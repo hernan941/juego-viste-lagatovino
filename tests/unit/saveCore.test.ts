@@ -13,17 +13,35 @@ class MemoryStorage implements StorageLike {
 
 const sample: SaveData = {
   version: SAVE_VERSION, catId: 'luna', catName: 'Luna',
-  outfit: { sweater: 'sweater-rayas', head: 'head-boina' }, secrets: ['navidad'], muted: true,
+  outfit: { sweater: 'sweater-rayas', head: 'head-boina' }, secrets: ['navidad'], muted: true, motion: 'reduce',
 };
 
 describe('defaultSave', () => {
-  it('is empty, unmuted and current version', () => {
-    expect(defaultSave()).toEqual({ version: SAVE_VERSION, catId: null, catName: '', outfit: {}, secrets: [], muted: false });
+  it('is empty, unmuted, on automatic motion and current version', () => {
+    expect(defaultSave()).toEqual({ version: SAVE_VERSION, catId: null, catName: '', outfit: {}, secrets: [], muted: false, motion: 'auto' });
   });
 
   it('returns a fresh object each time', () => {
     expect(defaultSave()).not.toBe(defaultSave());
     expect(defaultSave().secrets).not.toBe(defaultSave().secrets);
+  });
+});
+
+describe('motion preference (ADR 0013, no migration)', () => {
+  it('a save without the field (every v1 save so far) reads as auto', () => {
+    const old: Record<string, unknown> = { ...sample };
+    delete old.motion;
+    expect(deserialize(JSON.stringify(old)).motion).toBe('auto');
+  });
+
+  it('keeps reduce and full, and reads anything else as auto', () => {
+    expect(deserialize(JSON.stringify({ ...sample, motion: 'full' })).motion).toBe('full');
+    expect(deserialize(JSON.stringify({ ...sample, motion: 'reduce' })).motion).toBe('reduce');
+    for (const bad of ['none', '', 3, null, true, ['reduce']]) expect(deserialize(JSON.stringify({ ...sample, motion: bad })).motion).toBe('auto');
+  });
+
+  it('does not bump the save version', () => {
+    expect(SAVE_VERSION).toBe(1);
   });
 });
 
@@ -51,7 +69,7 @@ describe('serialize / deserialize', () => {
   it('migrates a version 0 save (cat/name/mute keys)', () => {
     const raw = JSON.stringify({ version: 0, cat: 'luna', name: 'Luna', outfit: { head: 'head-boina' }, secrets: ['x'], mute: true });
     expect(deserialize(raw)).toEqual({
-      version: SAVE_VERSION, catId: 'luna', catName: 'Luna', outfit: { head: 'head-boina' }, secrets: ['x'], muted: true,
+      version: SAVE_VERSION, catId: 'luna', catName: 'Luna', outfit: { head: 'head-boina' }, secrets: ['x'], muted: true, motion: 'auto',
     });
   });
 

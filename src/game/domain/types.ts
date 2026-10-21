@@ -72,6 +72,9 @@ export type Outfit = Readonly<Partial<Record<Slot, string>>>;
 
 export const SAVE_VERSION = 1;
 
+/** Motion preference (ADR 0013): 'auto' follows the browser, the other two are the player's choice and win over it. */
+export type MotionPref = 'auto' | 'reduce' | 'full';
+
 export interface SaveData {
   version: number;
   catId: string | null;
@@ -80,4 +83,6 @@ export interface SaveData {
   /** Ids of the combos whose secret reward is already unlocked. */
   secrets: string[];
   muted: boolean;
+  /** ADR 0013. Missing or invalid in old saves: read as 'auto', so no migration. */
+  motion: MotionPref;
 }

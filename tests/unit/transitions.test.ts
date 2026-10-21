@@ -46,7 +46,7 @@ describe('enterKind', () => {
   });
 });
 
-function fakeScene() {
+function fakeScene(reduced = false) {
   const gfx = {
     clear: vi.fn(), fillStyle: vi.fn(), fillRect: vi.fn(), lineStyle: vi.fn(), strokeCircle: vi.fn(),
     setDepth: vi.fn(), setScrollFactor: vi.fn(), destroy: vi.fn(),
@@ -87,6 +87,7 @@ function fakeScene() {
     input: { enabled: true },
     scene: { start: vi.fn() },
     events: { once: vi.fn() },
+    registry: { get: vi.fn((k: string) => (k === 'reducedMotion' ? reduced : undefined)) },
   };
   return { scene, gfx, tweens, img, ctx, textures };
 }
@@ -185,5 +186,45 @@ describe('transitionIn', () => {
     const { scene, tweens } = fakeScene();
     transitionIn(scene as never, null);
     expect(tweens).toHaveLength(0);
+  });
+});
+
+describe('reduced motion (ADR 0013): every iris becomes a plain fade of the same length', () => {
+  it.each(['iris', 'heart', 'paw'] as const)('closing with %s fades instead, and the next scene is told it was a fade', (kind) => {
+    const { scene, gfx, tweens, img, textures } = fakeScene(true);
+    transitionTo(scene as never, 'DressUp', { catId: 'x' }, kind);
+    expect(tweens[0].duration).toBe(TRANSITION_MS);
+    tweens[0].run(0.5);
+    expect(gfx.fillRect).toHaveBeenCalled();
+    expect(gfx.strokeCircle).not.toHaveBeenCalled();
+    expect(img.setScale).not.toHaveBeenCalled();
+    expect(textures.createCanvas).not.toHaveBeenCalled();
+    tweens[0].done();
+    expect(scene.scene.start).toHaveBeenCalledWith('DressUp', { catId: 'x', transition: 'fade' });
+  });
+
+  it.each(['iris', 'heart', 'paw'] as const)('opening a scene that was left with %s also fades', (kind) => {
+    const { scene, gfx, tweens, textures } = fakeScene(true);
+    transitionIn(scene as never, kind);
+    tweens[0].run(0.5);
+    expect(gfx.strokeCircle).not.toHaveBeenCalled();
+    expect(textures.createCanvas).not.toHaveBeenCalled();
+    tweens[0].done();
+    expect(gfx.destroy).toHaveBeenCalled();
+  });
+
+  it('still does nothing without a kind, and still fades when asked for a fade', () => {
+    const { scene, tweens } = fakeScene(true);
+    transitionIn(scene as never, null);
+    expect(tweens).toHaveLength(0);
+    transitionIn(scene as never, 'fade');
+    expect(tweens).toHaveLength(1);
+  });
+
+  it('with motion on, the iris is still an iris', () => {
+    const { scene, gfx, tweens } = fakeScene(false);
+    transitionTo(scene as never, 'DressUp', {}, 'iris');
+    tweens[0].run(0.5);
+    expect(gfx.strokeCircle).toHaveBeenCalled();
   });
 });

@@ -1,5 +1,6 @@
 // Pure core of SavePlugin (ADR 0004): serialize, versioned migration and storage access.
 import { SLOT_ORDER, type Slot } from '../domain/slots';
+import { isMotionPref } from '../systems/motion';
 import { SAVE_VERSION, type Outfit, type SaveData } from '../domain/types';
 
 export const SAVE_KEY = `viste-lagato:save:v${SAVE_VERSION}`;
@@ -14,7 +15,7 @@ export interface StorageLike {
 type Obj = Record<string, unknown>;
 
 export function defaultSave(): SaveData {
-  return { version: SAVE_VERSION, catId: null, catName: '', outfit: {}, secrets: [], muted: false };
+  return { version: SAVE_VERSION, catId: null, catName: '', outfit: {}, secrets: [], muted: false, motion: 'auto' };
 }
 
 /** migrations[n] upgrades a save from version n to n + 1. */
@@ -65,6 +66,7 @@ export function deserialize(raw: string | null): SaveData {
     outfit: sanitizeOutfit(data.outfit),
     secrets: Array.isArray(data.secrets) ? data.secrets.filter((s): s is string => typeof s === 'string') : [],
     muted: data.muted === true,
+    motion: isMotionPref(data.motion) ? data.motion : 'auto',
   };
 }
 

@@ -6,6 +6,7 @@
 // Phaser is only a type here.
 import type Phaser from 'phaser';
 import { TRANSITION_KINDS, type TransitionKind } from '../domain/flow';
+import { profileOf } from './motion';
 import { IRIS_SHAPES, coverRects, irisHoleScale, type Direction } from './irisShapes';
 
 export type { Direction, TransitionKind };
@@ -161,6 +162,8 @@ export function transitionTo(scene: Phaser.Scene, key: string, data: object = {}
   if (busy.has(scene)) return;
   busy.add(scene);
   scene.input.enabled = false;
+  // Reduced motion (ADR 0013): any iris is a plain fade of the same length; the next scene opens with a fade too.
+  kind = profileOf(scene).transitionKind(kind);
   const overlay = createOverlay(scene, kind);
   run(scene, overlay, 'close', () => {
     busy.delete(scene);
@@ -174,7 +177,7 @@ export function transitionIn(scene: Phaser.Scene, kind: TransitionKind | null, o
     onDone?.();
     return;
   }
-  const overlay = createOverlay(scene, kind);
+  const overlay = createOverlay(scene, profileOf(scene).transitionKind(kind));
   run(scene, overlay, 'open', () => {
     overlay.destroy();
     onDone?.();
