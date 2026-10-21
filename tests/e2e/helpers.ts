@@ -30,8 +30,10 @@ export const sharedTest = test.extend({
     if (!shared || shared.page.isClosed()) {
       const context = await browser.newContext({ baseURL, viewport });
       shared = { context, page: await context.newPage() };
-    } else await shared.page.evaluate(() => window.__VISTE__?.reset()).catch(() => undefined); // a first visit again
+    } else await shared.page.evaluate(() => { window.__VISTE__?.park(false); window.__VISTE__?.reset(); }).catch(() => undefined); // awake, and a first visit again
     await use(shared.page);
+    // Parked while the worker tests another page: a page that keeps rendering (software WebGL) slows every other test down.
+    await shared.page.evaluate(() => window.__VISTE__?.park(true)).catch(() => undefined);
     // The page is kept for the next test of this worker (a failed test makes Playwright start a new worker, and a new page).
   },
 });
