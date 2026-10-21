@@ -12,7 +12,8 @@ art/
     base/face-*.svg         # caras: normal, feliz, sorpresa, parpadeo y amor (capas intercambiables)
     coats/<id>.svg          # pelaje por gato: color base + patrón por parte
     <id>.svg                # GENERADO: gato completo (silueta + pelaje + cara normal), autocontenido
-    noface/<id>.svg         # GENERADO: el mismo gato sin cara, para superponer face-*.svg en el juego
+    noface/<id>.svg         # GENERADO: el mismo gato sin cara y sin cola (lo que carga el juego)
+    tail/<id>.svg           # GENERADO: solo la cola con el pelaje del gato, en el lienzo de 512 (capa animada)
   clothes/<slot>/<id>.svg   # prenda en el lienzo de 512, ya en su lugar
   clothes/<slot>/<id>.icon.svg  # GENERADO: icono del grid (la prenda centrada sobre una celda crema)
   ui/panel.svg, ui/button.svg
@@ -67,6 +68,9 @@ La cabeza, además, lleva el interior rosa de las orejas y el **brillo**. El int
 
 ### Caras
 Los archivos `face-*.svg` son capas transparentes de 512 (ojos, boca, mejillas y bigotes), todas en las mismas posiciones. El gato generado incluye `face-normal`. Para animar (parpadeo cada 3–5 s, reacciones), el juego carga `noface/<id>.svg` y encima la capa `face-*` que corresponda.
+
+### Cola (capa propia, F3)
+El juego carga `tail/<id>.svg` detrás de `noface/<id>.svg` y la rota desde su base, `details.tailBase` de `anchors.json` (352, 446: el punto medio de los dos extremos de `tail-shape` donde se une al cuerpo). La unión queda tapada por el cuerpo. Hace un vaivén suave en reposo (±4°) y un latigazo al soltar una prenda (±8°). El gato completo `<id>.svg` sigue incluyendo la cola para el styleguide.
 
 ## Cómo dibujar una prenda nueva
 1. Se abre `cats/base/silhouette.svg` como referencia y se dibuja sobre el mismo `viewBox` de 512, sin mover nada. Conviene guiarse con las cajas y anclas de `anchors.json`.

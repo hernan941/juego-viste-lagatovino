@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import cats from '../../src/game/data/cats.json';
 import clothes from '../../src/game/data/clothes.json';
-import { buildManifest, clothingAssetName } from '../../src/game/data/assets';
+import { buildManifest, catTailKey, clothingAssetName } from '../../src/game/data/assets';
 import { EXPRESSIONS } from '../../src/game/domain/expressions';
 import type { CatDef, ClothingDef } from '../../src/game/domain/types';
 
@@ -23,11 +23,20 @@ describe('buildManifest', () => {
     const keys = manifest.map((m) => m.key);
     expect(new Set(keys).size).toBe(keys.length);
     for (const c of cats) expect(keys).toContain(c.texture);
+    for (const c of cats) expect(keys).toContain(catTailKey(c));
     for (const e of EXPRESSIONS) expect(keys).toContain(`face-${e}`);
     for (const c of clothes) {
       expect(keys).toContain(c.texture);
       expect(keys).toContain(c.icon);
     }
+  });
+
+  it('loads each cat as a tailless body plus its own tail layer (F3)', () => {
+    for (const c of cats) {
+      expect(manifest.find((m) => m.key === c.texture)?.path).toBe(`assets/cats/noface/${c.id}.svg`);
+      expect(manifest.find((m) => m.key === catTailKey(c))?.path).toBe(`assets/cats/tail/${c.id}.svg`);
+    }
+    expect(catTailKey({ texture: 'cat-naranja' })).toBe('cat-naranja-tail');
   });
 
   it('every asset exists in public/assets (run npm run art if this fails)', () => {

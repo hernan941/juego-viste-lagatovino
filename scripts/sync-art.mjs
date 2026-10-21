@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Copies the art that the game loads from art/ (source of truth) to public/assets/ (ADR 0006, F2).
 //   npm run art  →  node art/tools/build-art.mjs  +  node scripts/sync-art.mjs
-// Only runtime files are copied: gatos sin cara, caras, prendas con su icono y UI. The full
+// Only runtime files are copied: gatos sin cara ni cola, colas, caras, prendas con su icono y UI. The full
 // cats (art/cats/<id>.svg), coats, preview.html and tools stay in art/.
 import { cpSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -23,6 +23,7 @@ const copy = (from, to) => {
 };
 
 for (const f of svgs(join(ART, 'cats/noface'))) copy(join(ART, 'cats/noface', f), join(OUT, 'cats/noface', f));
+for (const f of svgs(join(ART, 'cats/tail'))) copy(join(ART, 'cats/tail', f), join(OUT, 'cats/tail', f));
 for (const f of svgs(join(ART, 'cats/base')).filter((n) => n.startsWith('face-'))) {
   copy(join(ART, 'cats/base', f), join(OUT, 'cats/base', f));
 }

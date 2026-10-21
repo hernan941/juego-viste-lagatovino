@@ -16,7 +16,8 @@
     "pawRight": { "x": 288, "y": 474 },
     "earLeftTip":  { "x": 152, "y": 52 },
     "earRightTip": { "x": 360, "y": 52 },
-    "tailTip":  { "x": 430, "y": 352 }
+    "tailTip":  { "x": 430, "y": 352 },
+    "tailBase": { "x": 352, "y": 446 }
   },
   "boxes": {
     "head":  { "x": 88,  "y": 48,  "width": 336, "height": 274 },

@@ -92,7 +92,7 @@
       `<td>${stage([`cats/${id}.svg`, ...(sw ? [`clothes/sweater/${sw}.svg`] : [])])}</td>`).join('')}</tr>`).join('');
 
   document.getElementById('faces').innerHTML = ['normal', 'feliz', 'sorpresa', 'parpadeo', 'amor']
-    .map((f) => `<div>${stage(['cats/noface/naranja.svg', `cats/base/face-${f}.svg`])}<div class="label">${f}</div></div>`).join('');
+    .map((f) => `<div>${stage(['cats/tail/naranja.svg', 'cats/noface/naranja.svg', `cats/base/face-${f}.svg`])}<div class="label">${f}</div></div>`).join('');
 
   fetch('anchors.json').then((r) => r.json()).catch(() => null).then((a) => {
     const pct = (v) => (v / 512 * 100) + '%';

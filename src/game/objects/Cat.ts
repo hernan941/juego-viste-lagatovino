@@ -1,9 +1,10 @@
 import Phaser from 'phaser';
 import { ObjectEvents } from '../constants';
-import { faceKey } from '../data/assets';
+import { catTailKey, faceKey } from '../data/assets';
 import { reactionFor, type Expression, type ReactionEvent } from '../domain/expressions';
 import { blinkCount, lookOffset, nextBlinkDelay } from '../domain/idle';
 import { slotZIndex, hitBoxForSlot, anchorForSlot } from '../domain/slots';
+import { TAIL_FLICK, TAIL_IDLE, tailPivot } from '../domain/tail';
 import type { AnchorName, AnchorsDef, CatDef, ClothingDef, Point, Rect } from '../domain/types';
 
 /** Y of the paws' bottom edge in the 512 canvas: the pivot for breathing and squash. */
@@ -17,8 +18,9 @@ interface Layer {
 }
 
 /**
- * The cat: a Container whose origin is the middle of its feet. Inside it, `rig` takes squash, shake
- * and wiggle, and `breath` the idle loop. The body has no face; the face is a swappable layer and the
+ * The cat: a Container whose origin is the middle of its feet. Inside it, `rig` takes squash and shake,
+ * and `breath` the idle loop. The body has no face and no tail: the tail is its own layer behind the
+ * body, pivoting at its base (idle sway and flick, F3); the face is a swappable layer and the
  * clothes are one image per slot, ordered by the slot z index (ADR 0003). All art is the 512 canvas
  * scaled by `Cat.scale`, so anchors and boxes from anchors.json apply directly.
  */
@@ -27,6 +29,8 @@ export class Cat extends Phaser.GameObjects.Container {
   private readonly rig: Phaser.GameObjects.Container;
   private readonly breath: Phaser.GameObjects.Container;
   private readonly face: Phaser.GameObjects.Image;
+  private readonly tail: Phaser.GameObjects.Image;
+  private tailTween?: Phaser.Tweens.Tween | Phaser.Tweens.TweenChain;
   private readonly layers = new Map<string, Layer>();
   private expression: Expression = 'normal';
   private held = false;
@@ -45,9 +49,10 @@ export class Cat extends Phaser.GameObjects.Container {
     this.rig = scene.add.container(0, 0, [this.breath]);
     this.add(this.rig);
 
+    this.tail = this.createTail();
     const body = this.canvasImage(def.texture).setDepth(-1);
     this.face = this.canvasImage(faceKey('normal')).setDepth(FACE_DEPTH);
-    this.breath.add([body, this.face]);
+    this.breath.add([this.tail, body, this.face]);
     this.breath.sort('depth');
 
     scene.add.existing(this);
@@ -58,6 +63,14 @@ export class Cat extends Phaser.GameObjects.Container {
   private canvasImage(key: string): Phaser.GameObjects.Image {
     const { width, height } = this.anchors.canvas;
     return this.scene.add.image(0, 0, key).setOrigin(0.5).setPosition(0, height / 2 - FEET_Y).setDisplaySize(width, height);
+  }
+
+  /** The tail layer: the full 512 canvas with its origin at the base of the tail, so it rotates from there. */
+  private createTail(): Phaser.GameObjects.Image {
+    const { width, height } = this.anchors.canvas;
+    const { point, origin } = tailPivot(this.anchors);
+    return this.scene.add.image(0, 0, catTailKey(this.def)).setOrigin(origin.x, origin.y)
+      .setPosition(point.x - width / 2, point.y - FEET_Y).setDisplaySize(width, height).setDepth(-2);
   }
 
   /** Canvas point (px of the 512 canvas) to game coordinates. */
@@ -87,9 +100,17 @@ export class Cat extends Phaser.GameObjects.Container {
 
   private startIdle(): void {
     this.scene.tweens.add({ targets: this.breath, scaleY: { from: 0.98, to: 1.02 }, duration: 1500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-    // The tail is part of the body texture, so the whole figure sways a little instead.
-    this.scene.tweens.add({ targets: this.breath, angle: { from: -1, to: 1 }, duration: 2300, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    this.swayTail();
     this.scheduleBlink();
+  }
+
+  /** Gentle endless sway of the tail from its base: ±4° with Sine.easeInOut (TAIL_IDLE). */
+  private swayTail(): void {
+    this.tailTween?.remove();
+    this.tail.setAngle(-TAIL_IDLE.angle);
+    this.tailTween = this.scene.tweens.add({
+      targets: this.tail, angle: TAIL_IDLE.angle, duration: TAIL_IDLE.duration, yoyo: true, repeat: -1, ease: TAIL_IDLE.ease,
+    });
   }
 
   private scheduleBlink(): void {
@@ -175,9 +196,27 @@ export class Cat extends Phaser.GameObjects.Container {
     this.scene.tweens.add({ targets: this.rig, angle: { from: -4, to: 4 }, duration: 55, yoyo: true, repeat: 3, ease: 'Sine.easeInOut', onComplete: () => this.rig.setAngle(0) });
   }
 
-  /** The tail is not a separate part, so the whole figure does a small wiggle (Back.easeOut). */
+  /** Tail whip when an item is dropped: snaps to ±8° and settles with Back.easeOut, then sways again. */
+  tailFlick(): void {
+    this.tailTween?.remove();
+    this.tailTween = this.scene.tweens.chain({
+      targets: this.tail,
+      tweens: [
+        { angle: -TAIL_FLICK.angle, duration: 70, ease: 'Quad.easeOut' },
+        { angle: TAIL_FLICK.angle, duration: 110, ease: 'Sine.easeInOut' },
+        { angle: 0, duration: TAIL_FLICK.duration, ease: TAIL_FLICK.ease },
+      ],
+      // The chain is finishing: forget it before swaying again so it is not removed twice.
+      onComplete: () => {
+        this.tailTween = undefined;
+        this.swayTail();
+      },
+    });
+  }
+
+  /** Kept for callers from F2 (DressUp): the wiggle is now the tail flick. */
   wiggle(): void {
-    this.scene.tweens.add({ targets: this.rig, angle: { from: 3, to: 0 }, duration: 380, ease: 'Back.easeOut' });
+    this.tailFlick();
   }
 
   /** Pop-in when the cat appears: 0.8 to 1.05 to 1 in 250 ms. */
@@ -253,7 +292,8 @@ export class Cat extends Phaser.GameObjects.Container {
   destroy(fromScene?: boolean): void {
     this.blinkTimer?.remove();
     this.revertTimer?.remove();
-    this.scene?.tweens.killTweensOf([this, this.rig, this.breath, this.face, ...[...this.layers.values()].map((l) => l.image)]);
+    this.tailTween?.remove();
+    this.scene?.tweens.killTweensOf([this, this.rig, this.breath, this.face, this.tail, ...[...this.layers.values()].map((l) => l.image)]);
     this.removeAllListeners();
     super.destroy(fromScene);
   }

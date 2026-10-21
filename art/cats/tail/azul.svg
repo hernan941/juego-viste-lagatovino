@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Viste Lagato · gato "azul". GENERADO por art/tools/build-art.mjs: no editar a mano (editar base/ o coats/azul.svg). -->
+  <defs>
+    <path id="tail-shape" d="M350 462 C400 472 446 452 452 400 C456 362 440 334 416 336 C394 338 388 362 402 374 C414 384 420 396 416 410 C410 432 388 440 354 430 Z"/>
+    <path id="body-shape" d="M256 262 C330 262 370 330 372 400 C374 452 340 490 256 490 C172 490 138 452 140 400 C142 330 182 262 256 262 Z"/>
+    <ellipse id="paw-l-shape" cx="224" cy="474" rx="34" ry="24"/>
+    <ellipse id="paw-r-shape" cx="288" cy="474" rx="34" ry="24"/>
+    <path id="head-shape" d="M256 318 C172 318 96 300 92 232 C88 185 100 150 118 128 C112 104 118 74 134 60 C146 50 160 52 170 62 C184 76 196 90 208 100 C236 94 276 94 304 100 C316 90 328 76 342 62 C352 52 366 50 378 60 C394 74 400 104 394 128 C412 150 424 185 420 232 C416 300 340 318 256 318 Z"/>
+    <clipPath id="clip-tail"><use href="#tail-shape"/></clipPath>
+    <clipPath id="clip-body"><use href="#body-shape"/></clipPath>
+    <clipPath id="clip-paw-l"><use href="#paw-l-shape"/></clipPath>
+    <clipPath id="clip-paw-r"><use href="#paw-r-shape"/></clipPath>
+    <clipPath id="clip-head"><use href="#head-shape"/></clipPath>
+  </defs>
+
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <g id="tail">
+      <use href="#tail-shape" fill="#8FA3BF"/>
+      <g clip-path="url(#clip-tail)">
+        
+        <path class="shade" fill="#000" fill-opacity="0.15" d="M340 448 C392 462 440 444 452 400 L470 400 L470 500 L330 500 Z"/>
+      </g>
+      <use href="#tail-shape" fill="none" stroke="#4A3036" stroke-width="8"/>
+    </g>
+  </g>
+</svg>

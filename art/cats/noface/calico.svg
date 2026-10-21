@@ -14,15 +14,6 @@
   </defs>
 
   <g stroke-linejoin="round" stroke-linecap="round">
-    <g id="tail">
-      <use href="#tail-shape" fill="#FFAE5C"/>
-      <g clip-path="url(#clip-tail)">
-        <path fill="#3E3A47" d="M380 330 L470 330 L470 392 C446 384 420 380 400 384 Z"/>
-        <path class="shade" fill="#000" fill-opacity="0.15" d="M340 448 C392 462 440 444 452 400 L470 400 L470 500 L330 500 Z"/>
-      </g>
-      <use href="#tail-shape" fill="none" stroke="#4A3036" stroke-width="8"/>
-    </g>
-
     <g id="body">
       <use href="#body-shape" fill="#FFFDF8"/>
       <g clip-path="url(#clip-body)">

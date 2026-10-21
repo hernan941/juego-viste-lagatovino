@@ -17,6 +17,9 @@ export const ICON_TEXTURE_SIZE = 256;
 
 export const faceKey = (expression: string) => `face-${expression}`;
 
+/** Texture key of a cat's tail layer (the body texture is loaded without its tail). */
+export const catTailKey = (cat: Pick<CatDef, 'texture'>) => `${cat.texture}-tail`;
+
 /** File name of an item without the slot prefix: `sweater-rayas` in slot `sweater` is `rayas`. */
 export function clothingAssetName(item: Pick<ClothingDef, 'id' | 'slot'>): string {
   const prefix = `${item.slot}-`;
@@ -25,8 +28,12 @@ export function clothingAssetName(item: Pick<ClothingDef, 'id' | 'slot'>): strin
 
 export function buildManifest(cats: readonly CatDef[], clothes: readonly ClothingDef[]): AssetEntry[] {
   const entries: AssetEntry[] = [];
-  // Cats are loaded without a face: the Cat object overlays the expression layers.
-  for (const c of cats) entries.push({ key: c.texture, path: `assets/cats/noface/${c.id}.svg`, size: CAT_TEXTURE_SIZE });
+  // Cats are loaded without face and tail: the Cat object overlays the expression layers and
+  // animates the tail as its own layer behind the body.
+  for (const c of cats) {
+    entries.push({ key: c.texture, path: `assets/cats/noface/${c.id}.svg`, size: CAT_TEXTURE_SIZE });
+    entries.push({ key: catTailKey(c), path: `assets/cats/tail/${c.id}.svg`, size: CAT_TEXTURE_SIZE });
+  }
   for (const e of EXPRESSIONS) entries.push({ key: faceKey(e), path: `assets/cats/base/face-${e}.svg`, size: CAT_TEXTURE_SIZE });
   for (const c of clothes) {
     const dir = `assets/clothes/${c.slot}/${clothingAssetName(c)}`;

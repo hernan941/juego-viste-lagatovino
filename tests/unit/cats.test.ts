@@ -41,6 +41,7 @@ describe('cat cast (F3)', () => {
       expect(coatFiles.has(`/art/cats/coats/${c.id}.svg`), `coat ${c.id}`).toBe(true);
       expect(fullCats.has(`/art/cats/${c.id}.svg`), `art ${c.id}`).toBe(true);
       expect(publicFiles.has(`/public/assets/cats/noface/${c.id}.svg`), `public ${c.id}`).toBe(true);
+      expect(publicFiles.has(`/public/assets/cats/tail/${c.id}.svg`), `tail ${c.id}`).toBe(true);
     }
   });
 });

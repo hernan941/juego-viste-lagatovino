@@ -5,8 +5,11 @@
 //
 // 1. Gatos: art/cats/base/silhouette.svg + art/cats/coats/<id>.svg + art/cats/base/face-normal.svg
 //    → art/cats/<id>.svg (autocontenido, listo para this.load.svg).
-//    También escribe art/cats/noface/<id>.svg (mismo gato SIN cara) para que el juego
-//    superponga las capas de expresión (face-*.svg) y pueda parpadear.
+//    También escribe, para el juego (F3):
+//    - art/cats/noface/<id>.svg: el gato SIN cara y SIN cola, para superponer las capas de
+//      expresión (face-*.svg) y que pueda parpadear;
+//    - art/cats/tail/<id>.svg: solo la cola con el pelaje del gato, en el mismo lienzo de 512,
+//      que el juego anima como capa propia detrás del cuerpo (vaivén y latigazo).
 // 2. Iconos: art/clothes/<slot>/<id>.svg → art/clothes/<slot>/<id>.icon.svg
 //    (la prenda recortada a su caja y centrada sobre una celda crema).
 //
@@ -48,7 +51,11 @@ function luminance(hex) {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
-function composeCat(id, { withFace }) {
+// Grupo de la cola en la plantilla: <g id="tail"> … contorno <use href="#tail-shape"> … </g>.
+const TAIL_GROUP = /\s*<g id="tail">[\s\S]*?<use href="#tail-shape" fill="none"[^>]*\/>\s*<\/g>/;
+
+/** part: 'all' (gato completo), 'body' (sin cola) o 'tail' (solo la cola). */
+function composeCat(id, { withFace, part = 'all' }) {
   const coat = parseCoat(read(`cats/coats/${id}.svg`), id);
   let svg = read('cats/base/silhouette.svg');
   svg = svg.replace(/<!--[\s\S]*?-->/, `<!-- Viste Lagato · gato "${id}". GENERADO por art/tools/build-art.mjs: no editar a mano (editar base/ o coats/${id}.svg). -->`);
@@ -61,6 +68,12 @@ function composeCat(id, { withFace }) {
   if (luminance(coat.head.fill) > 0.85) {
     svg = svg.replaceAll('fill="#FFFFFF" fill-opacity="0.55"', 'fill="#FFF0A8" fill-opacity="0.5"');
   }
+  if (part === 'body') svg = svg.replace(TAIL_GROUP, '');
+  if (part === 'tail') {
+    const tail = svg.match(TAIL_GROUP)[0];
+    const open = svg.indexOf('<g stroke-linejoin="round" stroke-linecap="round">');
+    svg = `${svg.slice(0, open)}<g stroke-linejoin="round" stroke-linecap="round">${tail}\n  </g>\n</svg>\n`;
+  }
   if (withFace) {
     const face = innerSvg(read('cats/base/face-normal.svg'));
     svg = svg.replace(/<\/svg>\s*$/, `  <g id="face">${face}</g>\n</svg>\n`);
@@ -70,10 +83,12 @@ function composeCat(id, { withFace }) {
 
 function buildCats() {
   mkdirSync(join(ART, 'cats/noface'), { recursive: true });
+  mkdirSync(join(ART, 'cats/tail'), { recursive: true });
   const ids = readdirSync(join(ART, 'cats/coats')).filter((f) => f.endsWith('.svg')).map((f) => basename(f, '.svg'));
   for (const id of ids) {
     writeFileSync(join(ART, `cats/${id}.svg`), composeCat(id, { withFace: true }));
-    writeFileSync(join(ART, `cats/noface/${id}.svg`), composeCat(id, { withFace: false }));
+    writeFileSync(join(ART, `cats/noface/${id}.svg`), composeCat(id, { withFace: false, part: 'body' }));
+    writeFileSync(join(ART, `cats/tail/${id}.svg`), composeCat(id, { withFace: false, part: 'tail' }));
   }
   return ids;
 }
