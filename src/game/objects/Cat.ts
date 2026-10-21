@@ -3,13 +3,17 @@ import { ObjectEvents } from '../constants';
 import { catTailKey, faceKey } from '../data/assets';
 import { reactionFor, type Expression, type ReactionEvent } from '../domain/expressions';
 import { blinkCount, lookOffset, nextBlinkDelay } from '../domain/idle';
+import { grabPoint, hitsAlpha } from '../domain/pixelHit';
 import { slotZIndex, hitBoxForSlot, anchorForSlot } from '../domain/slots';
 import { TAIL_FLICK, TAIL_IDLE, tailPivot } from '../domain/tail';
+import { alphaMapOf } from './alphaMap';
 import type { AnchorName, AnchorsDef, CatDef, ClothingDef, Point, Rect } from '../domain/types';
 
 /** Y of the paws' bottom edge in the 512 canvas: the pivot for breathing and squash. */
 const FEET_Y = 490;
 const FACE_DEPTH = slotZIndex('neck') + 0.5;
+/** Pixels (of the 192 px alpha map) around the pointer that still count as touching a worn item: thin ones stay grabbable. */
+const HIT_REACH = 2;
 const FACE_LOOK_PX = { x: 5, y: 3 };
 
 interface Layer {
@@ -89,8 +93,20 @@ export class Cat extends Phaser.GameObjects.Container {
     return { x: tl.x, y: tl.y, width: z.width * this.scaleX, height: z.height * this.scaleY };
   }
 
-  /** Center of the hit box of the worn item of a slot, in game coordinates (where to grab it). */
+  /**
+   * A visible point of the worn item, in game coordinates (where to grab it): a solid pixel that no item
+   * drawn above covers. Thin items that are fully hidden fall back to the center of the slot box.
+   */
   getLayerGrabPoint(item: ClothingDef): Point {
+    const own = alphaMapOf(this.scene, item.texture);
+    const covers = [...this.layers.values()]
+      .filter((l) => slotZIndex(l.item.slot) > slotZIndex(item.slot))
+      .map((l) => alphaMapOf(this.scene, l.item.texture));
+    const p = grabPoint(own, covers, { reach: HIT_REACH });
+    if (p) {
+      const k = this.anchors.canvas.width / own.width;
+      return this.canvasToWorld({ x: (p.x + 0.5) * k, y: (p.y + 0.5) * k });
+    }
     const b = this.anchors.boxes[hitBoxForSlot(item.slot)];
     const slotAnchor = this.anchors.anchors[anchorForSlot(item.slot)];
     return this.canvasToWorld({ x: b.x + b.width / 2, y: Math.min(Math.max(slotAnchor.y, b.y), b.y + b.height) });
@@ -263,10 +279,16 @@ export class Cat extends Phaser.GameObjects.Container {
     img.setAlpha(0).setScale(finalScale.x * 0.9, finalScale.y * 0.9);
     this.breath.add(img);
     this.scene.tweens.add({ targets: img, alpha: 1, scaleX: finalScale.x, scaleY: finalScale.y, duration: 250, ease: 'Back.easeOut' });
-    // Hit area: the template box of the slot, so a worn item can be dragged off the cat.
-    const box = this.anchors.boxes[hitBoxForSlot(item.slot)];
-    const k = img.width / this.anchors.canvas.width;
-    img.setInteractive({ hitArea: new Phaser.Geom.Rectangle(box.x * k, box.y * k, box.width * k, box.height * k), hitAreaCallback: Phaser.Geom.Rectangle.Contains, draggable: true, useHandCursor: true });
+    // Hit area: the visible pixels of the item (plus a small reach), so the topmost item under the pointer is the one
+    // that is dragged: an accessory never hides the sweater and items outside the torso box can be grabbed.
+    const alpha = alphaMapOf(this.scene, item.texture);
+    const k = alpha.width / img.width;
+    img.setInteractive({
+      hitArea: new Phaser.Geom.Rectangle(0, 0, img.width, img.height),
+      hitAreaCallback: (_area: Phaser.Geom.Rectangle, x: number, y: number) => hitsAlpha(alpha, x * k, y * k, undefined, HIT_REACH),
+      draggable: true,
+      useHandCursor: true,
+    });
     img.on('dragstart', (pointer: Phaser.Input.Pointer) => this.emit(ObjectEvents.ItemDragStart, item, pointer));
     img.on('drag', (pointer: Phaser.Input.Pointer) => this.emit(ObjectEvents.ItemDrag, item, pointer));
     img.on('dragend', (pointer: Phaser.Input.Pointer) => this.emit(ObjectEvents.ItemDragEnd, item, pointer));
