@@ -168,7 +168,7 @@ F0 Base ─► F1 Estética ─► F2 Vertical slice ─┬─► F3 Elenco de g
   - El PNG se descarga y se ve bien.
 - **Depende de**: F5.
 - **Agentes**: architect (formato de guardado), phaser-code-writer y game-designer.
-- **Estado**: Implementada, pendiente de revisión del game-designer
+- **Estado**: Hecha
 - **Tareas** (hechas con TDD):
   1. `domain/session.ts` → `sessionFromSave`: restaura el gato, el nombre y el outfit validados contra el catálogo.
   2. `plugins/saveService.ts` (guardado con debounce de 300 ms sobre lo que ya hay: conserva mute y secretos) y `plugins/SavePlugin.ts` (Global Plugin que escucha el registry y vacía al cerrar la página). La clave es `viste-lagato:save:v1`, el JSON corrupto o de una versión futura arranca limpio, y `secrets` queda listo para F8.
@@ -177,6 +177,7 @@ F0 Base ─► F1 Estética ─► F2 Vertical slice ─┬─► F3 Elenco de g
   5. Showcase: botón "Descargar foto" (sonido Shutter, flash blanco, el gato posa, burbuja "¡Foto lista!").
   6. e2e: `tests/e2e/save.spec.ts` y `tests/e2e/photo.spec.ts`.
 - **Tamaño**: S
+- **Revisión game-designer (2026-10-21, `d90942f` y `a634a24`): Aprobada con arreglos (sin Alta).** La foto es un recuerdo que da ganas de guardar: tarjeta crema con borde `rosa-400`, logo con contorno, el gato grande sobre un halo mantequilla con su sombra, corazones y brillitos, y la placa con el nombre. Cumple el checklist §10 (contorno, paleta plana, formas redondeadas, el gato se ve tierno y entero, con cola y prendas en su sitio). El momento de sacarla también se siente bien: obturador, flash 70/420 ms, pose `amor` con squash y burbuja "¡Foto lista!" con `Back.easeOut`; no se puede disparar dos veces mientras trabaja. El guardado es invisible, como debe ser: "Iniciar" te devuelve a tu gato con su nombre y su look, y el JSON roto arranca limpio. Arreglos **Media/Baja** en `docs/game-design.md` → "Backlog de juice": (Media) que la foto salga con la cara de la pose (en la evidencia el gato posa con ojos de corazón en pantalla y el PNG sale con `feliz`), (Media) un momento de "revelado" con miniatura de la foto, (Baja) huellitas del fondo casi invisibles, brillitos poco contrastados sobre crema, burbuja que tapa la panza y pompón del gorro tapado por el cartel.
 
 ### F8. Sorpresas: combinaciones y regalitos
 - **Objetivo**: dar ganas de seguir experimentando ("¿qué más hay?").
