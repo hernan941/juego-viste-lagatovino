@@ -785,7 +785,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
       slotAnchors: Object.fromEntries(SLOT_ORDER.map((slot) => [slot, this.cat.getAnchorWorld(anchorForSlot(slot))])),
       drawOrder: this.cat.getDrawOrder(),
       secrets: { unlocked: this.reveal.shownUnlocked(this.unlocked), count: this.reveal.shownCount(this.unlocked), revealing: this.reveal.hiddenItems(), sign: this.sign.text, signLog: [...this.sign.announced], trace: this.secretTrace.map((t) => ({ ...t, revealing: [...t.revealing] })), total: this.catalog.combos.length, text: this.counter.text },
-      gift: this.gift ? { comboId: this.gift.comboId, itemId: this.gift.item.id, ready: this.gift.ready, opened: this.gift.opened, bow: this.gift.getBowPoint(), box: this.gift.getCenter() } : null,
+      gift: this.gift ? { comboId: this.gift.comboId, itemId: this.gift.item.id, ready: this.gift.ready, opened: this.gift.opened, bow: this.gift.getBowPoint(), box: this.gift.getCenter(), pill: this.gift.getHintPoint() } : null,
       pendingGifts: this.gifts.length,
       almost: [...this.almost],
       pets: this.pets,

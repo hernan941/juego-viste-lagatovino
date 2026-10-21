@@ -50,7 +50,7 @@ export interface DressUpE2EState {
   /** F8: the secrets counter ("Secretos X/N") and the unlocked combo ids. */
   secrets: { unlocked: string[]; count: number; total: number; text: string; revealing: string[]; sign: string; signLog: string[]; trace: { revealing: string[]; count: number; text: string }[] };
   /** The gift box on screen, with the bow to drag; null when there is none. */
-  gift: { comboId: string; itemId: string; ready: boolean; opened: boolean; bow: Point; box: Point } | null;
+  gift: { comboId: string; itemId: string; ready: boolean; opened: boolean; bow: Point; box: Point; pill: Point } | null;
   /** Gifts waiting for the one on screen to be opened. */
   pendingGifts: number;
   /** Ids of the combos that lack exactly one piece (the "¡Casi...!" hint). */
@@ -83,7 +83,7 @@ export interface VisteDressUpState extends Omit<DressUpE2EState, 'cells' | 'tabs
   dropZone: Rect & { center: Point };
   layerGrab: Record<string, Point>;
   layerRows: { itemId: string; close: Point }[];
-  gift: (Omit<NonNullable<DressUpE2EState['gift']>, 'bow' | 'box'> & { bow: Point; box: Point }) | null;
+  gift: (Omit<NonNullable<DressUpE2EState['gift']>, 'bow' | 'box' | 'pill'> & { bow: Point; box: Point; pill: Point }) | null;
 }
 
 /** What the scenes without a DressUp report: their buttons and points of interest, in game coordinates. */
@@ -269,7 +269,7 @@ export function installE2EHook(game: Game): void {
       return {
         ...s,
         grid: { ...grid, center: { x: grid.x + grid.width / 2, y: grid.y + grid.height / 2 } },
-        gift: s.gift && { ...s.gift, bow: map(s.gift.bow), box: map(s.gift.box) },
+        gift: s.gift && { ...s.gift, bow: map(s.gift.bow), box: map(s.gift.box), pill: map(s.gift.pill) },
         pxPerGamePx: f,
         slotAnchors: mapAll(s.slotAnchors),
         cells: mapAll(s.cells),

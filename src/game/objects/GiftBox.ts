@@ -72,10 +72,10 @@ export class GiftBox extends Phaser.GameObjects.Container {
     pill.lineStyle(4, hex('rosa200'), 1).strokeRoundedRect(-pillW / 2, -24, pillW, 48, 24);
     const dots = scene.add.graphics();
     dots.fillStyle(hex('rosa400'), 1);
-    [-100, -112].forEach((y, i) => dots.fillCircle(0, y, 4.6 - i * 0.5));
-    dots.fillTriangle(-10, -120, 10, -120, 0, -138);
+    // Short, between the bow and the pill that sits right above it.
+    dots.fillCircle(0, -88, 4.2).fillTriangle(-8, -95, 8, -95, 0, -108);
     this.arrow = scene.add.container(0, 0, [dots]);
-    this.hint = scene.add.container(48, -158, [pill, label]).setAlpha(0);
+    this.hint = scene.add.container(38, -118, [pill, label]).setAlpha(0);
     this.arrow.setAlpha(0);
 
     this.add([body, this.lid, this.bow, this.hint, this.arrow]);
@@ -96,6 +96,12 @@ export class GiftBox extends Phaser.GameObjects.Container {
   /** Where to grab the bow, in game coordinates. */
   getBowPoint(): Point {
     const m = this.bow.getWorldTransformMatrix();
+    return { x: m.tx, y: m.ty };
+  }
+
+  /** Where the "¡Arrastra el moño!" pill is, in game coordinates (for the e2e: it must sit right above the bow). */
+  getHintPoint(): Point {
+    const m = this.hint.getWorldTransformMatrix();
     return { x: m.tx, y: m.ty };
   }
 

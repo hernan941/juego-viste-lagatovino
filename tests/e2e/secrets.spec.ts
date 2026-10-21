@@ -57,6 +57,19 @@ test.describe('secret combos (F8)', () => {
     expect((await state(page)).secrets).toMatchObject({ count: 0, total: combos.length, text: `Secretos 0/${combos.length}` });
   });
 
+  test('the "¡Arrastra el moño!" pill sits right above the bow, not up over the cat\'s face', async ({ page }) => {
+    const combo = combos[0];
+    await openGame(page);
+    const worn = pieces(combo);
+    await wear(page, worn.slice(0, -1));
+    await equipItem(page, worn[worn.length - 1]);
+    const { gift } = await waitGift(page);
+    const rise = gift!.bow.y - gift!.pill.y;
+    expect(rise).toBeGreaterThan(50);
+    expect(rise).toBeLessThan(80);
+    expect(Math.abs(gift!.pill.x - gift!.bow.x)).toBeLessThan(90);
+  });
+
   test('the snow of the Navidad combo is over in 5 s: no emitter is left at 5.5 s', async ({ page }) => {
     const combo = combos.find((c) => c.reaction === 'snowfall')!;
     await openGame(page);
