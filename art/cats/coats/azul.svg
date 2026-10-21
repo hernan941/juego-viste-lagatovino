@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" data-coat="azul">
+  <!-- Pelaje "azul" (Humo, gris azulado liso). Formato en art/README.md. -->
+  <g id="tail" data-fill="#8FA3BF">
+  </g><!--/tail-->
+  <g id="body" data-fill="#8FA3BF">
+  </g><!--/body-->
+  <g id="paws" data-fill="#8FA3BF">
+  </g><!--/paws-->
+  <g id="head" data-fill="#8FA3BF">
+  </g><!--/head-->
+</svg>

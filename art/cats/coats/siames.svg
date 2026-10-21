@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" data-coat="siames">
+  <!-- Pelaje "siames" (Siamés, crema con puntas café). Formato en art/README.md.
+       Puntas #8A5A3C en orejas, antifaz, patitas y cola; antifaz en dos tonos (#B98060 por fuera) y almohadillas de bigote del mismo #B98060
+       para que la boca :3 se lea sobre el café. -->
+  <g id="tail" data-fill="#8A5A3C">
+    <path fill="#FBE3C0" d="M330 420 C360 440 380 446 400 444 L392 510 L330 510 Z"/>
+  </g><!--/tail-->
+  <g id="body" data-fill="#FBE3C0">
+  </g><!--/body-->
+  <g id="paws" data-fill="#8A5A3C">
+  </g><!--/paws-->
+  <g id="head" data-fill="#FBE3C0">
+    <!-- orejas -->
+    <path fill="#8A5A3C" d="M90 40 L204 40 L204 98 C180 104 150 112 118 132 L90 132 Z"/>
+    <path fill="#8A5A3C" d="M422 40 L308 40 L308 98 C332 104 362 112 394 132 L422 132 Z"/>
+    <!-- antifaz -->
+    <ellipse fill="#B98060" cx="256" cy="240" rx="112" ry="72"/>
+    <ellipse fill="#8A5A3C" cx="256" cy="242" rx="92" ry="58"/>
+    <path fill="#B98060" d="M256 234 C268 224 294 226 296 246 C298 266 272 270 256 262 C240 270 214 266 216 246 C218 226 244 224 256 234 Z"/>
+  </g><!--/head-->
+</svg>

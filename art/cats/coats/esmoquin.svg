@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" data-coat="esmoquin">
+  <!-- Pelaje "esmoquin" (Michi, blanco y negro). Formato en art/README.md.
+       Negro suave con hocico, pechera, patitas y punta de la cola blancos.
+       Legibilidad en pelaje oscuro (art-direction §2): halo #56505F detrás de cada ojo. -->
+  <g id="tail" data-fill="#3E3A47">
+    <path fill="#FFFDF8" d="M380 330 L460 330 L460 380 C440 372 418 370 396 376 Z"/>
+  </g><!--/tail-->
+  <g id="body" data-fill="#3E3A47">
+    <path fill="#FFFDF8" d="M194 296 L318 296 C318 372 292 424 256 436 C220 424 194 372 194 296 Z"/>
+  </g><!--/body-->
+  <g id="paws" data-fill="#FFFDF8">
+  </g><!--/paws-->
+  <g id="head" data-fill="#3E3A47">
+    <ellipse fill="#56505F" cx="192" cy="224" rx="24" ry="29"/>
+    <ellipse fill="#56505F" cx="320" cy="224" rx="24" ry="29"/>
+    <!-- antifaz blanco: franja en la frente que se abre en el hocico y la barbilla -->
+    <path fill="#FFFDF8" d="M256 150 C268 150 274 170 280 196 C284 214 286 224 290 232 C318 242 342 272 344 330 L168 330 C170 272 194 242 222 232 C226 224 228 214 232 196 C238 170 244 150 256 150 Z"/>
+  </g><!--/head-->
+</svg>

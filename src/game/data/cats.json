@@ -1,5 +1,14 @@
 [
   { "id": "naranja", "name": "Naranjito", "coat": "Atigrado naranja", "texture": "cat-naranja" },
   { "id": "negro", "name": "Luna", "coat": "Negro entero", "texture": "cat-negro" },
-  { "id": "calico", "name": "Tricolor", "coat": "Calicó (blanco, naranja y negro)", "texture": "cat-calico" }
+  { "id": "calico", "name": "Tricolor", "coat": "Calicó (blanco, naranja y negro)", "texture": "cat-calico" },
+  { "id": "gris", "name": "Grisú", "coat": "Atigrado gris", "texture": "cat-gris" },
+  { "id": "blanco", "name": "Nieve", "coat": "Blanco entero", "texture": "cat-blanco" },
+  { "id": "esmoquin", "name": "Michi", "coat": "Blanco y negro (esmoquin)", "texture": "cat-esmoquin" },
+  { "id": "carey", "name": "Carey", "coat": "Carey (negro y naranja jaspeado)", "texture": "cat-carey" },
+  { "id": "siames", "name": "Siamés", "coat": "Crema con puntas café", "texture": "cat-siames" },
+  { "id": "marron", "name": "Canela", "coat": "Atigrado marrón", "texture": "cat-marron" },
+  { "id": "crema", "name": "Vainilla", "coat": "Crema claro", "texture": "cat-crema" },
+  { "id": "azul", "name": "Humo", "coat": "Gris azulado liso", "texture": "cat-azul" },
+  { "id": "naranja-blanco", "name": "Mandarina", "coat": "Naranja con pecho y patitas blancas", "texture": "cat-naranja-blanco" }
 ]

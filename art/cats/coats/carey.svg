@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" data-coat="carey">
+  <!-- Pelaje "carey" (Carey, negro y naranja jaspeado). Formato en art/README.md.
+       Negro suave con manchitas naranja #FFAE5C y #E8853A. Legibilidad en pelaje oscuro
+       (art-direction §2): halo #56505F detrás de los ojos, almohadillas de bigote y patitas #56505F. -->
+  <g id="tail" data-fill="#3E3A47">
+    <path fill="#FFAE5C" d="M404 332 C430 326 452 346 450 372 C432 380 412 370 404 352 Z"/>
+    <path fill="#E8853A" d="M372 436 C390 428 410 436 412 456 C396 466 376 462 372 436 Z"/>
+  </g><!--/tail-->
+  <g id="body" data-fill="#3E3A47">
+    <path fill="#FFAE5C" d="M130 350 C150 340 178 350 180 376 C182 398 160 406 136 396 Z"/>
+    <path fill="#E8853A" d="M168 420 C184 412 204 420 204 438 C204 454 186 458 170 450 Z"/>
+    <path fill="#FFAE5C" d="M310 318 C330 306 360 316 362 340 C364 362 340 372 320 360 C306 352 302 330 310 318 Z"/>
+    <path fill="#E8853A" d="M332 392 C348 386 370 396 372 414 C360 428 338 424 332 392 Z"/>
+    <path fill="#FFAE5C" d="M240 330 C252 324 266 330 266 342 C266 352 252 356 242 350 Z"/>
+  </g><!--/body-->
+  <g id="paws" data-fill="#56505F">
+    <path fill="#E8853A" d="M290 452 C306 446 324 456 324 474 L290 476 Z"/>
+  </g><!--/paws-->
+  <g id="head" data-fill="#3E3A47">
+    <!-- jaspeado naranja (lejos de los ojos para que la cara siga limpia) -->
+    <path fill="#FFAE5C" d="M80 40 L200 40 C210 76 204 104 186 116 C160 132 120 140 80 146 Z"/>
+    <path fill="#E8853A" d="M262 100 C276 92 296 98 300 112 C302 126 286 134 270 130 C258 126 254 108 262 100 Z"/>
+    <path fill="#FFAE5C" d="M360 230 C380 214 418 214 432 232 L432 300 C400 302 372 290 362 270 C354 256 352 240 360 230 Z"/>
+    <path fill="#E8853A" d="M96 268 C112 262 134 270 134 288 C120 300 100 298 92 290 Z"/>
+    <!-- halo de los ojos y hocico, como en "negro" -->
+    <ellipse fill="#56505F" cx="192" cy="224" rx="24" ry="29"/>
+    <ellipse fill="#56505F" cx="320" cy="224" rx="24" ry="29"/>
+    <path fill="#56505F" d="M256 236 C266 228 290 230 292 248 C294 264 272 268 256 260 C240 268 218 264 220 248 C222 230 246 228 256 236 Z"/>
+  </g><!--/head-->
+</svg>

@@ -11,8 +11,8 @@ describe('seed catalog (F2)', () => {
     expect(() => assertCatalog({ cats, clothes, combos })).not.toThrow();
   });
 
-  it('has the 3 sample cats from art-direction.md', () => {
-    expect(cats.map((c) => [c.id, c.name])).toEqual([
+  it('keeps the 3 F1 sample cats first (the full F3 cast is in cats.test.ts)', () => {
+    expect(cats.slice(0, 3).map((c) => [c.id, c.name])).toEqual([
       ['naranja', 'Naranjito'], ['negro', 'Luna'], ['calico', 'Tricolor'],
     ]);
   });

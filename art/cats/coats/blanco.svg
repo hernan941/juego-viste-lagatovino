@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" data-coat="blanco">
+  <!-- Pelaje "blanco" (Nieve, blanco entero). Formato en art/README.md.
+       Pelaje claro: el compositor cambia el brillo a #FFF0A8 al 50 % (art-direction §3-§4). -->
+  <g id="tail" data-fill="#FFFDF8">
+  </g><!--/tail-->
+  <g id="body" data-fill="#FFFDF8">
+  </g><!--/body-->
+  <g id="paws" data-fill="#FFFDF8">
+  </g><!--/paws-->
+  <g id="head" data-fill="#FFFDF8">
+  </g><!--/head-->
+</svg>

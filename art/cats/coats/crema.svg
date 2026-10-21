@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" data-coat="crema">
+  <!-- Pelaje "crema" (Vainilla, crema claro). Formato en art/README.md.
+       Liso, con tres rayitas suaves en la frente para que no se confunda con Nieve. -->
+  <g id="tail" data-fill="#FBE3C0">
+  </g><!--/tail-->
+  <g id="body" data-fill="#FBE3C0">
+  </g><!--/body-->
+  <g id="paws" data-fill="#FBE3C0">
+  </g><!--/paws-->
+  <g id="head" data-fill="#FBE3C0" fill="none" stroke="#F0C894" stroke-linecap="round">
+    <path stroke-width="12" d="M256 92 L256 134"/>
+    <path stroke-width="10" d="M228 98 L233 128"/>
+    <path stroke-width="10" d="M284 98 L279 128"/>
+  </g><!--/head-->
+</svg>

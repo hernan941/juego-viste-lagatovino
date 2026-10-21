@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" data-coat="naranja-blanco">
+  <!-- Pelaje "naranja-blanco" (Mandarina, naranja con pecho y patitas blancas). Formato en art/README.md.
+       Atigrado naranja (rayas #E8853A) con hocico, pechera, patitas y punta de la cola blancos. -->
+  <g id="tail" data-fill="#FFAE5C">
+    <path fill="none" stroke="#E8853A" stroke-width="14" stroke-linecap="round" d="M378 420 L392 470 M414 396 L460 406"/>
+    <path fill="#FFFDF8" d="M380 330 L460 330 L460 380 C440 372 418 370 396 376 Z"/>
+  </g><!--/tail-->
+  <g id="body" data-fill="#FFAE5C">
+    <path fill="none" stroke="#E8853A" stroke-width="14" stroke-linecap="round" d="M128 372 C150 370 164 378 172 390 M128 410 C152 408 166 416 172 428 M384 372 C362 370 348 378 340 390 M384 410 C360 408 346 416 340 428"/>
+    <path fill="#FFFDF8" d="M194 296 L318 296 C318 372 292 424 256 436 C220 424 194 372 194 296 Z"/>
+  </g><!--/body-->
+  <g id="paws" data-fill="#FFFDF8">
+  </g><!--/paws-->
+  <g id="head" data-fill="#FFAE5C">
+    <path fill="#FFFDF8" d="M256 224 C280 210 318 218 330 250 C340 280 330 320 256 330 C182 320 172 280 182 250 C194 218 232 210 256 224 Z"/>
+    <path fill="none" stroke="#E8853A" stroke-linecap="round" stroke-width="14" d="M256 90 L256 140"/>
+    <path fill="none" stroke="#E8853A" stroke-linecap="round" stroke-width="12" d="M226 96 L232 132 M286 96 L280 132"/>
+    <path fill="none" stroke="#E8853A" stroke-linecap="round" stroke-width="13" d="M80 176 L122 184 M80 200 L116 204 M432 176 L390 184 M432 200 L396 204"/>
+  </g><!--/head-->
+</svg>

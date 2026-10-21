@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Viste Lagato · gato "blanco". GENERADO por art/tools/build-art.mjs: no editar a mano (editar base/ o coats/blanco.svg). -->
+  <defs>
+    <path id="tail-shape" d="M350 462 C400 472 446 452 452 400 C456 362 440 334 416 336 C394 338 388 362 402 374 C414 384 420 396 416 410 C410 432 388 440 354 430 Z"/>
+    <path id="body-shape" d="M256 262 C330 262 370 330 372 400 C374 452 340 490 256 490 C172 490 138 452 140 400 C142 330 182 262 256 262 Z"/>
+    <ellipse id="paw-l-shape" cx="224" cy="474" rx="34" ry="24"/>
+    <ellipse id="paw-r-shape" cx="288" cy="474" rx="34" ry="24"/>
+    <path id="head-shape" d="M256 318 C172 318 96 300 92 232 C88 185 100 150 118 128 C112 104 118 74 134 60 C146 50 160 52 170 62 C184 76 196 90 208 100 C236 94 276 94 304 100 C316 90 328 76 342 62 C352 52 366 50 378 60 C394 74 400 104 394 128 C412 150 424 185 420 232 C416 300 340 318 256 318 Z"/>
+    <clipPath id="clip-tail"><use href="#tail-shape"/></clipPath>
+    <clipPath id="clip-body"><use href="#body-shape"/></clipPath>
+    <clipPath id="clip-paw-l"><use href="#paw-l-shape"/></clipPath>
+    <clipPath id="clip-paw-r"><use href="#paw-r-shape"/></clipPath>
+    <clipPath id="clip-head"><use href="#head-shape"/></clipPath>
+  </defs>
+
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <g id="tail">
+      <use href="#tail-shape" fill="#FFFDF8"/>
+      <g clip-path="url(#clip-tail)">
+        
+        <path class="shade" fill="#000" fill-opacity="0.15" d="M340 448 C392 462 440 444 452 400 L470 400 L470 500 L330 500 Z"/>
+      </g>
+      <use href="#tail-shape" fill="none" stroke="#4A3036" stroke-width="8"/>
+    </g>
+
+    <g id="body">
+      <use href="#body-shape" fill="#FFFDF8"/>
+      <g clip-path="url(#clip-body)">
+        
+        <use class="shade" href="#head-shape" fill="#000" fill-opacity="0.15" transform="translate(0 18)"/>
+        <path class="shade" fill="#000" fill-opacity="0.15" d="M120 432 C160 478 352 478 392 432 L400 520 L112 520 Z"/>
+      </g>
+      <use href="#body-shape" fill="none" stroke="#4A3036" stroke-width="8"/>
+    </g>
+
+    <g id="paw-l">
+      <use href="#paw-l-shape" fill="#FFFDF8"/>
+      <g clip-path="url(#clip-paw-l)">
+        
+        <rect class="shade" fill="#000" fill-opacity="0.15" x="180" y="484" width="90" height="20"/>
+      </g>
+      <use href="#paw-l-shape" fill="none" stroke="#4A3036" stroke-width="8"/>
+      <path fill="none" stroke="#4A3036" stroke-width="5" d="M212 496 L212 486 M236 496 L236 486"/>
+    </g>
+    <g id="paw-r">
+      <use href="#paw-r-shape" fill="#FFFDF8"/>
+      <g clip-path="url(#clip-paw-r)">
+        
+        <rect class="shade" fill="#000" fill-opacity="0.15" x="244" y="484" width="90" height="20"/>
+      </g>
+      <use href="#paw-r-shape" fill="none" stroke="#4A3036" stroke-width="8"/>
+      <path fill="none" stroke="#4A3036" stroke-width="5" d="M276 496 L276 486 M300 496 L300 486"/>
+    </g>
+
+    <g id="head">
+      <use href="#head-shape" fill="#FFFDF8"/>
+      <g clip-path="url(#clip-head)">
+        
+      </g>
+      <path fill="#FF9EB5" d="M134 114 C128 94 134 76 146 70 C156 66 166 74 174 84 C182 94 188 100 192 104 C172 104 150 108 134 114 Z"/>
+      <path fill="#FF9EB5" d="M378 114 C384 94 378 76 366 70 C356 66 346 74 338 84 C330 94 324 100 320 104 C340 104 362 108 378 114 Z"/>
+      <ellipse fill="#FFF0A8" fill-opacity="0.5" cx="214" cy="124" rx="26" ry="9" transform="rotate(-10 214 124)"/>
+      <circle fill="#FFF0A8" fill-opacity="0.5" cx="252" cy="116" r="5"/>
+      <use href="#head-shape" fill="none" stroke="#4A3036" stroke-width="8"/>
+    </g>
+  </g>
+  <g id="face"><g stroke-linejoin="round" stroke-linecap="round">
+  
+  <ellipse fill="#FF9EB5" fill-opacity="0.6" cx="158" cy="258" rx="24" ry="14"/>
+  <ellipse fill="#FF9EB5" fill-opacity="0.6" cx="354" cy="258" rx="24" ry="14"/>
+  
+  <path fill="none" stroke="#4A3036" stroke-width="4" d="M126 238 L104 232 M126 252 L106 258 M386 238 L408 232 M386 252 L406 258"/>
+  
+  <ellipse fill="#33242A" cx="192" cy="224" rx="14" ry="19"/>
+  <ellipse fill="#33242A" cx="320" cy="224" rx="14" ry="19"/>
+  <circle fill="#FFFFFF" cx="187" cy="216" r="7.5"/>
+  <circle fill="#FFFFFF" cx="315" cy="216" r="7.5"/>
+  
+  <path fill="none" stroke="#4A3036" stroke-width="6" d="M236 240 C236 254 254 256 256 242 C258 256 276 254 276 240"/>
+</g></g>
+</svg>
