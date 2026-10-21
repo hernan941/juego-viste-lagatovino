@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
-import { ObjectEvents, Palette } from '../constants';
+import { ObjectEvents, Palette, SfxKeys } from '../constants';
 import type { Point } from '../domain/types';
+import { getAudio } from '../plugins/AudioPlugin';
 import { addHover, addPress, hex, makeText, type ScaleTo } from './ui';
 
 export interface TabDef {
@@ -61,7 +62,10 @@ export class Tabs extends Phaser.GameObjects.Container {
     defs.forEach((def, i) => {
       const tab = new Tab(scene, i * (TAB_SIZE + TAB_GAP), def);
       tab.on('pointerdown', () => this.select(def.id));
-      tab.on('pointerover', () => this.showCaption(def.id));
+      tab.on('pointerover', () => {
+        this.showCaption(def.id);
+        getAudio(scene).play(SfxKeys.Hover, { volume: 0.5 });
+      });
       tab.on('pointerout', () => this.showCaption(null));
       this.add(tab);
       this.tabs.push(tab);
@@ -79,6 +83,7 @@ export class Tabs extends Phaser.GameObjects.Container {
   select(id: string, silent = false): void {
     if (id === this.current) return;
     this.current = id;
+    if (!silent) getAudio(this.scene).play(SfxKeys.Click);
     for (const t of this.tabs) t.setSelected(t.def.id === id, silent);
     this.showCaption(this.hovered, true);
     if (!silent) this.emit(ObjectEvents.TabSelect, id);
