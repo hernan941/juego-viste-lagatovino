@@ -25,6 +25,9 @@ const FACE_LOOK_PX = { x: 5, y: 3 };
 const PET_COOLDOWN_MS = 400;
 /** The pointer has to move this far from where it dropped before a garment lights up. */
 const HOVER_MOVE_PX = 4;
+/** The halo of a hovered garment: this many copies, this far (canvas px) from it. */
+const HALO_COPIES = 8;
+const HALO_PX = 5;
 
 interface Layer {
   item: ClothingDef;
@@ -63,8 +66,8 @@ export class Cat extends Phaser.GameObjects.Container {
   private dragging = false;
   /** Where the pointer was at the last drop: a hover does not start until it moves away from there. */
   private hoverHold: Point | null = null;
-  /** The glow of every layer that is hovered. */
-  private readonly glows = new Map<Phaser.GameObjects.Image, Phaser.Filters.Controller>();
+  /** The halo copies of every layer that is hovered. */
+  private readonly halos = new Map<Phaser.GameObjects.Image, Phaser.GameObjects.Image[]>();
   private readonly petCooldown = new Cooldown(PET_COOLDOWN_MS);
   /** Layers whose pop-in has not finished yet (stable positions are for tests, and for the scene's `settled`). */
   private readonly popping = new Set<Phaser.GameObjects.Image>();
@@ -561,7 +564,7 @@ export class Cat extends Phaser.GameObjects.Container {
       draggable: true,
       useHandCursor: true,
     });
-    // Hover (it teaches that worn items can be dragged off): a soft rosa-200 glow around the garment and a sparkle is asked for.
+    // Hover (it teaches that worn items can be dragged off): a soft rosa-200 halo around the garment and a sparkle is asked for.
     // The fill is never tinted (the outline must stay dark and the colors flat), and the scale does not change: the hit test of
     // a thin garment must stay exactly where its pixels are. A garment that just appeared under a still pointer waits for it to move.
     this.holdHoverAt(this.scene.input?.activePointer);
@@ -606,25 +609,45 @@ export class Cat extends Phaser.GameObjects.Container {
   }
 
   private tryHover(img: Phaser.GameObjects.Image, item: ClothingDef, pointer: Phaser.Input.Pointer): void {
-    if (this.dragging || this.glows.has(img)) return;
+    if (this.dragging || this.halos.has(img)) return;
     if (this.hoverHold) {
       if (Math.hypot(pointer.x - this.hoverHold.x, pointer.y - this.hoverHold.y) <= HOVER_MOVE_PX) return;
       this.hoverHold = null;
     }
-    img.enableFilters();
-    this.glows.set(img, img.filters!.internal.addGlow(hex('rosa200'), 3, 0, 1, false, 0.1, 12));
+    this.halos.set(img, item.tags.includes('mece') ? [] : this.createHalo(img, item));
     this.emit(ObjectEvents.LayerHover, item, { x: pointer.x, y: pointer.y });
   }
 
+  /**
+   * The halo of a hovered garment: eight copies of its own pixels, flat rosa-200, nudged 5 px around it and put right behind it,
+   * so a soft border shows around the garment without touching its fill. They fade in. (Not for the balloon, which rocks.)
+   */
+  private createHalo(img: Phaser.GameObjects.Image, item: ClothingDef): Phaser.GameObjects.Image[] {
+    const copies = Array.from({ length: HALO_COPIES }, (_, i) => {
+      const a = (i * Math.PI * 2) / HALO_COPIES;
+      return this.canvasImage(item.texture)
+        .setPosition(img.x + Math.cos(a) * HALO_PX, img.y + Math.sin(a) * HALO_PX)
+        .setScale(img.scaleX, img.scaleY)
+        .setTint(hex('rosa200')).setTintMode(Phaser.TintModes.FILL)
+        .setDepth(img.depth - 0.01).setAlpha(0);
+    });
+    this.breath.add(copies);
+    this.breath.sort('depth');
+    this.scene.tweens.add({ targets: copies, alpha: 0.9, duration: 140, ease: 'Sine.easeOut' });
+    return copies;
+  }
+
   private clearHover(img: Phaser.GameObjects.Image): void {
-    const glow = this.glows.get(img);
-    if (!glow) return;
-    this.glows.delete(img);
-    img.filters?.internal.remove(glow);
+    const copies = this.halos.get(img);
+    if (!copies) return;
+    this.halos.delete(img);
+    this.scene.tweens.killTweensOf(copies);
+    this.scene.tweens.add({ targets: copies, alpha: 0, duration: 120, onComplete: () => copies.forEach((c) => c.destroy()) });
   }
 
   private dismiss(layer: Layer): void {
     const { image } = layer;
+    this.clearHover(image);
     image.disableInteractive();
     this.popping.delete(image);
     this.scene.tweens.killTweensOf(image);
