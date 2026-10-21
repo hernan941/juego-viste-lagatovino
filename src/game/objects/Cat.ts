@@ -2,13 +2,16 @@ import Phaser from 'phaser';
 import { ObjectEvents } from '../constants';
 import { catTailKey, faceKey } from '../data/assets';
 import { reactionFor, type Expression, type ReactionEvent } from '../domain/expressions';
-import { blinkCount, lookOffset, nextBlinkDelay } from '../domain/idle';
+import { Cooldown } from '../domain/cooldown';
+import { blinkCount, idleLookOffset, lookOffset, nextBlinkDelay, nextFlickDelay, nextIdleLookDelay } from '../domain/idle';
+import { staggerDelays } from '../domain/stagger';
 import { grabPoint, hitsAlpha } from '../domain/pixelHit';
 import { slotZIndex, hitBoxForSlot, anchorForSlot } from '../domain/slots';
-import { TAIL_FLICK_STEPS, TAIL_IDLE, tailPivot } from '../domain/tail';
+import { TAIL_FLICK, TAIL_FLICK_DROP, TAIL_FLICK_WAG, TAIL_IDLE, flickSteps, tailPivot } from '../domain/tail';
+import { isE2EEnabled } from '../e2eHook';
 import { profileOf } from '../systems/motion';
 import { RegistryKeys } from '../constants';
-import { alphaMapOf } from './alphaMap';
+import { alphaMapOf, opaqueBounds } from './alphaMap';
 import type { AnchorName, AnchorsDef, CatDef, ClothingDef, Point, Rect } from '../domain/types';
 
 /** Y of the paws' bottom edge in the 512 canvas: the pivot for breathing and squash. */
@@ -17,6 +20,8 @@ const FACE_DEPTH = slotZIndex('neck') + 0.5;
 /** Pixels (of the 192 px alpha map) around the pointer that still count as touching a worn item: thin ones stay grabbable. */
 const HIT_REACH = 2;
 const FACE_LOOK_PX = { x: 5, y: 3 };
+/** Petting the cat answers at most this often. */
+const PET_COOLDOWN_MS = 400;
 
 interface Layer {
   item: ClothingDef;
@@ -44,6 +49,18 @@ export class Cat extends Phaser.GameObjects.Container {
   private expression: Expression = 'normal';
   private held = false;
   private blinkTimer?: Phaser.Time.TimerEvent;
+  private idleLookTimer?: Phaser.Time.TimerEvent;
+  private idleLookBack?: Phaser.Time.TimerEvent;
+  private wagTimer?: Phaser.Time.TimerEvent;
+  private glanceTimer?: Phaser.Time.TimerEvent;
+  /** True while the face follows something (the dragged item): the idle glance waits. */
+  private watching = false;
+  private pettable = false;
+  /** A worn item is being dragged off: no hover on the others. */
+  private dragging = false;
+  private readonly petCooldown = new Cooldown(PET_COOLDOWN_MS);
+  /** Layers whose pop-in has not finished yet (stable positions are for tests, and for the scene's `settled`). */
+  private readonly popping = new Set<Phaser.GameObjects.Image>();
   private revertTimer?: Phaser.Time.TimerEvent;
   private lookTween?: Phaser.Tweens.Tween;
   private faceTween?: Phaser.Tweens.Tween;
@@ -93,6 +110,18 @@ export class Cat extends Phaser.GameObjects.Container {
     return this.canvasToWorld(this.anchors.anchors[name]);
   }
 
+  /** Where the tip of the balloon is, in game coordinates (the top of the accessory item when it is worn, else above the head). */
+  getAccessoryTip(): Point {
+    const layer = this.layers.get('accessory');
+    if (layer) {
+      const b = opaqueBounds(this.scene, layer.item.texture);
+      const { width, height } = this.anchors.canvas;
+      if (b) return this.canvasToWorld({ x: (b.x + b.width / 2) * width, y: (b.y + b.height * 0.2) * height });
+    }
+    const head = this.anchors.anchors.head;
+    return this.canvasToWorld({ x: head.x + 120, y: head.y - 70 });
+  }
+
   /** The drop zone (body plus margin is added by the caller) in game coordinates. */
   getDropZoneRect(): Rect {
     const z = this.anchors.dropZone;
@@ -137,6 +166,8 @@ export class Cat extends Phaser.GameObjects.Container {
     }
     this.swayTail();
     if (!this.blinkTimer) this.scheduleBlink();
+    if (!this.idleLookTimer) this.scheduleIdleLook();
+    if (!this.wagTimer) this.scheduleWag();
   }
 
   /**
@@ -152,6 +183,43 @@ export class Cat extends Phaser.GameObjects.Container {
     this.tailTween = this.scene.tweens.add({
       targets: this.tail, angle, duration: TAIL_IDLE.duration * p.slow, yoyo: true, repeat: -1, ease: TAIL_IDLE.ease,
     });
+  }
+
+  /** Every 8 to 12 s the cat glances to a side for a moment, as if something caught its attention. */
+  private scheduleIdleLook(): void {
+    this.idleLookTimer = this.scene.time.delayedCall(nextIdleLookDelay(Math.random()), () => {
+      if (!this.watching && !this.held && this.expression === 'normal') {
+        const off = idleLookOffset(Math.random(), FACE_LOOK_PX.x);
+        this.moveFace(off, 260);
+        this.idleLookBack = this.scene.time.delayedCall(900, () => {
+          if (!this.watching) this.moveFace({ x: 0, y: 0 }, 260);
+        });
+      }
+      this.scheduleIdleLook();
+    });
+  }
+
+  /** Every 6 to 10 s a soft, spontaneous tail wag: the cat looks like it is thinking. */
+  private scheduleWag(): void {
+    this.wagTimer = this.scene.time.delayedCall(nextFlickDelay(Math.random()), () => {
+      if (!this.held) this.tailFlick(TAIL_FLICK_WAG);
+      this.scheduleWag();
+    });
+  }
+
+  /** Moves the face layer `off` px from its rest position with a short ease. */
+  private moveFace(off: Point, ms: number): void {
+    const base = this.canvasImagePosition();
+    this.lookTween?.remove();
+    this.lookTween = this.scene.tweens.add({ targets: this.face, x: base.x + off.x, y: base.y + off.y, duration: ms, ease: 'Sine.easeOut' });
+  }
+
+  /** A glance to one side (1 right, -1 left) for a moment, then back (a flourish of the Showcase pose). */
+  glance(dir: 1 | -1, ms = 700): void {
+    this.glanceTimer?.remove();
+    const eyes = this.canvasToWorld(this.anchors.anchors.eyes);
+    this.lookAt({ x: eyes.x + dir * 300, y: eyes.y });
+    this.glanceTimer = this.scene.time.delayedCall(ms, () => this.lookAt(null));
   }
 
   private scheduleBlink(): void {
@@ -218,10 +286,10 @@ export class Cat extends Phaser.GameObjects.Container {
 
   /** The face drifts 4 to 6 px toward a point (the dragged item); `null` brings it back. */
   lookAt(target: Point | null): void {
-    const base = this.canvasImagePosition();
+    this.watching = target !== null;
     const off = target ? lookOffset(this.canvasToWorld(this.anchors.anchors.eyes), target, FACE_LOOK_PX.x, FACE_LOOK_PX.y, 300) : { x: 0, y: 0 };
-    this.lookTween?.remove();
-    this.lookTween = this.scene.tweens.add({ targets: this.face, x: base.x + off.x, y: base.y + off.y, duration: 120, ease: 'Sine.easeOut' });
+    this.idleLookBack?.remove();
+    this.moveFace(off, 120);
   }
 
   private canvasImagePosition(): Point {
@@ -231,9 +299,9 @@ export class Cat extends Phaser.GameObjects.Container {
   // ---- Reactions of the body ---------------------------------------------
 
   /** Squash and stretch in 300 ms. */
-  squash(): void {
+  squash(amount = 1): void {
     const p = profileOf(this.scene);
-    const k = p.squash;
+    const k = p.squash * amount;
     this.scene.tweens.killTweensOf(this.rig);
     this.scene.tweens.chain({
       targets: this.rig,
@@ -241,6 +309,21 @@ export class Cat extends Phaser.GameObjects.Container {
         { scaleX: 1 + 0.14 * k, scaleY: 1 - 0.16 * k, duration: 90, ease: 'Quad.easeOut' },
         { scaleX: 1 - 0.05 * k, scaleY: 1 + 0.08 * k, duration: 110, ease: 'Quad.easeInOut' },
         { scaleX: 1, scaleY: 1, duration: 100, ease: p.ease('Back.easeOut') },
+      ],
+    });
+  }
+
+  /** A hop that stretches upward and lands squashed: the pompom of the hat bounces (snow combo). */
+  stretchUp(): void {
+    const p = profileOf(this.scene);
+    const k = p.squash;
+    this.scene.tweens.killTweensOf(this.rig);
+    this.scene.tweens.chain({
+      targets: this.rig,
+      tweens: [
+        { scaleX: 1 - 0.04 * k, scaleY: 1 + 0.12 * k, y: -22 * k, duration: 130, ease: 'Quad.easeOut' },
+        { scaleX: 1 + 0.06 * k, scaleY: 1 - 0.07 * k, y: 0, duration: 120, ease: 'Quad.easeIn' },
+        { scaleX: 1, scaleY: 1, duration: 170, ease: p.ease('Back.easeOut') },
       ],
     });
   }
@@ -325,12 +408,12 @@ export class Cat extends Phaser.GameObjects.Container {
   }
 
   /** Tail whip when an item is dropped: snaps to ±8° and settles with Back.easeOut, then sways again. */
-  tailFlick(): void {
+  tailFlick(angle: number = TAIL_FLICK.angle): void {
     this.tailTween?.stop();
     const p = profileOf(this.scene);
     this.tailTween = this.scene.tweens.chain({
       targets: this.tail,
-      tweens: TAIL_FLICK_STEPS.map((step) => ({ ...step, angle: step.angle * p.tailSwing, ease: p.ease(step.ease) })),
+      tweens: flickSteps(angle, p.tailSwing).map((step) => ({ ...step, ease: p.ease(step.ease) })),
       // The chain is finishing: forget it before swaying again so it is not removed twice.
       onComplete: () => {
         this.tailTween = undefined;
@@ -339,9 +422,64 @@ export class Cat extends Phaser.GameObjects.Container {
     });
   }
 
-  /** Kept for callers from F2 (DressUp): the wiggle is now the tail flick. */
+  /** The whip of the tail when an item is dropped (12 degrees, bigger than the base flick). */
   wiggle(): void {
-    this.tailFlick();
+    this.tailFlick(TAIL_FLICK_DROP);
+  }
+
+  // ---- Petting ---------------------------------------------------------------
+
+  /**
+   * Lets the player pet the cat: a click on its body (the fur, where no garment is) or on a worn item that is not dragged
+   * answers with a happy face, a small squash and a `CatPet` event (the scene adds the purr). It has a cooldown of 400 ms.
+   */
+  makePettable(): void {
+    if (this.pettable) return;
+    this.pettable = true;
+    const alpha = alphaMapOf(this.scene, this.def.texture);
+    const k = alpha.width / this.fur.width;
+    this.fur.setInteractive({
+      hitArea: new Phaser.Geom.Rectangle(0, 0, this.fur.width, this.fur.height),
+      hitAreaCallback: (_area: Phaser.Geom.Rectangle, x: number, y: number) => hitsAlpha(alpha, x * k, y * k),
+      useHandCursor: true,
+    });
+    this.fur.on('pointerdown', () => this.pet());
+  }
+
+  /** The reaction itself (also what a click on a worn item triggers). False when the cooldown has not passed. */
+  pet(): boolean {
+    if (!this.pettable || !this.petCooldown.try(this.scene.time.now)) return false;
+    this.react('drop');
+    this.squash(0.5);
+    this.emit(ObjectEvents.CatPet);
+    return true;
+  }
+
+  /**
+   * For the souvenir photo: holds `expression`, stops the body tweens (so the cat is not caught mid-squash) and puts the
+   * body, the face and the look at rest. Returns the function that lets go and brings back what was there.
+   */
+  freezeForPhoto(expression: Expression): () => void {
+    const prev = { expression: this.expression, held: this.held };
+    this.revertTimer?.remove();
+    this.scene.tweens.killTweensOf([this.rig, this.face]);
+    this.lookTween?.remove();
+    this.faceTween?.remove();
+    this.rig.setScale(1).setAngle(0).setY(0);
+    this.held = true;
+    this.expression = expression;
+    this.face.setTexture(faceKey(expression));
+    const base = this.canvasImagePosition();
+    this.face.setPosition(base.x, base.y).setScale(this.canvasScale());
+    return () => {
+      this.held = prev.held;
+      this.setExpression(prev.expression);
+    };
+  }
+
+  /** Scale of a full 512 canvas image inside the cat (the display size over the texture size). */
+  private canvasScale(): number {
+    return this.anchors.canvas.width / this.face.width;
   }
 
   /** Pop-in when the cat appears: 0.8 to 1.05 to 1 in 250 ms. */
@@ -375,27 +513,37 @@ export class Cat extends Phaser.GameObjects.Container {
    * Renders `items` (already ordered by `getLayers`). New ones pop in; the ones that leave (or are
    * replaced in their slot) animate out before being destroyed. Nothing appears or vanishes abruptly.
    */
-  setOutfit(items: readonly ClothingDef[]): void {
+  setOutfit(items: readonly ClothingDef[], { stagger = false }: { stagger?: boolean } = {}): void {
     const next = new Map(items.map((i) => [i.slot, i]));
     for (const [slot, layer] of [...this.layers]) {
       if (next.get(slot as ClothingDef['slot'])?.id === layer.item.id) continue;
       this.layers.delete(slot);
       this.dismiss(layer);
     }
-    for (const item of items) {
-      if (this.layers.has(item.slot)) continue;
-      this.layers.set(item.slot, { item, image: this.createLayer(item) });
-    }
+    // `stagger`: the new layers pop one after another (80 ms apart), back to front, as when the look arrives on another cat.
+    const fresh = items.filter((item) => !this.layers.has(item.slot));
+    const delays = stagger ? staggerDelays(fresh.length) : [];
+    fresh.forEach((item, i) => this.layers.set(item.slot, { item, image: this.createLayer(item, delays[i] ?? 0) }));
     this.breath.sort('depth');
   }
 
-  private createLayer(item: ClothingDef): Phaser.GameObjects.Image {
+  /** True while a layer is still popping in (for the scene's `settled`). */
+  get settling(): boolean {
+    return this.popping.size > 0;
+  }
+
+  private createLayer(item: ClothingDef, delay = 0): Phaser.GameObjects.Image {
     const img = this.canvasImage(item.texture).setDepth(slotZIndex(item.slot));
     const finalScale = { x: img.scaleX, y: img.scaleY };
     const p = profileOf(this.scene);
     img.setAlpha(0).setScale(finalScale.x * (1 - 0.1 * p.squash), finalScale.y * (1 - 0.1 * p.squash));
     this.breath.add(img);
-    this.scene.tweens.add({ targets: img, alpha: 1, scaleX: finalScale.x, scaleY: finalScale.y, duration: 250, ease: p.ease('Back.easeOut') });
+    this.rockLayer(img, item);
+    this.popping.add(img);
+    this.scene.tweens.add({
+      targets: img, alpha: 1, scaleX: finalScale.x, scaleY: finalScale.y, duration: 250, delay, ease: p.ease('Back.easeOut'),
+      onComplete: () => this.popping.delete(img),
+    });
     // Hit area: the visible pixels of the item (plus a small reach), so the topmost item under the pointer is the one
     // that is dragged: an accessory never hides the sweater and items outside the torso box can be grabbed.
     const alpha = alphaMapOf(this.scene, item.texture);
@@ -406,15 +554,53 @@ export class Cat extends Phaser.GameObjects.Container {
       draggable: true,
       useHandCursor: true,
     });
-    img.on('dragstart', (pointer: Phaser.Input.Pointer) => this.emit(ObjectEvents.ItemDragStart, item, pointer));
+    // Hover (it teaches that worn items can be dragged off): the garment brightens a little and a sparkle is asked for.
+    // It does not change the scale: the hit test of a thin garment must stay exactly where its pixels are.
+    img.on('pointerover', (pointer: Phaser.Input.Pointer) => {
+      if (this.dragging) return;
+      img.setTint(0x303030).setTintMode(Phaser.TintModes.ADD);
+      this.emit(ObjectEvents.LayerHover, item, { x: pointer.x, y: pointer.y });
+    });
+    img.on('pointerout', () => this.clearHover(img));
+    // A click that is not a drag pets the cat (the garment covers most of its body).
+    let dragged = false;
+    img.on('pointerdown', () => { dragged = false; });
+    img.on('pointerup', () => { if (!dragged) this.pet(); });
+    img.on('dragstart', (pointer: Phaser.Input.Pointer) => {
+      dragged = true;
+      this.dragging = true;
+      this.clearHover(img);
+      this.emit(ObjectEvents.ItemDragStart, item, pointer);
+    });
     img.on('drag', (pointer: Phaser.Input.Pointer) => this.emit(ObjectEvents.ItemDrag, item, pointer));
-    img.on('dragend', (pointer: Phaser.Input.Pointer) => this.emit(ObjectEvents.ItemDragEnd, item, pointer));
+    img.on('dragend', (pointer: Phaser.Input.Pointer) => {
+      this.dragging = false;
+      this.emit(ObjectEvents.ItemDragEnd, item, pointer);
+    });
     return img;
+  }
+
+  /**
+   * Items tagged `mece` (the balloon) rock around the point where they are tied (the paw) in idle: ±3 degrees, 1.6 s.
+   * Off with reduced motion, and off in test mode: a swaying layer would move the grab points that the e2e computes from its pixels.
+   */
+  private rockLayer(img: Phaser.GameObjects.Image, item: ClothingDef): void {
+    if (!item.tags.includes('mece') || !profileOf(this.scene).loops || isE2EEnabled()) return;
+    const { width, height } = this.anchors.canvas;
+    const pivot = this.anchors.anchors.paws;
+    img.setOrigin(pivot.x / width, pivot.y / height).setPosition(pivot.x - width / 2, pivot.y - FEET_Y);
+    this.scene.tweens.add({ targets: img, angle: { from: -3, to: 3 }, duration: 1600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+  }
+
+  private clearHover(img: Phaser.GameObjects.Image): void {
+    img.setTintMode(Phaser.TintModes.MULTIPLY).clearTint();
   }
 
   private dismiss(layer: Layer): void {
     const { image } = layer;
     image.disableInteractive();
+    this.popping.delete(image);
+    this.scene.tweens.killTweensOf(image);
     this.scene.tweens.add({
       targets: image, alpha: 0, y: image.y + 24, scaleX: image.scaleX * 0.94, scaleY: image.scaleY * 0.94, duration: 220, ease: 'Quad.easeIn',
       onComplete: () => image.destroy(),
@@ -431,6 +617,10 @@ export class Cat extends Phaser.GameObjects.Container {
   destroy(fromScene?: boolean): void {
     this.scene?.registry?.events.off(`changedata-${RegistryKeys.ReducedMotion}`, this.startIdle, this);
     this.blinkTimer?.remove();
+    this.idleLookTimer?.remove();
+    this.idleLookBack?.remove();
+    this.wagTimer?.remove();
+    this.glanceTimer?.remove();
     this.revertTimer?.remove();
     this.tintTimer?.remove();
     this.breathTween?.remove();

@@ -4,13 +4,17 @@ import Phaser from 'phaser';
 import { FONT_FAMILY, Palette, TextureKeys } from '../constants';
 import { photoLayout } from '../domain/photo';
 import type { AnchorsDef } from '../domain/types';
+import type { Expression } from '../domain/expressions';
 import type { Cat } from './Cat';
 import { hex } from './ui';
 
 export const PHOTO_LOGO = 'Viste Lagato';
 
 /** The finished photo as a data URL (image/png). The RenderTexture and the helper objects are destroyed. */
-export function takePhoto(scene: Phaser.Scene, cat: Cat, anchors: AnchorsDef, catName: string): Promise<string> {
+/** The cat poses with love eyes (what the player sees when pressing the button), at rest: never caught mid-squash. */
+export const PHOTO_POSE: Expression = 'amor';
+
+export function takePhoto(scene: Phaser.Scene, cat: Cat, anchors: AnchorsDef, catName: string, pose: Expression = PHOTO_POSE): Promise<string> {
   const l = photoLayout();
   const rt = scene.make.renderTexture({ x: 0, y: 0, width: l.width, height: l.height }, false);
   const temp: Phaser.GameObjects.GameObject[] = [];
@@ -61,6 +65,7 @@ export function takePhoto(scene: Phaser.Scene, cat: Cat, anchors: AnchorsDef, ca
   // The live cat, with its pose and clothes, bigger and with its feet at `feet`. The drawing runs on `render()`,
   // and `capture` puts the cat back as it was right after.
   const scale = l.cat.size / anchors.canvas.width;
+  const release = cat.freezeForPhoto(pose);
   rt.capture(cat, { x: l.feet.x, y: l.feet.y, scaleX: scale, scaleY: scale });
 
   // Name plaque at the bottom.
@@ -79,6 +84,7 @@ export function takePhoto(scene: Phaser.Scene, cat: Cat, anchors: AnchorsDef, ca
   rt.draw(name);
 
   rt.render();
+  release();
   return new Promise((resolve) => {
     rt.snapshot((image) => {
       const url = (image as HTMLImageElement).src;
