@@ -1,15 +1,27 @@
 import Phaser from 'phaser';
 import { ObjectEvents } from '../constants';
-import type { ClothingDef } from '../domain/types';
-import { addHover, hex } from './ui';
+import type { ClothingDef, Rect } from '../domain/types';
+import { addHover, hex, type ScaleTo } from './ui';
 
 export const CELL_SIZE = 104;
 
-/** A wardrobe cell: the item icon, draggable. Emits ItemDragStart / ItemDrag / ItemDragEnd. */
+/**
+ * A wardrobe cell: the item icon, draggable. Emits ItemDragStart / ItemDrag / ItemDragEnd, and ItemClick
+ * when it is pressed and released without dragging (equipping is only by dragging, ADR 0008, so the
+ * cell answers with a wiggle and the scene points to the cat).
+ *
+ * The pop-in animates the Container itself; hover, press and wiggle animate the `view` child, so
+ * none of them cancels the others.
+ */
 export class ClothingItem extends Phaser.GameObjects.Container {
   readonly item: ClothingDef;
+  private readonly view: Phaser.GameObjects.Container;
   private readonly icon: Phaser.GameObjects.Image;
   private readonly wornRing: Phaser.GameObjects.Graphics;
+  private readonly scaleView: ScaleTo;
+  private wiggleTween?: Phaser.Tweens.Tween;
+  private dragged = false;
+  private ringFactor = 1;
 
   constructor(scene: Phaser.Scene, x: number, y: number, item: ClothingDef) {
     super(scene, x, y);
@@ -17,7 +29,8 @@ export class ClothingItem extends Phaser.GameObjects.Container {
     this.icon = scene.add.image(0, 0, item.icon).setDisplaySize(CELL_SIZE, CELL_SIZE);
     this.wornRing = scene.add.graphics().setAlpha(0);
     this.wornRing.lineStyle(5, hex('menta'), 1).strokeRoundedRect(-CELL_SIZE / 2 - 2, -CELL_SIZE / 2 - 2, CELL_SIZE + 4, CELL_SIZE + 4, 16);
-    this.add([this.icon, this.wornRing]);
+    this.view = scene.add.container(0, 0, [this.icon, this.wornRing]);
+    this.add(this.view);
 
     this.setSize(CELL_SIZE, CELL_SIZE);
     this.setInteractive({
@@ -26,10 +39,62 @@ export class ClothingItem extends Phaser.GameObjects.Container {
       draggable: true,
       useHandCursor: true,
     });
-    addHover(this);
-    this.on('dragstart', (p: Phaser.Input.Pointer) => this.emit(ObjectEvents.ItemDragStart, this, p));
+    this.scaleView = addHover(this, 1.05, this.view);
+    this.on('pointerdown', () => {
+      this.dragged = false;
+      this.scaleView(0.92, 60);
+    });
+    this.on('pointerup', () => {
+      this.scaleView(1.05, 100);
+      if (!this.dragged) {
+        this.wiggle();
+        this.emit(ObjectEvents.ItemClick, this);
+      }
+    });
+    this.on('dragstart', (p: Phaser.Input.Pointer) => {
+      this.dragged = true;
+      this.emit(ObjectEvents.ItemDragStart, this, p);
+    });
     this.on('drag', (p: Phaser.Input.Pointer) => this.emit(ObjectEvents.ItemDrag, this, p));
-    this.on('dragend', (p: Phaser.Input.Pointer) => this.emit(ObjectEvents.ItemDragEnd, this, p));
+    this.on('dragend', (p: Phaser.Input.Pointer) => {
+      this.scaleView(1, 100);
+      this.emit(ObjectEvents.ItemDragEnd, this, p);
+    });
+  }
+
+  /** Limits the part of the cell that answers to the pointer (the visible part, in cell-local px), or none. */
+  setHitRect(rect: Rect | null): void {
+    const hit = this.input?.hitArea as Phaser.Geom.Rectangle | undefined;
+    hit?.setTo(rect?.x ?? 0, rect?.y ?? 0, rect?.width ?? 0, rect?.height ?? 0);
+  }
+
+  /**
+   * Draws only the part of the cell inside `visible` (cell-local px, 0..104), or nothing when null:
+   * this is how the grid clips its cells to the viewport. The ring fades with the visible fraction.
+   */
+  setClip(visible: Rect | null): void {
+    const full = !!visible && visible.y <= 0 && visible.height >= CELL_SIZE;
+    if (full || !visible) {
+      this.icon.setCrop();
+      this.icon.setVisible(full);
+      this.ringFactor = full ? 1 : 0;
+    } else {
+      const k = this.icon.frame.realHeight / CELL_SIZE;
+      this.icon.setVisible(true);
+      this.icon.setCrop(0, visible.y * k, this.icon.frame.realWidth, visible.height * k);
+      this.ringFactor = visible.height / CELL_SIZE;
+    }
+    this.wornRing.setVisible(this.ringFactor >= 1);
+  }
+
+  /** A short side to side shake: angle -6 to 6, yoyo, 2 repeats, 60 ms. */
+  wiggle(): void {
+    this.wiggleTween?.remove();
+    this.view.setAngle(0);
+    this.wiggleTween = this.scene.tweens.add({
+      targets: this.view, angle: { from: -6, to: 6 }, duration: 60, yoyo: true, repeat: 2, ease: 'Sine.easeInOut',
+      onComplete: () => this.view.setAngle(0),
+    });
   }
 
   /** The cell looks empty while its item is in the player's hand. */
@@ -54,7 +119,7 @@ export class ClothingItem extends Phaser.GameObjects.Container {
   }
 
   destroy(fromScene?: boolean): void {
-    this.scene?.tweens.killTweensOf([this, this.icon, this.wornRing]);
+    this.scene?.tweens.killTweensOf([this, this.view, this.icon, this.wornRing]);
     this.removeAllListeners();
     super.destroy(fromScene);
   }

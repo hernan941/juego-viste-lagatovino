@@ -17,9 +17,10 @@ const config: Phaser.Types.Core.GameConfig = {
   parent: 'game-container',
   backgroundColor: Palette.rosa50,
   scale: { mode: Scale.FIT, autoCenter: Scale.CENTER_BOTH },
-  // One texture per batch: software WebGL (SwiftShader: headless Chromium, VMs) renders multi-texture batches
-  // with flickering, half-drawn layers. The scene is small, so the extra draw calls cost nothing.
-  render: { maxTextures: 1 },
+  // Test mode only: software WebGL (SwiftShader, which headless Chromium in the e2e uses) renders
+  // multi-texture batches with flickering, half-drawn layers, so tests batch one texture at a time.
+  // Real browsers (dev and production) use Phaser's default.
+  ...(import.meta.env.MODE === 'test' ? { render: { maxTextures: 1 } } : {}),
   plugins: { global: [{ key: PluginKeys.Audio, plugin: AudioPlugin, start: true }] },
   scene: [Boot, Preloader, Title, CatSelect, ShopEntrance, DressUp, Showcase],
 };

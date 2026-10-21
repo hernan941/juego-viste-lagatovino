@@ -42,6 +42,8 @@ export const Events = {
 
 /** Events emitted by the game objects (Cat, ItemGrid, Tabs, LayersPanel). */
 export const ObjectEvents = {
+  /** ItemGrid: (cell) pressed and released without dragging */
+  ItemClick: 'item-click',
   /** ItemGrid / Cat: (item: ClothingDef, pointer) */
   ItemDragStart: 'item-drag-start',
   ItemDrag: 'item-drag',
