@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" data-coat="calico">
+  <!-- Pelaje "calico" (Tricolor: blanco con manchas naranja y negro suave). Formato en art/README.md. -->
+  <g id="tail" data-fill="#FFAE5C">
+    <path fill="#3E3A47" d="M380 330 L470 330 L470 392 C446 384 420 380 400 384 Z"/>
+  </g><!--/tail-->
+  <g id="body" data-fill="#FFFDF8">
+    <path fill="#FFAE5C" d="M300 300 C340 300 380 340 384 400 C372 420 344 424 324 404 C306 386 298 350 300 300 Z"/>
+    <path fill="#3E3A47" d="M130 360 C150 352 176 362 178 386 C180 408 156 418 130 412 Z"/>
+  </g><!--/body-->
+  <g id="paws" data-fill="#FFFDF8">
+  </g><!--/paws-->
+  <g id="head" data-fill="#FFFDF8">
+    <path fill="#FFAE5C" d="M80 40 L210 40 C220 80 222 110 206 140 C186 172 140 184 80 186 Z"/>
+    <path fill="#3E3A47" d="M310 40 L440 40 L440 170 C404 168 360 156 330 130 C312 112 304 80 310 40 Z"/>
+  </g><!--/head-->
+</svg>

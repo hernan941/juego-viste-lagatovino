@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Viste Lagato · Styleguide F1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --rosa-50: #FFF0F6; --rosa-200: #FFD1E3; --rosa-400: #FF8FB8; --rosa-600: #E2578B;
+    --crema: #FFF7EC; --menta: #BDEFD8; --lavanda: #D8CCFF; --cielo: #C4E6FF;
+    --mantequilla: #FFF0A8; --texto: #5A3A48; --contorno: #4A3036;
+    --cell: 220px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--rosa-50); color: var(--texto); font-family: Fredoka, system-ui, sans-serif; }
+  main { max-width: 1240px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { color: var(--rosa-600); font-weight: 600; font-size: 40px; margin: 0 0 4px; }
+  h2 { color: var(--rosa-600); font-weight: 600; font-size: 24px; margin: 40px 0 12px; }
+  p.lead { margin: 0 0 8px; font-weight: 400; }
+  .card { background: #fff; border: 4px solid var(--rosa-200); border-radius: 28px; padding: 16px; box-shadow: 0 8px 0 rgba(226, 87, 139, .12); }
+  table.matrix { border-collapse: separate; border-spacing: 12px; margin: -12px; }
+  table.matrix th { font-weight: 500; font-size: 16px; text-align: center; }
+  table.matrix th.row { text-align: right; padding-right: 4px; }
+  /* Caja común de 512 escalada: el gato y la prenda usan exactamente el mismo lienzo. */
+  .stage { position: relative; width: var(--cell); height: var(--cell); background: var(--crema); border-radius: 24px; overflow: hidden; }
+  .stage img { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .row-flex { display: flex; flex-wrap: wrap; gap: 12px; }
+  .label { text-align: center; font-weight: 500; margin-top: 6px; }
+  .anchor { position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: var(--rosa-600); border: 2px solid #fff; }
+  .anchor span { position: absolute; left: 12px; top: -6px; font-size: 12px; font-weight: 600; color: var(--rosa-600); background: #fff; border-radius: 6px; padding: 0 4px; }
+  .drop { position: absolute; border: 3px dashed var(--rosa-400); border-radius: 16px; }
+  .ui-demo { position: relative; width: 480px; max-width: 100%; aspect-ratio: 480 / 360; }
+  .ui-demo > img { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .ui-demo .content { position: absolute; inset: 10% 8% 12%; display: flex; flex-direction: column; align-items: center; justify-content: space-between; }
+  .ui-demo .title { font-weight: 600; font-size: 28px; color: var(--rosa-600); }
+  .btn { position: relative; width: 240px; height: 100px; border: 0; background: url(ui/button.svg) center / contain no-repeat; font: 600 30px Fredoka, sans-serif; color: #fff; cursor: pointer; padding: 0 0 18px; transition: transform .1s; text-shadow: 0 2px 0 rgba(226, 87, 139, .6); }
+  .btn:hover { transform: scale(1.05); }
+  .btn:active { transform: translateY(4px); }
+  .swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+  .swatch { width: 110px; border-radius: 16px; overflow: hidden; border: 3px solid var(--rosa-200); background: #fff; font-size: 13px; }
+  .swatch div { height: 44px; }
+  .swatch span { display: block; padding: 4px 8px; }
+  @media (max-width: 760px) { :root { --cell: 150px; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Viste Lagato · Styleguide F1</h1>
+  <p class="lead">Plantilla del gato, 3 gatos de muestra, 2 sweaters, expresiones, iconos y UI. Cada celda superpone SVG de 512&times;512 con posición absoluta en la misma caja: si un sweater encaja aquí, encaja en el juego.</p>
+
+  <h2>Gatos × sweaters</h2>
+  <div class="card" style="overflow-x:auto">
+    <table class="matrix" id="matrix"></table>
+  </div>
+
+  <h2>Expresiones (capas intercambiables)</h2>
+  <div class="card"><div class="row-flex" id="faces"></div></div>
+
+  <h2>Plantilla, anclas e iconos</h2>
+  <div class="card"><div class="row-flex" id="template"></div></div>
+
+  <h2>UI</h2>
+  <div class="card">
+    <div class="row-flex" style="align-items:center;gap:32px">
+      <div class="ui-demo">
+        <img src="ui/panel.svg" alt="Panel">
+        <div class="content">
+          <div class="title">¡Elige tu gatito!</div>
+          <button class="btn" type="button">Iniciar</button>
+        </div>
+      </div>
+      <div>
+        <img src="ui/button.svg" width="240" alt="Botón">
+        <div class="label">button.svg (sin texto)</div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Paleta</h2>
+  <div class="card"><div class="swatches" id="swatches"></div></div>
+</main>
+<script>
+  const cats = [['naranja', 'Naranjito'], ['negro', 'Luna'], ['calico', 'Tricolor']];
+  const sweaters = [[null, 'Sin ropa'], ['rayas', 'Sweater rayas'], ['navideno', 'Sweater navideño']];
+  const stage = (layers) => `<div class="stage">${layers.map((src) => `<img src="${src}" alt="">`).join('')}</div>`;
+
+  const m = document.getElementById('matrix');
+  m.innerHTML = `<tr><th></th>${sweaters.map(([, n]) => `<th>${n}</th>`).join('')}</tr>` +
+    cats.map(([id, name]) => `<tr><th class="row">${name}<br><small>${id}</small></th>${sweaters.map(([sw]) =>
+      `<td>${stage([`cats/${id}.svg`, ...(sw ? [`clothes/sweater/${sw}.svg`] : [])])}</td>`).join('')}</tr>`).join('');
+
+  document.getElementById('faces').innerHTML = ['normal', 'feliz', 'sorpresa', 'parpadeo', 'amor']
+    .map((f) => `<div>${stage(['cats/noface/naranja.svg', `cats/base/face-${f}.svg`])}<div class="label">${f}</div></div>`).join('');
+
+  fetch('anchors.json').then((r) => r.json()).catch(() => null).then((a) => {
+    const pct = (v) => (v / 512 * 100) + '%';
+    let overlay = '';
+    if (a) {
+      const d = a.dropZone;
+      overlay = `<div class="drop" style="left:${pct(d.x)};top:${pct(d.y)};width:${pct(d.width)};height:${pct(d.height)}"></div>` +
+        Object.entries(a.anchors).map(([k, p]) => `<div class="anchor" style="left:${pct(p.x)};top:${pct(p.y)}"><span>${k}</span></div>`).join('');
+    }
+    document.getElementById('template').innerHTML =
+      `<div><div class="stage"><img src="cats/base/silhouette.svg" alt="">${overlay}</div><div class="label">silhouette + anclas${a ? '' : ' (abrir con un servidor para verlas)'}</div></div>` +
+      `<div>${stage(['cats/base/silhouette.svg', 'cats/base/face-normal.svg', 'clothes/sweater/rayas.svg'])}<div class="label">plantilla + rayas</div></div>` +
+      ['rayas', 'navideno'].map((s) => `<div><img src="clothes/sweater/${s}.icon.svg" width="220" height="220" alt=""><div class="label">${s}.icon.svg</div></div>`).join('');
+  });
+
+  const pal = { 'rosa-50': '#FFF0F6', 'rosa-200': '#FFD1E3', 'rosa-400': '#FF8FB8', 'rosa-600': '#E2578B', crema: '#FFF7EC', menta: '#BDEFD8', lavanda: '#D8CCFF', cielo: '#C4E6FF', mantequilla: '#FFF0A8', texto: '#5A3A48', contorno: '#4A3036', 'pelo naranja': '#FFAE5C', 'pelo negro': '#3E3A47', 'pelo blanco': '#FFFDF8' };
+  document.getElementById('swatches').innerHTML = Object.entries(pal)
+    .map(([k, v]) => `<div class="swatch"><div style="background:${v}"></div><span>${k}<br>${v}</span></div>`).join('');
+</script>
+</body>
+</html>

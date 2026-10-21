@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" data-coat="naranja">
+  <!--
+    Pelaje "naranja" (Naranjito, atigrado naranja). Formato en art/README.md:
+    un <g id="PARTE" data-fill="#hex"> por parte (tail, body, paws, head),
+    cerrado con </g><!-/PARTE->. Las formas se dibujan en coordenadas del lienzo
+    de 512 y el compositor las recorta a la silueta de esa parte.
+  -->
+  <g id="tail" data-fill="#FFAE5C" fill="none" stroke="#E8853A" stroke-width="14" stroke-linecap="round">
+    <path d="M378 420 L392 470"/>
+    <path d="M414 396 L460 406"/>
+    <path d="M408 360 L456 350"/>
+  </g><!--/tail-->
+  <g id="body" data-fill="#FFAE5C" fill="none" stroke="#E8853A" stroke-width="14" stroke-linecap="round">
+    <path d="M128 372 C150 370 164 378 172 390"/>
+    <path d="M128 410 C152 408 166 416 172 428"/>
+    <path d="M384 372 C362 370 348 378 340 390"/>
+    <path d="M384 410 C360 408 346 416 340 428"/>
+  </g><!--/body-->
+  <g id="paws" data-fill="#FFAE5C">
+  </g><!--/paws-->
+  <g id="head" data-fill="#FFAE5C" fill="none" stroke="#E8853A" stroke-linecap="round">
+    <path stroke-width="14" d="M256 90 L256 140"/>
+    <path stroke-width="12" d="M226 96 L232 132"/>
+    <path stroke-width="12" d="M286 96 L280 132"/>
+    <path stroke-width="13" d="M80 176 L122 184"/>
+    <path stroke-width="13" d="M80 200 L116 204"/>
+    <path stroke-width="13" d="M432 176 L390 184"/>
+    <path stroke-width="13" d="M432 200 L396 204"/>
+  </g><!--/head-->
+</svg>

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 100" width="240" height="100">
+  <!--
+    Viste Lagato · boton "gordito" principal (art-direction §6). Sin texto: el texto lo pone
+    Phaser con Fredoka 600 en #5A3A48 o blanco. Cara rosa-400 #FF8FB8 sobre una base
+    rosa-600 #E2578B que asoma 8 px abajo (aspecto 3D blando). Al presionar, la cara baja 4 px
+    (tween de 100 ms); en hover escala 1,05.
+  -->
+  <!-- sombra suave en el piso -->
+  <ellipse cx="120" cy="92" rx="104" ry="6" fill="#E2578B" fill-opacity="0.18"/>
+  <!-- base 3D -->
+  <rect x="8" y="14" width="224" height="74" rx="37" fill="#E2578B"/>
+  <!-- cara -->
+  <rect x="8" y="6" width="224" height="74" rx="37" fill="#FF8FB8"/>
+  <!-- brillo -->
+  <rect x="34" y="15" width="84" height="12" rx="6" fill="#FFFFFF" fill-opacity="0.55"/>
+  <circle cx="132" cy="21" r="5" fill="#FFFFFF" fill-opacity="0.55"/>
+</svg>

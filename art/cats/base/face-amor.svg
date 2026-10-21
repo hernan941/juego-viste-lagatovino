@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Viste Lagato · cara "amor" (capa intercambiable, art-direction §2). Ojos de corazón. -->
+<g stroke-linejoin="round" stroke-linecap="round">
+  <!-- mejillas -->
+  <ellipse fill="#FF9EB5" fill-opacity="0.6" cx="158" cy="258" rx="24" ry="14"/>
+  <ellipse fill="#FF9EB5" fill-opacity="0.6" cx="354" cy="258" rx="24" ry="14"/>
+  <!-- bigotes -->
+  <path fill="none" stroke="#4A3036" stroke-width="4" d="M126 238 L104 232 M126 252 L106 258 M386 238 L408 232 M386 252 L406 258"/>
+  <!-- ojos -->
+  <path fill="#E2578B" stroke="#4A3036" stroke-width="5" d="M192 242 C176 230 166 222 166 210 C166 200 174 194 182 194 C187 194 190 197 192 201 C194 197 197 194 202 194 C210 194 218 200 218 210 C218 222 208 230 192 242 Z"/>
+  <path fill="#E2578B" stroke="#4A3036" stroke-width="5" d="M320 242 C304 230 294 222 294 210 C294 200 302 194 310 194 C315 194 318 197 320 201 C322 197 325 194 330 194 C338 194 346 200 346 210 C346 222 336 230 320 242 Z"/>
+  <circle fill="#FFFFFF" cx="178" cy="205" r="4.5"/>
+  <circle fill="#FFFFFF" cx="306" cy="205" r="4.5"/>
+  <!-- boca :3 -->
+  <path fill="none" stroke="#4A3036" stroke-width="6" d="M236 240 C236 254 254 256 256 242 C258 256 276 254 276 240"/>
+</g>
+</svg>

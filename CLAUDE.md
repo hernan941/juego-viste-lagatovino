@@ -5,6 +5,9 @@ Juego 2D para navegador de vestir gatos, con estética kawaii/chibi.
 ## Regla de oro del usuario
 **No construir nada sin que el usuario lo pida explícitamente.** Ni scaffolding, ni código, ni dependencias, ni `git init`. Si una tarea implica crear o modificar código, primero se propone y se espera un "sí".
 
+## Regla: commits sin coautor
+Los mensajes de commit **nunca** llevan líneas `Co-Authored-By` ni ninguna otra atribución (tampoco "Generated with Claude Code"). Solo el mensaje del cambio. Esto aplica a todos los agentes.
+
 ## Regla: sesión principal libre
 La sesión principal (con la que habla el usuario) **siempre queda libre** para que el usuario pueda preguntar "¿cómo vas?" en cualquier momento.
 - La sesión principal **no ejecuta trabajo largo**: ni código, ni arte, ni investigación, ni ediciones de varios archivos.
