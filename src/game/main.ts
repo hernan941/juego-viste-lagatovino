@@ -11,6 +11,7 @@ import { SavePlugin } from './plugins/SavePlugin';
 import { MotionPlugin } from './plugins/MotionPlugin';
 import { GAME_HEIGHT, GAME_WIDTH, Palette, PluginKeys } from './constants';
 import { installE2EHook } from './e2eHook';
+import { installFpsCounter } from './fpsCounter';
 
 const config: Phaser.Types.Core.GameConfig = {
   type: AUTO,
@@ -36,6 +37,7 @@ const config: Phaser.Types.Core.GameConfig = {
 const StartGame = (parent: string) => {
   const game = new Game({ ...config, parent });
   installE2EHook(game);
+  installFpsCounter(game);
   return game;
 };
 

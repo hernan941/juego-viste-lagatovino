@@ -11,6 +11,8 @@ import type { Session } from './domain/session';
 import { chooseCat, emptySession } from './domain/session';
 import { readSession, writeSession } from './systems/sessionStore';
 import type { Catalog } from './data/schema';
+import { EventBus } from './EventBus';
+import { countListeners, type PerfCounts } from './systems/perf';
 
 /** What a scene reports to the test hook, in game coordinates (1280 x 720). */
 export interface DressUpE2EState {
@@ -137,6 +139,8 @@ export interface VisteHook {
    * named `name`, as the `?start=` shortcut does.
    */
   jump(scene: string, catId?: string, name?: string): void;
+  /** F9: what is alive in the active scenes (tweens, timers, listeners, display list), to catch leaks after N scene cycles. */
+  readonly perf: PerfCounts & { fps: number };
   /** Number of frames the game loop has run (stops growing while parked). */
   readonly frames: number;
   /** Test-only action: stops (or restarts) the game loop, so a page that is not being tested does not use the CPU. */
@@ -165,6 +169,11 @@ export function e2eStart(): { scene: string; catId: string | null; name: string 
 
 const isE2EScene = (s: Phaser.Scene): s is Phaser.Scene & E2EScene =>
   typeof (s as Partial<E2EScene>).getE2EState === 'function';
+
+/** Objects in a display list, counting what containers hold. */
+function countDisplay(list: Phaser.GameObjects.GameObject[]): number {
+  return list.reduce((n, o) => n + 1 + ((o as Phaser.GameObjects.Container).list ? countDisplay((o as Phaser.GameObjects.Container).list) : 0), 0);
+}
 
 export function installE2EHook(game: Game): void {
   if (!isE2EEnabled()) return;
@@ -214,6 +223,19 @@ export function installE2EHook(game: Game): void {
     },
     wear(ids: string[]): void {
       game.scene.getScenes(true).find(isE2EScene)?.e2eWear(ids);
+    },
+    get perf(): PerfCounts & { fps: number } {
+      const total: PerfCounts & { fps: number } = { tweens: 0, timers: 0, eventBus: countListeners(EventBus), registry: countListeners(game.registry.events), input: 0, sceneEvents: 0, displayList: 0, fps: game.loop.actualFps };
+      for (const scene of game.scene.getScenes(true)) {
+        // `_active` and `_pendingInsertion` are the clock's private lists of timers: there is no public count.
+        const clock = scene.time as unknown as { _active: unknown[]; _pendingInsertion: unknown[] };
+        total.tweens += scene.tweens.getTweens().length;
+        total.timers += clock._active.length + clock._pendingInsertion.length;
+        total.input += countListeners(scene.input) + (scene.input.keyboard ? countListeners(scene.input.keyboard) : 0);
+        total.sceneEvents += countListeners(scene.events);
+        total.displayList += countDisplay(scene.children.list);
+      }
+      return total;
     },
     get frames(): number {
       return game.loop.frame;
