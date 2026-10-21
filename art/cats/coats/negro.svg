@@ -1,12 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" data-coat="negro">
-  <!-- Pelaje "negro" (Luna, negro entero, negro suave #3E3A47). Formato en art/README.md. -->
+  <!-- Pelaje "negro" (Luna, negro entero, negro suave #3E3A47). Formato en art/README.md.
+       Legibilidad en pelaje oscuro (art-direction §2): halo #56505F detrás de cada ojo,
+       almohadillas de bigote del mismo tono y patitas #56505F para que no se fundan con el cuerpo. -->
   <g id="tail" data-fill="#3E3A47">
   </g><!--/tail-->
   <g id="body" data-fill="#3E3A47">
   </g><!--/body-->
-  <g id="paws" data-fill="#3E3A47">
+  <g id="paws" data-fill="#56505F">
   </g><!--/paws-->
   <g id="head" data-fill="#3E3A47">
+    <!-- halo de los ojos: deja ver el óvalo #33242A y su brillo -->
+    <ellipse fill="#56505F" cx="192" cy="224" rx="24" ry="29"/>
+    <ellipse fill="#56505F" cx="320" cy="224" rx="24" ry="29"/>
     <!-- hocico un poco más claro para que se lea la boca :3 sobre el negro -->
     <path fill="#56505F" d="M256 236 C266 228 290 230 292 248 C294 264 272 268 256 260 C240 268 218 264 220 248 C222 230 246 228 256 236 Z"/>
   </g><!--/head-->

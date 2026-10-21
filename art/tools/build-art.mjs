@@ -39,6 +39,15 @@ function parseCoat(src, id) {
   return coat;
 }
 
+/** Luminancia relativa (0-1) de un color #RRGGBB. */
+function luminance(hex) {
+  const [r, g, b] = [1, 3, 5].map((i) => {
+    const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
 function composeCat(id, { withFace }) {
   const coat = parseCoat(read(`cats/coats/${id}.svg`), id);
   let svg = read('cats/base/silhouette.svg');
@@ -46,6 +55,11 @@ function composeCat(id, { withFace }) {
   for (const part of PARTS) {
     svg = svg.replace(new RegExp(`data-fill="${part}" fill="[^"]*"`, 'g'), `fill="${coat[part].fill}"`);
     svg = svg.replaceAll(`<!--coat:${part}-->`, coat[part].content);
+  }
+  // Pelajes claros (blanco, calicó, crema…): el brillo blanco de la cabeza no se ve sobre el
+  // blanco, así que pasa a `mantequilla` (#FFF0A8) al 50 % (art-direction §3-§4).
+  if (luminance(coat.head.fill) > 0.85) {
+    svg = svg.replaceAll('fill="#FFFFFF" fill-opacity="0.55"', 'fill="#FFF0A8" fill-opacity="0.5"');
   }
   if (withFace) {
     const face = innerSvg(read('cats/base/face-normal.svg'));
@@ -66,15 +80,29 @@ function buildCats() {
 
 // Caja de recorte de cada slot en el lienzo de 512 (para los iconos).
 const ICON_CROP = {
-  sweater: [112, 290, 288, 200],
+  // cuadrada y algo más ajustada que el sweater: deja ~9 % de margen lateral en la celda
+  sweater: [121, 256, 270, 270],
 };
 
 // Ajustes solo para el icono (la prenda suelta, sin gato debajo):
 // - se quitan los recortes de patitas (class="paw-cut") para que el borde quede entero;
-// - se dibuja el contorno del cuello, que en el gato lo aporta el trazo de la cabeza.
+// - se dibuja el contorno del cuello, que en el gato lo aporta el trazo de la cabeza;
+// - sweater: el bajo se hace recto (sin la panza redondeada) y los puños bajan hasta el
+//   elástico, con las costuras alargadas, para que suelto no parezca un canasto con asas.
+const SW_HEM_ROUND = 'C384 432 378 454 366 468 C330 480 182 480 146 468 C134 454 128 432 130 398';
+const SW_HEM_FLAT = 'C383 430 382 456 374 470 C330 472 182 472 138 470 C130 456 129 430 130 398';
+const SW_CUFF_DROP = 20;
 const ICON_FIX = {
   sweater: (inner) =>
-    inner.replace(/<[^>]*class="paw-cut"[^>]*\/>\s*/g, '') +
+    inner
+      .replace(/<[^>]*class="paw-cut"[^>]*\/>\s*/g, '')
+      .replaceAll(SW_HEM_ROUND, SW_HEM_FLAT)
+      .replace('198 436 M344 340', `199 ${436 + SW_CUFF_DROP} M344 340`)
+      .replace(/(314) 436"/, `313 ${436 + SW_CUFF_DROP}"`)
+      .replace(
+        /(<rect x="192" y="430"[^>]*\/>\s*<rect x="258" y="430"[^>]*\/>\s*<path[^>]*d="M210 437[^"]*"[^>]*\/>)/,
+        `<g transform="translate(0 ${SW_CUFF_DROP})">$1</g>`,
+      ) +
     '\n<use href="#sw-head" fill="none" stroke="#4A3036" stroke-width="8" clip-path="url(#sw-clip)"/>',
 };
 

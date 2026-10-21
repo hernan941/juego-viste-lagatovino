@@ -84,8 +84,8 @@
   
   <ellipse fill="#33242A" cx="192" cy="224" rx="14" ry="19"/>
   <ellipse fill="#33242A" cx="320" cy="224" rx="14" ry="19"/>
-  <circle fill="#FFFFFF" cx="187" cy="216" r="5.5"/>
-  <circle fill="#FFFFFF" cx="315" cy="216" r="5.5"/>
+  <circle fill="#FFFFFF" cx="187" cy="216" r="7.5"/>
+  <circle fill="#FFFFFF" cx="315" cy="216" r="7.5"/>
   
   <path fill="none" stroke="#4A3036" stroke-width="6" d="M236 240 C236 254 254 256 256 242 C258 256 276 254 276 240"/>
 </g></g>

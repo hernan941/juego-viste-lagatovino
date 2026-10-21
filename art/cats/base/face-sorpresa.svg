@@ -9,10 +9,10 @@
   <!-- ojos -->
   <circle fill="#33242A" cx="190" cy="222" r="22"/>
   <circle fill="#33242A" cx="322" cy="222" r="22"/>
-  <circle fill="#FFFFFF" cx="182" cy="212" r="7.5"/>
-  <circle fill="#FFFFFF" cx="314" cy="212" r="7.5"/>
-  <circle fill="#FFFFFF" cx="197" cy="231" r="3"/>
-  <circle fill="#FFFFFF" cx="329" cy="231" r="3"/>
+  <circle fill="#FFFFFF" cx="181" cy="211" r="10"/>
+  <circle fill="#FFFFFF" cx="313" cy="211" r="10"/>
+  <circle fill="#FFFFFF" cx="198" cy="232" r="4"/>
+  <circle fill="#FFFFFF" cx="330" cy="232" r="4"/>
   <!-- boca en o -->
   <ellipse fill="#E2578B" stroke="#4A3036" stroke-width="6" cx="256" cy="252" rx="11" ry="13"/>
 </g>

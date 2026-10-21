@@ -34,7 +34,7 @@
     </g>
 
     <g id="paw-l">
-      <use href="#paw-l-shape" fill="#3E3A47"/>
+      <use href="#paw-l-shape" fill="#56505F"/>
       <g clip-path="url(#clip-paw-l)">
         
         <rect class="shade" fill="#000" fill-opacity="0.15" x="180" y="484" width="90" height="20"/>
@@ -43,7 +43,7 @@
       <path fill="none" stroke="#4A3036" stroke-width="5" d="M212 496 L212 486 M236 496 L236 486"/>
     </g>
     <g id="paw-r">
-      <use href="#paw-r-shape" fill="#3E3A47"/>
+      <use href="#paw-r-shape" fill="#56505F"/>
       <g clip-path="url(#clip-paw-r)">
         
         <rect class="shade" fill="#000" fill-opacity="0.15" x="244" y="484" width="90" height="20"/>
@@ -55,7 +55,9 @@
     <g id="head">
       <use href="#head-shape" fill="#3E3A47"/>
       <g clip-path="url(#clip-head)">
-        <path fill="#56505F" d="M256 236 C266 228 290 230 292 248 C294 264 272 268 256 260 C240 268 218 264 220 248 C222 230 246 228 256 236 Z"/>
+        <ellipse fill="#56505F" cx="192" cy="224" rx="24" ry="29"/>
+    <ellipse fill="#56505F" cx="320" cy="224" rx="24" ry="29"/>
+    <path fill="#56505F" d="M256 236 C266 228 290 230 292 248 C294 264 272 268 256 260 C240 268 218 264 220 248 C222 230 246 228 256 236 Z"/>
       </g>
       <path fill="#FF9EB5" d="M134 114 C128 94 134 76 146 70 C156 66 166 74 174 84 C182 94 188 100 192 104 C172 104 150 108 134 114 Z"/>
       <path fill="#FF9EB5" d="M378 114 C384 94 378 76 366 70 C356 66 346 74 338 84 C330 94 324 100 320 104 C340 104 362 108 378 114 Z"/>
@@ -73,8 +75,8 @@
   
   <ellipse fill="#33242A" cx="192" cy="224" rx="14" ry="19"/>
   <ellipse fill="#33242A" cx="320" cy="224" rx="14" ry="19"/>
-  <circle fill="#FFFFFF" cx="187" cy="216" r="5.5"/>
-  <circle fill="#FFFFFF" cx="315" cy="216" r="5.5"/>
+  <circle fill="#FFFFFF" cx="187" cy="216" r="7.5"/>
+  <circle fill="#FFFFFF" cx="315" cy="216" r="7.5"/>
   
   <path fill="none" stroke="#4A3036" stroke-width="6" d="M236 240 C236 254 254 256 256 242 C258 256 276 254 276 240"/>
 </g></g>
