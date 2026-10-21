@@ -3,15 +3,15 @@
   <rect x="4" y="4" width="248" height="248" rx="32" fill="#FFF7EC" stroke="#FFD1E3" stroke-width="4"/>
   <svg x="20" y="20" width="216" height="216" viewBox="370 66 150 150" preserveAspectRatio="xMidYMid meet" overflow="visible">
 <g stroke-linejoin="round" stroke-linecap="round">
-    <path fill="none" stroke="#4A3036" stroke-width="5" d="M446 214 C452 280 400 330 340 392 C318 414 304 438 296 462"/>
-    <g transform="translate(446 140) scale(4.6)">
-      <path d="M0 10 C-8 4 -13 0 -13 -5 C-13 -9 -10 -12 -6.5 -12 C-3.5 -12 -1.5 -10 0 -7.5 C1.5 -10 3.5 -12 6.5 -12 C10 -12 13 -9 13 -5 C13 0 8 4 0 10 Z" fill="#FF8FB8" stroke="#4A3036" stroke-width="1.7391304347826089"/>
-      <path d="M-1.6 11 L1.6 11 L3 15 L-3 15 Z" fill="#F2A9C4" stroke="#4A3036" stroke-width="1.0869565217391306"/>
+    <path fill="none" stroke="#4A3036" stroke-width="5" d="M412 212 C416 284 384 336 336 394 C316 418 304 440 296 462"/>
+    <g transform="translate(412 148) scale(3.8)">
+      <path d="M0 10 C-8 4 -13 0 -13 -5 C-13 -9 -10 -12 -6.5 -12 C-3.5 -12 -1.5 -10 0 -7.5 C1.5 -10 3.5 -12 6.5 -12 C10 -12 13 -9 13 -5 C13 0 8 4 0 10 Z" fill="#FF8FB8" stroke="#4A3036" stroke-width="2.1"/>
+      <path d="M-1.6 11 L1.6 11 L3 15 L-3 15 Z" fill="#F2A9C4" stroke="#4A3036" stroke-width="1.3"/>
       <path d="M-1 -4 C-6 -8 -10 -6 -10 -2" fill="none" stroke="#FFFFFF" stroke-opacity="0.7" stroke-width="2.4" transform="translate(0 0)"/>
       <path fill="#000" fill-opacity="0.15" d="M5 -9 C11 -11 14 -6 12 -1 C10 4 4 8 0 10 C6 4 8 -3 5 -9 Z"/>
     </g>
-    <ellipse fill="#FFFFFF" fill-opacity="0.55" cx="418" cy="122" rx="7" ry="16" transform="rotate(28 418 122)"/>
-    <circle fill="#FFFFFF" fill-opacity="0.55" cx="410" cy="150" r="4"/>
+    <ellipse fill="#FFFFFF" fill-opacity="0.55" cx="388" cy="128" rx="6" ry="14" transform="rotate(28 388 128)"/>
+    <circle fill="#FFFFFF" fill-opacity="0.55" cx="382" cy="152" r="3.5"/>
   </g>
   </svg>
 </svg>

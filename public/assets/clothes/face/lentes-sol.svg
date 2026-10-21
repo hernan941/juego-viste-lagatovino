@@ -1,19 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <!--
-    Viste Lagato · face "lentes-sol". Lentes de sol oscuros con marco rosa y destellos.
+    Viste Lagato · face "lentes-sol". Lentes de sol con marco rosa y cristales translucidos (se ven las expresiones a traves, F9).
     Se dibuja ya en su lugar (lienzo de 512, anclas de art/anchors.json).
     Contorno 8 px #4A3036, una sombra (negro 15 %) y un brillo (art-direction §3 y §5).
   -->
   <g stroke-linejoin="round" stroke-linecap="round">
     <path fill="none" stroke="#4A3036" stroke-width="12" d="M146 214 L104 204 M366 214 L408 204"/><path fill="none" stroke="#FF8FB8" stroke-width="5" d="M140 213 L106 205 M372 213 L406 205"/><path fill="none" stroke="#4A3036" stroke-width="16" d="M236 216 C248 204 264 204 276 216"/><path fill="none" stroke="#FF8FB8" stroke-width="6" d="M236 216 C248 204 264 204 276 216"/>
     <g transform="translate(192 224) scale(1)">
-      <path d="M-36 -22 C-36 -34 -28 -36 -14 -36 L14 -36 C28 -36 36 -34 36 -22 L36 8 C36 30 20 38 0 38 C-20 38 -36 30 -36 8 Z" fill="#5B4478" fill-opacity="0.92"/>
+      <path d="M-36 -22 C-36 -34 -28 -36 -14 -36 L14 -36 C28 -36 36 -34 36 -22 L36 8 C36 30 20 38 0 38 C-20 38 -36 30 -36 8 Z" fill="#5B4478" fill-opacity="0.5"/>
       <path d="M-36 -22 C-36 -34 -28 -36 -14 -36 L14 -36 C28 -36 36 -34 36 -22 L36 8 C36 30 20 38 0 38 C-20 38 -36 30 -36 8 Z" fill="none" stroke="#4A3036" stroke-width="18"/>
       <path d="M-36 -22 C-36 -34 -28 -36 -14 -36 L14 -36 C28 -36 36 -34 36 -22 L36 8 C36 30 20 38 0 38 C-20 38 -36 30 -36 8 Z" fill="none" stroke="#FF8FB8" stroke-width="10"/>
       
     </g>
     <g transform="translate(320 224) scale(1)">
-      <path d="M-36 -22 C-36 -34 -28 -36 -14 -36 L14 -36 C28 -36 36 -34 36 -22 L36 8 C36 30 20 38 0 38 C-20 38 -36 30 -36 8 Z" fill="#5B4478" fill-opacity="0.92"/>
+      <path d="M-36 -22 C-36 -34 -28 -36 -14 -36 L14 -36 C28 -36 36 -34 36 -22 L36 8 C36 30 20 38 0 38 C-20 38 -36 30 -36 8 Z" fill="#5B4478" fill-opacity="0.5"/>
       <path d="M-36 -22 C-36 -34 -28 -36 -14 -36 L14 -36 C28 -36 36 -34 36 -22 L36 8 C36 30 20 38 0 38 C-20 38 -36 30 -36 8 Z" fill="none" stroke="#4A3036" stroke-width="18"/>
       <path d="M-36 -22 C-36 -34 -28 -36 -14 -36 L14 -36 C28 -36 36 -34 36 -22 L36 8 C36 30 20 38 0 38 C-20 38 -36 30 -36 8 Z" fill="none" stroke="#FF8FB8" stroke-width="10"/>
       

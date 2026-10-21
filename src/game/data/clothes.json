@@ -40,7 +40,7 @@
   {"id":"paws-botitas","name":"Botitas","slot":"paws","category":"paws","texture":"paws-botitas","icon":"paws-botitas-icon","tags":["invierno","deportivo"]},
   {"id":"accessory-mochilita","name":"Mochilita","slot":"accessory","category":"accessory","texture":"accessory-mochilita","icon":"accessory-mochilita-icon","tags":["deportivo","paseo"]},
   {"id":"accessory-flor-oreja","name":"Flor en la oreja","slot":"accessory","category":"accessory","texture":"accessory-flor-oreja","icon":"accessory-flor-oreja-icon","tags":["flores","tierno"]},
-  {"id":"accessory-globo","name":"Globo de corazón","slot":"accessory","category":"accessory","texture":"accessory-globo","icon":"accessory-globo-icon","tags":["fiesta","corazones"]},
+  {"id":"accessory-globo","name":"Globo de corazón","slot":"accessory","category":"accessory","texture":"accessory-globo","icon":"accessory-globo-icon","tags":["fiesta","corazones","mece"]},
   {"id":"accessory-taza-leche","name":"Taza de leche","slot":"accessory","category":"accessory","texture":"accessory-taza-leche","icon":"accessory-taza-leche-icon","tags":["gatuno","cocina","comodo"]},
   {"id":"accessory-ovillo","name":"Ovillo de lana","slot":"accessory","category":"accessory","texture":"accessory-ovillo","icon":"accessory-ovillo-icon","tags":["lana","gatuno"]},
   {"id":"sweater-dorado-estrella","name":"Sweater dorado de estrella","slot":"sweater","category":"sweater","texture":"sweater-dorado-estrella","icon":"sweater-dorado-estrella-icon","tags":["estrellas","realeza","secreto"],"secret":true},

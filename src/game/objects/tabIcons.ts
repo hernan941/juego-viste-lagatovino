@@ -26,17 +26,31 @@ const ellipse = (g: Phaser.GameObjects.Graphics, fill: number, x: number, y: num
   g.lineStyle(4, LINE, 1).strokeEllipse(x, y, w, h);
 };
 
+/** An ellipse tilted by `rot` radians (Phaser's Graphics has no rotated ellipse): drawn as a polygon with the outline. */
+const tiltedEllipse = (g: Phaser.GameObjects.Graphics, fill: number, cx: number, cy: number, rx: number, ry: number, rot: number) => {
+  const pts = Array.from({ length: 28 }, (_, i) => {
+    const a = (i / 28) * Math.PI * 2;
+    const x = Math.cos(a) * rx;
+    const y = Math.sin(a) * ry;
+    return new Phaser.Math.Vector2(cx + x * Math.cos(rot) - y * Math.sin(rot), cy + x * Math.sin(rot) + y * Math.cos(rot));
+  });
+  g.fillStyle(fill, 1).fillPoints(pts, true);
+  g.lineStyle(4, LINE, 1).strokePoints(pts, true);
+};
+
 const ICONS: Record<string, Draw> = {
-  // Sweater: a T shape with sleeves and a round neck.
+  // Sweater: long sleeves that hang down to ribbed cuffs, a round neck and a stripe (so it does not read as a T-shirt).
   sweater: (g) => {
-    const pts = [[22, 9], [28, 13], [36, 13], [42, 9], [59, 24], [52, 34], [46, 29], [46, 55], [18, 55], [18, 29], [12, 34], [5, 24]]
+    const pts = [[24, 8], [28, 12], [36, 12], [40, 8], [56, 14], [61, 46], [50, 48], [47, 30], [47, 56], [17, 56], [17, 30], [14, 48], [3, 46], [8, 14]]
       .map(([x, y]) => new Phaser.Math.Vector2(x, y));
     g.fillStyle(hex('mantequilla'), 1).fillPoints(pts, true);
     g.lineStyle(4, LINE, 1).strokePoints(pts, true);
     g.fillStyle(hex('crema'), 1).fillEllipse(32, 12, 14, 8);
     g.lineStyle(3, LINE, 1).strokeEllipse(32, 12, 14, 8);
-    g.lineStyle(3, 0xf2c94c, 1).lineBetween(18, 46, 46, 46);
-    g.lineStyle(3, 0xffffff, 0.9).lineBetween(24, 24, 24, 36);
+    rr(g, hex('crema'), 49, 43, 14, 8, 3);
+    rr(g, hex('crema'), 1, 43, 14, 8, 3);
+    g.lineStyle(3, 0xf2c94c, 1).lineBetween(19, 44, 45, 44);
+    g.lineStyle(3, 0xffffff, 0.9).lineBetween(24, 22, 24, 34);
   },
   // Beanie: dome, folded brim and pompon.
   head: (g) => {
@@ -45,11 +59,15 @@ const ICONS: Record<string, Draw> = {
     rr(g, hex('crema'), 10, 40, 44, 12, 6);
     g.lineStyle(3, 0xffffff, 0.8).lineBetween(21, 28, 24, 24);
   },
-  // Scarf: wrapped band with a hanging end.
+  // Scarf: a U that wraps the neck, with a hanging end and fringe.
   neck: (g) => {
-    rr(g, hex('menta'), 36, 30, 14, 26, 6);
-    rr(g, hex('menta'), 8, 18, 48, 18, 9);
-    g.lineStyle(3, 0x6cc59a, 1).lineBetween(14, 22, 14, 32).lineBetween(24, 24, 24, 34).lineBetween(34, 24, 34, 34);
+    rr(g, hex('menta'), 38, 28, 15, 26, 6);
+    g.lineStyle(3, 0x6cc59a, 1).lineBetween(41, 56, 41, 61).lineBetween(45.5, 56, 45.5, 61).lineBetween(50, 56, 50, 61);
+    g.lineStyle(3, 0x6cc59a, 1).lineBetween(38, 38, 53, 38);
+    // The wrap: a thick U (outline first, then the color on top).
+    g.lineStyle(17, LINE, 1).beginPath().arc(32, 20, 19, 0.15, Math.PI - 0.15).strokePath();
+    g.lineStyle(10, hex('menta'), 1).beginPath().arc(32, 20, 19, 0.15, Math.PI - 0.15).strokePath();
+    g.lineStyle(3, 0x6cc59a, 1).lineBetween(17, 30, 21, 26).lineBetween(26, 38, 28, 33).lineBetween(37, 38, 36, 33);
   },
   // Glasses: two round lenses with a bridge.
   face: (g) => {
@@ -58,12 +76,14 @@ const ICONS: Record<string, Draw> = {
     circle(g, hex('cielo'), 45, 33, 12);
     g.fillStyle(0xffffff, 0.9).fillCircle(15, 29, 3).fillCircle(41, 29, 3);
   },
-  // Mitten: rounded body, thumb and cuff.
+  // Mitten: a ribbed cuff, a thumb that points up on a diagonal and a little heart.
   paws: (g) => {
-    ellipse(g, hex('lavanda'), 14, 36, 14, 20);
-    rr(g, hex('lavanda'), 16, 18, 30, 36, { tl: 15, tr: 15, bl: 10, br: 10 });
-    rr(g, hex('crema'), 15, 10, 32, 12, 5);
-    g.lineStyle(3, 0xffffff, 0.8).lineBetween(24, 28, 24, 40);
+    tiltedEllipse(g, hex('lavanda'), 13, 30, 7.5, 12, -0.6);
+    rr(g, hex('lavanda'), 17, 12, 31, 36, { tl: 15, tr: 15, bl: 9, br: 9 });
+    rr(g, hex('crema'), 16, 44, 33, 14, 5);
+    g.lineStyle(3, 0xb7a5f2, 1).lineBetween(23, 46, 23, 56).lineBetween(32, 46, 32, 56).lineBetween(41, 46, 41, 56);
+    g.fillStyle(hex('rosa400'), 1).fillCircle(29, 26, 4).fillCircle(37, 26, 4).fillTriangle(25, 28, 41, 28, 33, 38);
+    g.fillStyle(0xffffff, 0.8).fillCircle(28, 24, 1.5);
   },
   // Balloon with its string.
   accessory: (g) => {

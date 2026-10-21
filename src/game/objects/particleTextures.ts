@@ -22,9 +22,11 @@ export function createParticleTextures(scene: Phaser.Scene): void {
   }
   if (!scene.textures.exists(TextureKeys.Snow)) {
     const g = scene.make.graphics({}, false);
-    g.fillStyle(0xffffff, 1).fillCircle(9, 9, 8);
-    g.lineStyle(2, 0xc4e6ff, 1).strokeCircle(9, 9, 8);
-    g.generateTexture(TextureKeys.Snow, 18, 18);
+    // A fluffy flake with a sky blue outline, so it is seen on the pale blue of the mirror (F9: it used to disappear).
+    g.fillStyle(0xffffff, 1).fillCircle(11, 11, 9);
+    g.lineStyle(3, 0x8cc8f0, 1).strokeCircle(11, 11, 9);
+    g.lineStyle(2, 0x8cc8f0, 0.9).lineBetween(11, 5, 11, 17).lineBetween(5, 11, 17, 11);
+    g.generateTexture(TextureKeys.Snow, 22, 22);
     g.destroy();
   }
   if (!scene.textures.exists(TextureKeys.Petal)) {
