@@ -5,7 +5,7 @@ import { reactionFor, type Expression, type ReactionEvent } from '../domain/expr
 import { blinkCount, lookOffset, nextBlinkDelay } from '../domain/idle';
 import { grabPoint, hitsAlpha } from '../domain/pixelHit';
 import { slotZIndex, hitBoxForSlot, anchorForSlot } from '../domain/slots';
-import { TAIL_FLICK, TAIL_IDLE, tailPivot } from '../domain/tail';
+import { TAIL_FLICK_STEPS, TAIL_IDLE, tailPivot } from '../domain/tail';
 import { alphaMapOf } from './alphaMap';
 import type { AnchorName, AnchorsDef, CatDef, ClothingDef, Point, Rect } from '../domain/types';
 
@@ -112,6 +112,11 @@ export class Cat extends Phaser.GameObjects.Container {
     return this.canvasToWorld({ x: b.x + b.width / 2, y: Math.min(Math.max(slotAnchor.y, b.y), b.y + b.height) });
   }
 
+  /** Current angle of the tail layer in degrees (for tests). */
+  get tailAngle(): number {
+    return this.tail.angle;
+  }
+
   // ---- Idle: breathing, sway, blinking -----------------------------------
 
   private startIdle(): void {
@@ -121,9 +126,10 @@ export class Cat extends Phaser.GameObjects.Container {
   }
 
   /** Gentle endless sway of the tail from its base: ±4° with Sine.easeInOut (TAIL_IDLE). */
-  private swayTail(): void {
+  private swayTail(fromCurrent = false): void {
     this.tailTween?.remove();
-    this.tail.setAngle(-TAIL_IDLE.angle);
+    // After a flick the tail already rests at -angle (TAIL_FLICK_STEPS), so it must not be reset: no jump.
+    if (!fromCurrent) this.tail.setAngle(-TAIL_IDLE.angle);
     this.tailTween = this.scene.tweens.add({
       targets: this.tail, angle: TAIL_IDLE.angle, duration: TAIL_IDLE.duration, yoyo: true, repeat: -1, ease: TAIL_IDLE.ease,
     });
@@ -217,15 +223,11 @@ export class Cat extends Phaser.GameObjects.Container {
     this.tailTween?.remove();
     this.tailTween = this.scene.tweens.chain({
       targets: this.tail,
-      tweens: [
-        { angle: -TAIL_FLICK.angle, duration: 70, ease: 'Quad.easeOut' },
-        { angle: TAIL_FLICK.angle, duration: 110, ease: 'Sine.easeInOut' },
-        { angle: 0, duration: TAIL_FLICK.duration, ease: TAIL_FLICK.ease },
-      ],
+      tweens: TAIL_FLICK_STEPS.map((step) => ({ ...step })),
       // The chain is finishing: forget it before swaying again so it is not removed twice.
       onComplete: () => {
         this.tailTween = undefined;
-        this.swayTail();
+        this.swayTail(true);
       },
     });
   }

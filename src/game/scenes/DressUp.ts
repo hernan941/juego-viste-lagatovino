@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import {
-  CATEGORY_LABELS, GAME_HEIGHT, GAME_WIDTH, ObjectEvents, RegistryKeys, SceneKeys, TextureKeys,
+  CATEGORY_LABELS, FONT_FAMILY, MEOW_KEYS, ObjectEvents, Palette, RegistryKeys, SceneKeys, SfxKeys, TextureKeys,
 } from '../constants';
 import type { Catalog } from '../data/schema';
 import { itemsInCategory, visibleCategories } from '../domain/catalog';
@@ -10,13 +10,19 @@ import { ghostFit, alphaBounds } from '../domain/imageBounds';
 import { equip, getLayers, unequip } from '../domain/outfit';
 import { anchorForSlot } from '../domain/slots';
 import type { AnchorsDef, Category, ClothingDef, Outfit, Point, Rect } from '../domain/types';
-import type { DressUpE2EState, E2EScene } from '../e2eHook';
+import type { DressUpE2EState, E2EScene, E2EUi, UiState } from '../e2eHook';
+import { Button } from '../objects/Button';
+import { MuteButton } from '../objects/MuteButton';
+import { getAudio } from '../plugins/AudioPlugin';
+import { go } from '../systems/navigate';
+import { readSession } from '../systems/sessionStore';
 import { Cat } from '../objects/Cat';
 import type { ClothingItem } from '../objects/ClothingItem';
 import { ItemGrid } from '../objects/ItemGrid';
 import { LayersPanel } from '../objects/LayersPanel';
 import { Tabs } from '../objects/Tabs';
 import { tabIconKey } from '../objects/tabIcons';
+import { drawRoom } from '../objects/room';
 import { drawPanel, hex, makeText } from '../objects/ui';
 import { enterKind, transitionIn } from '../systems/transitions';
 
@@ -32,7 +38,6 @@ const GHOST_HOME_SIZE = 90;
 /** Left panel: tabs, then the scrollable grid, then the hint (game px). */
 const PANEL = { x: 36, y: 36, width: 404, height: 648 };
 const GRID = { x: 62, y: 164, width: 368 - 12, height: 464 };
-const ROOM_TEXTURE = 'room-bg';
 
 interface DragState {
   item: ClothingDef;
@@ -50,7 +55,7 @@ interface DragState {
 }
 
 /** The fitting room (F2 vertical slice): one cat, two tabs, a grid, the mirror and the layers panel. */
-export class DressUp extends Phaser.Scene implements E2EScene {
+export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
   private catalog!: Catalog;
   private anchors!: AnchorsDef;
   private outfit: Outfit = {};
@@ -65,7 +70,13 @@ export class DressUp extends Phaser.Scene implements E2EScene {
   private sparkles!: Phaser.GameObjects.Particles.ParticleEmitter;
   private drag: DragState | null = null;
   private catId = '';
+  private catName = '';
   private baseCatScale = 1;
+  private doneButton!: Button;
+  private changeButton!: Button;
+  private mute!: MuteButton;
+  private leaving = false;
+  private lastDragSound = 0;
 
   constructor() {
     super(SceneKeys.DressUp);
@@ -74,15 +85,20 @@ export class DressUp extends Phaser.Scene implements E2EScene {
   init(data?: { catId?: string }) {
     this.catalog = this.registry.get(RegistryKeys.Catalog) as Catalog;
     this.anchors = this.registry.get(RegistryKeys.Anchors) as AnchorsDef;
-    this.outfit = {};
+    const session = readSession(this.registry);
+    // The outfit comes back from the Showcase; a different cat starts naked (chooseCat clears it).
+    this.outfit = session.outfit;
     this.drag = null;
-    const wanted = (this.registry.get(RegistryKeys.CatId) as string | undefined) ?? data?.catId;
-    this.catId = this.catalog.cats.find((c) => c.id === wanted)?.id ?? this.catalog.cats[0].id;
+    this.leaving = false;
+    const wanted = session.catId ?? data?.catId;
+    const cat = this.catalog.cats.find((c) => c.id === wanted) ?? this.catalog.cats[0];
+    this.catId = cat.id;
+    this.catName = session.catName || cat.name;
   }
 
   create(data?: unknown) {
     this.input.dragDistanceThreshold = 8;
-    this.drawRoom();
+    drawRoom(this, CAT_X, CAT_FEET_Y);
     this.zoneGlow = this.add.graphics().setAlpha(0);
 
     const def = this.catalog.cats.find((c) => c.id === this.catId)!;
@@ -124,8 +140,16 @@ export class DressUp extends Phaser.Scene implements E2EScene {
       })
       .setDepth(4000);
 
+    this.createNameSign();
+    this.doneButton = new Button(this, 1093, 568, '¡Listo!', { width: 250, height: 88, fontSize: 42 });
+    this.doneButton.on(ObjectEvents.ButtonClick, () => this.leave('finish'));
+    this.changeButton = new Button(this, 1093, 652, 'Cambiar de gato', { width: 220, height: 62, fontSize: 24, tone: 'lavanda' });
+    this.changeButton.on(ObjectEvents.ButtonClick, () => this.leave('change'));
+    this.mute = new MuteButton(this, 1240, 686).setScale(0.8);
+
     this.tabs.select(categories[0], true);
     this.showCategory(categories[0]);
+    if (Object.keys(this.outfit).length > 0) this.applyOutfit(this.outfit);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.cleanup, this);
     transitionIn(this, enterKind(data));
   }
@@ -138,48 +162,48 @@ export class DressUp extends Phaser.Scene implements E2EScene {
     d.ghost.y += (d.target.y - d.ghost.y) * 0.4;
   }
 
+  /** Hanging sign with the name of the cat, over the mirror. */
+  private createNameSign() {
+    const text = this.add
+      .text(0, 0, this.catName, { fontFamily: FONT_FAMILY, fontSize: '34px', color: Palette.texto, fontStyle: '600' })
+      .setOrigin(0.5);
+    const width = Math.max(190, text.width + 70);
+    const g = this.add.graphics();
+    g.lineStyle(4, hex('contorno'), 1).beginPath().moveTo(-width / 2 + 34, -34).lineTo(-width / 2 + 34, -12).moveTo(width / 2 - 34, -34).lineTo(width / 2 - 34, -12).strokePath();
+    g.fillStyle(hex('rosa600'), 0.18).fillRoundedRect(-width / 2 + 3, -16 + 7, width, 54, 27);
+    g.fillStyle(hex('mantequilla'), 1).fillRoundedRect(-width / 2, -16, width, 54, 27);
+    g.lineStyle(4, 0xf5d86a, 1).strokeRoundedRect(-width / 2, -16, width, 54, 27);
+    g.fillStyle(0xffffff, 0.6).fillRoundedRect(-width / 2 + 20, -10, 50, 6, 3);
+    text.setY(11);
+    const sign = this.add.container(CAT_X, -60, [g, text]).setDepth(30);
+    this.tweens.add({ targets: sign, y: 92, duration: 500, delay: 250, ease: 'Back.easeOut' });
+    this.tweens.add({ targets: sign, angle: { from: -1.5, to: 1.5 }, duration: 1800, delay: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+  }
+
+  private leave(action: 'finish' | 'change') {
+    if (this.leaving) return;
+    this.leaving = true;
+    if (this.drag) this.endDragQuiet();
+    go(this, action);
+  }
+
+  /** Lets go of an item that is still in the hand if the player leaves. */
+  private endDragQuiet() {
+    this.drag?.ghost.destroy();
+    this.drag?.preview?.destroy();
+    this.drag = null;
+  }
+
   private cleanup() {
     this.drag = null;
+    this.doneButton?.destroy();
+    this.changeButton?.destroy();
+    this.mute?.destroy();
     this.tweens.killAll();
     this.cat?.destroy();
     this.grid?.destroy();
     this.tabs?.destroy();
     this.layersPanel?.destroy();
-  }
-
-  // ---- Room ----------------------------------------------------------------
-
-  /** The whole room is static, so it is drawn once into a texture (Graphics replays every shape each frame). */
-  private drawRoom() {
-    if (!this.textures.exists(ROOM_TEXTURE)) {
-      const g = this.make.graphics({}, false);
-      g.fillStyle(hex('rosa50'), 1).fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-      // Paw print wallpaper: tiny lavender huellitas on a grid.
-      g.fillStyle(hex('lavanda'), 0.45);
-      for (let row = 0; row < 9; row++) {
-        for (let col = 0; col < 17; col++) {
-          const x = col * 80 + (row % 2 === 0 ? 20 : 60);
-          const y = row * 84 + 30;
-          g.fillEllipse(x, y + 4, 11, 9).fillCircle(x - 7, y - 4, 3).fillCircle(x - 2.5, y - 8, 3).fillCircle(x + 2.5, y - 8, 3).fillCircle(x + 7, y - 4, 3);
-        }
-      }
-      // Big mirror with a soft golden frame.
-      const mx = CAT_X - 236;
-      const my = 56;
-      g.fillStyle(hex('rosa600'), 0.15).fillRoundedRect(mx + 4, my + 14, 472, 600, 52);
-      g.fillStyle(hex('mantequilla'), 1).fillRoundedRect(mx, my, 472, 600, 52);
-      g.lineStyle(6, 0xf5d86a, 1).strokeRoundedRect(mx, my, 472, 600, 52);
-      g.fillStyle(hex('crema'), 1).fillRoundedRect(mx + 22, my + 22, 428, 556, 36);
-      g.fillStyle(hex('cielo'), 0.35).fillRoundedRect(mx + 22, my + 22, 428, 556, 36);
-      g.fillStyle(0xffffff, 0.45).fillRoundedRect(mx + 56, my + 56, 26, 190, 13).fillRoundedRect(mx + 96, my + 56, 12, 90, 6);
-      // Round rug under the cat.
-      g.fillStyle(hex('rosa600'), 0.18).fillEllipse(CAT_X, CAT_FEET_Y + 14, 360, 70);
-      g.fillStyle(hex('rosa200'), 1).fillEllipse(CAT_X, CAT_FEET_Y + 6, 360, 70);
-      g.lineStyle(5, hex('rosa400'), 1).strokeEllipse(CAT_X, CAT_FEET_Y + 6, 360, 70).strokeEllipse(CAT_X, CAT_FEET_Y + 6, 280, 46);
-      g.generateTexture(ROOM_TEXTURE, GAME_WIDTH, GAME_HEIGHT);
-      g.destroy();
-    }
-    this.add.image(0, 0, ROOM_TEXTURE).setOrigin(0);
   }
 
   private showCategory(category: Category) {
@@ -224,6 +248,7 @@ export class DressUp extends Phaser.Scene implements E2EScene {
     // Taking an item: it grows and tilts.
     this.tweens.add({ targets: ghost, scale: fit.scale * 1.15, angle: 8, duration: 150, ease: 'Back.easeOut' });
     this.drag = { item, fromEquipped, cell, ghost, ghostScale: fit.scale * 1.15, homeScale: home.scale, target: { x: pointer.x, y: pointer.y }, overZone: false, lastLook: 0 };
+    getAudio(this).play(SfxKeys.Grab);
     cell?.setLifted(true);
     if (fromEquipped) this.cat.setLayerLifted(item, true);
     this.cat.hold('sorpresa');
@@ -238,6 +263,11 @@ export class DressUp extends Phaser.Scene implements E2EScene {
     // Magnet: near the slot anchor the item settles onto it.
     const snap = over ? magnetSnap(point, this.cat.getAnchorWorld(anchorForSlot(d.item.slot)), MAGNET_RADIUS) : { point, snapped: false };
     d.target = snap.point;
+    // A barely-there whisper while it moves, at most every 160 ms.
+    if (this.time.now - this.lastDragSound > 160) {
+      this.lastDragSound = this.time.now;
+      getAudio(this).play(SfxKeys.Drag, { volume: 0.4 });
+    }
     this.setPreview(d, snap.snapped && !d.fromEquipped);
     if (over !== d.overZone) {
       d.overZone = over;
@@ -317,6 +347,7 @@ export class DressUp extends Phaser.Scene implements E2EScene {
     this.tweens.add({ targets: ghost, x: anchor.x, y: anchor.y, scale: ghost.scale * 0.5, alpha: 0, angle: 0, duration: 160, ease: 'Quad.easeIn', onComplete: () => ghost.destroy() });
     this.settlePreview(d);
     cell?.setLifted(false);
+    getAudio(this).play(SfxKeys.Drop);
     if (fromEquipped) {
       // Dropped back on the cat: nothing changes, the item just settles again.
       this.cat.setLayerLifted(item, false);
@@ -328,6 +359,8 @@ export class DressUp extends Phaser.Scene implements E2EScene {
     this.applyOutfit(equip(previous, item).outfit);
     const combo = newlyCompleted(previous, this.outfit, this.catalog.combos, this.catalog.clothes).length > 0;
     this.cat.react(combo ? 'combo' : 'drop');
+    this.time.delayedCall(90, () => getAudio(this).play(SfxKeys.Purr));
+    if (combo || Math.random() < 0.25) this.time.delayedCall(250, () => getAudio(this).playRandom(MEOW_KEYS));
     this.cat.squash();
     this.cat.wiggle();
     this.celebrate(anchor, combo ? 2 : 1);
@@ -335,6 +368,7 @@ export class DressUp extends Phaser.Scene implements E2EScene {
 
   private takeOff(d: DragState) {
     this.applyOutfit(unequip(this.outfit, d.item.slot));
+    getAudio(this).play(SfxKeys.Remove);
     this.cat.react('remove');
     this.cat.shake();
     this.returnGhost(d);
@@ -349,6 +383,7 @@ export class DressUp extends Phaser.Scene implements E2EScene {
   /** Item that was let go outside the cat: back to its cell with a bounce (250 ms, Back.easeOut). */
   private returnGhost({ ghost, item, cell, homeScale }: DragState) {
     const home = this.grid.getCellPositions()[item.id];
+    getAudio(this).play(SfxKeys.Return);
     this.tweens.killTweensOf(ghost);
     ghost.setAlpha(1);
     const done = () => {
@@ -364,6 +399,7 @@ export class DressUp extends Phaser.Scene implements E2EScene {
 
   /** A click on a cell answers with a pulse of the hint: dragging is the only way to wear things (ADR 0008). */
   private pulseHint() {
+    getAudio(this).play(SfxKeys.Click, { volume: 0.7 });
     this.tweens.killTweensOf(this.hint);
     this.hint.setScale(1).setAlpha(1);
     this.tweens.chain({
@@ -379,6 +415,7 @@ export class DressUp extends Phaser.Scene implements E2EScene {
   private removeItem(item: ClothingDef) {
     if (this.outfit[item.slot] !== item.id) return;
     this.applyOutfit(unequip(this.outfit, item.slot));
+    getAudio(this).play(SfxKeys.Remove);
     this.cat.react('remove');
     this.cat.shake();
   }
@@ -400,6 +437,15 @@ export class DressUp extends Phaser.Scene implements E2EScene {
 
   // ---- Test hook (ADR 0012) --------------------------------------------------
 
+  getE2EUi(): UiState {
+    return {
+      ready: this.cat.alpha > 0.99 && !this.leaving,
+      buttons: { finish: this.doneButton.getCenter(), change: this.changeButton.getCenter(), mute: this.mute.getCenter() },
+      points: {},
+      info: { catName: this.catName },
+    };
+  }
+
   getE2EState(): DressUpE2EState {
     const z = this.dropZone();
     const layers = getLayers(this.outfit, this.catalog.clothes);
@@ -411,6 +457,8 @@ export class DressUp extends Phaser.Scene implements E2EScene {
     const viewport = this.grid.getViewport();
     return {
       catId: this.catId,
+      catName: this.catName,
+      tailAngle: this.cat.tailAngle,
       activeTab: this.tabs.selectedId,
       visibleCells: this.grid.getVisibleIds(),
       grid: viewport,

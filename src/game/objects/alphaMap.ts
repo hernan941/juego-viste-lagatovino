@@ -1,5 +1,7 @@
 import type Phaser from 'phaser';
+import { alphaBounds } from '../domain/imageBounds';
 import type { AlphaMap } from '../domain/pixelHit';
+import type { Rect } from '../domain/types';
 
 /** Side of the alpha maps: 192 px is plenty to tell where an item is, and cheap to keep. */
 const SIDE = 192;
@@ -24,4 +26,11 @@ export function alphaMapOf(scene: Phaser.Scene, key: string): AlphaMap {
   const map = { width: SIDE, height: SIDE, data };
   maps.set(key, map);
   return map;
+}
+
+/** Bounding box of the visible pixels of a texture as fractions (0..1) of it, or null if it is empty. */
+export function opaqueBounds(scene: Phaser.Scene, key: string): Rect | null {
+  const m = alphaMapOf(scene, key);
+  const found = alphaBounds(Array.from(m.data, (a) => [0, 0, 0, a]).flat(), m.width, m.height);
+  return found && { x: found.x / m.width, y: found.y / m.height, width: found.width / m.width, height: found.height / m.height };
 }

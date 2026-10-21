@@ -19,3 +19,13 @@ export function tailPivot(anchors: Pick<AnchorsDef, 'canvas' | 'details'>): { po
   const point = anchors.details.tailBase ?? TAIL_BASE_FALLBACK;
   return { point: { ...point }, origin: { x: point.x / anchors.canvas.width, y: point.y / anchors.canvas.height } };
 }
+
+/**
+ * The flick as tween steps: snaps to one side, then the other, and settles on the angle where the sway
+ * starts (-TAIL_IDLE.angle), so handing over to the sway does not make the tail jump.
+ */
+export const TAIL_FLICK_STEPS = [
+  { angle: -TAIL_FLICK.angle, duration: 70, ease: 'Quad.easeOut' },
+  { angle: TAIL_FLICK.angle, duration: 110, ease: 'Sine.easeInOut' },
+  { angle: -TAIL_IDLE.angle, duration: TAIL_FLICK.duration, ease: TAIL_FLICK.ease },
+] as const;

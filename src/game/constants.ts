@@ -52,6 +52,10 @@ export const ObjectEvents = {
   TabSelect: 'tab-select',
   /** LayersPanel: (item: ClothingDef) */
   LayerRemove: 'layer-remove',
+  /** Button: pressed and released on it */
+  ButtonClick: 'button-click',
+  /** MuteButton: (muted: boolean) after toggling */
+  MuteToggle: 'mute-toggle',
 } as const;
 
 export const RegistryKeys = {

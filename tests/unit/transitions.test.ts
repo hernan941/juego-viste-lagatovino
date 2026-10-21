@@ -39,6 +39,8 @@ describe('enterKind', () => {
   it('reads the transition from scene data and falls back to none', () => {
     expect(enterKind({ transition: 'iris' })).toBe('iris');
     expect(enterKind({ transition: 'fade' })).toBe('fade');
+    expect(enterKind({ transition: 'heart' })).toBe('heart');
+    expect(enterKind({ transition: 'paw' })).toBe('paw');
     expect(enterKind({ transition: 'zzz' })).toBeNull();
     expect(enterKind(undefined)).toBeNull();
   });
@@ -51,9 +53,26 @@ function fakeScene() {
   };
   gfx.setDepth.mockReturnValue(gfx);
   gfx.setScrollFactor.mockReturnValue(gfx);
+  const ctx = {
+    fillStyle: '', globalCompositeOperation: '', fillRect: vi.fn(), beginPath: vi.fn(), moveTo: vi.fn(), lineTo: vi.fn(),
+    closePath: vi.fn(), fill: vi.fn(), ellipse: vi.fn(),
+  };
+  const created = new Set<string>();
+  const textures = {
+    exists: vi.fn((k: string) => created.has(k)),
+    createCanvas: vi.fn((k: string) => {
+      created.add(k);
+      return { getContext: () => ctx, refresh: vi.fn() };
+    }),
+  };
+  const img = { setDepth: vi.fn(), setScrollFactor: vi.fn(), setScale: vi.fn(), setVisible: vi.fn(), destroy: vi.fn() };
+  img.setDepth.mockReturnValue(img);
+  img.setScrollFactor.mockReturnValue(img);
+  img.setScale.mockReturnValue(img);
+  img.setVisible.mockReturnValue(img);
   const tweens: { duration: number; run: (v: number) => void; done: () => void }[] = [];
   const scene = {
-    add: { graphics: vi.fn(() => gfx) },
+    add: { graphics: vi.fn(() => gfx), image: vi.fn(() => img) },
     tweens: {
       addCounter: vi.fn((cfg: { from: number; to: number; duration: number; onUpdate: (t: { getValue: () => number }) => void; onComplete: () => void }) => {
         tweens.push({
@@ -64,11 +83,12 @@ function fakeScene() {
       }),
     },
     scale: { width: 1280, height: 720 },
+    textures,
     input: { enabled: true },
     scene: { start: vi.fn() },
     events: { once: vi.fn() },
   };
-  return { scene, gfx, tweens };
+  return { scene, gfx, tweens, img, ctx, textures };
 }
 
 describe('transitionTo', () => {
@@ -94,6 +114,37 @@ describe('transitionTo', () => {
     expect(gfx.fillRect).toHaveBeenCalled();
     tweens[0].done();
     expect(scene.scene.start).toHaveBeenCalledWith('DressUp', { transition: 'iris' });
+  });
+
+  it.each(['heart', 'paw'] as const)('closes with a %s shaped hole: a scaled image plus rects around it, then a full cover', (kind) => {
+    const { scene, gfx, tweens, img, ctx } = fakeScene();
+    transitionTo(scene as never, 'DressUp', {}, kind);
+    expect(ctx.fill).toHaveBeenCalled();
+    tweens[0].run(0.5);
+    expect(img.setScale).toHaveBeenLastCalledWith(expect.any(Number));
+    expect(img.setScale.mock.calls.at(-1)![0]).toBeGreaterThan(0);
+    expect(gfx.strokeCircle).not.toHaveBeenCalled();
+    tweens[0].run(1);
+    expect(img.setVisible).toHaveBeenLastCalledWith(false);
+    expect(gfx.fillRect).toHaveBeenLastCalledWith(0, 0, 1280, 720);
+    tweens[0].done();
+    expect(scene.scene.start).toHaveBeenCalledWith('DressUp', { transition: kind });
+  });
+
+  it('paints the texture of a shape only once', () => {
+    const { scene, textures } = fakeScene();
+    transitionIn(scene as never, 'heart');
+    transitionIn(scene as never, 'heart');
+    transitionIn(scene as never, 'paw');
+    expect(textures.createCanvas).toHaveBeenCalledTimes(2);
+  });
+
+  it('opens a heart iris and removes the image and the rects when done', () => {
+    const { scene, gfx, tweens, img } = fakeScene();
+    transitionIn(scene as never, 'heart');
+    tweens[0].done();
+    expect(img.destroy).toHaveBeenCalled();
+    expect(gfx.destroy).toHaveBeenCalled();
   });
 
   it('ignores a second call while one is running', () => {

@@ -1,4 +1,5 @@
 import { expect, test as base, type Page } from '@playwright/test';
+import catsJson from '../../src/game/data/cats.json' with { type: 'json' };
 import clothesJson from '../../src/game/data/clothes.json' with { type: 'json' };
 import type { ClothingDef } from '../../src/game/domain/types';
 
@@ -35,7 +36,7 @@ export async function settled(page: Page): Promise<NonNullable<State>> {
 }
 
 export async function openGame(page: Page): Promise<NonNullable<State>> {
-  await page.goto('/');
+  await page.goto('/?start=DressUp');
   return settled(page);
 }
 
@@ -79,3 +80,56 @@ export async function equipItem(page: Page, item: ClothingDef) {
 }
 
 export const outsidePoint = (s: NonNullable<State>) => ({ x: s.dropZone.x - 150, y: s.dropZone.y + s.dropZone.height - 80 });
+
+/** Cats of the catalog, read from cats.json (no ids hardcoded in the specs). */
+export const cats = catsJson as { id: string; name: string }[];
+
+export interface Ui {
+  scene: string;
+  ready: boolean;
+  buttons: Record<string, { x: number; y: number }>;
+  points: Record<string, { x: number; y: number }>;
+  info: Record<string, unknown>;
+}
+
+export async function ui(page: Page): Promise<Ui> {
+  const u = await page.evaluate(() => JSON.parse(JSON.stringify(window.__VISTE__?.ui ?? null)));
+  expect(u, 'the scene reports its UI').not.toBeNull();
+  return u;
+}
+
+/** Waits until `scene` is the active one and its entrance is over. */
+export async function waitScene(page: Page, scene: string, timeout = 40_000): Promise<Ui> {
+  await page.waitForFunction((n) => window.__VISTE__?.scene === n && window.__VISTE__?.ui?.ready === true, scene, { timeout });
+  return ui(page);
+}
+
+export async function clickButton(page: Page, name: string): Promise<void> {
+  const u = await ui(page);
+  expect(u.buttons[name], `button ${name} in ${u.scene}`).toBeDefined();
+  await page.mouse.move(u.buttons[name].x, u.buttons[name].y);
+  await page.mouse.click(u.buttons[name].x, u.buttons[name].y);
+}
+
+/** Title -> CatSelect: presses "Iniciar". */
+export async function startGame(page: Page): Promise<Ui> {
+  await page.goto('/');
+  await waitScene(page, 'Title');
+  await clickButton(page, 'start');
+  return waitScene(page, 'CatSelect');
+}
+
+/** Picks a cat in CatSelect and waits for the name field. */
+export async function pickCat(page: Page, id: string): Promise<Ui> {
+  const u = await ui(page);
+  await page.mouse.click(u.points[id].x, u.points[id].y);
+  await page.waitForFunction((cat) => (window.__VISTE__?.ui?.info as { selected?: string } | undefined)?.selected === cat, id);
+  await page.waitForFunction(() => (window.__VISTE__?.ui?.info as { chooseVisible?: boolean } | undefined)?.chooseVisible === true);
+  return ui(page);
+}
+
+/** Replaces the name of the cat with `name` by typing. */
+export async function typeName(page: Page, name: string): Promise<void> {
+  for (let i = 0; i < 14; i++) await page.keyboard.press('Backspace');
+  await page.keyboard.type(name);
+}

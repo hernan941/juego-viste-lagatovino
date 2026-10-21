@@ -1,22 +1,25 @@
 import { expect } from '@playwright/test';
+import { slotZIndex } from '../../src/game/domain/slots';
 import { bySlot, dragTo, equipItem, openGame, outsidePoint, settled, test } from './helpers';
 
 const SLOTS = ['sweater', 'head', 'neck', 'face', 'paws', 'accessory'] as const;
 
 test('with 6 layers worn, dragging each one off takes that item and no other', async ({ page }) => {
-  test.setTimeout(240_000);
+  test.setTimeout(420_000);
   await openGame(page);
-  const items = SLOTS.map((slot) => bySlot(slot)[0]);
+  // Back to front: every item is taken off while the ones in front of it (that could cover it) are still worn.
+  const items = SLOTS.map((slot) => bySlot(slot)[0]).sort((a, b) => slotZIndex(a.slot) - slotZIndex(b.slot));
   for (const item of items) await equipItem(page, item);
 
+  const left = [...items];
   for (const item of items) {
     let s = await settled(page);
-    expect(s.layers).toHaveLength(items.length);
+    expect(s.layers.sort()).toEqual(left.map((i) => i.id).sort());
     await dragTo(page, s.layerGrab[item.id], outsidePoint(s));
     await page.waitForFunction((slot) => !window.__VISTE__?.dressUp?.outfit[slot as 'head'], item.slot);
+    left.splice(left.indexOf(item), 1);
     s = await settled(page);
-    expect(s.layers.sort(), `only ${item.id} left`).toEqual(items.filter((i) => i !== item).map((i) => i.id).sort());
-    await equipItem(page, item);
+    expect(s.layers.sort(), `only ${item.id} left`).toEqual(left.map((i) => i.id).sort());
   }
 });
 

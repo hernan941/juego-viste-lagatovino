@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import anchors from '../../src/game/data/anchors.json';
-import { TAIL_FLICK, TAIL_IDLE, tailPivot } from '../../src/game/domain/tail';
+import { TAIL_FLICK, TAIL_FLICK_STEPS, TAIL_IDLE, tailPivot } from '../../src/game/domain/tail';
 
 describe('tailPivot', () => {
   it('is the base of the tail, where it meets the body (silhouette tail-shape ends at 350,462 and 354,430)', () => {
@@ -27,5 +27,19 @@ describe('tail motion', () => {
     expect(TAIL_FLICK.angle).toBe(8);
     expect(TAIL_FLICK.ease).toBe('Back.easeOut');
     expect(TAIL_FLICK.duration).toBeGreaterThan(0);
+  });
+});
+
+describe('tail flick hand-off to the sway', () => {
+  it('lands on the angle where the sway starts, so the tail does not jump when the flick ends', () => {
+    const last = TAIL_FLICK_STEPS[TAIL_FLICK_STEPS.length - 1];
+    expect(last.angle).toBe(-TAIL_IDLE.angle);
+  });
+
+  it('snaps to one side, then the other, then settles with the flick easing', () => {
+    expect(TAIL_FLICK_STEPS.map((s) => Math.sign(s.angle))).toEqual([-1, 1, -1]);
+    expect(Math.abs(TAIL_FLICK_STEPS[0].angle)).toBe(TAIL_FLICK.angle);
+    expect(TAIL_FLICK_STEPS[2].ease).toBe(TAIL_FLICK.ease);
+    expect(TAIL_FLICK_STEPS[2].duration).toBe(TAIL_FLICK.duration);
   });
 });
