@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { yarnState, type YarnOptions } from '../../src/game/domain/yarn';
+import { shownProgress, yarnState, type YarnOptions } from '../../src/game/domain/yarn';
 
 const opts: YarnOptions = { x0: 340, x1: 940, y: 400, amp: 18, waves: 3, radius: 46, minRadiusRatio: 0.55, segments: 40 };
 
@@ -43,5 +43,49 @@ describe('yarnState (preloader)', () => {
   it('clamps the progress', () => {
     expect(yarnState(-1, opts).ball.x).toBeCloseTo(opts.x0);
     expect(yarnState(5, opts).ball.x).toBeCloseTo(opts.x1);
+  });
+});
+
+describe('shownProgress (preloader minimum time)', () => {
+  const frame = 1000 / 60;
+
+  it('is held back by the clock: a cached load still takes the minimum time to show', () => {
+    expect(shownProgress(0, 1, 0, 900, frame)).toBe(0);
+    expect(shownProgress(0.3, 1, 450, 900, frame)).toBeGreaterThan(0.3);
+    expect(shownProgress(0.3, 1, 450, 900, frame)).toBeLessThan(0.5);
+    let shown = 0;
+    for (let i = 0; i < 200; i++) shown = shownProgress(shown, 1, 450, 900, frame);
+    expect(shown).toBeCloseTo(0.5, 2); // at half the time, half the bar even when everything is loaded
+  });
+
+  it('never goes back, even when the target drops', () => {
+    expect(shownProgress(0.6, 0.2, 100, 900, frame)).toBe(0.6);
+  });
+
+  it('is exactly 1 when the load is done and the minimum time has passed', () => {
+    let shown = 0;
+    for (let i = 0; i < 200; i++) shown = shownProgress(shown, 1, 2000, 900, frame);
+    expect(shown).toBe(1);
+  });
+
+  it('does not reach 1 before the minimum time, however fast the load', () => {
+    let shown = 0;
+    for (let i = 0; i < 200; i++) shown = shownProgress(shown, 1, 600, 900, frame);
+    expect(shown).toBeLessThan(1);
+  });
+
+  it('eases by time, not by frame: the same second gives the same bar at 10 fps and at 60 fps', () => {
+    let slow = 0;
+    let fast = 0;
+    for (let i = 0; i < 10; i++) slow = shownProgress(slow, 1, 5000, 900, 100);
+    for (let i = 0; i < 60; i++) fast = shownProgress(fast, 1, 5000, 900, 1000 / 60);
+    expect(slow).toBeCloseTo(fast, 2);
+  });
+
+  it('closes the gap faster once everything is loaded (the ball must not make the player wait after the load)', () => {
+    const loading = shownProgress(0.2, 0.9, 5000, 900, 100);
+    const loaded = shownProgress(0.2, 1, 5000, 900, 100);
+    expect(loaded - 0.2).toBeGreaterThan((loading - 0.2) * (0.8 / 0.7)); // more than the same easing toward the larger gap
+    expect(shownProgress(0.2, 1, 5000, 900, 250)).toBeGreaterThan(0.95);
   });
 });

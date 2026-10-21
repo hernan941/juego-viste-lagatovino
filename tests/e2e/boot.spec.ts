@@ -67,3 +67,38 @@ test('the test hook can park the game (no frames, no CPU) while another page is 
   await page.evaluate(() => window.__VISTE__?.park(false));
   await page.waitForFunction((n) => (window.__VISTE__?.frames ?? 0) > n, parked);
 });
+
+/** Records (scene, progress) at every frame from the first one until the Title is up, in the page itself. */
+const recordBoot = () => {
+  const frames: { scene: string | null; progress: number | null; bar: boolean | null }[] = [];
+  (window as unknown as { __boot: typeof frames }).__boot = frames;
+  const tick = () => {
+    const ui = window.__VISTE__?.ui;
+    frames.push({ scene: window.__VISTE__?.scene ?? null, progress: (ui?.info.progress as number | undefined) ?? null, bar: (ui?.info.bar as boolean | undefined) ?? null });
+    if (window.__VISTE__?.scene !== 'Title') requestAnimationFrame(tick);
+  };
+  tick();
+};
+
+test('the Preloader shows the yarn: its progress never goes back and reaches 1 before the Title', async ({ page }) => {
+  await page.addInitScript(recordBoot);
+  await page.goto('/');
+  await page.waitForFunction(() => window.__VISTE__?.scene === 'Title', undefined, { timeout: 30_000 });
+  const frames = await page.evaluate(() => (window as unknown as { __boot: { scene: string | null; progress: number | null; bar: boolean | null }[] }).__boot);
+  const shown = frames.filter((f) => f.scene === 'Preloader' && f.progress !== null).map((f) => f.progress as number);
+  expect(shown.length, 'the Preloader was on screen for some frames').toBeGreaterThan(3);
+  for (let i = 1; i < shown.length; i++) expect(shown[i]).toBeGreaterThanOrEqual(shown[i - 1]);
+  expect(shown[shown.length - 1]).toBeGreaterThan(0.9);
+  expect(frames.filter((f) => f.scene === 'Preloader').every((f) => f.bar === false)).toBe(true);
+});
+
+test('with reduced motion the Preloader shows the still progress bar instead of the rolling ball', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.addInitScript(recordBoot);
+  await page.goto('/');
+  await page.waitForFunction(() => window.__VISTE__?.scene === 'Title', undefined, { timeout: 30_000 });
+  const frames = await page.evaluate(() => (window as unknown as { __boot: { scene: string | null; bar: boolean | null }[] }).__boot);
+  const preloader = frames.filter((f) => f.scene === 'Preloader' && f.bar !== null);
+  expect(preloader.length).toBeGreaterThan(3);
+  expect(preloader.every((f) => f.bar === true)).toBe(true);
+});

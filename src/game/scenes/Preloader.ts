@@ -9,8 +9,8 @@ import { assertCatalog, validateAnchors, type Catalog } from '../data/schema';
 import { createParticleTextures } from '../objects/particleTextures';
 import { createTabIconTextures } from '../objects/tabIcons';
 import { chooseCat, emptySession } from '../domain/session';
-import { yarnState, type YarnOptions } from '../domain/yarn';
-import { e2eStart } from '../e2eHook';
+import { shownProgress, yarnState, type YarnOptions } from '../domain/yarn';
+import { e2eStart, type UiState } from '../e2eHook';
 import { hex } from '../objects/ui';
 import { getSave } from '../plugins/SavePlugin';
 import { go } from '../systems/navigate';
@@ -22,7 +22,6 @@ import { enterKind, transitionIn, transitionTo } from '../systems/transitions';
 const YARN: YarnOptions = { x0: 340, x1: 940, y: GAME_HEIGHT / 2 + 40, amp: 16, waves: 3, radius: 50, minRadiusRatio: 0.55, segments: 48 };
 /** Shown for at least this long, so the ball is seen rolling even when everything is cached. */
 const MIN_MS = 900;
-
 
 export class Preloader extends Scene {
   private enter: ReturnType<typeof enterKind> = null;
@@ -58,6 +57,10 @@ export class Preloader extends Scene {
       this.target = progress;
     });
     transitionIn(this, this.enter);
+    // A scene does not get `update` while it is loading, and the loading is the whole point of this one: the ball is driven by
+    // the game step instead, so it rolls while the SVGs come in (and the minimum time counts from the start, not from the end of the load).
+    this.game.events.on(Phaser.Core.Events.POST_STEP, this.tick, this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.game.events.off(Phaser.Core.Events.POST_STEP, this.tick, this));
   }
 
   /** A ball of yarn: rosa disc, outline and a few curved strands that turn with it. */
@@ -130,12 +133,9 @@ export class Preloader extends Scene {
     this.target = 1;
   }
 
-  update(_time: number, delta: number) {
+  private tick(_time: number, delta: number) {
     this.elapsed += delta;
-    const timeCap = Math.min(1, this.elapsed / MIN_MS);
-    const goal = Math.min(this.target, timeCap);
-    this.shown += (goal - this.shown) * 0.12;
-    if (goal === 1 && this.shown > 0.995) this.shown = 1;
+    this.shown = shownProgress(this.shown, this.target, this.elapsed, MIN_MS, delta);
     this.drawYarn(this.shown);
     if (this.loaded && this.shown === 1 && !this.leaving) {
       this.leaving = true;
@@ -154,5 +154,10 @@ export class Preloader extends Scene {
       return;
     }
     go(this, 'loaded');
+  }
+
+  /** Test hook: how far the bar shows, and whether it is the still bar of reduced motion (ready never: nobody clicks here). */
+  getE2EUi(): UiState {
+    return { ready: false, buttons: {}, points: {}, info: { progress: this.shown, bar: profileOf(this).reduced, loaded: this.loaded } };
   }
 }

@@ -38,3 +38,19 @@ export function yarnState(progress: number, o: YarnOptions): YarnState {
     });
   return { ball: { x, y: wave(x), radius: o.radius * (1 - k * p), rotation }, thread };
 }
+
+/** Time constant (ms) of the easing of the bar: about what 12 % per frame gave at 60 fps. */
+const EASE_TAU_MS = 130;
+/** ... and once everything is loaded, so the ball does not make the player wait after the load. */
+const FINISH_TAU_MS = 60;
+
+/**
+ * The progress the Preloader shows: it eases toward the real load progress (by time, so a slow machine does not stretch the
+ * bar), but never faster than the clock allows (`minMs` for the whole bar, so a cached load does not flash by), and it never
+ * goes back. 1 is reached exactly.
+ */
+export function shownProgress(shown: number, target: number, elapsedMs: number, minMs: number, deltaMs: number): number {
+  const goal = Math.min(target, Math.min(1, elapsedMs / minMs));
+  const next = Math.max(shown, shown + (goal - shown) * (1 - Math.exp(-deltaMs / (target >= 1 ? FINISH_TAU_MS : EASE_TAU_MS))));
+  return goal === 1 && next > 0.995 ? 1 : next;
+}
