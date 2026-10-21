@@ -12,6 +12,7 @@ import { isE2EEnabled } from '../e2eHook';
 import { profileOf } from '../systems/motion';
 import { RegistryKeys } from '../constants';
 import { alphaMapOf, opaqueBounds } from './alphaMap';
+import { hex } from './ui';
 import type { AnchorName, AnchorsDef, CatDef, ClothingDef, Point, Rect } from '../domain/types';
 
 /** Y of the paws' bottom edge in the 512 canvas: the pivot for breathing and squash. */
@@ -22,6 +23,8 @@ const HIT_REACH = 2;
 const FACE_LOOK_PX = { x: 5, y: 3 };
 /** Petting the cat answers at most this often. */
 const PET_COOLDOWN_MS = 400;
+/** The pointer has to move this far from where it dropped before a garment lights up. */
+const HOVER_MOVE_PX = 4;
 
 interface Layer {
   item: ClothingDef;
@@ -58,6 +61,10 @@ export class Cat extends Phaser.GameObjects.Container {
   private pettable = false;
   /** A worn item is being dragged off: no hover on the others. */
   private dragging = false;
+  /** Where the pointer was at the last drop: a hover does not start until it moves away from there. */
+  private hoverHold: Point | null = null;
+  /** The glow of every layer that is hovered. */
+  private readonly glows = new Map<Phaser.GameObjects.Image, Phaser.Filters.Controller>();
   private readonly petCooldown = new Cooldown(PET_COOLDOWN_MS);
   /** Layers whose pop-in has not finished yet (stable positions are for tests, and for the scene's `settled`). */
   private readonly popping = new Set<Phaser.GameObjects.Image>();
@@ -554,13 +561,13 @@ export class Cat extends Phaser.GameObjects.Container {
       draggable: true,
       useHandCursor: true,
     });
-    // Hover (it teaches that worn items can be dragged off): the garment brightens a little and a sparkle is asked for.
-    // It does not change the scale: the hit test of a thin garment must stay exactly where its pixels are.
-    img.on('pointerover', (pointer: Phaser.Input.Pointer) => {
-      if (this.dragging) return;
-      img.setTint(0x303030).setTintMode(Phaser.TintModes.ADD);
-      this.emit(ObjectEvents.LayerHover, item, { x: pointer.x, y: pointer.y });
-    });
+    // Hover (it teaches that worn items can be dragged off): a soft rosa-200 glow around the garment and a sparkle is asked for.
+    // The fill is never tinted (the outline must stay dark and the colors flat), and the scale does not change: the hit test of
+    // a thin garment must stay exactly where its pixels are. A garment that just appeared under a still pointer waits for it to move.
+    this.holdHoverAt(this.scene.input?.activePointer);
+    const tryHover = (pointer: Phaser.Input.Pointer) => this.tryHover(img, item, pointer);
+    img.on('pointerover', tryHover);
+    img.on('pointermove', tryHover);
     img.on('pointerout', () => this.clearHover(img));
     // A click that is not a drag pets the cat (the garment covers most of its body).
     let dragged = false;
@@ -575,6 +582,7 @@ export class Cat extends Phaser.GameObjects.Container {
     img.on('drag', (pointer: Phaser.Input.Pointer) => this.emit(ObjectEvents.ItemDrag, item, pointer));
     img.on('dragend', (pointer: Phaser.Input.Pointer) => {
       this.dragging = false;
+      this.holdHoverAt(pointer);
       this.emit(ObjectEvents.ItemDragEnd, item, pointer);
     });
     return img;
@@ -592,8 +600,27 @@ export class Cat extends Phaser.GameObjects.Container {
     this.scene.tweens.add({ targets: img, angle: { from: -3, to: 3 }, duration: 1600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
   }
 
+  /** No hover until the pointer moves away from where it is now (a drop leaves it over the garment that just landed). */
+  private holdHoverAt(pointer?: { x: number; y: number }): void {
+    this.hoverHold = pointer ? { x: pointer.x, y: pointer.y } : null;
+  }
+
+  private tryHover(img: Phaser.GameObjects.Image, item: ClothingDef, pointer: Phaser.Input.Pointer): void {
+    if (this.dragging || this.glows.has(img)) return;
+    if (this.hoverHold) {
+      if (Math.hypot(pointer.x - this.hoverHold.x, pointer.y - this.hoverHold.y) <= HOVER_MOVE_PX) return;
+      this.hoverHold = null;
+    }
+    img.enableFilters();
+    this.glows.set(img, img.filters!.internal.addGlow(hex('rosa200'), 3, 0, 1, false, 0.1, 12));
+    this.emit(ObjectEvents.LayerHover, item, { x: pointer.x, y: pointer.y });
+  }
+
   private clearHover(img: Phaser.GameObjects.Image): void {
-    img.setTintMode(Phaser.TintModes.MULTIPLY).clearTint();
+    const glow = this.glows.get(img);
+    if (!glow) return;
+    this.glows.delete(img);
+    img.filters?.internal.remove(glow);
   }
 
   private dismiss(layer: Layer): void {

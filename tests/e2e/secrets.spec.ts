@@ -57,6 +57,28 @@ test.describe('secret combos (F8)', () => {
     expect((await state(page)).secrets).toMatchObject({ count: 0, total: combos.length, text: `Secretos 0/${combos.length}` });
   });
 
+  test('the snow of the Navidad combo is over in 5 s: no emitter is left at 5.5 s', async ({ page }) => {
+    const combo = combos.find((c) => c.reaction === 'snowfall')!;
+    await openGame(page);
+    const worn = pieces(combo);
+    await wear(page, worn.slice(0, -1));
+    expect((await state(page)).fxEmitters).toBe(0);
+    // The page itself times the effect: from the first emitter alive to the moment there is none (the drag is not counted).
+    const timing = page.evaluate(() => new Promise<number>((resolve) => {
+      let t0 = 0;
+      const tick = () => {
+        const n = window.__VISTE__?.dressUp?.fxEmitters ?? 0;
+        if (t0 === 0 && n > 0) t0 = performance.now();
+        else if (t0 > 0 && n === 0) return resolve(performance.now() - t0);
+        requestAnimationFrame(tick);
+      };
+      tick();
+    }));
+    await equipItem(page, worn[worn.length - 1]);
+    const elapsed = await timing;
+    expect(elapsed).toBeLessThan(5500);
+  });
+
   for (const combo of combos) {
     test(`combo "${combo.id}": reaction, gift, bow, wardrobe, counter, no second gift and reload`, async ({ page }) => {
       const reward = byId(combo.rewardItemId);

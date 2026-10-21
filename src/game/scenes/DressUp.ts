@@ -791,6 +791,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
       pets: this.pets,
       hint: { shown: this.hintsShown, done: this.hintPlanner.done, showing: this.hintGhost !== null },
       reactions: [...this.reactionLog],
+      fxEmitters: this.children.list.filter((o) => o instanceof Phaser.GameObjects.Particles.ParticleEmitter && o !== this.hearts && o !== this.sparkles).length,
       settled: !this.cat.settling && this.drag === null && this.giftsComing === 0 && this.reveal.active === 0 && (this.gift === null || this.gift.ready) && cellsSettled && Math.abs(viewport.scroll - viewport.targetScroll) < 0.5 && this.cat.alpha > 0.99 && Math.abs(this.cat.scaleX - this.baseCatScale) < 0.001,
     };
   }

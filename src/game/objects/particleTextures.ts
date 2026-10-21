@@ -22,10 +22,10 @@ export function createParticleTextures(scene: Phaser.Scene): void {
   }
   if (!scene.textures.exists(TextureKeys.Snow)) {
     const g = scene.make.graphics({}, false);
-    // A fluffy flake with a sky blue outline, so it is seen on the pale blue of the mirror (F9: it used to disappear).
-    g.fillStyle(0xffffff, 1).fillCircle(11, 11, 9);
-    g.lineStyle(3, 0x8cc8f0, 1).strokeCircle(11, 11, 9);
-    g.lineStyle(2, 0x8cc8f0, 0.9).lineBetween(11, 5, 11, 17).lineBetween(5, 11, 17, 11);
+    // A soft round flake (no cross: it must not look like a "+" button): a white dot with a halo and a thin lavender edge.
+    g.fillStyle(0xffffff, 0.35).fillCircle(11, 11, 10);
+    g.fillStyle(0xffffff, 1).fillCircle(11, 11, 7);
+    g.lineStyle(2, 0xd8ccff, 1).strokeCircle(11, 11, 7);
     g.generateTexture(TextureKeys.Snow, 22, 22);
     g.destroy();
   }

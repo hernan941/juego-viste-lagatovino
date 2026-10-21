@@ -61,6 +61,8 @@ export interface DressUpE2EState {
   pets: number;
   /** `reaction` of every combo reaction played in this visit, newest last. */
   reactions: string[];
+  /** Particle emitters of the combo effects that are still alive (the permanent hearts and sparkles do not count). */
+  fxEmitters: number;
   /** True when no entrance animation or drag is running, so positions are stable. */
   settled: boolean;
 }

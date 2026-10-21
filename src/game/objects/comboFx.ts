@@ -3,6 +3,7 @@
 import Phaser from 'phaser';
 import { FONT_FAMILY, Palette, SfxKeys, TextureKeys } from '../constants';
 import { comboReactionPlan } from '../domain/combos';
+import { SNOW, snowSpan } from '../domain/snow';
 import type { ComboDef } from '../domain/types';
 import { getAudio } from '../plugins/AudioPlugin';
 import { profileOf } from '../systems/motion';
@@ -11,9 +12,6 @@ import type { NameSign } from './NameSign';
 import { hex } from './ui';
 
 const FX_DEPTH = 3500;
-/** Horizontal span of the mirror, where snow and confetti fall. */
-const MIRROR = { left: 450, right: 960 };
-
 export interface ComboFxContext {
   scene: Phaser.Scene;
   cat: Cat;
@@ -96,13 +94,15 @@ function starsOrbit({ scene, cat }: ComboFxContext): void {
 }
 
 function snowfall({ scene, cat }: ComboFxContext): void {
-  // Flakes that are seen on the pale mirror: bigger (0.8 to 1.5), a sky blue outline, half of them tinted, and more of them.
+  // Soft flakes inside the glass of the mirror. They fall at 90 to 140 px/s, reach the rug in about 3 s and fade out there;
+  // the whole effect is over in less than 5 s so it never hangs in front of the sign or the prize.
+  const { min, max } = snowSpan(cat.x);
   const snow = scene.add.particles(0, 0, TextureKeys.Snow, {
-    x: { min: MIRROR.left, max: MIRROR.right }, y: 60, speedX: { min: -25, max: 25 }, speedY: { min: 40, max: 80 }, gravityY: 30,
-    lifespan: 4200, frequency: profileOf(scene).every(30), quantity: 1, scale: { min: 0.8, max: 1.5 }, alpha: { start: 1, end: 0.35 },
-    tint: [0xffffff, 0xc4e6ff],
+    x: { min, max }, y: SNOW.startY, speedX: { min: -20, max: 20 }, speedY: SNOW.speedY, gravityY: SNOW.gravityY,
+    lifespan: SNOW.lifespan, frequency: profileOf(scene).every(45), quantity: 1, scale: { min: 0.8, max: 1.4 },
+    alpha: { start: 1, end: 0, ease: 'Cubic.easeIn' }, tint: [0xffffff, 0xe6f3ff],
   });
-  shortLived(scene, snow, 2000, 4300);
+  shortLived(scene, snow, SNOW.runMs, SNOW.lifespan + SNOW.slackMs);
   // The pompom of the hat bounces for real: a hop that stretches upward.
   cat.stretchUp();
   chime(scene, [1.8, 2.1, 1.9, 2.3, 2], 110);
@@ -126,7 +126,7 @@ function petals({ scene, cat }: ComboFxContext): void {
 
 function royalPose({ scene, cat }: ComboFxContext): void {
   const confetti = scene.add.particles(0, 0, TextureKeys.Confetti, {
-    x: { min: MIRROR.left, max: MIRROR.right }, y: -10, speedX: { min: -40, max: 40 }, speedY: { min: 60, max: 140 }, gravityY: 120,
+    x: { ...snowSpan(cat.x) }, y: -10, speedX: { min: -40, max: 40 }, speedY: { min: 60, max: 140 }, gravityY: 120,
     lifespan: 3200, frequency: profileOf(scene).every(18), quantity: 1, rotate: { min: 0, max: 360 * profileOf(scene).spin }, scaleX: { start: 1, end: 0.2 }, tint: [0xffe27a, 0xfff0a8, 0xf5d86a],
   });
   shortLived(scene, confetti, 1800, 3300);
