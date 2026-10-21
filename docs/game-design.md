@@ -32,6 +32,19 @@ Iniciar → Elegir gato → Entrar a la tienda → Vestir arrastrando (probar �
   - En el panel de capas, la ✕ quita una prenda y el gato se sacude.
 - **Admirar**: el gato posa con brillitos y un "¡Qué guapo!". Se puede volver a vestir o cambiar de gato.
 
+## Qué expresión usar en cada momento (capas `face-*`, F1)
+| Momento | Expresión | Detalle |
+|---|---|---|
+| Idle | `normal` + `parpadeo` | Parpadeo de 120 ms cada 3–5 s; a veces un doble parpadeo |
+| Tomar una prenda | `sorpresa` | Mientras se arrastra y la prenda está sobre la dropZone |
+| Soltar sobre el gato | `feliz` | Durante 600–900 ms con squash y corazones, y luego vuelve a `normal` |
+| Combinación especial / sweater favorito | `amor` | Con muchos corazones y un "miau" más largo |
+| Quitar con ✕ | `parpadeo` largo | Mientras el gato se sacude, y luego `normal` |
+| Admirar (Showcase) | `feliz` ↔ `amor` | Alternan durante la pose |
+| Elegir gato (clic) | `feliz` | Junto con el salto y el miau |
+
+Regla: las expresiones se cambian con un micro-tween (escala Y de la capa 0,9 → 1 en 80 ms), nunca de golpe.
+
 ## Decisiones confirmadas por el usuario
 - Las prendas se ponen **arrastrando** (drag & drop).
 - El MVP tiene **más que sweaters**: 6 categorías y muchas opciones (`docs/art-direction.md` §5).

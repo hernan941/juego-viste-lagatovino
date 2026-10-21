@@ -53,6 +53,8 @@ F0 Base ─► F1 Estética ─► F2 Vertical slice ─┬─► F3 Elenco de g
 - **Depende de**: F0.
 - **Agentes**: architect (plantilla y anclas), phaser-code-writer (SVG y styleguide) y game-designer (ternura y legibilidad).
 - **Tamaño**: M
+- **Estado**: Hecha
+- Aprobado por game-designer (2026-10-20), con arreglos: es tierno, coherente con el estilo de `gatos.jpeg` y los dos sweaters encajan en los 3 gatos sin ajustes. Las 5 expresiones se distinguen bien. Los colores nuevos quedan oficializados en `art-direction.md` §4. Antes de cerrar F2 hay que hacer tres cosas: (1) **[Alta]** mejorar la legibilidad de la cara de Luna con un halo `#56505F` detrás de los ojos en `coats/negro.svg` y un brillo de ojo más grande; (2) **[Alta]** copiar las anclas de `art/anchors.json` a `src/game/data/` (hoy `cats.json` no las tiene, y era un criterio de aceptación); (3) **[Media]** separar visualmente las patitas del cuerpo en el gato negro. Los iconos anchos y bajos se aceptan para el MVP.
 
 ### F2. Vertical slice: vestir es divertido
 - **Objetivo**: probar la mecánica central **con todo el juice**, en pequeño.

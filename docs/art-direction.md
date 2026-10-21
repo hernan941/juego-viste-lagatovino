@@ -34,7 +34,8 @@ Los nombres son provisionales.
 - **Anclas compartidas** para la ropa: `head`, `eyes`, `neck`, `torso` y `paws`. Sus coordenadas se definen una sola vez, compartidas por todos los gatos, en `src/game/data/anchors.json` (fuente: `art/anchors.json`). Las prendas de `face` (lentes) usan el ancla `eyes`.
 
 ### Cara (idéntica en todos los gatos)
-- Ojos: óvalos verticales oscuros, cada uno con **un brillo blanco** arriba a la izquierda.
+- Ojos: óvalos verticales oscuros (`ojos` `#33242A`), cada uno con **un brillo blanco** arriba a la izquierda.
+- **Pelajes oscuros**: la capa de cara sigue siendo idéntica; la legibilidad se resuelve en el **pelaje** (`coats/<id>.svg`) con un halo `#56505F` detrás de cada ojo y almohadillas de bigote del mismo tono.
 - Boca: `:3` (forma de "w"), en el mismo color del contorno.
 - Mejillas: dos óvalos rosa `#FF9EB5` con opacidad del 60 %.
 - Bigotes: 2 líneas cortas a cada lado, finas.
@@ -74,8 +75,31 @@ Tonos cálidos y algo saturados:
 - café `#8A5A3C`
 - azul `#8FA3BF`
 
+Tonos de detalle de los pelajes (aprobados en F1):
+- raya naranja `#E8853A` (rayas del atigrado naranja; para otros atigrados, el color base un ~20 % más oscuro y algo más saturado)
+- hocico oscuro `#56505F` (almohadillas de bigote y halo de los ojos en pelajes oscuros: `negro`, y si hace falta `carey` y `azul`)
+
+### Cara
+| Token | Hex | Uso |
+|---|---|---|
+| `ojos` | `#33242A` | Ojos (un poco más oscuros que el contorno, para que destaquen) |
+| `brillo-ojo` | `#FFFFFF` | Brillo de los ojos y destellos |
+
 ### Ropa
 Libre, siempre que los colores estén en la familia pastel o en una versión saturada de ella. Ningún color neón ni gris apagado.
+
+Tonos de referencia aprobados en F1 (para reutilizar y que el guardarropa se vea de una misma familia):
+| Token | Hex | Uso |
+|---|---|---|
+| `coral` | `#F0707A` | Rojo navideño suave, fresas, corazones |
+| `rojo-acento` | `#E2465A` | Solo detalles pequeños (nariz del reno, cerezas); nunca áreas grandes |
+| `verde` | `#6CC59A` | Verde de base (pinos, puños, rana) |
+| `verde-oscuro` | `#4FA77E` | Detalles y costuras sobre `verde` |
+| `cafe-claro` | `#B98060` | Reno, osito, galletas |
+| `cafe` | `#8A5A3C` | Astas, detalles (el mismo tono que el pelaje café) |
+| `beige` | `#E8C3A4` | Hocicos y rellenos suaves |
+| `rosa-lana` | `#F2A9C4` | Rosa de lana (rayas, elásticos) |
+| `dorado` | `#F5D86A` | Estrellas, coronas, botones |
 
 ## 5. Ropa
 Toda prenda respeta el contorno, la sombra única y el brillo descritos arriba. Debe verse **gordita y suave** (lana, peluche). Se dibuja sobre la plantilla del gato para que encaje en las anclas.
