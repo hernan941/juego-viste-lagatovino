@@ -46,7 +46,7 @@ export interface DressUpE2EState {
   /** F9: worn item ids in the order the cat really draws them, back to front (display list, not the domain). */
   drawOrder: string[];
   /** F8: the secrets counter ("Secretos X/N") and the unlocked combo ids. */
-  secrets: { unlocked: string[]; count: number; total: number; text: string; revealing: string[]; sign: string; signLog: string[] };
+  secrets: { unlocked: string[]; count: number; total: number; text: string; revealing: string[]; sign: string; signLog: string[]; trace: { revealing: string[]; count: number; text: string }[] };
   /** The gift box on screen, with the bow to drag; null when there is none. */
   gift: { comboId: string; itemId: string; ready: boolean; opened: boolean; bow: Point; box: Point } | null;
   /** Gifts waiting for the one on screen to be opened. */

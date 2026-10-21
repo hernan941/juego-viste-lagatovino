@@ -96,6 +96,8 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
   private sign!: NameSign;
   /** Reactions played in this visit, newest last (for the e2e hook). */
   private reactionLog: string[] = [];
+  /** Test hook: the prize and counter state at each step of the gift sequence. */
+  private secretTrace: { revealing: string[]; count: number; text: string }[] = [];
 
   constructor() {
     super(SceneKeys.DressUp);
@@ -116,6 +118,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.gift = null;
     this.almost = new Set();
     this.reactionLog = [];
+    this.secretTrace = [];
     const wanted = session.catId ?? data?.catId;
     const cat = this.catalog.cats.find((c) => c.id === wanted) ?? this.catalog.cats[0];
     this.catId = cat.id;
@@ -435,6 +438,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     getSave(this).unlockSecret(combo.id);
     this.unlocked = getSave(this).secrets;
     this.reveal.begin(combo.id, item.id);
+    this.traceSecrets();
     this.sign.announce(`¡${item.name}!`);
     // Show the tab of the prize so the cell is there (invisible) when it lands.
     this.tabs.select(item.category, true);
@@ -448,6 +452,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
       cell?.revealPop();
       this.time.delayedCall(380, () => cell?.active && cell.celebrate());
       this.counter.setCount(this.reveal.shownCount(this.unlocked), this.catalog.combos.length, true);
+      this.traceSecrets();
       if (home) this.sparkles.explode(14, home.x, home.y);
       getAudio(this).play(SfxKeys.Return, { rate: 1.3 });
       this.time.delayedCall(250, () => this.nextGift());
@@ -547,6 +552,10 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
 
   // ---- Test hook (ADR 0012) --------------------------------------------------
 
+  private traceSecrets() {
+    this.secretTrace.push({ revealing: this.reveal.hiddenItems(), count: this.reveal.shownCount(this.unlocked), text: this.counter.text });
+  }
+
   getE2EUi(): UiState {
     return {
       ready: this.cat.alpha > 0.99 && !this.leaving,
@@ -595,7 +604,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
       magnet: this.drag?.preview !== undefined,
       slotAnchors: Object.fromEntries(SLOT_ORDER.map((slot) => [slot, this.cat.getAnchorWorld(anchorForSlot(slot))])),
       drawOrder: this.cat.getDrawOrder(),
-      secrets: { unlocked: this.reveal.shownUnlocked(this.unlocked), count: this.reveal.shownCount(this.unlocked), revealing: this.reveal.hiddenItems(), sign: this.sign.text, signLog: [...this.sign.announced], total: this.catalog.combos.length, text: this.counter.text },
+      secrets: { unlocked: this.reveal.shownUnlocked(this.unlocked), count: this.reveal.shownCount(this.unlocked), revealing: this.reveal.hiddenItems(), sign: this.sign.text, signLog: [...this.sign.announced], trace: this.secretTrace.map((t) => ({ ...t, revealing: [...t.revealing] })), total: this.catalog.combos.length, text: this.counter.text },
       gift: this.gift ? { comboId: this.gift.comboId, itemId: this.gift.item.id, ready: this.gift.ready, opened: this.gift.opened, bow: this.gift.getBowPoint(), box: this.gift.getCenter() } : null,
       pendingGifts: this.gifts.length,
       almost: [...this.almost],

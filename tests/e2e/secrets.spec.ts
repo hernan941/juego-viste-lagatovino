@@ -143,25 +143,10 @@ test.describe('secret combos (F8)', () => {
     await equipItem(page, worn[worn.length - 1]);
     const s = await waitGift(page);
     const bow = s.gift!.bow;
-    // Samples of the scene every frame-ish, so the short flight cannot be missed by slow polling.
-    await page.evaluate(() => {
-      const w = window as unknown as { __samples: { revealing: string[]; count: number; text: string }[]; __sampler?: number };
-      w.__samples = [];
-      window.clearInterval(w.__sampler);
-      w.__sampler = window.setInterval(() => {
-        const d = window.__VISTE__?.dressUp;
-        if (d) w.__samples.push({ revealing: d.secrets.revealing, count: d.secrets.count, text: d.secrets.text });
-      }, 16);
-    });
     await dragTo(page, bow, { x: bow.x + 40, y: bow.y - 150 }, { smooth: true });
     await page.waitForFunction(() => window.__VISTE__?.dressUp?.secrets.count === 1, undefined, { timeout: 10_000 });
-    // The sampler runs on its own timer: wait until it has seen the counter at 1.
-    await page.waitForFunction(() => (window as unknown as { __samples: { count: number }[] }).__samples.some((x) => x.count === 1));
-    const samples = await page.evaluate(() => {
-      const w = window as unknown as { __samples: { revealing: string[]; count: number; text: string }[]; __sampler?: number };
-      window.clearInterval(w.__sampler); // the page is reused by the next test
-      return w.__samples;
-    });
+    // The scene writes down the state of the prize and the counter at each step (no timer of the test can miss the short flight).
+    const samples = (await state(page)).secrets.trace;
     // While the prize flew the cell was held back and the counter had not moved...
     const flying = samples.filter((x) => x.revealing.length > 0);
     expect(flying.length).toBeGreaterThan(0);
