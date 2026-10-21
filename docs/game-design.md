@@ -72,5 +72,31 @@ Decisión tomada con libertad otorgada por el usuario. El `game-designer` la val
   - Un contador "Secretos: 2/6" invita a seguir experimentando.
 - Si el `game-designer` la descarta, queda solo la reacción especial del gato a las combinaciones, sin desbloqueos.
 
+## Backlog de juice (para F9, salvo que se indique otra feature)
+Surgió de la revisión de F2 del `game-designer` (2026-10-20). Va ordenado por impacto/esfuerzo. Formato: qué, por qué divierte, esfuerzo y pista para Phaser.
+
+### Media
+- ~~**Cola como capa propia**~~: **hecho en F3** (`domain/tail.ts`, `Cat.tailFlick`).
+- **(F3) La cola salta 4° al terminar el latigazo**. `tailFlick` termina en `angle: 0` y luego `swayTail()` hace `setAngle(-TAIL_IDLE.angle)` de golpe. En cada drop se ve un tirón de la punta (~10 px), y "nada aparece de golpe". Arreglarlo antes de F5. Esfuerzo: S. Pista: que el último paso de la cadena vaya a `-TAIL_IDLE.angle` en vez de 0, o que `swayTail(fromCurrent)` no haga `setAngle` y arranque con un tween previo desde el ángulo actual a −4 (300 ms, `Sine.easeOut`). Un test en `tests/integration` que compruebe que, tras el flick, el ángulo no cambia más de 1° entre dos frames.
+- **Corazones que suben flotando** en vez de caer. Hoy `gravityY: 420` los hace caer y, sobre sweaters rosa o coral, casi no se ven. Esfuerzo: S. Pista: `gravityY: -40`, `angle` de −120 a −60, `speed` de 80 a 200 y un aro "pop" en el ancla (un Graphics con un círculo: escala 0→1,4 y alpha 1→0 en 180 ms). Que la emisión ocurra por delante de la prenda y que algunos brillitos `mantequilla` la contrasten.
+- **El fantasma se inclina según la velocidad del arrastre**, como tela que se balancea. Esfuerzo: S. Pista: en `update`, `angle` se acerca a `clamp(dx * 0.8, -15, 15)`. El lerp tiene que ser independiente de los fps: `k = 1 - Math.pow(0.6, delta / 16.67)`.
+- **Acariciar al gato**: un clic en el cuerpo da cara `feliz`, un squash pequeño y (en F6) un ronroneo. Es el primer clic de cualquiera y hoy no hace nada. Esfuerzo: S. Pista: un hit area en el `body` de `Cat` y en `pointerdown` llamar a `react('drop')` con un squash de amplitud 0,5. Necesita un cooldown de 400 ms.
+- **Hover en las prendas puestas**: enseña que se pueden arrastrar para quitarlas. Esfuerzo: S. Pista: en `pointerover` de la capa, escala ×1,03 en 100 ms y un brillito pequeño.
+- **Press de 4 px** en pestañas y ✕ (art-direction §8). Hoy solo tienen hover. Esfuerzo: S. Pista: en `pointerdown`, `y += 4` en 60 ms, y vuelve con `Back.easeOut` en `pointerup`.
+- **Pista de primer uso** sin tutorial. Si a los 4 s no se ha soltado ninguna prenda, una prenda fantasma (alpha 0,5) viaja de la primera celda al gato siguiendo una curva y se repite cada 5 s hasta el primer drop. El texto de ayuda actual está abajo y pasa desapercibido. Esfuerzo: S. Pista: un tween con `onUpdate` sobre una `Phaser.Curves.QuadraticBezier`.
+- **(F4) Pestañas con icono**. Con 6 categorías, las pestañas de texto de 168 px no caben. Esfuerzo: M. Pista: pestañas con un icono de silueta (art-direction §6) y la etiqueta en un tooltip.
+- **(F4) Panel de capas para 6 slots**. Hoy mide 330 px de alto, y 6 filas de 62 px más la cabecera necesitan unos 450. Esfuerzo: S. Pista: hacer crecer el panel o bajar `ROW_H` a 52.
+
+### Baja
+- **Sorpresa solo sobre la zona** (tabla de expresiones). Fuera de la zona, ojos `normal` que siguen la prenda, y al entrar, `sorpresa` con un micro-tween. Así el momento "¡la va a recibir!" se nota más. Esfuerzo: S.
+- **Zona de soltar que late**: alpha 0,7↔1, 600 ms, yoyo. Cuando el imán engancha, un círculo pequeño en el ancla del slot. Esfuerzo: S.
+- **Al volver a la celda**, la celda hace un pop 1,1→1 al recibir la prenda y el gato la sigue con la mirada un instante ("¿no?"). Esfuerzo: S.
+- **Idle extra**: cada 8 a 12 s, mirar a un lado o mover una oreja. Esfuerzo: S.
+- **Iris con forma de huellita o corazón** (art-direction §8). Hoy es un círculo. Corresponde a F5. Esfuerzo: M.
+- **(F3) Coletazo espontáneo en idle**. La cola rota rígida y ±4° es muy tranquilo. Cada 6 a 10 s al azar, un coletazo suave (la cadena de `tailFlick` a ±6°) hace que el gato parezca pensar. Al soltar, un latigazo algo mayor (±12° en vez de ±8°). Esfuerzo: S. Pista: `time.delayedCall` con un retardo aleatorio, como `scheduleBlink`, y limpiarlo en `destroy`.
+- **(F3) Suavizar el corte crema→café en la cola del siamés**. El tramo crema se queda, pero la línea interna entre los dos tonos parece una venda en miniatura. Esfuerzo: S. Pista: en `coats/siames.svg`, quitar el trazo interno de la unión, o meter un tono intermedio (~`#C49A72`) de 6 a 8 px.
+- **(F3) Rubor del siamés sobre el borde de la máscara**. Las mejillas quedan mitad sobre crema y mitad sobre café, y se ven turbias. Esfuerzo: S. Pista: como la cara es idéntica en todos los gatos, se arregla en el pelaje: ensanchar un poco la máscara en `coats/siames.svg` para que el rubor caiga entero sobre ella.
+- **Texto de ayuda más cerca del grid**. Hoy queda al pie del panel, lejos de las prendas. Cuando el grid esté lleno en F4, hay que revisar dónde queda. Esfuerzo: S.
+
 ## Fuera del MVP (ideas guardadas)
 Monedas y compra, caminar por la ciudad, minijuegos para ganar monedas, cuentas, logros, compartir en redes.

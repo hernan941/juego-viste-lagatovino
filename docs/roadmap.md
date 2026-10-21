@@ -78,6 +78,12 @@ F0 Base ─► F1 Estética ─► F2 Vertical slice ─┬─► F3 Elenco de g
 - **Depende de**: F1.
 - **Agentes**: phaser-code-writer y game-designer (iteración de juice).
 - **Tamaño**: L
+- **Estado**: En curso
+- Revisión de game-designer (2026-10-20): **todavía no se aprueba**. La base es muy buena: el layout coincide con `ejemplo de juego.jpeg`, el gato respira, parpadea y pone cara de sorpresa al tomar una prenda y cara feliz al recibirla, el squash dura 300 ms, la prenda vuelve con rebote y el panel de capas anima sus filas. Antes de cerrar F2 hay que hacer tres arreglos **[Alta]**:
+  1. **Celdas que quedan semitransparentes para siempre** (bug confirmado con Playwright). Si el mouse pasa sobre una celda mientras el grid hace su pop-in, por ejemplo justo después de cambiar de pestaña, la celda se queda con un alpha de ~0,3 y parece deshabilitada. Además, `settled` nunca vuelve a `true`. Causa: `addHover` llama a `tweens.killTweensOf(target)` y eso mata el tween de alpha de `popIn`. Pista: en `addHover`, guardar la referencia del tween de hover y hacer solo `hoverTween?.remove()`, o aplicar la escala de hover a un hijo (el `icon`) en vez de al Container. Hay que agregar un test que lo reproduzca.
+  2. **El fantasma que se arrastra es una tarjeta que tapa la cara del gato**. Hoy se arrastra el icono con su fondo `crema`, y cuando el imán lo pega al ancla cubre los ojos de sorpresa, justo la reacción que queremos que se vea. Pista: crear el fantasma con la textura de la prenda sin el fondo de celda, por ejemplo `item.texture` recortada con `setCrop` a `anchors.boxes[hitBoxForSlot(slot)]`. Cuando `magnetSnap` dé `snapped`, mostrar una vista previa de la prenda puesta en el gato con alpha 0,5 (una capa con `canvasImage(item.texture)`) y bajar el fantasma a alpha ~0,25 con un tween de 100 ms. Al soltar, la vista previa pasa a alpha 1 con el pop de siempre.
+  3. **Un clic en una celda sin arrastrar no da respuesta**. Solo hay hover. Como arrastrar es la única forma de equipar (ADR 0008), el jugador nuevo que hace clic debe recibir una pista. Pista: en `pointerdown` de `ClothingItem`, escala 0,92 en 60 ms. En `pointerup` sin `dragstart`, un meneo de la celda (`angle` −6→6, yoyo, 2 repeticiones, 60 ms) y que el texto "Arrastra la ropa al gatito" haga un pulso de escala 1→1,15→1 con `Back.easeOut` y alpha 1.
+  Las mejoras Media y Baja quedan en `docs/game-design.md` → "Backlog de juice". La cola separada se pide para F3. El sonido corresponde a F6 y no bloquea F2. Los 60 FPS no se pudieron medir en headless (WebGL por software).
 
 ### F3. Elenco de gatos
 - **Objetivo**: tener muchos gatos para elegir.
@@ -88,6 +94,8 @@ F0 Base ─► F1 Estética ─► F2 Vertical slice ─┬─► F3 Elenco de g
 - **Depende de**: F1 (y F2 recomendado).
 - **Agentes**: phaser-code-writer (arte) y game-designer (revisión de variedad).
 - **Tamaño**: M
+- **Estado**: Hecha
+- Aprobado por game-designer (2026-10-20): los 12 gatos se distinguen entre sí, también en miniatura (~128 px). Los pares que podían confundirse (gris/azul, blanco/crema, negro/carey/esmoquin, naranja/mandarina) se separan por patrón y no solo por tono. Son tiernos y coherentes con F1 y con `gatos.jpeg`. La cara se lee en los oscuros gracias al halo `#56505F` (en Michi, además, la mancha blanca enmarca la boca). El sweater y el gorro de F2 encajan en los 12 sin ajustes. La cola, ya como capa propia con pivote en la base, se mece en idle y da un latigazo al soltar una prenda. Dudas del artista: (1) **se quedan las rayitas en la frente de Vainilla**, porque son sutiles, realistas para un gato crema y la separan de Nieve y del cuerpo del siamés en miniatura; (2) **se queda el tramo crema en la base de la cola del siamés**, porque las "puntas" nacen del cuerpo claro y además disimula la unión cuando la cola rota (solo se suaviza el corte, ver backlog). No hay arreglos Alta. Lo Media y lo Baja (entre ello, el salto de 4° de la cola al terminar el latigazo, que conviene arreglar pronto) quedan en `docs/game-design.md` → "Backlog de juice".
 
 ### F4. Guardarropa completo
 - **Objetivo**: tener muchas opciones para combinar.
