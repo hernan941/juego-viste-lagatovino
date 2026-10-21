@@ -4,7 +4,9 @@
     Se dibuja ya en su lugar (lienzo de 512, anclas de art/anchors.json).
     Contorno 8 px #4A3036, una sombra (negro 15 %) y un brillo (art-direction §3 y §5).
   -->
-  <g stroke-linejoin="round" stroke-linecap="round">
+  <!-- Apoyada en la alfombra (junto a las patitas, como el ovillo): baja 14 px y una sombrita de contacto debajo. -->
+  <ellipse cx="369" cy="503" rx="44" ry="7" fill="#000" fill-opacity="0.15"/>
+  <g stroke-linejoin="round" stroke-linecap="round" transform="translate(-16 14)">
     <path fill="none" stroke="#4A3036" stroke-width="12" d="M356 408 C356 400 344 392 344 424 C344 456 356 448 356 440" opacity="0"/>
     <path fill="none" stroke="#4A3036" stroke-width="22" d="M420 420 C458 410 462 462 420 456"/>
     <path fill="none" stroke="#8EC5F5" stroke-width="10" d="M420 420 C458 410 462 462 420 456"/>
