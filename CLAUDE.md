@@ -45,7 +45,7 @@ Las preguntas abiertas y los supuestos por defecto están en `docs/game-design.m
 - **localStorage** en el MVP y Supabase en el futuro (ADR 0004)
 - **Hosting estático** en Vercel o Netlify (ADR 0005), **después del MVP**. El MVP se entrega en localhost.
 
-## Estructura prevista (ADR 0010; aún no existe, no crearla sin permiso)
+## Estructura (ADR 0010)
 Es la plantilla oficial de Phaser ([`phaserjs/template-vite-ts`](https://github.com/phaserjs/template-vite-ts)) extendida con capas propias:
 ```
 index.html                 # página que contiene el juego (plantilla)

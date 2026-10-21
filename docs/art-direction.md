@@ -31,7 +31,7 @@ Los nombres son provisionales.
 - **Chibi**: la cabeza ocupa aproximadamente el **55–60 %** de la altura del gato. El cuerpo es pequeño y redondo.
 - **Pose base única**: sentado, de frente, patitas delanteras juntas y cola saliendo hacia la derecha. Todos los gatos usan **exactamente** la misma silueta. Solo cambian los colores y patrones (rayas, manchas, puntas).
 - **Orejas** triangulares con la punta redondeada y el interior rosa.
-- **Anclas compartidas** para la ropa: `head`, `eyes`, `neck`, `torso` y `paws`. Sus coordenadas se definen una sola vez en `cats.json`.
+- **Anclas compartidas** para la ropa: `head`, `eyes`, `neck`, `torso` y `paws`. Sus coordenadas se definen una sola vez, compartidas por todos los gatos, en `src/game/data/anchors.json` (fuente: `art/anchors.json`). Las prendas de `face` (lentes) usan el ancla `eyes`.
 
 ### Cara (idéntica en todos los gatos)
 - Ojos: óvalos verticales oscuros, cada uno con **un brillo blanco** arriba a la izquierda.
@@ -87,7 +87,7 @@ Categorías del MVP (muchas opciones; los sweaters son el protagonista):
 | `sweater` | **Sweaters** (≈16) | rayas, navideño con reno, cuello alto, trenzado, hoodie con orejitas, corazones, arcoíris, pescaditos, lunares, universitario, oversize, chaleco, huellitas, fresa, nubes, cohete |
 | `head` | Gorros (≈8) | beanie con pompón, boina, gorrito de fresa, sombrero de copa, corona mini, gorro de rana, vincha con moño, gorro de chef |
 | `neck` | Bufandas y collares (≈6) | bufanda de rayas, bufanda larga, collar con cascabel, pañuelo, moño, collar de perlas |
-| `eyes` | Lentes (≈5) | redondos, de corazón, de sol, de estrella, monóculo |
+| `face` | Lentes (≈5) | redondos, de corazón, de sol, de estrella, monóculo |
 | `paws` | Guantes y calcetines (≈4) | mitones, calcetines de rayas, guantes de lana, botitas |
 | `accessory` | Accesorios (≈5) | mochilita, flor en la oreja, globo, taza de leche, ovillo de lana |
 
