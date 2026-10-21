@@ -185,8 +185,8 @@ test.describe('secret combos (F8)', () => {
     const u = await page.evaluate(() => JSON.parse(JSON.stringify(window.__VISTE__?.ui ?? null)));
     await page.mouse.click(u.buttons.finish.x, u.buttons.finish.y);
     await page.waitForFunction(() => window.__VISTE__?.scene === 'Showcase' && window.__VISTE__.ui?.ready === true, undefined, { timeout: 30_000 });
-    const info = await page.evaluate(() => window.__VISTE__?.ui?.info as { secrets: string });
-    expect(info.secrets).toBe(`Secretos 1/${combos.length}`);
+    // The prize was kept. The Showcase shows the old count first and pops to the new one with its "¡Te guardé tu regalito!" toast.
+    await page.waitForFunction((n) => (window.__VISTE__?.ui?.info as { secrets?: string } | undefined)?.secrets === `Secretos 1/${n}`, combos.length, { timeout: 15_000 });
     expect(await page.evaluate(() => window.__VISTE__?.saved.secrets)).toEqual([combo.id]);
   });
 });

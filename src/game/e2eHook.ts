@@ -55,6 +55,10 @@ export interface DressUpE2EState {
   pendingGifts: number;
   /** Ids of the combos that lack exactly one piece (the "¡Casi...!" hint). */
   almost: string[];
+  /** F9: the first-use hint: how many times its ghost garment has travelled, whether the first drop turned it off, and whether it is on screen. */
+  hint: { shown: number; done: boolean; showing: boolean };
+  /** F9: times the player petted the cat in this visit (a click on its body, with a cooldown). */
+  pets: number;
   /** `reaction` of every combo reaction played in this visit, newest last. */
   reactions: string[];
   /** True when no entrance animation or drag is running, so positions are stable. */

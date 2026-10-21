@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { FONT_FAMILY, GAME_HEIGHT, GAME_WIDTH, Palette, RegistryKeys, SceneKeys, SfxKeys } from '../constants';
+import { GAME_HEIGHT, GAME_WIDTH, Palette, RegistryKeys, SceneKeys, SfxKeys } from '../constants';
 import type { Catalog } from '../data/schema';
 import type { AnchorsDef } from '../domain/types';
 import type { E2EUi, UiState } from '../e2eHook';
@@ -8,7 +8,7 @@ import { MuteButton } from '../objects/MuteButton';
 import { MotionButton } from '../objects/MotionButton';
 import { addClouds, addSky, addSun } from '../objects/scenery';
 import { createShopFront, type ShopFront } from '../objects/shopFront';
-import { hex } from '../objects/ui';
+import { hex, makePill } from '../objects/ui';
 import { getAudio } from '../plugins/AudioPlugin';
 import { go } from '../systems/navigate';
 import { readSession } from '../systems/sessionStore';
@@ -69,11 +69,9 @@ export class ShopEntrance extends Phaser.Scene implements E2EUi {
     this.cat.hold('feliz');
     this.world.add([sky, sun, ...clouds, street, this.shop.container, this.cat]);
 
-    const hint = this.add
-      .text(GAME_WIDTH - 28, GAME_HEIGHT - 26, 'Toca para saltar', { fontFamily: FONT_FAMILY, fontSize: '24px', color: Palette.texto, fontStyle: '500', stroke: '#FFFFFF', strokeThickness: 6 })
-      .setOrigin(1, 1)
-      .setAlpha(0);
-    this.tweens.add({ targets: hint, alpha: 0.8, delay: 1200, duration: 400 });
+    // "Clic para saltar": the game is for the PC (ADR 0008), in a pill that reads over the sidewalk; it fades in after a second.
+    const hint = makePill(this, GAME_WIDTH - 150, GAME_HEIGHT - 44, 'Clic para saltar', 24, { skipIcon: true }).setDepth(40).setAlpha(0);
+    this.tweens.add({ targets: hint, alpha: 1, delay: 1000, duration: 400 });
     this.mute = new MuteButton(this, GAME_WIDTH - 56, 56).setDepth(50);
     this.motion = new MotionButton(this, GAME_WIDTH - 128, 56).setDepth(50);
 
@@ -121,9 +119,13 @@ export class ShopEntrance extends Phaser.Scene implements E2EUi {
     // Waddle: a sway and a little hop at every step.
     const p = profileOf(this);
     const waddle = { t: 0 };
+    let lastT = 0;
     this.bob = this.tweens.add({
       targets: waddle, t: 1, duration: 520, repeat: -1,
       onUpdate: () => {
+        // A soft little step each time the cycle starts again.
+        if (waddle.t < lastT) getAudio(this).play(SfxKeys.Key, { rate: 0.6, volume: 0.3 });
+        lastT = waddle.t;
         const a = waddle.t * Math.PI * 2;
         this.cat.setAngle(Math.sin(a) * 5 * p.shake);
         this.cat.y = WALK_FEET_Y - Math.abs(Math.sin(a / 2)) * 14 * Math.max(p.squash, p.shake);
@@ -154,6 +156,7 @@ export class ShopEntrance extends Phaser.Scene implements E2EUi {
 
   private openDoor() {
     if (this.skipped) return;
+    getAudio(this).play(SfxKeys.Remove, { rate: 1.2 });
     this.tweens.add({
       targets: this.shop.door, scaleX: 0.12, duration: 450, ease: 'Cubic.easeOut',
       onComplete: () => this.goIn(),

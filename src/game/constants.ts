@@ -60,6 +60,10 @@ export const ObjectEvents = {
   MuteToggle: 'mute-toggle',
   /** MotionButton: (reduced: boolean) after toggling */
   MotionToggle: 'motion-toggle',
+  /** Cat: the player petted it (a click on its body, with a cooldown) */
+  CatPet: 'cat-pet',
+  /** Cat: (item: ClothingDef, at: Point) the pointer entered a worn item */
+  LayerHover: 'layer-hover',
 } as const;
 
 export const RegistryKeys = {

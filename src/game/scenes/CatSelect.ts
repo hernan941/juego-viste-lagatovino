@@ -127,7 +127,7 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
     drawPanel(panel, BAR.width, BAR.height, 44);
     panel.setPosition(BAR.x, BAR.y);
     this.hint = this.add
-      .text(GAME_WIDTH / 2, BAR.y + BAR.height / 2, 'Toca al gatito que más te guste', { fontFamily: FONT_FAMILY, fontSize: '36px', color: Palette.texto, fontStyle: '600' })
+      .text(GAME_WIDTH / 2, BAR.y + BAR.height / 2, 'Elige al gatito que más te guste', { fontFamily: FONT_FAMILY, fontSize: '36px', color: Palette.texto, fontStyle: '600' })
       .setOrigin(0.5);
     if (profileOf(this).loops) this.tweens.add({ targets: this.hint, y: this.hint.y - 6, duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
 
@@ -208,6 +208,8 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
   private shakeBox() {
     this.tweens.killTweensOf(this.field);
     this.field.x = 0;
+    // A refused key is not silent anymore: a soft boing.
+    getAudio(this).play(SfxKeys.Return, { volume: 0.4 });
     const k = profileOf(this).shake;
     if (k === 0) {
       // Reduced motion: no shake, the box changes color for a moment instead.

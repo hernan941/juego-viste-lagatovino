@@ -21,7 +21,8 @@ export class GiftBox extends Phaser.GameObjects.Container {
   readonly item: ClothingDef;
   private readonly lid: Phaser.GameObjects.Container;
   private readonly bow: Phaser.GameObjects.Container;
-  private readonly hint: Phaser.GameObjects.Text;
+  private readonly hint: Phaser.GameObjects.Container;
+  private readonly arrow: Phaser.GameObjects.Container;
   private readonly bowRest = { x: 0, y: -64 };
   private landed = false;
   private open = false;
@@ -59,12 +60,25 @@ export class GiftBox extends Phaser.GameObjects.Container {
     this.bow.on('drag', (_p: Phaser.Input.Pointer, dragX: number, dragY: number) => this.onBowDrag(dragX, dragY));
     this.bow.on('dragend', () => this.onBowRelease());
 
-    this.hint = scene.add
-      .text(0, 108, '¡Arrastra el moño!', { fontFamily: FONT_FAMILY, fontSize: '22px', color: Palette.texto, fontStyle: '600', padding: { x: 4, y: 6 } })
-      .setOrigin(0.5)
-      .setAlpha(0);
+    // The instruction: a cream pill with a pink border, above the bow and inside the mirror (it used to sit over the gold frame),
+    // and a dotted arrow that rises away from the bow, to show which way to pull.
+    const label = scene.add
+      .text(0, -3, '¡Arrastra el moño!', { fontFamily: FONT_FAMILY, fontSize: '22px', color: Palette.texto, fontStyle: '600', padding: { x: 4, y: 6 } })
+      .setOrigin(0.5);
+    const pillW = label.width + 40;
+    const pill = scene.add.graphics();
+    pill.fillStyle(hex('rosa600'), 0.18).fillRoundedRect(-pillW / 2 + 2, -24 + 6, pillW, 48, 24);
+    pill.fillStyle(hex('crema'), 1).fillRoundedRect(-pillW / 2, -24, pillW, 48, 24);
+    pill.lineStyle(4, hex('rosa200'), 1).strokeRoundedRect(-pillW / 2, -24, pillW, 48, 24);
+    const dots = scene.add.graphics();
+    dots.fillStyle(hex('rosa400'), 1);
+    [-100, -112].forEach((y, i) => dots.fillCircle(0, y, 4.6 - i * 0.5));
+    dots.fillTriangle(-10, -120, 10, -120, 0, -138);
+    this.arrow = scene.add.container(0, 0, [dots]);
+    this.hint = scene.add.container(48, -158, [pill, label]).setAlpha(0);
+    this.arrow.setAlpha(0);
 
-    this.add([body, this.lid, this.bow, this.hint]);
+    this.add([body, this.lid, this.bow, this.hint, this.arrow]);
     this.setDepth(3000);
     scene.add.existing(this);
     this.drop(y);
@@ -97,7 +111,7 @@ export class GiftBox extends Phaser.GameObjects.Container {
         getAudio(this.scene).play(SfxKeys.Drop, { volume: 0.9 });
         this.scene.tweens.add({ targets: this.hint, alpha: 1, duration: 300 });
         this.wobbleBow();
-        if (profileOf(this.scene).loops) this.scene.tweens.add({ targets: this.hint, y: 116, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+        this.pulseArrow();
       },
     });
   }
@@ -109,10 +123,19 @@ export class GiftBox extends Phaser.GameObjects.Container {
     else this.scene.tweens.add({ targets: this.bow, scale: { from: 1, to: 1.08 }, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
   }
 
+  /** The dotted arrow fades in and out (900 ms) while the bow waits; reduced motion keeps it still and visible. */
+  private pulseArrow(): void {
+    this.scene.tweens.killTweensOf(this.arrow);
+    if (profileOf(this.scene).loops) this.scene.tweens.add({ targets: this.arrow, alpha: { from: 0, to: 1 }, duration: 450, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    else this.scene.tweens.add({ targets: this.arrow, alpha: 1, duration: 300 });
+  }
+
   private onBowGrab(): void {
     if (!this.ready) return;
     this.scene.tweens.killTweensOf(this.bow);
     this.bow.setAngle(0).setScale(1);
+    this.scene.tweens.killTweensOf(this.arrow);
+    this.scene.tweens.add({ targets: this.arrow, alpha: 0, duration: 120 });
     getAudio(this.scene).play(SfxKeys.Grab);
   }
 
@@ -130,7 +153,11 @@ export class GiftBox extends Phaser.GameObjects.Container {
     getAudio(this.scene).play(SfxKeys.Return, { volume: 0.5 });
     this.lid.setAngle(0);
     this.scene.tweens.add({ targets: this.bow, x: this.bowRest.x, y: this.bowRest.y, duration: 260, ease: profileOf(this.scene).ease('Back.easeOut') });
-    this.scene.time.delayedCall(300, () => this.scene && this.ready && this.wobbleBow());
+    this.scene.time.delayedCall(300, () => {
+      if (!this.scene || !this.ready) return;
+      this.wobbleBow();
+      this.pulseArrow();
+    });
   }
 
   private openBox(): void {
@@ -141,8 +168,8 @@ export class GiftBox extends Phaser.GameObjects.Container {
     const audio = getAudio(scene);
     audio.play(SfxKeys.Gift);
     audio.play(SfxKeys.Remove, { rate: 1.3, volume: 0.7 });
-    scene.tweens.killTweensOf([this.hint, this.bow, this.lid]);
-    scene.tweens.add({ targets: this.hint, alpha: 0, duration: 150 });
+    scene.tweens.killTweensOf([this.hint, this.arrow, this.bow, this.lid]);
+    scene.tweens.add({ targets: [this.hint, this.arrow], alpha: 0, duration: 150 });
     scene.tweens.add({ targets: this.bow, y: this.bow.y - 120, x: this.bow.x + 60, angle: 200 * profileOf(scene).spin, alpha: 0, duration: 450, ease: 'Quad.easeOut' });
     scene.tweens.add({ targets: this.lid, y: -110, angle: -24 * profileOf(scene).shake, alpha: 0, duration: 500, ease: profileOf(scene).ease('Back.easeOut') });
 
@@ -191,7 +218,7 @@ export class GiftBox extends Phaser.GameObjects.Container {
   }
 
   destroy(fromScene?: boolean): void {
-    this.scene?.tweens.killTweensOf([this, this.bow, this.lid, this.hint]);
+    this.scene?.tweens.killTweensOf([this, this.bow, this.lid, this.hint, this.arrow]);
     this.removeAllListeners();
     super.destroy(fromScene);
   }

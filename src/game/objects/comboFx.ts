@@ -25,15 +25,26 @@ export interface ComboFxContext {
 }
 
 /** A short phrase in a bubble that enters with Back.easeOut, stays and floats away. */
-export function showBubble(scene: Phaser.Scene, x: number, y: number, text: string, tone: 'rosa50' | 'mantequilla' = 'mantequilla'): void {
+export function showBubble(
+  scene: Phaser.Scene, x: number, y: number, text: string, tone: 'rosa50' | 'mantequilla' = 'mantequilla',
+  { fontSize = 34, tail }: { fontSize?: number; tail?: 'left' | 'right' } = {},
+): void {
   const label = scene.add
-    .text(0, 0, text, { fontFamily: FONT_FAMILY, fontSize: '34px', color: Palette.texto, fontStyle: '600', padding: { x: 4, y: 8 } })
+    .text(0, 0, text, { fontFamily: FONT_FAMILY, fontSize: `${fontSize}px`, color: Palette.texto, fontStyle: '600', padding: { x: 4, y: 8 } })
     .setOrigin(0.5);
   const w = label.width + 56;
   const g = scene.add.graphics();
   g.fillStyle(hex('rosa600'), 0.18).fillRoundedRect(-w / 2 + 2, -26 + 8, w, 56, 28);
   g.fillStyle(hex(tone), 1).fillRoundedRect(-w / 2, -26, w, 56, 28);
   g.lineStyle(4, hex('rosa200'), 1).strokeRoundedRect(-w / 2, -26, w, 56, 28);
+  if (tail) {
+    // A little tail toward the one who speaks (the cat): a triangle on the chosen side of the bubble.
+    const s = tail === 'left' ? -1 : 1;
+    const pts = [new Phaser.Math.Vector2(s * (w / 2 - 6), -6), new Phaser.Math.Vector2(s * (w / 2 + 22), 8), new Phaser.Math.Vector2(s * (w / 2 - 6), 16)];
+    g.fillStyle(hex(tone), 1).fillPoints(pts, true);
+    g.lineStyle(4, hex('rosa200'), 1).beginPath().moveTo(pts[0].x, pts[0].y).lineTo(pts[1].x, pts[1].y).lineTo(pts[2].x, pts[2].y).strokePath();
+    g.fillStyle(hex(tone), 1).fillRect(s * (w / 2 - 8) - 4, -3, 8, 17);
+  }
   const bubble = scene.add.container(x, y, [g, label]).setDepth(FX_DEPTH + 10).setScale(0).setAlpha(0);
   scene.tweens.chain({
     targets: bubble,
@@ -85,12 +96,15 @@ function starsOrbit({ scene, cat }: ComboFxContext): void {
 }
 
 function snowfall({ scene, cat }: ComboFxContext): void {
+  // Flakes that are seen on the pale mirror: bigger (0.8 to 1.5), a sky blue outline, half of them tinted, and more of them.
   const snow = scene.add.particles(0, 0, TextureKeys.Snow, {
-    x: { min: MIRROR.left, max: MIRROR.right }, y: -10, speedX: { min: -25, max: 25 }, speedY: { min: 40, max: 80 }, gravityY: 30,
-    lifespan: 4200, frequency: profileOf(scene).every(45), quantity: 1, scale: { min: 0.5, max: 1.1 }, alpha: { start: 1, end: 0.3 },
+    x: { min: MIRROR.left, max: MIRROR.right }, y: 60, speedX: { min: -25, max: 25 }, speedY: { min: 40, max: 80 }, gravityY: 30,
+    lifespan: 4200, frequency: profileOf(scene).every(30), quantity: 1, scale: { min: 0.8, max: 1.5 }, alpha: { start: 1, end: 0.35 },
+    tint: [0xffffff, 0xc4e6ff],
   });
   shortLived(scene, snow, 2000, 4300);
-  cat.squash();
+  // The pompom of the hat bounces for real: a hop that stretches upward.
+  cat.stretchUp();
   chime(scene, [1.8, 2.1, 1.9, 2.3, 2], 110);
 }
 
@@ -113,20 +127,28 @@ function petals({ scene, cat }: ComboFxContext): void {
 function royalPose({ scene, cat }: ComboFxContext): void {
   const confetti = scene.add.particles(0, 0, TextureKeys.Confetti, {
     x: { min: MIRROR.left, max: MIRROR.right }, y: -10, speedX: { min: -40, max: 40 }, speedY: { min: 60, max: 140 }, gravityY: 120,
-    lifespan: 3200, frequency: profileOf(scene).every(30), quantity: 1, rotate: { min: 0, max: 360 * profileOf(scene).spin }, scaleX: { start: 1, end: 0.2 }, tint: [0xffe27a, 0xfff0a8, 0xf5d86a],
+    lifespan: 3200, frequency: profileOf(scene).every(18), quantity: 1, rotate: { min: 0, max: 360 * profileOf(scene).spin }, scaleX: { start: 1, end: 0.2 }, tint: [0xffe27a, 0xfff0a8, 0xf5d86a],
   });
   shortLived(scene, confetti, 1800, 3300);
   cat.raiseChin(1100);
+  // A sparkle on the crown, where the chin-up pose points.
+  const crown = cat.getAnchorWorld('head');
+  const glint = scene.add.particles(crown.x, crown.y - 70, TextureKeys.Sparkle, {
+    emitting: false, speed: { min: 30, max: 120 }, angle: { min: 220, max: 320 }, lifespan: 700, scale: { start: 1.2, end: 0 }, alpha: { start: 1, end: 0 },
+  }).setDepth(FX_DEPTH);
+  glint.explode(profileOf(scene).count(8));
+  scene.time.delayedCall(900, () => glint.destroy());
   chime(scene, [1, 1.26, 1.5], 260);
 }
 
 function heartbeat({ scene, cat, hearts }: ComboFxContext): void {
   cat.heartbeat();
-  const from = cat.getAnchorWorld('torso');
+  // The big heart comes out of the balloon (the accessory anchor is the tip of it), not from the cat's face.
+  const from = cat.getAccessoryTip();
   const p = profileOf(scene);
-  const big = scene.add.image(from.x + 120, from.y - 60, TextureKeys.Heart).setDepth(FX_DEPTH).setScale(0.3);
+  const big = scene.add.image(from.x, from.y, TextureKeys.Heart).setDepth(FX_DEPTH).setScale(0.3);
   scene.tweens.add({
-    targets: big, y: from.y - 190, scale: 3, duration: 650, ease: p.ease('Back.easeOut'),
+    targets: big, y: Math.max(110, from.y - 110), scale: 3, duration: 650, ease: p.ease('Back.easeOut'),
     onComplete: () => {
       hearts.explode(p.count(26), big.x, big.y);
       scene.tweens.add({ targets: big, scale: 4.2, alpha: 0, duration: 200, onComplete: () => big.destroy() });
@@ -136,15 +158,17 @@ function heartbeat({ scene, cat, hearts }: ComboFxContext): void {
 }
 
 const BANDS = [0xff8fb8, 0xffd9a8, 0xfff0a8, 0xbdefd8, 0xc4e6ff];
+/** The rainbow lives inside the mirror (it is 428 px wide, centered on the cat): outer radius 212 and bands of 18 px. */
+const RAINBOW = { outer: 212, band: 18, cy: 575 };
 
 function rainbowArc({ scene, cat, rainbow }: ComboFxContext): void {
   const cx = cat.x;
-  const cy = 540;
+  const cy = RAINBOW.cy;
   const turn = { p: 0 };
   const draw = (progress: number) => {
     rainbow.clear();
     BANDS.forEach((color, i) => {
-      rainbow.lineStyle(22, color, 0.95).beginPath().arc(cx, cy, 380 - i * 21, Math.PI, Math.PI + progress * Math.PI, false).strokePath();
+      rainbow.lineStyle(RAINBOW.band, color, 0.95).beginPath().arc(cx, cy, RAINBOW.outer - RAINBOW.band / 2 - i * RAINBOW.band, Math.PI, Math.PI + progress * Math.PI, false).strokePath();
     });
   };
   if (profileOf(scene).reduced) {

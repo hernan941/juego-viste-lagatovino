@@ -148,6 +148,18 @@ export class ClothingItem extends Phaser.GameObjects.Container {
     });
   }
 
+  /** The cell pops (1.1 to 1) when its garment comes back to it. */
+  receivePop(): void {
+    const p = profileOf(this.scene);
+    this.scene.tweens.chain({
+      targets: this.view,
+      tweens: [
+        { scale: 1 + 0.1 * Math.max(p.squash, 0.3), duration: 90, ease: 'Sine.easeOut' },
+        { scale: 1, duration: 160, ease: p.ease('Back.easeOut') },
+      ],
+    });
+  }
+
   /** A prize cell that was kept invisible appears with a pop (0.2 to 1.15 to 1) right when the prize lands. */
   revealPop(): void {
     const p = profileOf(this.scene);

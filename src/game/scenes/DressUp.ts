@@ -4,7 +4,9 @@ import {
 } from '../constants';
 import type { Catalog } from '../data/schema';
 import { itemsInCategory, visibleCategories } from '../domain/catalog';
-import { almostCombos, newlyCompleted, secretRewards } from '../domain/combos';
+import { almostCombos, almostHint, newlyCompleted, secretRewards } from '../domain/combos';
+import { HintPlanner } from '../domain/hint';
+import { tiltToward } from '../domain/tilt';
 import { magnetSnap, resolveDrop, isInsideDropZone } from '../domain/dropZone';
 import { ghostFit, alphaBounds } from '../domain/imageBounds';
 import { equip, getLayers, unequip } from '../domain/outfit';
@@ -19,6 +21,7 @@ import { getSave } from '../plugins/SavePlugin';
 import { go } from '../systems/navigate';
 import { readSession } from '../systems/sessionStore';
 import { Cat } from '../objects/Cat';
+import { opaqueBounds } from '../objects/alphaMap';
 import { playComboReaction, playShortReaction, showBubble, type ComboFxContext } from '../objects/comboFx';
 import { NameSign } from '../objects/NameSign';
 import { GiftReveal } from '../domain/giftReveal';
@@ -60,6 +63,8 @@ interface DragState {
   target: Point;
   overZone: boolean;
   lastLook: number;
+  /** True during the first 150 ms (the grab tween owns the angle); afterwards the tilt follows the speed. */
+  grabbing: boolean;
 }
 
 /** The fitting room (F2 vertical slice): one cat, two tabs, a grid, the mirror and the layers panel. */
@@ -97,6 +102,13 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
   private almost = new Set<string>();
   private reveal = new GiftReveal();
   private sign!: NameSign;
+  // F9: first-use hint (a ghost garment travels to the cat) and the little dot where the magnet holds the item.
+  private hintPlanner = new HintPlanner();
+  private hintGhost: Phaser.GameObjects.Image | null = null;
+  private hintsShown = 0;
+  private pets = 0;
+  private anchorDot: Phaser.GameObjects.Graphics | null = null;
+  private lookTimer?: Phaser.Time.TimerEvent;
   /** Reactions played in this visit, newest last (for the e2e hook). */
   private reactionLog: string[] = [];
   /** Test hook: the prize and counter state at each step of the gift sequence. */
@@ -110,10 +122,17 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.catalog = this.registry.get(RegistryKeys.Catalog) as Catalog;
     this.anchors = this.registry.get(RegistryKeys.Anchors) as AnchorsDef;
     const session = readSession(this.registry);
-    // The outfit comes back from the Showcase; a different cat starts naked (chooseCat clears it).
+    // The outfit comes back from the Showcase, and it also follows the player to another cat (chooseCat keeps it).
     this.outfit = session.outfit;
     this.drag = null;
     this.leaving = false;
+    this.hintPlanner = new HintPlanner();
+    // Already dressed (a look that came along): the player knows what to do.
+    if (Object.keys(this.outfit).length > 0) this.hintPlanner.dropped();
+    this.hintGhost = null;
+    this.hintsShown = 0;
+    this.pets = 0;
+    this.anchorDot = null;
     this.unlocked = getSave(this).secrets;
     this.gifts = [];
     this.reveal = new GiftReveal();
@@ -139,6 +158,9 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.baseCatScale = this.cat.scaleX;
     this.cat.appear();
     this.cat.on(ObjectEvents.ItemDragStart, (item: ClothingDef, p: Phaser.Input.Pointer) => this.beginDrag(item, p, true));
+    this.cat.makePettable();
+    this.cat.on(ObjectEvents.CatPet, () => this.onPet());
+    this.cat.on(ObjectEvents.LayerHover, (_item: ClothingDef, at: Point) => this.sparkles.explode(profileOf(this).count(1), at.x, at.y));
     this.cat.on(ObjectEvents.ItemDrag, (_item: ClothingDef, p: Phaser.Input.Pointer) => this.moveDrag(p));
     this.cat.on(ObjectEvents.ItemDragEnd, (_item: ClothingDef, p: Phaser.Input.Pointer) => this.endDrag(p));
 
@@ -162,8 +184,8 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
 
     this.hearts = this.add
       .particles(0, 0, TextureKeys.Heart, {
-        emitting: false, speed: { min: 120, max: 320 }, angle: { min: -160, max: -20 }, gravityY: 420,
-        lifespan: { min: 700, max: 1100 }, scale: { start: 1.4, end: 0.3 }, alpha: { start: 1, end: 0 }, rotate: { min: -40 * profileOf(this).spin, max: 40 * profileOf(this).spin },
+        emitting: false, speed: { min: 80, max: 200 }, angle: { min: -120, max: -60 }, gravityY: -40,
+        lifespan: { min: 900, max: 1400 }, scale: { start: 1.4, end: 0.3 }, alpha: { start: 1, end: 0 }, rotate: { min: -40 * profileOf(this).spin, max: 40 * profileOf(this).spin },
       })
       .setDepth(4000);
     this.sparkles = this.add
@@ -183,19 +205,70 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.mute = new MuteButton(this, 1240, 686).setScale(0.8);
     this.motion = new MotionButton(this, 1240, 636).setScale(0.8);
 
+    // The prizes shine: every 2.5 s, a golden twinkle on each secret garment that is worn.
+    this.time.addEvent({ delay: 2500, loop: true, callback: () => this.twinkleSecrets() });
     this.tabs.select(categories[0], true);
     this.showCategory(categories[0]);
-    if (Object.keys(this.outfit).length > 0) this.applyOutfit(this.outfit);
+    if (Object.keys(this.outfit).length > 0) {
+      // The look arrives with a pop, one layer after another, and the cat is happy about it.
+      this.applyOutfit(this.outfit, true);
+      this.cat.react('drop');
+    }
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.cleanup, this);
     transitionIn(this, enterKind(data));
   }
 
-  update() {
+  update(_time: number, delta: number) {
     const d = this.drag;
-    if (!d) return;
-    // The dragged item eases toward the pointer (or the magnet anchor), so it feels soft.
-    d.ghost.x += (d.target.x - d.ghost.x) * 0.4;
-    d.ghost.y += (d.target.y - d.ghost.y) * 0.4;
+    if (d) {
+      // The dragged item eases toward the pointer (or the magnet anchor), so it feels soft.
+      const before = d.ghost.x;
+      d.ghost.x += (d.target.x - d.ghost.x) * 0.4;
+      d.ghost.y += (d.target.y - d.ghost.y) * 0.4;
+      // ... and leans with its speed, like cloth (a lerp that does not depend on the fps; reduced motion keeps it straight).
+      if (!d.grabbing) d.ghost.angle = tiltToward(d.ghost.angle, d.ghost.x - before, delta, profileOf(this).shake);
+    }
+    // First-use hint: after 4 s without a drop (and every 5 s) a ghost garment travels from the grid to the cat.
+    const busy = this.drag !== null || this.leaving || this.gift !== null || this.giftsComing > 0 || this.gifts.length > 0 || this.hintGhost !== null;
+    if (this.hintPlanner.update(delta, busy)) this.playHint();
+  }
+
+  /** The hint: the first visible cell's garment, at half opacity, travels along a curve to where it would be worn. */
+  private playHint() {
+    const visible = this.grid.getVisibleIds();
+    const id = visible[0];
+    const item = id ? this.catalog.clothes.find((c) => c.id === id) : undefined;
+    const from = id ? this.grid.getCellPositions()[id] : undefined;
+    if (!item || !from) return;
+    this.hintsShown++;
+    const to = this.cat.getAnchorWorld(anchorForSlot(item.slot));
+    const src = this.textures.get(item.texture).getSourceImage();
+    const fit = ghostFit(this.boundsOf(item), src.width, src.height, GHOST_SIZE);
+    const home = ghostFit(this.boundsOf(item), src.width, src.height, GHOST_HOME_SIZE);
+    const ghost = this.add.image(from.x, from.y, item.texture).setOrigin(fit.origin.x, fit.origin.y).setScale(home.scale).setDepth(4900).setAlpha(0);
+    this.hintGhost = ghost;
+    const p = profileOf(this);
+    // A curve that bows up and away from the straight line; reduced motion goes straight and calm.
+    const bend = p.reduced ? 0 : -90;
+    const curve = new Phaser.Curves.QuadraticBezier(
+      new Phaser.Math.Vector2(from.x, from.y), new Phaser.Math.Vector2((from.x + to.x) / 2, Math.min(from.y, to.y) + bend), new Phaser.Math.Vector2(to.x, to.y),
+    );
+    const t = { v: 0 };
+    const gone = () => {
+      ghost.destroy();
+      if (this.hintGhost === ghost) this.hintGhost = null;
+    };
+    this.tweens.add({ targets: ghost, alpha: 0.5, duration: 250 });
+    this.tweens.add({
+      targets: t, v: 1, duration: 1300, delay: 150, ease: 'Sine.easeInOut',
+      onUpdate: () => {
+        const pt = curve.getPoint(t.v);
+        ghost.setPosition(pt.x, pt.y).setScale(home.scale + (fit.scale - home.scale) * t.v);
+      },
+      onComplete: () => {
+        this.tweens.add({ targets: ghost, alpha: 0, duration: 250, onComplete: gone });
+      },
+    });
   }
 
   /** Hanging sign with the name of the cat, over the mirror (it flips to announce looks and prizes). */
@@ -211,8 +284,10 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.leaving = true;
     if (this.drag) this.endDragQuiet();
     // A gift that was never opened is not lost: the player earned it, so it goes to the wardrobe quietly.
-    for (const combo of [...(this.gift ? [this.gift.comboId] : []), ...this.gifts.map((c) => c.id)]) getSave(this).unlockSecret(combo);
-    go(this, action);
+    const gifted = [...(this.gift ? [this.gift.comboId] : []), ...this.gifts.map((c) => c.id)];
+    for (const combo of gifted) getSave(this).unlockSecret(combo);
+    // The Showcase tells the player about the prizes that were delivered quietly.
+    go(this, action, { gifted });
   }
 
   /** Lets go of an item that is still in the hand if the player leaves. */
@@ -224,6 +299,11 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
 
   private cleanup() {
     this.drag = null;
+    this.hintGhost?.destroy();
+    this.hintGhost = null;
+    this.anchorDot?.destroy();
+    this.anchorDot = null;
+    this.lookTimer?.remove();
     this.doneButton?.destroy();
     this.changeButton?.destroy();
     this.mute?.destroy();
@@ -282,12 +362,15 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     const ghost = this.add.image(pointer.x, pointer.y, item.texture).setOrigin(fit.origin.x, fit.origin.y).setScale(fit.scale).setDepth(5000);
     // Taking an item: it grows and tilts.
     const p = profileOf(this);
-    this.tweens.add({ targets: ghost, scale: fit.scale * (1 + 0.15 * p.squash), angle: 8 * p.shake, duration: 150, ease: p.ease('Back.easeOut') });
-    this.drag = { item, fromEquipped, cell, ghost, ghostScale: fit.scale * (1 + 0.15 * p.squash), homeScale: home.scale, target: { x: pointer.x, y: pointer.y }, overZone: false, lastLook: 0 };
+    this.tweens.add({
+      targets: ghost, scale: fit.scale * (1 + 0.15 * p.squash), angle: 8 * p.shake, duration: 150, ease: p.ease('Back.easeOut'),
+      onComplete: () => { if (this.drag?.ghost === ghost) this.drag.grabbing = false; },
+    });
+    this.drag = { item, fromEquipped, cell, ghost, ghostScale: fit.scale * (1 + 0.15 * p.squash), homeScale: home.scale, target: { x: pointer.x, y: pointer.y }, overZone: false, lastLook: 0, grabbing: true };
     getAudio(this).play(SfxKeys.Grab);
     cell?.setLifted(true);
     if (fromEquipped) this.cat.setLayerLifted(item, true);
-    this.cat.hold('sorpresa');
+    // The cat only looks at the item (normal eyes that follow it); it is surprised once the item is over the drop zone.
     this.cat.lookAt({ x: pointer.x, y: pointer.y });
   }
 
@@ -308,6 +391,9 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     if (over !== d.overZone) {
       d.overZone = over;
       this.setZoneHighlight(over);
+      // "She is going to get it!": surprise only over the zone (a micro tween comes with the face swap).
+      if (over) this.cat.hold('sorpresa');
+      else this.cat.release();
     }
     if (this.time.now - d.lastLook > 90) {
       d.lastLook = this.time.now;
@@ -315,19 +401,52 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     }
   }
 
-  /** While the magnet holds the item: a half transparent preview on the cat, and a fainter ghost. */
+  /**
+   * While the magnet holds the item: only the half transparent preview on the cat is seen (the ghost steps aside, so there is
+   * no double image) and it breathes; a small ring marks the anchor. Letting go of the magnet brings the ghost back.
+   */
   private setPreview(d: DragState, on: boolean) {
     if (on === (d.preview !== undefined)) return;
-    this.tweens.add({ targets: d.ghost, alpha: on ? 0.25 : 1, duration: 100 });
+    const p = profileOf(this);
+    this.tweens.killTweensOf(d.ghost);
     if (on) {
+      this.tweens.add({ targets: d.ghost, alpha: 0, scale: d.ghostScale * 0.8, duration: 100 });
       const c = this.cat.canvasToWorld({ x: this.anchors.canvas.width / 2, y: this.anchors.canvas.height / 2 });
       const size = this.anchors.canvas.width * this.baseCatScale;
       const preview = this.add.image(c.x, c.y, d.item.texture).setDisplaySize(size, size).setDepth(4500).setAlpha(0);
       d.preview = preview;
-      this.tweens.add({ targets: preview, alpha: 0.5, duration: 100 });
+      this.tweens.add({
+        targets: preview, alpha: 0.5, duration: 100,
+        onComplete: () => {
+          // The preview breathes (0.45 to 0.6); reduced motion keeps it still.
+          if (p.loops && d.preview === preview) this.tweens.add({ targets: preview, alpha: { from: 0.45, to: 0.6 }, duration: 400, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+        },
+      });
+      this.showAnchorDot(this.cat.getAnchorWorld(anchorForSlot(d.item.slot)));
     } else {
+      this.tweens.add({ targets: d.ghost, alpha: 1, scale: d.ghostScale, duration: 200, ease: p.ease('Back.easeOut') });
       this.fadePreview(d);
+      this.hideAnchorDot();
     }
+  }
+
+  /** A small ring where the magnet holds the item (the slot anchor). */
+  private showAnchorDot(at: Point) {
+    this.hideAnchorDot();
+    const dot = this.add.graphics().setDepth(4600).setPosition(at.x, at.y);
+    dot.lineStyle(5, hex('rosa400'), 1).strokeCircle(0, 0, 16);
+    dot.fillStyle(hex('rosa400'), 0.35).fillCircle(0, 0, 16);
+    dot.setScale(profileOf(this).reduced ? 1 : 0.2).setAlpha(0);
+    this.anchorDot = dot;
+    this.tweens.add({ targets: dot, scale: 1, alpha: 1, duration: 140, ease: profileOf(this).ease('Back.easeOut') });
+  }
+
+  private hideAnchorDot() {
+    const dot = this.anchorDot;
+    this.anchorDot = null;
+    if (!dot) return;
+    this.tweens.killTweensOf(dot);
+    this.tweens.add({ targets: dot, alpha: 0, duration: 100, onComplete: () => dot.destroy() });
   }
 
   private fadePreview(d: DragState) {
@@ -361,7 +480,13 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.zoneGlow.fillStyle(hex('rosa400'), 0.14).fillRoundedRect(z.x - 8, z.y - 8, z.width + 16, z.height + 16, 48);
     this.zoneGlow.lineStyle(6, hex('rosa400'), 0.9).strokeRoundedRect(z.x - 8, z.y - 8, z.width + 16, z.height + 16, 48);
     this.tweens.killTweensOf(this.zoneGlow);
-    this.tweens.add({ targets: this.zoneGlow, alpha: on ? 1 : 0, duration: 140 });
+    this.tweens.add({
+      targets: this.zoneGlow, alpha: on ? 1 : 0, duration: 140,
+      // The zone that waits for the item beats softly (0.7 to 1, 600 ms); reduced motion keeps it still.
+      onComplete: () => {
+        if (on && profileOf(this).loops && this.drag?.overZone) this.tweens.add({ targets: this.zoneGlow, alpha: { from: 1, to: 0.7 }, duration: 600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      },
+    });
   }
 
   private endDrag(pointer: Phaser.Input.Pointer) {
@@ -369,6 +494,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     if (!d) return;
     this.drag = null;
     this.setZoneHighlight(false);
+    this.hideAnchorDot();
     this.cat.lookAt(null);
     const action = resolveDrop({ x: pointer.x, y: pointer.y }, this.dropZone(), DROP_MARGIN, d.fromEquipped);
     if (action === 'equip') this.dropOnCat(d);
@@ -392,6 +518,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
       return;
     }
     const previous = this.outfit;
+    this.hintPlanner.dropped();
     this.applyOutfit(equip(previous, item).outfit);
     const done = newlyCompleted(previous, this.outfit, this.catalog.combos, this.catalog.clothes);
     const combo = done.length > 0;
@@ -403,6 +530,27 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.celebrate(anchor, combo ? 2 : 1);
     for (const c of done) this.onCombo(c);
     this.updateAlmost();
+  }
+
+  /** A `mantequilla` sparkle at a random point of every worn secret item (the six prizes should feel special). */
+  private twinkleSecrets() {
+    if (this.leaving) return;
+    for (const layer of getLayers(this.outfit, this.catalog.clothes)) {
+      if (!layer.secret) continue;
+      const b = opaqueBounds(this, layer.texture);
+      if (!b) continue;
+      const { width, height } = this.anchors.canvas;
+      const at = this.cat.canvasToWorld({ x: (b.x + Math.random() * b.width) * width, y: (b.y + Math.random() * b.height) * height });
+      this.sparkles.explode(profileOf(this).count(1), at.x, at.y);
+    }
+  }
+
+  /** The cat was petted: a purr, and a couple of hearts floating up from its head. */
+  private onPet() {
+    this.pets++;
+    getAudio(this).play(SfxKeys.Purr, { volume: 0.7 });
+    const head = this.cat.getAnchorWorld('head');
+    this.hearts.explode(profileOf(this).count(3), head.x, head.y - 60);
   }
 
   // ---- Combos, gifts and secrets (F8) ---------------------------------------
@@ -474,7 +622,10 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     });
   }
 
-  /** "¡Casi!": a quiet twinkle on the cat when one piece is missing from a combo (no names, no spoilers). */
+  /**
+   * "¡Casi!": a quiet twinkle on the cat when one piece is missing from a combo (no names, no spoilers). The bubble comes out
+   * to the side of the head (it never covers the name sign) and the cat glances toward the tab of the piece that is missing.
+   */
   private updateAlmost() {
     const now = new Set(almostCombos(this.outfit, this.catalog.combos, this.catalog.clothes, this.unlocked).map((c) => c.id));
     const fresh = [...now].some((id) => !this.almost.has(id));
@@ -482,7 +633,14 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     if (!fresh) return;
     const head = this.cat.getAnchorWorld('head');
     this.sparkles.explode(profileOf(this).count(6), head.x + 90, head.y - 30);
-    showBubble(this, head.x + 110, head.y - 90, '¡Casi...!', 'rosa50');
+    showBubble(this, head.x + 160, head.y + 10, '¡Casi...!', 'rosa50', { fontSize: 26, tail: 'left' });
+    const hint = almostHint(this.outfit, this.catalog.combos, this.catalog.clothes, this.unlocked);
+    const tab = hint && this.tabs.getTabPositions()[hint.category];
+    if (tab && !this.drag) {
+      this.cat.lookAt(tab);
+      this.lookTimer?.remove();
+      this.lookTimer = this.time.delayedCall(600, () => !this.drag && this.cat.lookAt(null));
+    }
   }
 
   private takeOff(d: DragState) {
@@ -508,8 +666,13 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     ghost.setAlpha(1);
     const done = () => {
       ghost.destroy();
-      (cell ?? this.grid.getCell(item.id))?.setLifted(false);
+      const target = cell ?? this.grid.getCell(item.id);
+      target?.setLifted(false);
+      // The cell pops as it gets the garment back, and the cat watched it go ("no?").
+      target?.receivePop();
+      this.cat.lookAt(null);
     };
+    if (home) this.cat.lookAt(home);
     if (home) {
       this.tweens.add({ targets: ghost, x: home.x, y: home.y, scale: homeScale, angle: 0, duration: 250, ease: profileOf(this).ease('Back.easeOut'), onComplete: done });
     } else {
@@ -541,13 +704,22 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.updateAlmost();
   }
 
-  private applyOutfit(next: Outfit) {
+  private applyOutfit(next: Outfit, stagger = false) {
     this.outfit = next;
     this.registry.set(RegistryKeys.Outfit, next);
     const layers = getLayers(next, this.catalog.clothes);
-    this.cat.setOutfit(layers);
+    this.cat.setOutfit(layers, { stagger });
     this.layersPanel.setLayers(layers);
     this.grid.setWorn(new Set(Object.values(next)));
+  }
+
+  /** A ring that "pops" at the anchor (scale 0 to 1.4, alpha 1 to 0, 180 ms); reduced motion only fades it. */
+  private popRing(at: Point, power: number) {
+    const ring = this.add.graphics().setDepth(3990).setPosition(at.x, at.y);
+    ring.lineStyle(7, hex('rosa400'), 1).strokeCircle(0, 0, 46 * (power > 1 ? 1.3 : 1));
+    const calm = profileOf(this).reduced;
+    ring.setScale(calm ? 1 : 0);
+    this.tweens.add({ targets: ring, scale: calm ? 1 : 1.4, alpha: 0, duration: 180, ease: 'Sine.easeOut', onComplete: () => ring.destroy() });
   }
 
   /** Hearts and sparkles where the item lands; combos get a bigger burst. */
@@ -555,6 +727,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     const p = profileOf(this);
     this.hearts.explode(p.count(7 * power), at.x, at.y);
     this.sparkles.explode(p.count(9 * power), at.x, at.y);
+    this.popRing(at, power);
   }
 
   // ---- Test hook (ADR 0012) --------------------------------------------------
@@ -615,8 +788,10 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
       gift: this.gift ? { comboId: this.gift.comboId, itemId: this.gift.item.id, ready: this.gift.ready, opened: this.gift.opened, bow: this.gift.getBowPoint(), box: this.gift.getCenter() } : null,
       pendingGifts: this.gifts.length,
       almost: [...this.almost],
+      pets: this.pets,
+      hint: { shown: this.hintsShown, done: this.hintPlanner.done, showing: this.hintGhost !== null },
       reactions: [...this.reactionLog],
-      settled: this.drag === null && this.giftsComing === 0 && this.reveal.active === 0 && (this.gift === null || this.gift.ready) && cellsSettled && Math.abs(viewport.scroll - viewport.targetScroll) < 0.5 && this.cat.alpha > 0.99 && Math.abs(this.cat.scaleX - this.baseCatScale) < 0.001,
+      settled: !this.cat.settling && this.drag === null && this.giftsComing === 0 && this.reveal.active === 0 && (this.gift === null || this.gift.ready) && cellsSettled && Math.abs(viewport.scroll - viewport.targetScroll) < 0.5 && this.cat.alpha > 0.99 && Math.abs(this.cat.scaleX - this.baseCatScale) < 0.001,
     };
   }
 }

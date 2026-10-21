@@ -76,6 +76,43 @@ test.describe('"Descargar foto" in the Showcase', () => {
     expect((await inspectLastDownload(page)).colors).toBeGreaterThan(40);
   });
 
+  test('the photo shows the love eyes that the player sees, even when the pose was the happy one at the click', async ({ page }) => {
+    await openScene(page, 'Showcase', { cat: CAT.id, name: 'Mimi' });
+    await waitScene(page, 'Showcase');
+    await recordDownloads(page);
+    await page.waitForFunction(() => (window.__VISTE__?.ui?.info as { pose?: string } | undefined)?.pose === 'feliz');
+    const download = page.waitForEvent('download');
+    await clickButton(page, 'photo');
+    await download;
+    // The heart eyes are #E2578B; the happy eyes are dark arcs. Count the heart pixels around the left eye of the picture.
+    const hearts = await page.evaluate(async () => {
+      const seen = (window as unknown as { __downloads: { href: string }[] }).__downloads;
+      const img = new Image();
+      img.src = seen[seen.length - 1].href;
+      await img.decode();
+      const c = document.createElement('canvas');
+      c.width = img.width;
+      c.height = img.height;
+      const ctx = c.getContext('2d')!;
+      ctx.drawImage(img, 0, 0);
+      // Left eye at canvas (192, 218); the photo draws the 512 canvas at 860 px with the feet at y = 1073.
+      const k = 860 / 512;
+      const x = 540 + (192 - 256) * k;
+      const y = 1073 + (218 - 490) * k;
+      const d = ctx.getImageData(Math.round(x - 40), Math.round(y - 40), 80, 80).data;
+      let n = 0;
+      for (let i = 0; i < d.length; i += 4) if (Math.hypot(d[i] - 226, d[i + 1] - 87, d[i + 2] - 139) < 30) n++;
+      return n;
+    });
+    expect(hearts, 'pixels of the heart eye in the picture').toBeGreaterThan(300);
+    // The thumbnail of the photo showed itself and has been cleaned up.
+    await page.waitForFunction(() => (window.__VISTE__?.ui?.info as { reveals?: number } | undefined)?.reveals === 1);
+    await page.waitForFunction(() => {
+      const i = window.__VISTE__?.ui?.info as { revealing?: boolean; revealTextures?: number } | undefined;
+      return i?.revealing === false && i.revealTextures === 0;
+    }, undefined, { timeout: 15_000 });
+  });
+
   test('a double click downloads one photo', async ({ page }) => {
     await openScene(page, 'Showcase', { cat: CAT.id, name: 'Mimi' });
     await waitScene(page, 'Showcase');

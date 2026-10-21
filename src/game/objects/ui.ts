@@ -18,6 +18,31 @@ export function drawPanel(g: Phaser.GameObjects.Graphics, width: number, height:
   g.fillRoundedRect(radius, 8, 90, 6, 3);
 }
 
+/** A cream pill with a rosa-200 border and text (art-direction section 6): a quiet label that stays readable on any backdrop. */
+export function makePill(
+  scene: Phaser.Scene, x: number, y: number, text: string, size = 24, { skipIcon = false }: { skipIcon?: boolean } = {},
+): Phaser.GameObjects.Container {
+  const label = scene.add
+    .text(skipIcon ? 18 : 0, -2, text, { fontFamily: FONT_FAMILY, fontSize: `${size}px`, color: Palette.texto, fontStyle: '600', padding: { x: 2, y: 6 } })
+    .setOrigin(0.5);
+  const w = label.width + 52 + (skipIcon ? 36 : 0);
+  const h = size + 28;
+  const g = scene.add.graphics();
+  g.fillStyle(hex('rosa600'), 0.16).fillRoundedRect(-w / 2 + 2, -h / 2 + 6, w, h, h / 2);
+  g.fillStyle(hex('crema'), 1).fillRoundedRect(-w / 2, -h / 2, w, h, h / 2);
+  g.lineStyle(4, hex('rosa200'), 1).strokeRoundedRect(-w / 2, -h / 2, w, h, h / 2);
+  const parts: Phaser.GameObjects.GameObject[] = [g, label];
+  if (skipIcon) {
+    // The "skip" icon (two triangles) drawn in code: no emoji glyph is needed.
+    const icon = scene.add.graphics();
+    const cx = -w / 2 + 34;
+    icon.fillStyle(hex('rosa600'), 1);
+    icon.fillTriangle(cx - 12, -9, cx - 12, 9, cx, 0).fillTriangle(cx, -9, cx, 9, cx + 12, 0);
+    parts.push(icon);
+  }
+  return scene.add.container(x, y, parts);
+}
+
 export function makeText(
   scene: Phaser.Scene, x: number, y: number, text: string, size = 24, color: string = Palette.texto,
 ): Phaser.GameObjects.Text {

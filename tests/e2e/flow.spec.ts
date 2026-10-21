@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test';
 import {
-  bySlot, cats, clickButton, equipItem, openScene, pickCat, settled, sharedTest as test, startGame, test as fresh, typeName, ui, waitScene,
+  bySlot, cats, clickButton, dressWith, equipItem, openScene, pickCat, settled, sharedTest as test, startGame, test as fresh, typeName, ui, waitScene,
 } from './helpers';
 
 /** The N-th cat of cats.json (not the first, so the test shows that the pick travels). */
@@ -80,10 +80,12 @@ test.describe('the complete flow (ADR 0007)', () => {
     expect(dress.catName).toBe(NAME);
   });
 
-  test('the cat that was worn does not follow to another cat: changing cat starts naked', async ({ page }) => {
+  test('the look follows the player to another cat: changing cat keeps the outfit, and it pops in on the new cat', async ({ page }) => {
     await openScene(page, 'DressUp');
     const sweater = bySlot('sweater')[0];
+    const hat = bySlot('head')[0];
     await settled(page);
+    await dressWith(page, [hat.id]);
     await equipItem(page, sweater);
     await clickButton(page, 'change');
     await waitScene(page, 'CatSelect');
@@ -92,9 +94,13 @@ test.describe('the complete flow (ADR 0007)', () => {
     await pickCat(page, other.id);
     await clickButton(page, 'choose');
     await waitScene(page, 'ShopEntrance');
+    // The session (and the save) already carry the look to the new cat.
+    expect((await page.evaluate(() => window.__VISTE__?.session))?.outfit).toEqual({ sweater: sweater.id, head: hat.id });
     await page.mouse.click(300, 300);
     await waitScene(page, 'DressUp', 20_000);
-    expect((await settled(page)).layers).toEqual([]);
+    const dress = await settled(page);
+    expect(dress.catId).toBe(other.id);
+    expect([...dress.layers].sort()).toEqual([hat.id, sweater.id].sort());
   });
 });
 

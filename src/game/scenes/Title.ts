@@ -8,6 +8,7 @@ import { Cat } from '../objects/Cat';
 import { MuteButton } from '../objects/MuteButton';
 import { MotionButton } from '../objects/MotionButton';
 import { addClouds, addHills, addSky, addSun } from '../objects/scenery';
+import { Cooldown } from '../domain/cooldown';
 import { hex } from '../objects/ui';
 import { getAudio } from '../plugins/AudioPlugin';
 import { go } from '../systems/navigate';
@@ -20,7 +21,7 @@ const LOGO_Y = 190;
 const PEEK = [
   { catIndex: 0, x: 215, scale: 330, rise: 120 },
   { catIndex: 5, x: 1065, scale: 330, rise: 120 },
-  { catIndex: 2, x: 640, scale: 300, rise: 80 },
+  { catIndex: 2, x: 640, scale: 300, rise: 34 },
 ];
 /** Y of the feet of a peeking cat when it is hidden and when it has popped up. */
 const HIDDEN_DY = 330;
@@ -90,14 +91,15 @@ export class Title extends Phaser.Scene implements E2EUi {
   /** A pat on a peeking kitten: happy face, squash and a meow. */
   private makePettable(cat: Cat, size: number) {
     const zone = this.add.zone(cat.x, HILL_TOP - size * 0.12, size * 0.55, size * 0.5).setDepth(6).setInteractive({ useHandCursor: true });
-    let last = 0;
+    // Hearing a meow on every pat tires the ear: the pat answers at most every 0.5 s, the meow at most every 1.2 s.
+    const pat = new Cooldown(500);
+    const meow = new Cooldown(1200);
     zone.on('pointerdown', () => {
-      if (this.time.now - last < 500) return;
-      last = this.time.now;
+      if (!pat.try(this.time.now)) return;
       cat.react('drop');
       cat.squash();
       cat.wiggle();
-      getAudio(this).playRandom(MEOW_KEYS);
+      if (meow.try(this.time.now)) getAudio(this).playRandom(MEOW_KEYS);
       getAudio(this).play(SfxKeys.Purr, { volume: 0.7 });
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => zone.destroy());
@@ -153,10 +155,10 @@ export class Title extends Phaser.Scene implements E2EUi {
 
   private createStart() {
     const cx = GAME_WIDTH / 2;
-    const cy = 392;
+    const cy = 348;
     const halo = this.add.graphics().setDepth(19);
-    halo.fillStyle(hex('rosa200'), 0.8).fillRoundedRect(-170, -62, 340, 124, 62).setPosition(cx, cy).setAlpha(0);
-    this.start = new Button(this, cx, cy, 'Iniciar', { width: 300, height: 104, fontSize: 52 }).setDepth(30).setScale(0);
+    halo.fillStyle(hex('rosa200'), 0.8).fillRoundedRect(-170, -56, 340, 112, 56).setPosition(cx, cy).setAlpha(0);
+    this.start = new Button(this, cx, cy, 'Iniciar', { width: 300, height: 94, fontSize: 50 }).setDepth(30).setScale(0);
     this.start.input!.enabled = false;
     this.time.delayedCall(1500, () => {
       this.tweens.add({
