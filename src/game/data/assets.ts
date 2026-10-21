@@ -1,5 +1,6 @@
 // Asset manifest derived from the catalog (ADR 0010): the Preloader loads exactly this list,
 // so a new cat or clothing item only needs its JSON entry and its SVG in art/ (then `npm run art`).
+import { SfxKeys } from '../constants';
 import { EXPRESSIONS } from '../domain/expressions';
 import type { CatDef, ClothingDef } from '../domain/types';
 
@@ -41,4 +42,15 @@ export function buildManifest(cats: readonly CatDef[], clothes: readonly Clothin
     entries.push({ key: c.icon, path: `${dir}.icon.svg`, size: ICON_TEXTURE_SIZE });
   }
   return entries;
+}
+
+export interface AudioEntry {
+  key: string;
+  /** Paths relative to public/, in order of preference (ogg first, mp3 as fallback). */
+  urls: [string, string];
+}
+
+/** Every sound effect the Preloader loads (ADR 0009). */
+export function buildAudioManifest(): AudioEntry[] {
+  return Object.values(SfxKeys).map((key) => ({ key, urls: [`assets/audio/${key}.ogg`, `assets/audio/${key}.mp3`] }));
 }

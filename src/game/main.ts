@@ -6,7 +6,8 @@ import { CatSelect } from './scenes/CatSelect';
 import { ShopEntrance } from './scenes/ShopEntrance';
 import { DressUp } from './scenes/DressUp';
 import { Showcase } from './scenes/Showcase';
-import { GAME_HEIGHT, GAME_WIDTH, Palette } from './constants';
+import { AudioPlugin } from './plugins/AudioPlugin';
+import { GAME_HEIGHT, GAME_WIDTH, Palette, PluginKeys } from './constants';
 import { installE2EHook } from './e2eHook';
 
 const config: Phaser.Types.Core.GameConfig = {
@@ -19,6 +20,7 @@ const config: Phaser.Types.Core.GameConfig = {
   // One texture per batch: software WebGL (SwiftShader: headless Chromium, VMs) renders multi-texture batches
   // with flickering, half-drawn layers. The scene is small, so the extra draw calls cost nothing.
   render: { maxTextures: 1 },
+  plugins: { global: [{ key: PluginKeys.Audio, plugin: AudioPlugin, start: true }] },
   scene: [Boot, Preloader, Title, CatSelect, ShopEntrance, DressUp, Showcase],
 };
 

@@ -1,7 +1,8 @@
 import type Phaser from 'phaser';
 import type { Game } from 'phaser';
 import type { Outfit, Point, Rect } from './domain/types';
-import { GAME_WIDTH } from './constants';
+import { GAME_WIDTH, PluginKeys, SfxKeys } from './constants';
+import type { AudioPlugin } from './plugins/AudioPlugin';
 
 /** What a scene reports to the test hook, in game coordinates (1280 x 720). */
 export interface DressUpE2EState {
@@ -43,6 +44,12 @@ export interface VisteHook {
   readonly scene: string | null;
   /** Live state of the DressUp scene, or null when it is not active. */
   readonly dressUp: VisteDressUpState | null;
+  /** Audio mute state (persisted in the save). */
+  readonly muted: boolean;
+  /** Sound keys present in the audio cache, to check that the Preloader loaded them. */
+  readonly loadedSounds: string[];
+  /** Test-only action (the rest of the hook is read-only): sets the mute through the AudioPlugin. */
+  setMuted(muted: boolean): void;
 }
 
 /** ADR 0012: read-only test hook, only in test mode or with ?e2e=1. Never in a normal build. */
@@ -60,7 +67,17 @@ export function installE2EHook(game: Game): void {
     const f = r.width / GAME_WIDTH;
     return (p) => ({ x: r.left + p.x * f, y: r.top + p.y * f });
   };
+  const audio = () => game.plugins.get(PluginKeys.Audio) as AudioPlugin;
   const hook: VisteHook = Object.freeze({
+    get muted(): boolean {
+      return audio().muted;
+    },
+    get loadedSounds(): string[] {
+      return Object.values(SfxKeys).filter((k) => game.cache.audio.exists(k));
+    },
+    setMuted(muted: boolean): void {
+      audio().setMuted(muted);
+    },
     get scene(): string | null {
       const active = game.scene.getScenes(true);
       return active.length > 0 ? active[active.length - 1].scene.key : null;

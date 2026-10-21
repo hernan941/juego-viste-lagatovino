@@ -1,7 +1,7 @@
 import { Scene } from 'phaser';
 import { FONT_FAMILY, GAME_HEIGHT, GAME_WIDTH, Palette, RegistryKeys, SceneKeys, colorToNumber } from '../constants';
 import anchorsJson from '../data/anchors.json';
-import { buildManifest } from '../data/assets';
+import { buildAudioManifest, buildManifest } from '../data/assets';
 import catsJson from '../data/cats.json';
 import clothesJson from '../data/clothes.json';
 import combosJson from '../data/combos.json';
@@ -40,6 +40,7 @@ export class Preloader extends Scene {
     for (const a of buildManifest(catalog.cats, catalog.clothes)) {
       this.load.svg(a.key, a.path, { width: a.size, height: a.size });
     }
+    for (const a of buildAudioManifest()) this.load.audio(a.key, a.urls);
   }
 
   create() {

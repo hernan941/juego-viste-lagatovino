@@ -68,6 +68,44 @@ export const TextureKeys = {
   Sparkle: 'particle-sparkle',
 } as const;
 
+/** Global plugin keys (GameConfig.plugins.global). */
+export const PluginKeys = {
+  Audio: 'AudioPlugin',
+} as const;
+
+/** Sound effect keys (docs/art-direction.md section 9). Files: public/assets/audio/<key>.{ogg,mp3}. */
+export const SfxKeys = {
+  /** Pick up an item: soft wool rub. */
+  Grab: 'sfx-grab',
+  /** Dragging: barely-there whisper (optional). */
+  Drag: 'sfx-drag',
+  /** Drop on the cat: padded pop (pair it with Purr). */
+  Drop: 'sfx-drop',
+  /** Short purr after dropping an item or petting the cat. */
+  Purr: 'sfx-purr',
+  /** Item returns to its grid cell: soft boing. */
+  Return: 'sfx-return',
+  /** Remove with the X: cloth sliding. */
+  Remove: 'sfx-remove',
+  Hover: 'sfx-hover',
+  Click: 'sfx-click',
+  /** Entering the shop: door bell. */
+  Doorbell: 'sfx-doorbell',
+  /** Downloading the photo: soft shutter. */
+  Shutter: 'sfx-shutter',
+  /** Typing the cat's name. */
+  Key: 'sfx-key',
+  /** Gift reveal: paper and ribbon (F8). */
+  Gift: 'sfx-gift',
+  Meow1: 'sfx-meow-1',
+  Meow2: 'sfx-meow-2',
+  Meow3: 'sfx-meow-3',
+} as const;
+export type SfxKey = (typeof SfxKeys)[keyof typeof SfxKeys];
+
+/** Short meows to pick from at random for reactions. */
+export const MEOW_KEYS: readonly SfxKey[] = [SfxKeys.Meow1, SfxKeys.Meow2, SfxKeys.Meow3];
+
 /** Tab labels by catalog category (UI text in Spanish). */
 export const CATEGORY_LABELS = {
   sweater: 'Sweaters',
