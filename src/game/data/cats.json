@@ -1,0 +1,5 @@
+[
+  { "id": "naranja", "name": "Naranjito", "coat": "Atigrado naranja", "texture": "cat-naranja" },
+  { "id": "negro", "name": "Luna", "coat": "Negro entero", "texture": "cat-negro" },
+  { "id": "calico", "name": "Tricolor", "coat": "Calicó (blanco, naranja y negro)", "texture": "cat-calico" }
+]

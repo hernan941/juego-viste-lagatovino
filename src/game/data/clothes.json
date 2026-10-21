@@ -1,0 +1,8 @@
+[
+  { "id": "sweater-rayas", "name": "Sweater de rayas", "slot": "sweater", "category": "sweater", "texture": "sweater-rayas", "icon": "sweater-rayas-icon", "tags": ["lana", "rayas"] },
+  { "id": "sweater-navideno", "name": "Sweater navideño", "slot": "sweater", "category": "sweater", "texture": "sweater-navideno", "icon": "sweater-navideno-icon", "tags": ["lana", "navidad"] },
+  { "id": "sweater-cuello-alto", "name": "Sweater de cuello alto", "slot": "sweater", "category": "sweater", "texture": "sweater-cuello-alto", "icon": "sweater-cuello-alto-icon", "tags": ["lana"] },
+  { "id": "sweater-corazones", "name": "Sweater de corazones", "slot": "sweater", "category": "sweater", "texture": "sweater-corazones", "icon": "sweater-corazones-icon", "tags": ["lana", "corazones"] },
+  { "id": "head-beanie-pompon", "name": "Beanie con pompón", "slot": "head", "category": "head", "texture": "head-beanie-pompon", "icon": "head-beanie-pompon-icon", "tags": ["lana", "navidad"] },
+  { "id": "head-boina", "name": "Boina", "slot": "head", "category": "head", "texture": "head-boina", "icon": "head-boina-icon", "tags": ["elegante"] }
+]
