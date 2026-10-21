@@ -12,6 +12,7 @@ import { chooseCat, emptySession } from '../domain/session';
 import { yarnState, type YarnOptions } from '../domain/yarn';
 import { e2eStart } from '../e2eHook';
 import { hex } from '../objects/ui';
+import { getSave } from '../plugins/SavePlugin';
 import { go } from '../systems/navigate';
 import { writeSession } from '../systems/sessionStore';
 import { enterKind, transitionIn, transitionTo } from '../systems/transitions';
@@ -96,6 +97,8 @@ export class Preloader extends Scene {
     if (!anchors.ok) throw new Error(`Anclas inválidas:\n- ${anchors.errors.join('\n- ')}`);
     this.registry.set(RegistryKeys.Catalog, catalog);
     this.registry.set(RegistryKeys.Anchors, anchors.value);
+    // The cat, name and outfit of the last visit (ADR 0004): CatSelect preselects them and DressUp wears them.
+    getSave(this).restoreInto(catalog);
     for (const a of buildManifest(catalog.cats, catalog.clothes)) {
       this.load.svg(a.key, a.path, { width: a.size, height: a.size });
     }

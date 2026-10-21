@@ -7,6 +7,7 @@ import { ShopEntrance } from './scenes/ShopEntrance';
 import { DressUp } from './scenes/DressUp';
 import { Showcase } from './scenes/Showcase';
 import { AudioPlugin } from './plugins/AudioPlugin';
+import { SavePlugin } from './plugins/SavePlugin';
 import { GAME_HEIGHT, GAME_WIDTH, Palette, PluginKeys } from './constants';
 import { installE2EHook } from './e2eHook';
 
@@ -21,7 +22,12 @@ const config: Phaser.Types.Core.GameConfig = {
   // multi-texture batches with flickering, half-drawn layers, so tests batch one texture at a time.
   // Real browsers (dev and production) use Phaser's default.
   ...(import.meta.env.MODE === 'test' ? { render: { maxTextures: 1 } } : {}),
-  plugins: { global: [{ key: PluginKeys.Audio, plugin: AudioPlugin, start: true }] },
+  plugins: {
+    global: [
+      { key: PluginKeys.Audio, plugin: AudioPlugin, start: true },
+      { key: PluginKeys.Save, plugin: SavePlugin, start: true },
+    ],
+  },
   scene: [Boot, Preloader, Title, CatSelect, ShopEntrance, DressUp, Showcase],
 };
 

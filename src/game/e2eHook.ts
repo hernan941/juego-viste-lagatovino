@@ -1,8 +1,9 @@
 import type Phaser from 'phaser';
 import type { Game } from 'phaser';
-import type { Outfit, Point, Rect } from './domain/types';
+import type { Outfit, Point, Rect, SaveData } from './domain/types';
 import { GAME_WIDTH, PluginKeys, SfxKeys } from './constants';
 import type { AudioPlugin } from './plugins/AudioPlugin';
+import type { SavePlugin } from './plugins/SavePlugin';
 import type { Session } from './domain/session';
 import { readSession } from './systems/sessionStore';
 
@@ -78,6 +79,8 @@ export interface VisteHook {
   readonly ui: VisteUi | null;
   /** The cat, name and outfit that travel between scenes. */
   readonly session: Session;
+  /** What is stored in localStorage right now (what a reload would restore). */
+  readonly saved: SaveData;
   /** Audio mute state (persisted in the save). */
   readonly muted: boolean;
   /** Sound keys present in the audio cache, to check that the Preloader loaded them. */
@@ -132,6 +135,9 @@ export function installE2EHook(game: Game): void {
   const hook: VisteHook = Object.freeze({
     get sounds(): string[] {
       return [...sounds];
+    },
+    get saved(): SaveData {
+      return (game.plugins.get(PluginKeys.Save) as SavePlugin).saved;
     },
     get muted(): boolean {
       return audio().muted;

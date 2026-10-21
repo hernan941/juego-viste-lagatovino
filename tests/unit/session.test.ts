@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { RegistryKeys } from '../../src/game/constants';
-import { chooseCat, emptySession, isComplete, toSaveData, withOutfit } from '../../src/game/domain/session';
+import { chooseCat, emptySession, isComplete, sessionFromSave, toSaveData, withOutfit } from '../../src/game/domain/session';
 import { defaultSave } from '../../src/game/plugins/saveCore';
 import { readSession, writeSession, type RegistryLike } from '../../src/game/systems/sessionStore';
 
@@ -66,5 +66,34 @@ describe('session store (registry)', () => {
     reg.set(RegistryKeys.CatName, null);
     reg.set(RegistryKeys.Outfit, 'x');
     expect(readSession(reg)).toEqual(emptySession());
+  });
+});
+
+describe('sessionFromSave (restoring a save against the catalog)', () => {
+  const cats = [{ id: 'luna', name: 'Luna' }, { id: 'nube', name: 'Nube' }];
+  const clothes = [
+    { id: 'sweater-a', slot: 'sweater' as const },
+    { id: 'head-b', slot: 'head' as const },
+  ];
+  const save = (over: Partial<ReturnType<typeof defaultSave>>) => ({ ...defaultSave(), ...over });
+
+  it('restores the cat, the name and the outfit', () => {
+    const s = sessionFromSave(save({ catId: 'luna', catName: 'Mimi', outfit: { sweater: 'sweater-a', head: 'head-b' } }), cats, clothes);
+    expect(s).toEqual({ catId: 'luna', catName: 'Mimi', outfit: { sweater: 'sweater-a', head: 'head-b' } });
+  });
+
+  it('starts clean when there is no cat or the cat no longer exists', () => {
+    expect(sessionFromSave(save({}), cats, clothes)).toEqual(emptySession());
+    expect(sessionFromSave(save({ catId: 'fantasma', catName: 'X' }), cats, clothes)).toEqual(emptySession());
+  });
+
+  it('falls back to the default name of the cat when the saved name is invalid', () => {
+    expect(sessionFromSave(save({ catId: 'nube', catName: '   ' }), cats, clothes).catName).toBe('Nube');
+    expect(sessionFromSave(save({ catId: 'nube', catName: 'x'.repeat(40) }), cats, clothes).catName).toBe('Nube');
+  });
+
+  it('drops items that are not in the catalog or sit in the wrong slot', () => {
+    const s = sessionFromSave(save({ catId: 'luna', catName: 'L', outfit: { sweater: 'borrado', head: 'sweater-a' } }), cats, clothes);
+    expect(s.outfit).toEqual({});
   });
 });

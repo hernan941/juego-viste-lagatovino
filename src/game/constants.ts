@@ -77,6 +77,7 @@ export const TextureKeys = {
 /** Global plugin keys (GameConfig.plugins.global). */
 export const PluginKeys = {
   Audio: 'AudioPlugin',
+  Save: 'SavePlugin',
 } as const;
 
 /** Sound effect keys (docs/art-direction.md section 9). Files: public/assets/audio/<key>.{ogg,mp3}. */
