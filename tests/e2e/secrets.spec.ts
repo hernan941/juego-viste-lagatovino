@@ -76,19 +76,21 @@ test.describe('secret combos (F8)', () => {
     const worn = pieces(combo);
     await wear(page, worn.slice(0, -1));
     expect((await state(page)).fxEmitters).toBe(0);
-    // The page itself times the effect: from the first emitter alive to the moment there is none (the drag is not counted).
+    // The page itself times the effect in game time (the scene clock): from the first emitter alive to the moment there is none.
     const timing = page.evaluate(() => new Promise<number>((resolve) => {
       let t0 = 0;
       const tick = () => {
-        const n = window.__VISTE__?.dressUp?.fxEmitters ?? 0;
-        if (t0 === 0 && n > 0) t0 = performance.now();
-        else if (t0 > 0 && n === 0) return resolve(performance.now() - t0);
+        const d = window.__VISTE__?.dressUp;
+        const n = d?.fxEmitters ?? 0;
+        if (t0 === 0 && n > 0) t0 = d!.clockMs;
+        else if (t0 > 0 && n === 0) return resolve(d!.clockMs - t0);
         requestAnimationFrame(tick);
       };
       tick();
     }));
     await equipItem(page, worn[worn.length - 1]);
     const elapsed = await timing;
+    expect(elapsed).toBeGreaterThan(3000); // the flakes do fall for a while
     expect(elapsed).toBeLessThan(5500);
   });
 
