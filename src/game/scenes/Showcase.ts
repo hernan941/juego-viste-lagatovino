@@ -66,6 +66,8 @@ export class Showcase extends Phaser.Scene implements E2EUi {
   /** The thumbnail of the photo that is on screen, if any, and how many have been shown (for the e2e hook). */
   private revealImage: Phaser.GameObjects.Image | null = null;
   private reveals = 0;
+  /** The thumbnail of the photo has landed (the "¡Foto lista!" bubble waits for it). */
+  private revealSettled = false;
   private readonly toastLog: string[] = [];
 
   constructor() {
@@ -79,6 +81,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
     this.lovePoses = 0;
     this.revealImage = null;
     this.reveals = 0;
+    this.revealSettled = false;
     this.toastLog.length = 0;
     this.pose = 'feliz';
     this.ready = false;
@@ -215,7 +218,6 @@ export class Showcase extends Phaser.Scene implements E2EUi {
     downloadDataUrl<HTMLAnchorElement>({ createElement: () => document.createElement('a'), body: document.body }, url, file);
     this.photos++;
     this.lastPhoto = file;
-    this.toast('¡Foto lista!');
     this.showReveal(url);
     this.photoBusy = false;
   }
@@ -236,6 +238,12 @@ export class Showcase extends Phaser.Scene implements E2EUi {
       const img = this.add.image(REVEAL.x, REVEAL.y, key).setScale(REVEAL.scale).setDepth(65);
       this.revealImage = img;
       this.reveals++;
+      this.revealSettled = false;
+      // The bubble comes out when the thumbnail has landed (or faded in), never before: the card does not fall over it.
+      const landed = () => {
+        this.revealSettled = true;
+        this.toast('¡Foto lista!');
+      };
       const bye = () => {
         if (this.revealImage === img) this.revealImage = null;
         img.destroy();
@@ -245,7 +253,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
         img.setAlpha(0);
         this.tweens.chain({
           targets: img,
-          tweens: [{ alpha: 1, duration: 300 }, { alpha: 1, duration: 1200 }, { alpha: 0, duration: 300, onComplete: bye }],
+          tweens: [{ alpha: 1, duration: 300, onComplete: landed }, { alpha: 1, duration: 1200 }, { alpha: 0, duration: 300, onComplete: bye }],
         });
         return;
       }
@@ -254,7 +262,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
       this.tweens.chain({
         targets: img,
         tweens: [
-          { y: REVEAL.y, angle: 6, duration: 520, ease: 'Back.easeOut' },
+          { y: REVEAL.y, angle: 6, duration: 520, ease: 'Back.easeOut', onComplete: landed },
           { y: REVEAL.y - 6, duration: 1200, ease: 'Sine.easeInOut' },
           { x: pocket.x, y: pocket.y, scale: 0.04, angle: 0, alpha: 0, duration: 480, ease: 'Quad.easeIn', onComplete: bye },
         ],
@@ -321,7 +329,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
       ready: this.ready && !this.leaving,
       buttons: { keep: this.keep.getCenter(), photo: this.photo.getCenter(), change: this.change.getCenter(), mute: this.mute.getCenter(), motion: this.motion.getCenter() },
       points: {},
-      info: { title: this.title, pose: this.pose, layers: this.cat.wornIds, photos: this.photos, lastPhoto: this.lastPhoto, photoBusy: this.photoBusy, revealing: this.revealImage !== null, reveals: this.reveals, revealTextures: this.textures.getTextureKeys().filter((k) => k.startsWith('photo-reveal')).length, toasts: [...this.toastLog], secrets: this.counter.text },
+      info: { title: this.title, pose: this.pose, layers: this.cat.wornIds, photos: this.photos, lastPhoto: this.lastPhoto, photoBusy: this.photoBusy, revealing: this.revealImage !== null, revealSettled: this.revealSettled, reveals: this.reveals, revealTextures: this.textures.getTextureKeys().filter((k) => k.startsWith('photo-reveal')).length, toasts: [...this.toastLog], secrets: this.counter.text },
     };
   }
 }

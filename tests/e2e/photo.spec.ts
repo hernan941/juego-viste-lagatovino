@@ -113,6 +113,25 @@ test.describe('"Descargar foto" in the Showcase', () => {
     }, undefined, { timeout: 15_000 });
   });
 
+  test('"¡Foto lista!" appears when the thumbnail has landed, not before', async ({ page }) => {
+    await openScene(page, 'DressUp', { cat: CAT.id, name: 'Doña Bigotes' });
+    await settled(page);
+    await equipItem(page, bySlot('sweater')[0]);
+    await clickButton(page, 'finish');
+    await waitScene(page, 'Showcase');
+    // The page watches every frame and notes whether the thumbnail had landed on the frame where the bubble showed up.
+    const watching = page.evaluate(() => new Promise<{ settled: boolean; revealing: boolean }>((resolve) => {
+      const tick = () => {
+        const i = window.__VISTE__?.ui?.info as { toasts?: string[]; revealSettled?: boolean; revealing?: boolean } | undefined;
+        if (i?.toasts?.includes('¡Foto lista!')) return resolve({ settled: i.revealSettled === true, revealing: i.revealing === true });
+        requestAnimationFrame(tick);
+      };
+      tick();
+    }));
+    await clickButton(page, 'photo');
+    expect(await watching).toEqual({ settled: true, revealing: true });
+  });
+
   test('a double click downloads one photo', async ({ page }) => {
     await openScene(page, 'Showcase', { cat: CAT.id, name: 'Mimi' });
     await waitScene(page, 'Showcase');
