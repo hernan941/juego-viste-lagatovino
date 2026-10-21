@@ -1,7 +1,7 @@
 // Combo detection and secret unlocking (docs/game-design.md, "Regalitos de la tienda").
 import type { Expression } from './expressions';
 import type { Slot } from './slots';
-import type { ClothingDef, ComboDef, ComboRequirement, Outfit } from './types';
+import type { Category, ClothingDef, ComboDef, ComboRequirement, Outfit } from './types';
 
 export interface SecretsState {
   unlocked: readonly string[];
@@ -119,4 +119,27 @@ export function almostCombos(
     const met = c.requires.filter((r) => meets(r, outfit, byId)).length;
     return c.requires.length - met === 1 && met >= 2;
   });
+}
+
+export interface AlmostHint {
+  comboId: string;
+  /** The tab (category) of the piece that is missing, where the cat looks. */
+  category: Category;
+}
+
+/** The tab to look at for the first combo that lacks exactly one piece (see `almostCombos`), or null. */
+export function almostHint(
+  outfit: Outfit,
+  combos: readonly ComboDef[],
+  catalog: readonly ClothingDef[],
+  unlocked: readonly string[],
+): AlmostHint | null {
+  const byId = new Map(catalog.map((c) => [c.id, c]));
+  for (const combo of almostCombos(outfit, combos, catalog, unlocked)) {
+    const missing = combo.requires.find((r) => !meets(r, outfit, byId));
+    const slot = missing && slotOf(missing, byId);
+    const category = slot && catalog.find((c) => c.slot === slot)?.category;
+    if (category) return { comboId: combo.id, category };
+  }
+  return null;
 }

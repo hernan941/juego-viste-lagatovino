@@ -20,3 +20,18 @@ export function lookOffset(from: Point, target: Point, maxX: number, maxY: numbe
     y: clamp((target.y - from.y) / range, -1, 1) * maxY,
   };
 }
+
+/** The cat glances aside every 8 to 12 s. `rand` in [0, 1). */
+export function nextIdleLookDelay(rand: number): number {
+  return 8000 + rand * 4000;
+}
+
+/** A spontaneous tail wag every 6 to 10 s, so the cat looks like it is thinking. `rand` in [0, 1). */
+export function nextFlickDelay(rand: number): number {
+  return 6000 + rand * 4000;
+}
+
+/** Where the face drifts when the cat glances aside: left or right by `px`. */
+export function idleLookOffset(rand: number, px: number): Point {
+  return { x: rand < 0.5 ? -px : px, y: 0 };
+}

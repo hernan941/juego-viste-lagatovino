@@ -1,6 +1,6 @@
 // Testable heart of AudioPlugin (ADR 0009): pitch variation, polyphony limit, mute persistence and the
 // "not before the first gesture" rule, on top of AudioCore. No Phaser here: the plugin passes a SoundBackend.
-import { AudioCore, pitchVariation } from './audioCore';
+import { AudioCore, MIN_INTERVAL_MS, RisingPitch, pitchVariation } from './audioCore';
 import { loadSave, saveToStorage, type StorageLike } from './saveCore';
 
 /** Overall level of the effects. Files are normalized to -9 dBFS peak, so this keeps them soft (ASMR). */
@@ -35,6 +35,8 @@ export interface AudioServiceDeps {
   storage: StorageLike;
   rng?: () => number;
   maxPerKey?: number;
+  /** The clock in ms (performance.now by default), so tests can drive the minimum interval and the rising pitch. */
+  now?: () => number;
 }
 
 /** Picks one element with an injectable rng() in [0, 1]. */
@@ -47,12 +49,15 @@ export class AudioService {
   private readonly backend: SoundBackend;
   private readonly storage: StorageLike;
   private readonly rng: () => number;
+  private readonly now: () => number;
+  private readonly rising = new RisingPitch();
 
-  constructor({ backend, storage, rng = Math.random, maxPerKey }: AudioServiceDeps) {
+  constructor({ backend, storage, rng = Math.random, maxPerKey, now = () => performance.now() }: AudioServiceDeps) {
     this.backend = backend;
     this.storage = storage;
     this.rng = rng;
-    this.core = new AudioCore({ muted: loadSave(storage).muted, maxPerKey });
+    this.now = now;
+    this.core = new AudioCore({ muted: loadSave(storage).muted, maxPerKey, minIntervalMs: MIN_INTERVAL_MS, now });
     backend.setMute(this.core.muted);
   }
 
@@ -70,7 +75,7 @@ export class AudioService {
       this.core.end(key);
     };
     const config: PlayConfig = {
-      rate: vary ? rate * pitchVariation(this.rng) : rate,
+      rate: (vary ? rate * pitchVariation(this.rng) : rate) * this.rising.next(key, this.now()),
       volume: Math.min(1, Math.max(0, BASE_VOLUME * volume)),
     };
     const started = this.backend.play(key, config, done);

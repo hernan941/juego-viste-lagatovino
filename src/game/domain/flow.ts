@@ -33,3 +33,9 @@ const FLOW: Record<string, Partial<Record<FlowAction, FlowStep>>> = {
 export function nextStep(scene: string, action: FlowAction): FlowStep | null {
   return FLOW[scene]?.[action] ?? null;
 }
+
+/** Combo ids whose prize was delivered quietly when the player left the fitting room without opening the gift. */
+export function giftedFrom(data: unknown): string[] {
+  const gifted = (data as { gifted?: unknown } | null | undefined)?.gifted;
+  return Array.isArray(gifted) ? gifted.filter((id): id is string => typeof id === 'string') : [];
+}

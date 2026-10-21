@@ -22,10 +22,14 @@ describe('session state', () => {
     expect(isComplete(s)).toBe(true);
   });
 
-  it('choosing another cat clears the outfit, choosing the same one keeps it', () => {
+  it('choosing another cat keeps the outfit (every garment fits every cat, ADR 0003): how does this look on Luna?', () => {
     const dressed = withOutfit(chooseCat(emptySession(), 'a', 'A'), { sweater: 's1' });
-    expect(chooseCat(dressed, 'b', 'B').outfit).toEqual({});
+    expect(chooseCat(dressed, 'b', 'B')).toEqual({ catId: 'b', catName: 'B', outfit: { sweater: 's1' } });
     expect(chooseCat(dressed, 'a', 'Nuevo').outfit).toEqual({ sweater: 's1' });
+  });
+
+  it('a first cat starts naked', () => {
+    expect(chooseCat(emptySession(), 'a', 'A').outfit).toEqual({});
   });
 
   it('refuses an invalid name by keeping the previous session', () => {

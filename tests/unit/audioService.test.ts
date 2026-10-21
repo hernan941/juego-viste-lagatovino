@@ -162,3 +162,49 @@ describe('AudioService mute', () => {
     expect(service.muted).toBe(true);
   });
 });
+
+describe('AudioService: hover sweep (minimum interval and rising pitch)', () => {
+  const sweep = () => {
+    const clock = { t: 10_000 };
+    const backend = new FakeBackend();
+    const service = new AudioService({ backend, storage: new MemoryStorage(), rng: () => 0.5, now: () => clock.t });
+    return { clock, backend, service };
+  };
+
+  it('twelve hovers in a flash (20 ms apart) do not rattle: at most one per 70 ms', () => {
+    const { clock, backend, service } = sweep();
+    let played = 0;
+    for (let i = 0; i < 12; i++) {
+      clock.t += 20;
+      if (service.play('sfx-hover')) played++;
+    }
+    // Played at 20, 100 and 180 ms: the ones in between were swallowed.
+    expect(played).toBe(3);
+    expect(backend.started).toHaveLength(3);
+  });
+
+  it('the pitch climbs when hovers follow each other and falls back after a pause', () => {
+    const { clock, backend, service } = sweep();
+    for (let i = 0; i < 3; i++) {
+      clock.t += 100;
+      service.play('sfx-hover');
+    }
+    const rates = backend.started.map((s) => s.config.rate);
+    expect(rates[0]).toBeCloseTo(1);
+    expect(rates[1]).toBeGreaterThan(rates[0]);
+    expect(rates[2]).toBeGreaterThan(rates[1]);
+    for (const done of backend.finish) done();
+    clock.t += 1000;
+    expect(service.play('sfx-hover')).toBe(true);
+    expect(backend.started.at(-1)!.config.rate).toBeCloseTo(1);
+  });
+
+  it('the other sounds are not limited or bent', () => {
+    const { clock, backend, service } = sweep();
+    for (let i = 0; i < 3; i++) {
+      clock.t += 5;
+      expect(service.play('sfx-click')).toBe(true);
+    }
+    expect(backend.started.map((s) => s.config.rate)).toEqual([1, 1, 1]);
+  });
+});

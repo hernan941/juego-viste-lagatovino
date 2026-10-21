@@ -17,11 +17,11 @@ export function isComplete(s: Session): boolean {
   return s.catId !== null && validateCatName(s.catName).ok;
 }
 
-/** Picks a cat and names it. Another cat starts naked; the same cat keeps its clothes. An invalid name changes nothing. */
+/** Picks a cat and names it. The outfit is kept for any cat (every garment fits every cat, ADR 0003). An invalid name changes nothing. */
 export function chooseCat(s: Session, catId: string, rawName: string): Session {
   const check = validateCatName(rawName);
   if (!check.ok) return s;
-  return { catId, catName: check.name, outfit: s.catId === catId ? s.outfit : {} };
+  return { catId, catName: check.name, outfit: s.outfit };
 }
 
 export function withOutfit(s: Session, outfit: Outfit): Session {

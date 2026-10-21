@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  COMBO_REACTIONS, almostCombos, comboOutfit, comboReactionPlan, findCompletedCombos, newlyCompleted, secretRewards, unlockSecret,
+  COMBO_REACTIONS, almostCombos, almostHint, comboOutfit, comboReactionPlan, findCompletedCombos, newlyCompleted, secretRewards, unlockSecret,
 } from '../../src/game/domain/combos';
 import type { ClothingDef, ComboDef } from '../../src/game/domain/types';
 
@@ -165,5 +165,30 @@ describe('comboReactionPlan', () => {
 
   it('falls back to a love face for an unknown reaction', () => {
     expect(comboReactionPlan('whatever')).toEqual({ expression: 'amor', ms: 1600 });
+  });
+});
+
+describe('almostHint (where the cat looks when one piece is missing)', () => {
+  const tabbed = [
+    { ...item('xmas', 'sweater', ['navidad']), category: 'sweater' as const },
+    { ...item('pompom', 'head', ['navidad']), category: 'head' as const },
+    { ...item('scarf', 'neck'), category: 'neck' as const },
+    { ...item('scarf2', 'neck'), category: 'neck' as const },
+  ];
+
+  it('points to the category of the missing item (by id)', () => {
+    expect(almostHint({ sweater: 'xmas', head: 'pompom' }, [navidad], tabbed, [])).toEqual({ comboId: 'navidad', category: 'neck' });
+    expect(almostHint({ head: 'pompom', neck: 'scarf' }, [navidad], tabbed, [])).toEqual({ comboId: 'navidad', category: 'sweater' });
+    expect(almostHint({ sweater: 'xmas', neck: 'scarf' }, [navidad], tabbed, [])).toEqual({ comboId: 'navidad', category: 'head' });
+  });
+
+  it('points to the category of the slot when the missing piece is a tag', () => {
+    const withTag = { ...festive, requires: [...festive.requires, { slot: 'neck' as const, tag: 'x' }] };
+    expect(almostHint({ sweater: 'xmas', head: 'pompom' }, [withTag], tabbed, [])).toEqual({ comboId: 'festive', category: 'neck' });
+  });
+
+  it('is null when nothing is almost there, or the gift is already unlocked', () => {
+    expect(almostHint({}, combos, tabbed, [])).toBeNull();
+    expect(almostHint({ sweater: 'xmas', head: 'pompom' }, [navidad], tabbed, ['navidad'])).toBeNull();
   });
 });

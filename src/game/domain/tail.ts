@@ -20,12 +20,28 @@ export function tailPivot(anchors: Pick<AnchorsDef, 'canvas' | 'details'>): { po
   return { point: { ...point }, origin: { x: point.x / anchors.canvas.width, y: point.y / anchors.canvas.height } };
 }
 
+/** The whip when an item is dropped is bigger than the base flick, and the spontaneous wag of the idle is softer. */
+export const TAIL_FLICK_DROP = 12;
+export const TAIL_FLICK_WAG = 6;
+
+export interface FlickStep {
+  angle: number;
+  duration: number;
+  ease: string;
+}
+
 /**
- * The flick as tween steps: snaps to one side, then the other, and settles on the angle where the sway
- * starts (-TAIL_IDLE.angle), so handing over to the sway does not make the tail jump.
+ * The flick as tween steps: snaps to one side (`angle` degrees), then the other, and settles on the angle where the sway
+ * starts (-TAIL_IDLE.angle), so handing over to the sway does not make the tail jump. `swing` scales every angle: the
+ * motion profile uses it to calm the tail (ADR 0013), and the sway scales with it so the hand-over still matches.
  */
-export const TAIL_FLICK_STEPS = [
-  { angle: -TAIL_FLICK.angle, duration: 70, ease: 'Quad.easeOut' },
-  { angle: TAIL_FLICK.angle, duration: 110, ease: 'Sine.easeInOut' },
-  { angle: -TAIL_IDLE.angle, duration: TAIL_FLICK.duration, ease: TAIL_FLICK.ease },
-] as const;
+export function flickSteps(angle: number, swing = 1): FlickStep[] {
+  return [
+    { angle: -angle * swing, duration: 70, ease: 'Quad.easeOut' },
+    { angle: angle * swing, duration: 110, ease: 'Sine.easeInOut' },
+    { angle: -TAIL_IDLE.angle * swing, duration: TAIL_FLICK.duration, ease: TAIL_FLICK.ease },
+  ];
+}
+
+/** The base flick (8 degrees). */
+export const TAIL_FLICK_STEPS = flickSteps(TAIL_FLICK.angle);
