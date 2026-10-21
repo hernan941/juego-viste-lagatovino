@@ -41,7 +41,7 @@ async function inspectLastDownload(page: Page) {
 test.describe('"Descargar foto" in the Showcase', () => {
   test.setTimeout(120_000);
 
-  test('downloads a named PNG of the dressed cat, with shutter, flash and a confirmation', async ({ page }, testInfo) => {
+  test('downloads a named PNG of the dressed cat, with shutter, flash and a confirmation @cross', async ({ page }, testInfo) => {
     await openScene(page, 'DressUp', { cat: CAT.id, name: 'Doña Bigotes' });
     await settled(page);
     await recordDownloads(page);

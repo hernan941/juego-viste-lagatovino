@@ -9,7 +9,7 @@ test('every sound effect loads from the Preloader without console errors', async
   expect([...loaded].sort()).toEqual(Object.values(SfxKeys).sort());
 });
 
-test('the mute persists across reloads', async ({ page }) => {
+test('the mute persists across reloads @cross', async ({ page }) => {
   await page.goto('/?start=DressUp');
   await page.waitForFunction(() => window.__VISTE__?.scene === 'DressUp', undefined, { timeout: 15_000 });
   expect(await page.evaluate(() => window.__VISTE__?.muted)).toBe(false);

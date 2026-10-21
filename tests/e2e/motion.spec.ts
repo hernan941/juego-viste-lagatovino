@@ -10,7 +10,7 @@ test.describe('with the browser asking for less motion', () => {
   test.use({ reducedMotion: 'reduce' });
   test.setTimeout(120_000);
 
-  test('starts reduced on a clean save, and the iris of a scene change ends as a fade', async ({ page }) => {
+  test('starts reduced on a clean save, and the iris of a scene change ends as a fade @cross', async ({ page }) => {
     await page.goto('/');
     await waitScene(page, 'Title');
     expect(await state(page)).toEqual({ reduced: true, pref: 'auto' });

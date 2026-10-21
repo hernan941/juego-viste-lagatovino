@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { bySlot, cats, dressWith, settled, test, waitScene } from './helpers';
 
-test('the game boots through the Preloader to the Title with a canvas and no console errors', async ({ page }) => {
+test('the game boots through the Preloader to the Title with a canvas and no console errors @cross', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('canvas')).toBeVisible();
   await page.waitForFunction(() => window.__VISTE__?.scene === 'Title', undefined, { timeout: 30_000 });

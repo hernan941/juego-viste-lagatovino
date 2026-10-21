@@ -34,7 +34,7 @@ for (const { category, part, of, items } of chunks) {
   });
 }
 
-test('dropping outside the cat does not wear the item and it returns to its cell', async ({ page }) => {
+test('dropping outside the cat does not wear the item and it returns to its cell @cross', async ({ page }) => {
   const item = clothes[0];
   await openGame(page);
   const before = await showItem(page, item);
@@ -58,7 +58,7 @@ test('an item of the same slot replaces the previous one', async ({ page }) => {
   await expect.poll(async () => (await state(page)).layerRows.map((r) => r.itemId)).toEqual([second.id]);
 });
 
-test('dragging a worn item off the cat takes it off', async ({ page }) => {
+test('dragging a worn item off the cat takes it off @cross', async ({ page }) => {
   const item = clothes[0];
   await openGame(page);
   const worn = await equipItem(page, item);
@@ -78,7 +78,7 @@ test('dropping a worn item back on the cat keeps it', async ({ page }) => {
   expect(s.outfit).toEqual({ [item.slot]: item.id });
 });
 
-test('the cross of the layers panel takes the item off', async ({ page }) => {
+test('the cross of the layers panel takes the item off @cross', async ({ page }) => {
   const item = clothes[0];
   await openGame(page);
   await equipItem(page, item);

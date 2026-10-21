@@ -62,7 +62,7 @@ test.describe('the magnet (ADR 0008)', () => {
     }
   });
 
-  test('a drop inside the cat but beyond the magnet radius is worn too, and a drop outside is not', async ({ page }) => {
+  test('a drop inside the cat but beyond the magnet radius is worn too, and a drop outside is not @cross', async ({ page }) => {
     const item = clothes[0];
     await openGame(page);
     const s = await showItem(page, item);

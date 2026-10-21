@@ -16,7 +16,7 @@ async function openTab(page: Page, category: string) {
   return settled(page);
 }
 
-test('the game has one tab per category of clothes.json', async ({ page }) => {
+test('the game has one tab per category of clothes.json @cross', async ({ page }) => {
   const s = await openGame(page);
   expect(Object.keys(s.tabs).sort()).toEqual([...categories].sort());
   expect(categories.length).toBeGreaterThanOrEqual(6);
@@ -51,7 +51,7 @@ test('no secret item shows up in any tab', async ({ page }) => {
   }
 });
 
-test('one item per category can be worn at once and the layers panel lists all of them', async ({ page }) => {
+test('one item per category can be worn at once and the layers panel lists all of them @cross', async ({ page }) => {
   test.setTimeout(120_000);
   await openGame(page);
   // Five categories are put on through the hook and the last one is dragged: the point is that they all stay worn together.

@@ -23,7 +23,7 @@ test.describe('saving (ADR 0004)', () => {
   // 'after a reload the cat, the name, the outfit and the mute come back' is replaced by the test below, which checks all of that
   // and the secrets in a single reload (same flow through the real Title and CatSelect, strictly more assertions).
 
-  test('one reload brings back everything together: cat, name, outfit, mute, motion and secrets', async ({ page }) => {
+  test('one reload brings back everything together: cat, name, outfit, mute, motion and secrets @cross', async ({ page }) => {
     const combo = combos[0];
     const reward = byId(combo.rewardItemId);
     const pieces = SLOT_ORDER.filter((slot) => comboOutfit(combo, all)![slot]).map((slot) => byId(comboOutfit(combo, all)![slot]!));

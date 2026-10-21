@@ -95,7 +95,8 @@ test.describe('secret combos (F8)', () => {
   });
 
   for (const combo of combos) {
-    test(`combo "${combo.id}": reaction, gift, bow, wardrobe, counter, no second gift and reload`, async ({ page }) => {
+    // The first combo is part of the @cross subset (Firefox and 1920).
+    test(`combo "${combo.id}": reaction, gift, bow, wardrobe, counter, no second gift and reload${combo === combos[0] ? ' @cross' : ''}`, async ({ page }) => {
       const reward = byId(combo.rewardItemId);
       await openGame(page);
       const worn = pieces(combo);

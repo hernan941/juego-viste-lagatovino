@@ -20,7 +20,7 @@ async function chooseCat(page: import('@playwright/test').Page) {
 test.describe('the complete flow (ADR 0007)', () => {
   test.setTimeout(120_000);
 
-  test('smoke of the whole game: Title, CatSelect, name, the shop walk, dress by dragging, admire, download the PNG, keep dressing and change cat', async ({ page }) => {
+  test('smoke of the whole game: Title, CatSelect, name, the shop walk, dress by dragging, admire, download the PNG, keep dressing and change cat @cross', async ({ page }) => {
     await chooseCat(page);
     expect(await page.evaluate(() => window.__VISTE__?.session)).toMatchObject({ catId: CAT.id, catName: NAME });
 
