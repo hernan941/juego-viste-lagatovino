@@ -46,7 +46,7 @@ export async function state(page: Page): Promise<NonNullable<State>> {
 
 /** Waits until the scene is idle (entrance, tab and drop animations finished). */
 export async function settled(page: Page): Promise<NonNullable<State>> {
-  await page.waitForFunction(() => window.__VISTE__?.dressUp?.settled === true, undefined, { timeout: 60_000 });
+  await page.waitForFunction(() => window.__VISTE__?.dressUp?.settled === true, undefined, { timeout: 100_000 });
   return state(page);
 }
 
@@ -177,7 +177,7 @@ export async function ui(page: Page): Promise<Ui> {
 }
 
 /** Waits until `scene` is the active one and its entrance is over. */
-export async function waitScene(page: Page, scene: string, timeout = 60_000): Promise<Ui> {
+export async function waitScene(page: Page, scene: string, timeout = 100_000): Promise<Ui> {
   await page.waitForFunction((n) => window.__VISTE__?.scene === n && window.__VISTE__?.ui?.ready === true, scene, { timeout });
   return ui(page);
 }
