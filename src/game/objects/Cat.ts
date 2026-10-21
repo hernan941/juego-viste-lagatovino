@@ -28,6 +28,8 @@ const HOVER_MOVE_PX = 4;
 /** The halo of a hovered garment: this many copies, this far (canvas px) from it. */
 const HALO_COPIES = 8;
 const HALO_PX = 5;
+/** Behind the fur (-1) and the tail (-2): the copies never show through the translucent shading of the garment or touch the outlines. */
+const HALO_DEPTH = -3;
 
 interface Layer {
   item: ClothingDef;
@@ -619,7 +621,7 @@ export class Cat extends Phaser.GameObjects.Container {
   }
 
   /**
-   * The halo of a hovered garment: eight copies of its own pixels, flat rosa-200, nudged 5 px around it and put right behind it,
+   * The halo of a hovered garment: eight copies of its own pixels, flat rosa-200, nudged 5 px around it and put behind the whole cat,
    * so a soft border shows around the garment without touching its fill. They fade in. (Not for the balloon, which rocks.)
    */
   private createHalo(img: Phaser.GameObjects.Image, item: ClothingDef): Phaser.GameObjects.Image[] {
@@ -629,7 +631,7 @@ export class Cat extends Phaser.GameObjects.Container {
         .setPosition(img.x + Math.cos(a) * HALO_PX, img.y + Math.sin(a) * HALO_PX)
         .setScale(img.scaleX, img.scaleY)
         .setTint(hex('rosa200')).setTintMode(Phaser.TintModes.FILL)
-        .setDepth(img.depth - 0.01).setAlpha(0);
+        .setDepth(HALO_DEPTH).setAlpha(0);
     });
     this.breath.add(copies);
     this.breath.sort('depth');

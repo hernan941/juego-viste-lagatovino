@@ -37,6 +37,7 @@ class FakeImage {
   tints: unknown[] = [];
   tintModes: unknown[] = [];
   destroyed = false;
+  depths: unknown[] = [];
   constructor(readonly key?: string) {
     return new Proxy(this, { get: (t, p, r) => (p in t ? Reflect.get(t, p, r) : () => r) });
   }
@@ -44,6 +45,7 @@ class FakeImage {
   destroy() { this.destroyed = true; }
   setTint(c: unknown) { this.tints.push(c); return this; }
   setTintMode(m: unknown) { this.tintModes.push(m); return this; }
+  setDepth(d: unknown) { this.depths.push(d); return this; }
   clearTint() { return this; }
 }
 
@@ -94,6 +96,14 @@ describe('Cat hover on worn items (F9, review of task 16)', () => {
     expect(emitted()).toBe(1);
     layer.handlers.get('pointerout')!();
     expect(halos()).toHaveLength(0);
+  });
+
+  it('the glow sits behind the whole cat (fur and tail), so it never shows through the translucent shading of the garment or over the outlines', () => {
+    const { layer, f, halos } = wear();
+    f.pointer.x = 900; f.pointer.y = 900;
+    layer.handlers.get('pointermove')?.({ x: 900, y: 900 });
+    expect(halos().length).toBeGreaterThanOrEqual(8);
+    for (const h of halos()) expect(Math.max(...(h.depths as number[]))).toBeLessThan(-2);
   });
 
   it('a just-worn garment under a still pointer does not light up until the pointer moves', () => {
