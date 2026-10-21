@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import {
-  CATEGORY_LABELS, FONT_FAMILY, MEOW_KEYS, ObjectEvents, Palette, RegistryKeys, SceneKeys, SfxKeys, TextureKeys,
+  CATEGORY_LABELS, MEOW_KEYS, ObjectEvents, RegistryKeys, SceneKeys, SfxKeys, TextureKeys,
 } from '../constants';
 import type { Catalog } from '../data/schema';
 import { itemsInCategory, visibleCategories } from '../domain/catalog';
@@ -19,6 +19,8 @@ import { go } from '../systems/navigate';
 import { readSession } from '../systems/sessionStore';
 import { Cat } from '../objects/Cat';
 import { playComboReaction, playShortReaction, showBubble, type ComboFxContext } from '../objects/comboFx';
+import { NameSign } from '../objects/NameSign';
+import { GiftReveal } from '../domain/giftReveal';
 import { GiftBox } from '../objects/GiftBox';
 import { SecretCounter } from '../objects/SecretCounter';
 import type { ClothingItem } from '../objects/ClothingItem';
@@ -90,6 +92,8 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
   private counter!: SecretCounter;
   private rainbow!: Phaser.GameObjects.Graphics;
   private almost = new Set<string>();
+  private reveal = new GiftReveal();
+  private sign!: NameSign;
   /** Reactions played in this visit, newest last (for the e2e hook). */
   private reactionLog: string[] = [];
 
@@ -107,6 +111,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.leaving = false;
     this.unlocked = getSave(this).secrets;
     this.gifts = [];
+    this.reveal = new GiftReveal();
     this.giftsComing = 0;
     this.gift = null;
     this.almost = new Set();
@@ -186,20 +191,10 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     d.ghost.y += (d.target.y - d.ghost.y) * 0.4;
   }
 
-  /** Hanging sign with the name of the cat, over the mirror. */
+  /** Hanging sign with the name of the cat, over the mirror (it flips to announce looks and prizes). */
   private createNameSign() {
-    const text = this.add
-      .text(0, 0, this.catName, { fontFamily: FONT_FAMILY, fontSize: '34px', color: Palette.texto, fontStyle: '600' })
-      .setOrigin(0.5);
-    const width = Math.max(190, text.width + 70);
-    const g = this.add.graphics();
-    g.lineStyle(4, hex('contorno'), 1).beginPath().moveTo(-width / 2 + 34, -34).lineTo(-width / 2 + 34, -12).moveTo(width / 2 - 34, -34).lineTo(width / 2 - 34, -12).strokePath();
-    g.fillStyle(hex('rosa600'), 0.18).fillRoundedRect(-width / 2 + 3, -16 + 7, width, 54, 27);
-    g.fillStyle(hex('mantequilla'), 1).fillRoundedRect(-width / 2, -16, width, 54, 27);
-    g.lineStyle(4, 0xf5d86a, 1).strokeRoundedRect(-width / 2, -16, width, 54, 27);
-    g.fillStyle(0xffffff, 0.6).fillRoundedRect(-width / 2 + 20, -10, 50, 6, 3);
-    text.setY(11);
-    const sign = this.add.container(CAT_X, -60, [g, text]).setDepth(30);
+    const sign = new NameSign(this, CAT_X, -60, this.catName).setDepth(30);
+    this.sign = sign;
     this.tweens.add({ targets: sign, y: 92, duration: 500, delay: 250, ease: 'Back.easeOut' });
     this.tweens.add({ targets: sign, angle: { from: -1.5, to: 1.5 }, duration: 1800, delay: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
   }
@@ -229,6 +224,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.gift?.destroy();
     this.gift = null;
     this.counter?.destroy();
+    this.sign?.destroy();
     this.cat?.destroy();
     this.grid?.destroy();
     this.tabs?.destroy();
@@ -237,6 +233,8 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
 
   private showCategory(category: Category) {
     this.grid.setItems(itemsInCategory(this.catalog.clothes, category, secretRewards(this.unlocked, this.catalog.combos)));
+    // A prize still on its way is not in its cell yet: the cell appears (with a pop) when the prize lands.
+    for (const id of this.reveal.hiddenItems()) this.grid.getCell(id)?.setVisible(false);
   }
 
   // ---- Drag and drop (ADR 0008) --------------------------------------------
@@ -401,7 +399,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
   // ---- Combos, gifts and secrets (F8) ---------------------------------------
 
   private fx(): ComboFxContext {
-    return { scene: this, cat: this.cat, rainbow: this.rainbow, hearts: this.hearts };
+    return { scene: this, cat: this.cat, rainbow: this.rainbow, hearts: this.hearts, sign: this.sign };
   }
 
   /** A combo was completed: its own reaction, and a gift if the prize is still locked. */
@@ -431,31 +429,35 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     box.on(ObjectEvents.GiftOpened, (_b: GiftBox, prize: Phaser.GameObjects.Image) => this.onGiftOpened(combo, item, prize));
   }
 
-  /** The prize is out: it becomes part of the wardrobe (saved at once) and flies to its cell. */
+  /** The prize is out: it is saved at once, but the cell and the counter only react when it lands. */
   private onGiftOpened(combo: ComboDef, item: ClothingDef, prize: Phaser.GameObjects.Image) {
     this.gift = null;
     getSave(this).unlockSecret(combo.id);
     this.unlocked = getSave(this).secrets;
-    this.counter.setCount(this.unlocked.length, this.catalog.combos.length, true);
-    showBubble(this, 700, 190, `¡${item.name}!`, 'rosa50');
-    // Show the tab of the prize so the cell is there when it lands.
+    this.reveal.begin(combo.id, item.id);
+    this.sign.announce(`¡${item.name}!`);
+    // Show the tab of the prize so the cell is there (invisible) when it lands.
     this.tabs.select(item.category, true);
     this.showCategory(item.category);
     this.grid.setWorn(new Set(Object.values(this.outfit)));
     const home = this.grid.getCellPositions()[item.id];
     const finish = () => {
       prize.destroy();
+      this.reveal.land(combo.id);
       const cell = this.grid.getCell(item.id);
-      cell?.celebrate();
+      cell?.revealPop();
+      this.time.delayedCall(380, () => cell?.active && cell.celebrate());
+      this.counter.setCount(this.reveal.shownCount(this.unlocked), this.catalog.combos.length, true);
       if (home) this.sparkles.explode(14, home.x, home.y);
       getAudio(this).play(SfxKeys.Return, { rate: 1.3 });
       this.time.delayedCall(250, () => this.nextGift());
     };
     this.tweens.add({
-      targets: prize, x: home?.x ?? prize.x, y: home?.y ?? prize.y, alpha: home ? 1 : 0, duration: 650, delay: 350, ease: 'Cubic.easeInOut',
+      targets: prize, x: home?.x ?? prize.x, y: home?.y ?? prize.y, alpha: home ? 1 : 0, duration: 650, ease: 'Cubic.easeInOut',
       onUpdate: (tween: Phaser.Tweens.Tween) => {
         const k = 1 - tween.progress;
-        prize.setDisplaySize(GHOST_HOME_SIZE + 80 * k, GHOST_HOME_SIZE + 80 * k);
+        const side = GHOST_HOME_SIZE * 1.1 + 170 * k;
+        prize.setDisplaySize(side, side);
       },
       onComplete: finish,
     });
@@ -590,12 +592,12 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
       layerGrab: Object.fromEntries(layers.map((l) => [l.id, this.cat.getLayerGrabPoint(l)])),
       layerRows: this.layersPanel.getRows(),
       dragging: this.drag !== null,
-      secrets: { unlocked: [...this.unlocked], count: this.unlocked.length, total: this.catalog.combos.length, text: this.counter.text },
+      secrets: { unlocked: this.reveal.shownUnlocked(this.unlocked), count: this.reveal.shownCount(this.unlocked), revealing: this.reveal.hiddenItems(), sign: this.sign.text, signLog: [...this.sign.announced], total: this.catalog.combos.length, text: this.counter.text },
       gift: this.gift ? { comboId: this.gift.comboId, itemId: this.gift.item.id, ready: this.gift.ready, opened: this.gift.opened, bow: this.gift.getBowPoint(), box: this.gift.getCenter() } : null,
       pendingGifts: this.gifts.length,
       almost: [...this.almost],
       reactions: [...this.reactionLog],
-      settled: this.drag === null && this.giftsComing === 0 && (this.gift === null || this.gift.ready) && cellsSettled && Math.abs(viewport.scroll - viewport.targetScroll) < 0.5 && this.cat.alpha > 0.99 && Math.abs(this.cat.scaleX - this.baseCatScale) < 0.001,
+      settled: this.drag === null && this.giftsComing === 0 && this.reveal.active === 0 && (this.gift === null || this.gift.ready) && cellsSettled && Math.abs(viewport.scroll - viewport.targetScroll) < 0.5 && this.cat.alpha > 0.99 && Math.abs(this.cat.scaleX - this.baseCatScale) < 0.001,
     };
   }
 }

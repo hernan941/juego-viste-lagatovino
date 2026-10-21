@@ -139,6 +139,16 @@ export class ClothingItem extends Phaser.GameObjects.Container {
     });
   }
 
+  /** A prize cell that was kept invisible appears with a pop (0.2 to 1.15 to 1) right when the prize lands. */
+  revealPop(): void {
+    this.scene.tweens.killTweensOf(this);
+    this.setVisible(true).setAlpha(1).setScale(0.2);
+    this.scene.tweens.chain({
+      targets: this,
+      tweens: [{ scale: 1.15, duration: 160, ease: 'Sine.easeOut' }, { scale: 1, duration: 220, ease: 'Back.easeOut' }],
+    });
+  }
+
   destroy(fromScene?: boolean): void {
     this.scene?.tweens.killTweensOf([this, this.view, this.icon, this.wornRing, ...(this.badge ? [this.badge] : [])]);
     this.removeAllListeners();

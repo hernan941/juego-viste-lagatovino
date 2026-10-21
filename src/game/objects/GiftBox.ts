@@ -6,6 +6,8 @@ import { addHover, hex } from './ui';
 
 /** How far the bow has to be pulled from its knot to open the box (game px). */
 export const BOW_PULL = 70;
+/** How long the prize floats above the box before flying to its tab (ms). */
+export const FLOAT_MS = 600;
 
 /**
  * The gift box of a combo (F8). It drops in from above; the player opens it by DRAGGING the bow away
@@ -150,18 +152,32 @@ export class GiftBox extends Phaser.GameObjects.Container {
     const glow = scene.add.graphics().setDepth(3590).setAlpha(0);
     glow.fillStyle(hex('mantequilla'), 0.9).fillCircle(0, 0, 90);
     glow.setPosition(at.x, at.y - 120);
-    const prize = scene.add.image(at.x, at.y - 10, this.item.icon).setDisplaySize(30, 30).setDepth(3610);
+    // Only the garment (its texture), not the cream tile of the wardrobe icon.
+    const prize = scene.add.image(at.x, at.y - 10, this.item.texture).setDisplaySize(30, 30).setDepth(3610);
     const grow = { size: 30 };
-    scene.tweens.add({ targets: glow, alpha: 0.8, scale: { from: 0.3, to: 1.2 }, duration: 500, ease: 'Sine.easeOut' });
+    scene.tweens.add({ targets: glow, alpha: 0.5, scale: { from: 0.3, to: 1.2 }, duration: 500, ease: 'Sine.easeOut' });
     scene.tweens.add({
-      targets: grow, size: 170, duration: 650, ease: 'Back.easeOut', onUpdate: () => prize.setDisplaySize(grow.size, grow.size),
+      targets: grow, size: 260, duration: 650, ease: 'Back.easeOut', onUpdate: () => prize.setDisplaySize(grow.size, grow.size),
     });
     scene.tweens.add({
-      targets: prize, y: at.y - 130, duration: 650, ease: 'Back.easeOut',
+      targets: prize, y: at.y - 190, duration: 650, ease: 'Back.easeOut',
       onComplete: () => {
-        scene.tweens.add({ targets: glow, alpha: 0, duration: 300, onComplete: () => glow.destroy() });
-        this.emit(ObjectEvents.GiftOpened, this, prize);
-        scene.tweens.add({ targets: this, alpha: 0, duration: 300, onComplete: () => this.destroy() });
+        // It floats for a moment above the box, shining, so the player sees what it is.
+        glow.setPosition(prize.x, prize.y);
+        scene.tweens.add({ targets: glow, scale: { from: 1.2, to: 1.4 }, duration: 300, yoyo: true, repeat: 1, ease: 'Sine.easeInOut' });
+        scene.tweens.add({ targets: prize, y: prize.y - 12, duration: 300, yoyo: true, repeat: 1, ease: 'Sine.easeInOut' });
+        const shine = scene.add
+          .particles(0, 0, TextureKeys.Sparkle, {
+            x: prize.x, y: prize.y, emitZone: { type: 'random', source: new Phaser.Geom.Circle(0, 0, 90), quantity: 1 },
+            speed: { min: 10, max: 40 }, lifespan: 500, frequency: 70, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 },
+          })
+          .setDepth(3620);
+        scene.time.delayedCall(FLOAT_MS, () => {
+          shine.destroy();
+          scene.tweens.add({ targets: glow, alpha: 0, duration: 300, onComplete: () => glow.destroy() });
+          this.emit(ObjectEvents.GiftOpened, this, prize);
+          scene.tweens.add({ targets: this, alpha: 0, duration: 300, onComplete: () => this.destroy() });
+        });
       },
     });
   }

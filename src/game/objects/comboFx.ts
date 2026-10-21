@@ -1,11 +1,12 @@
 // Visual reactions of the combos (docs/game-design.md, "Combos de F8"). Each one only adds to the base
 // reaction (love face, double hearts, name bubble). Everything created here cleans itself up.
 import Phaser from 'phaser';
-import { FONT_FAMILY, GAME_WIDTH, Palette, SfxKeys, TextureKeys } from '../constants';
+import { FONT_FAMILY, Palette, SfxKeys, TextureKeys } from '../constants';
 import { comboReactionPlan } from '../domain/combos';
 import type { ComboDef } from '../domain/types';
 import { getAudio } from '../plugins/AudioPlugin';
 import type { Cat } from './Cat';
+import type { NameSign } from './NameSign';
 import { hex } from './ui';
 
 const FX_DEPTH = 3500;
@@ -18,9 +19,11 @@ export interface ComboFxContext {
   /** Graphics drawn behind the cat, for the rainbow. */
   rainbow: Phaser.GameObjects.Graphics;
   hearts: Phaser.GameObjects.Particles.ParticleEmitter;
+  /** The cat's name sign: it flips to show the name of the look (nothing is written over the head). */
+  sign: NameSign;
 }
 
-/** The name of the look in a bubble that enters with Back.easeOut, stays and floats away. */
+/** A short phrase in a bubble that enters with Back.easeOut, stays and floats away. */
 export function showBubble(scene: Phaser.Scene, x: number, y: number, text: string, tone: 'rosa50' | 'mantequilla' = 'mantequilla'): void {
   const label = scene.add
     .text(0, 0, text, { fontFamily: FONT_FAMILY, fontSize: '34px', color: Palette.texto, fontStyle: '600', padding: { x: 4, y: 8 } })
@@ -150,18 +153,18 @@ const REACTIONS: Record<string, (ctx: ComboFxContext) => void> = {
   'rainbow-arc': rainbowArc,
 };
 
-/** Full reaction of a combo whose prize is new: its own effect, the face, the name bubble and the gift sound. */
+/** Full reaction of a combo whose prize is new: its own effect, the face, the name on the sign and the gift sound. */
 export function playComboReaction(ctx: ComboFxContext, combo: ComboDef): void {
   const { scene, cat } = ctx;
   cat.playFaces(comboReactionPlan(combo.reaction));
   REACTIONS[combo.reaction]?.(ctx);
-  showBubble(scene, GAME_WIDTH / 2 + 60, 190, combo.name);
+  ctx.sign.announce(combo.name);
   getAudio(scene).play(SfxKeys.Gift);
 }
 
-/** Short reaction for a combo that was already won: love face, a few hearts and the name, no gift. */
+/** Short reaction for a combo that was already won: love face, a few hearts and the name on the sign, no gift. */
 export function playShortReaction(ctx: ComboFxContext, combo: ComboDef): void {
   ctx.cat.playFaces({ expression: 'amor', ms: 900 });
   ctx.cat.squash();
-  showBubble(ctx.scene, GAME_WIDTH / 2 + 60, 190, combo.name);
+  ctx.sign.announce(combo.name);
 }

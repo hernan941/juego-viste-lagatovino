@@ -77,6 +77,9 @@ test.describe('secret combos (F8)', () => {
       expect(boxed.gift).toMatchObject({ comboId: combo.id, itemId: reward.id, opened: false });
       expect(await page.evaluate(() => window.__VISTE__?.sounds)).toContain('sfx-gift');
       expect(boxed.secrets.count).toBe(0);
+      // The name of the look goes on the sign (never over the cat's head) and it flips back to the cat's name.
+      expect(boxed.secrets.signLog).toContain(combo.name);
+      await page.waitForFunction((n) => window.__VISTE__?.dressUp?.secrets.sign === n, boxed.catName, { timeout: 6000 });
 
       // Letting go of the bow too early does not open it.
       const bow = boxed.gift!.bow;
@@ -141,6 +144,41 @@ test.describe('secret combos (F8)', () => {
     expect(boxed.gift?.comboId).toBe(second.id);
     const done = await openGift(page);
     expect(done.secrets.count).toBe(2);
+  });
+
+  test('the prize lands before the counter goes up and its cell appears', async ({ page }) => {
+    const combo = combos[0];
+    await openGame(page);
+    const worn = pieces(combo);
+    await wear(page, worn.slice(0, -1));
+    await equipItem(page, worn[worn.length - 1]);
+    const s = await waitGift(page);
+    const bow = s.gift!.bow;
+    // Samples of the scene every frame-ish, so the short flight cannot be missed by slow polling.
+    await page.evaluate(() => {
+      const w = window as unknown as { __samples: { revealing: string[]; count: number; text: string }[] };
+      w.__samples = [];
+      setInterval(() => {
+        const d = window.__VISTE__?.dressUp;
+        if (d) w.__samples.push({ revealing: d.secrets.revealing, count: d.secrets.count, text: d.secrets.text });
+      }, 16);
+    });
+    await dragTo(page, bow, { x: bow.x + 40, y: bow.y - 150 });
+    await page.waitForFunction(() => window.__VISTE__?.dressUp?.secrets.count === 1, undefined, { timeout: 10_000 });
+    const samples = await page.evaluate(() => (window as unknown as { __samples: { revealing: string[]; count: number; text: string }[] }).__samples);
+    // While the prize flew the cell was held back and the counter had not moved...
+    const flying = samples.filter((x) => x.revealing.length > 0);
+    expect(flying.length).toBeGreaterThan(0);
+    for (const x of flying) {
+      expect(x.revealing).toEqual([combo.rewardItemId]);
+      expect(x.count).toBe(0);
+      expect(x.text).toBe(`Secretos 0/${combos.length}`);
+    }
+    // ...and the counter went up only when nothing was held back any more.
+    const raised = samples.find((x) => x.count === 1)!;
+    expect(raised.revealing).toEqual([]);
+    const after = await settled(page);
+    expect(after.secrets).toMatchObject({ count: 1, revealing: [], text: `Secretos 1/${combos.length}` });
   });
 
   test('"¡Casi...!" hint shows when exactly one piece of a combo is missing', async ({ page }) => {
