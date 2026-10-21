@@ -64,11 +64,11 @@ function fakeScene() {
     tweens: {
       add: (cfg: TweenConfig) => {
         added.push(cfg);
-        return { remove: vi.fn() };
+        return { stop: vi.fn() };
       },
       chain: (cfg: TweenConfig) => {
         chains.push(cfg);
-        return { remove: vi.fn() };
+        return { stop: vi.fn() };
       },
       killTweensOf: vi.fn(),
     },

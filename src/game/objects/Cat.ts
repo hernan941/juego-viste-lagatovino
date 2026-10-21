@@ -125,9 +125,12 @@ export class Cat extends Phaser.GameObjects.Container {
     this.scheduleBlink();
   }
 
-  /** Gentle endless sway of the tail from its base: ±4° with Sine.easeInOut (TAIL_IDLE). */
+  /**
+   * Gentle endless sway of the tail from its base: ±4° with Sine.easeInOut (TAIL_IDLE).
+   * The previous tail tween is stopped with `stop()`: `TweenChain.remove()` takes a child tween, not itself, and crashed.
+   */
   private swayTail(fromCurrent = false): void {
-    this.tailTween?.remove();
+    this.tailTween?.stop();
     // After a flick the tail already rests at -angle (TAIL_FLICK_STEPS), so it must not be reset: no jump.
     if (!fromCurrent) this.tail.setAngle(-TAIL_IDLE.angle);
     this.tailTween = this.scene.tweens.add({
@@ -282,7 +285,7 @@ export class Cat extends Phaser.GameObjects.Container {
 
   /** Tail whip when an item is dropped: snaps to ±8° and settles with Back.easeOut, then sways again. */
   tailFlick(): void {
-    this.tailTween?.remove();
+    this.tailTween?.stop();
     this.tailTween = this.scene.tweens.chain({
       targets: this.tail,
       tweens: TAIL_FLICK_STEPS.map((step) => ({ ...step })),
@@ -313,6 +316,12 @@ export class Cat extends Phaser.GameObjects.Container {
   }
 
   // ---- Clothes -------------------------------------------------------------
+
+  /** Worn item ids in the order they are really drawn, back to front (position in the display list, for tests). */
+  getDrawOrder(): string[] {
+    const at = (l: Layer) => this.breath.list.indexOf(l.image);
+    return [...this.layers.values()].sort((a, b) => at(a) - at(b)).map((l) => l.item.id);
+  }
 
   /** Worn item ids by slot (the visible layers). */
   get wornIds(): string[] {
@@ -378,7 +387,7 @@ export class Cat extends Phaser.GameObjects.Container {
   destroy(fromScene?: boolean): void {
     this.blinkTimer?.remove();
     this.revertTimer?.remove();
-    this.tailTween?.remove();
+    this.tailTween?.stop();
     this.scene?.tweens.killTweensOf([this, this.rig, this.breath, this.face, this.tail, ...[...this.layers.values()].map((l) => l.image)]);
     this.removeAllListeners();
     super.destroy(fromScene);
