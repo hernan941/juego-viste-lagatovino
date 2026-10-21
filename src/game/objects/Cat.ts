@@ -357,10 +357,10 @@ export class Cat extends Phaser.GameObjects.Container {
     this.scene.tweens.add({ targets: this.rig, y: -26 * profileOf(this.scene).squash, duration: 120, yoyo: true, ease: 'Quad.easeOut' });
   }
 
-  /** Chin up: tilts -4 degrees and grows 4 % taller in 400 ms, holds, then settles (royal combo). */
+  /** Chin up: tilts -7 degrees and grows 4 % taller in 400 ms, holds, then settles (royal combo). */
   raiseChin(holdMs: number): void {
     const p = profileOf(this.scene);
-    const angle = -4 * p.shake;
+    const angle = -7 * p.shake;
     this.scene.tweens.killTweensOf(this.rig);
     this.scene.tweens.chain({
       targets: this.rig,

@@ -3,6 +3,7 @@ import {
   CATEGORY_LABELS, MEOW_KEYS, ObjectEvents, RegistryKeys, SceneKeys, SfxKeys, TextureKeys,
 } from '../constants';
 import type { Catalog } from '../data/schema';
+import { DROP_BURST, petHeartSpots } from '../domain/petHearts';
 import { itemsInCategory, visibleCategories } from '../domain/catalog';
 import { almostCombos, almostHint, newlyCompleted, secretRewards } from '../domain/combos';
 import { HintPlanner } from '../domain/hint';
@@ -550,7 +551,8 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.pets++;
     getAudio(this).play(SfxKeys.Purr, { volume: 0.7 });
     const head = this.cat.getAnchorWorld('head');
-    this.hearts.explode(profileOf(this).count(3), head.x, head.y - 60);
+    // To the sides of the head: straight up they climbed to the name sign and covered it.
+    for (const spot of petHeartSpots(head, profileOf(this).count(4))) this.hearts.explode(1, spot.x, spot.y);
   }
 
   // ---- Combos, gifts and secrets (F8) ---------------------------------------
@@ -725,8 +727,8 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
   /** Hearts and sparkles where the item lands; combos get a bigger burst. */
   private celebrate(at: Point, power: number) {
     const p = profileOf(this);
-    this.hearts.explode(p.count(7 * power), at.x, at.y);
-    this.sparkles.explode(p.count(9 * power), at.x, at.y);
+    this.hearts.explode(p.count(DROP_BURST.hearts * power), at.x, at.y);
+    this.sparkles.explode(p.count(DROP_BURST.sparkles * power), at.x, at.y);
     this.popRing(at, power);
   }
 

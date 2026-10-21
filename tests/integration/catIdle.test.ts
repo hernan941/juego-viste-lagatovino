@@ -114,6 +114,15 @@ describe('Cat idle extras (F9): a glance aside, a spontaneous tail wag and the p
     expect(chains[0].tweens!.map((s) => s.angle)).toEqual([-12, 12, -TAIL_IDLE.angle]);
   });
 
+  it('the chin of the royal pose goes up -7 degrees (it was -4 and was hardly seen), and 0 with reduced motion', () => {
+    const full = fakeScene();
+    new Cat(full.scene as never, 0, 0, def, anchors as never, 512).raiseChin(1100);
+    expect(full.chains.at(-1)!.tweens!.map((s) => s.angle)).toEqual([-7, -7, 0]);
+    const calm = fakeScene({ reduced: true });
+    new Cat(calm.scene as never, 0, 0, def, anchors as never, 512).raiseChin(1100);
+    expect(calm.chains.at(-1)!.tweens![0].angle).toBeCloseTo(0);
+  });
+
   it('petting answers with an event, at most once every 400 ms, and only if the cat was made pettable', () => {
     const { scene, clock } = fakeScene({ now: 1000 });
     const cat = new Cat(scene as never, 0, 0, def, anchors as never, 512);
