@@ -1,5 +1,5 @@
 import { expect, type Page } from '@playwright/test';
-import { bySlot, cats, clickButton, equipItem, pickCat, rowsAtRest, settled, startGame, test, ui, waitScene } from './helpers';
+import { bySlot, cats, clickButton, equipItem, openScene, pickCat, rowsAtRest, settled, sharedTest, startGame, test, ui, waitScene } from './helpers';
 
 // ADR 0013: reduced motion. The player's choice beats the browser's, 'auto' follows it live, and the whole game plays calm.
 
@@ -74,12 +74,14 @@ test.describe('with the browser asking for less motion', () => {
   });
 });
 
-test.describe('on automatic, the browser setting is followed live', () => {
-  test.setTimeout(60_000);
+// One test, on the page that the worker shares (no cold boot): the browser setting is followed live on automatic, and a chosen
+// preference ignores it.
+sharedTest.describe('on automatic, the browser setting is followed live', () => {
+  sharedTest.setTimeout(100_000);
 
-  test('emulateMedia flips the state without reloading', async ({ page }) => {
+  sharedTest('emulateMedia flips the state without reloading, unless the player chose', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'no-preference' });
-    await page.goto('/');
+    await openScene(page, 'Title');
     await waitScene(page, 'Title');
     expect(await state(page)).toEqual({ reduced: false, pref: 'auto' });
     await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -87,12 +89,7 @@ test.describe('on automatic, the browser setting is followed live', () => {
     expect((await state(page)).pref).toBe('auto');
     await page.emulateMedia({ reducedMotion: 'no-preference' });
     await page.waitForFunction(() => window.__VISTE__?.reducedMotion === false);
-  });
 
-  test('a chosen preference ignores the browser changes', async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: 'no-preference' });
-    await page.goto('/');
-    await waitScene(page, 'Title');
     await hook(page, () => window.__VISTE__?.setMotionPref('full'));
     await page.emulateMedia({ reducedMotion: 'reduce' });
     // Give the change event time to arrive: the state must not follow it.
@@ -100,5 +97,6 @@ test.describe('on automatic, the browser setting is followed live', () => {
     expect(await state(page)).toEqual({ reduced: false, pref: 'full' });
     await hook(page, () => window.__VISTE__?.setMotionPref('auto'));
     await page.waitForFunction(() => window.__VISTE__?.reducedMotion === true);
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
   });
 });
