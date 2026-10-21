@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!--
+    Viste Lagato · neck "bufanda-larga". Bufanda larguisima menta con franjas crema; dos puntas cuelgan hasta las patitas.
+    Se dibuja ya en su lugar (lienzo de 512, anclas de art/anchors.json).
+    Contorno 8 px #4A3036, una sombra (negro 15 %) y un brillo (art-direction §3 y §5).
+  -->
+  <defs>
+    <path id="sw-head" d="M256 318 C172 318 96 300 92 232 C88 185 100 150 118 128 C112 104 118 74 134 60 C146 50 160 52 170 62 C184 76 196 90 208 100 C236 94 276 94 304 100 C316 90 328 76 342 62 C352 52 366 50 378 60 C394 74 400 104 394 128 C412 150 424 185 420 232 C416 300 340 318 256 318 Z"/>
+    <mask id="sw-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512">
+      <rect width="512" height="512" fill="#fff"/>
+      <use href="#sw-head" fill="#000" stroke="#000" stroke-width="8"/>
+      
+    </mask>
+  </defs>
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <g mask="url(#sw-cut)">
+      <path fill="none" stroke="#4A3036" stroke-width="46" d="M112 250 C122 320 190 346 256 346 C322 346 390 320 400 250"/><path fill="none" stroke="#9FE0C4" stroke-width="36" d="M112 250 C122 320 190 346 256 346 C322 346 390 320 400 250" />
+      <path fill="none" stroke="#7FCBAA" stroke-width="5" d="M118 262 C130 322 190 350 256 350 C322 350 382 322 394 262" opacity="0.0"/>
+    </g>
+    
+    <g transform="rotate(4 170 340)">
+      <clipPath id="lt-150"><path d="M150 336 L190 336 L194 440 L146 440 Z"/></clipPath>
+      <path d="M150 336 L190 336 L194 440 L146 440 Z" fill="#9FE0C4"/>
+      <g clip-path="url(#lt-150)">
+        <rect x="140" y="372" width="60" height="12" fill="#FFF7EC"/><rect x="140" y="404" width="60" height="12" fill="#FFF7EC"/><rect x="140" y="436" width="60" height="12" fill="#FFF7EC"/>
+        <path fill="#000" fill-opacity="0.15" d="M178 330 L198 330 L198 444 L172 444 Z"/>
+      </g>
+      <path d="M150 336 L190 336 L194 440 L146 440 Z" fill="none" stroke="#4A3036" stroke-width="8"/>
+      <path fill="none" stroke="#FFF7EC" stroke-width="5" d="M154 444 L154 458 M166 444 L166 460 M178 444 L178 460 M186 444 L186 458"/>
+    </g>
+    
+    <g transform="rotate(-4 342 340)">
+      <clipPath id="lt-322"><path d="M322 336 L362 336 L366 462 L318 462 Z"/></clipPath>
+      <path d="M322 336 L362 336 L366 462 L318 462 Z" fill="#9FE0C4"/>
+      <g clip-path="url(#lt-322)">
+        <rect x="312" y="372" width="60" height="12" fill="#FFF7EC"/><rect x="312" y="404" width="60" height="12" fill="#FFF7EC"/><rect x="312" y="436" width="60" height="12" fill="#FFF7EC"/>
+        <path fill="#000" fill-opacity="0.15" d="M350 330 L370 330 L370 466 L344 466 Z"/>
+      </g>
+      <path d="M322 336 L362 336 L366 462 L318 462 Z" fill="none" stroke="#4A3036" stroke-width="8"/>
+      <path fill="none" stroke="#FFF7EC" stroke-width="5" d="M326 466 L326 480 M338 466 L338 482 M350 466 L350 482 M358 466 L358 480"/>
+    </g>
+    <rect x="196" y="324" width="64" height="36" rx="16" fill="#9FE0C4" stroke="#4A3036" stroke-width="8" opacity="0"/>
+    <ellipse fill="#FFFFFF" fill-opacity="0.55" cx="168" cy="334" rx="6" ry="16" transform="rotate(55 168 334)"/><circle fill="#FFFFFF" fill-opacity="0.55" cx="184" cy="346" r="3"/>
+  </g>
+</svg>

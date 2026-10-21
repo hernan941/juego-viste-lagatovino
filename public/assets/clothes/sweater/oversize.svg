@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!--
+    Viste Lagato · sweater "oversize" (slot sweater). Durazno extra grande con cuello vuelto, punto de lana y mangas tan largas que tapan las patitas.
+    Misma estructura y mascara que rayas.svg (cabeza y patitas de la plantilla).
+    Contorno 8 px #4A3036, una sombra (negro 15 %) y un brillo (art-direction §3 y §5).
+  -->
+  <defs>
+    <path id="sw-head" d="M256 318 C172 318 96 300 92 232 C88 185 100 150 118 128 C112 104 118 74 134 60 C146 50 160 52 170 62 C184 76 196 90 208 100 C236 94 276 94 304 100 C316 90 328 76 342 62 C352 52 366 50 378 60 C394 74 400 104 394 128 C412 150 424 185 420 232 C416 300 340 318 256 318 Z"/>
+    <path id="sw-shape" d="M256 266 C336 266 380 332 382 398 C384 432 378 454 366 468 C330 480 182 480 146 468 C134 454 128 432 130 398 C132 332 176 266 256 266 Z"/>
+    <clipPath id="sw-clip"><use href="#sw-shape"/></clipPath>
+    <mask id="sw-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512">
+      <rect width="512" height="512" fill="#fff"/>
+      <use href="#sw-head" fill="#000" stroke="#000" stroke-width="8"/>
+      <ellipse class="paw-cut" cx="224" cy="474" rx="38" ry="28" fill="#000"/>
+      <ellipse class="paw-cut" cx="288" cy="474" rx="38" ry="28" fill="#000"/>
+    </mask>
+  </defs>
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <g mask="url(#sw-cut)">
+      
+      <g clip-path="url(#sw-clip)">
+        <rect x="100" y="250" width="312" height="240" fill="#FFC9A8"/>
+        <!-- patron -->
+        <path fill="none" stroke="#F4B391" stroke-width="3.5" d="M142 340 l5 7 l5 -7 M166 340 l5 7 l5 -7 M190 340 l5 7 l5 -7 M214 340 l5 7 l5 -7 M238 340 l5 7 l5 -7 M262 340 l5 7 l5 -7 M286 340 l5 7 l5 -7 M310 340 l5 7 l5 -7 M334 340 l5 7 l5 -7 M358 340 l5 7 l5 -7 M382 340 l5 7 l5 -7 M130 360 l5 7 l5 -7 M154 360 l5 7 l5 -7 M178 360 l5 7 l5 -7 M202 360 l5 7 l5 -7 M226 360 l5 7 l5 -7 M250 360 l5 7 l5 -7 M274 360 l5 7 l5 -7 M298 360 l5 7 l5 -7 M322 360 l5 7 l5 -7 M346 360 l5 7 l5 -7 M370 360 l5 7 l5 -7 M142 380 l5 7 l5 -7 M166 380 l5 7 l5 -7 M190 380 l5 7 l5 -7 M214 380 l5 7 l5 -7 M238 380 l5 7 l5 -7 M262 380 l5 7 l5 -7 M286 380 l5 7 l5 -7 M310 380 l5 7 l5 -7 M334 380 l5 7 l5 -7 M358 380 l5 7 l5 -7 M382 380 l5 7 l5 -7 M130 400 l5 7 l5 -7 M154 400 l5 7 l5 -7 M178 400 l5 7 l5 -7 M202 400 l5 7 l5 -7 M226 400 l5 7 l5 -7 M250 400 l5 7 l5 -7 M274 400 l5 7 l5 -7 M298 400 l5 7 l5 -7 M322 400 l5 7 l5 -7 M346 400 l5 7 l5 -7 M370 400 l5 7 l5 -7 M142 420 l5 7 l5 -7 M166 420 l5 7 l5 -7 M190 420 l5 7 l5 -7 M214 420 l5 7 l5 -7 M238 420 l5 7 l5 -7 M262 420 l5 7 l5 -7 M286 420 l5 7 l5 -7 M310 420 l5 7 l5 -7 M334 420 l5 7 l5 -7 M358 420 l5 7 l5 -7 M382 420 l5 7 l5 -7"/>
+        <!-- elastico inferior -->
+        <rect x="100" y="446" width="312" height="40" fill="#FFB491"/>
+        <path fill="none" stroke="#F0A98A" stroke-width="5" d="M150 452 L150 474 M170 454 L170 478 M342 454 L342 478 M362 452 L362 474"/>
+        <path fill="none" stroke="#4A3036" stroke-width="5" d="M128 446 L384 446"/>
+        <!-- sombra unica -->
+        <use href="#sw-head" fill="#000" fill-opacity="0.15" transform="translate(0 20)"/>
+        <path fill="#000" fill-opacity="0.15" d="M110 440 C170 470 342 470 402 440 L402 500 L110 500 Z"/>
+        <!-- cuello -->
+        <path fill="none" stroke="#4A3036" stroke-width="64" d="M92 238 C96 306 172 324 256 324 C340 324 416 306 420 238"/>
+        <path fill="none" stroke="#FFB491" stroke-width="56" d="M92 238 C96 306 172 324 256 324 C340 324 416 306 420 238"/>
+        <path fill="none" stroke="#F0A98A" stroke-width="4" d="M196 326 L196 336 M226 330 L226 340 M256 331 L256 341 M286 330 L286 340 M316 326 L316 336"/>
+        
+      </g>
+      <!-- costuras de las mangas -->
+      <path fill="none" stroke="#4A3036" stroke-width="5" d="M168 340 C186 372 194 404 198 436 M344 340 C326 372 318 404 314 436"/>
+      <use href="#sw-shape" fill="none" stroke="#4A3036" stroke-width="8"/>
+    </g>
+    <!-- punos sobre las patitas -->
+    <g>
+      <path d="M180 466 C174 436 188 426 224 426 C260 426 274 436 268 466 C274 494 248 506 224 506 C200 506 174 494 180 466 Z" fill="#FFB491" stroke="#4A3036" stroke-width="8"/>
+      <path d="M186 482 C202 500 246 500 262 482 C260 496 244 502 224 502 C204 502 188 496 186 482 Z" fill="#000" fill-opacity="0.15"/>
+      <path d="M184 444 C200 436 248 436 264 444 L266 460 C248 466 200 466 182 460 Z" fill="#F4A07F" stroke="#4A3036" stroke-width="5"/>
+      <path fill="none" stroke="#E08A68" stroke-width="3.5" d="M198 446 L198 462 M211 444 L211 463 M224 444 L224 464 M237 444 L237 463 M250 446 L250 462"/>
+    </g><g>
+      <path d="M244 466 C238 436 252 426 288 426 C324 426 338 436 332 466 C338 494 312 506 288 506 C264 506 238 494 244 466 Z" fill="#FFB491" stroke="#4A3036" stroke-width="8"/>
+      <path d="M250 482 C266 500 310 500 326 482 C324 496 308 502 288 502 C268 502 252 496 250 482 Z" fill="#000" fill-opacity="0.15"/>
+      <path d="M248 444 C264 436 312 436 328 444 L330 460 C312 466 264 466 246 460 Z" fill="#F4A07F" stroke="#4A3036" stroke-width="5"/>
+      <path fill="none" stroke="#E08A68" stroke-width="3.5" d="M262 446 L262 462 M275 444 L275 463 M288 444 L288 464 M301 444 L301 463 M314 446 L314 462"/>
+    </g>
+
+    <!-- brillo -->
+    <ellipse fill="#FFFFFF" fill-opacity="0.5" cx="166" cy="372" rx="8" ry="22" transform="rotate(20 166 372)"/>
+    <circle fill="#FFFFFF" fill-opacity="0.5" cx="176" cy="404" r="4"/>
+  </g>
+</svg>

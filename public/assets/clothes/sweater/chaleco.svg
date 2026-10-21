@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!--
+    Viste Lagato · sweater "chaleco" (slot sweater). Chaleco cafe claro de rombos con escote en V sobre una camisita crema.
+    Misma estructura y mascara que rayas.svg (cabeza y patitas de la plantilla).
+    Contorno 8 px #4A3036, una sombra (negro 15 %) y un brillo (art-direction §3 y §5).
+  -->
+  <defs>
+    <path id="sw-head" d="M256 318 C172 318 96 300 92 232 C88 185 100 150 118 128 C112 104 118 74 134 60 C146 50 160 52 170 62 C184 76 196 90 208 100 C236 94 276 94 304 100 C316 90 328 76 342 62 C352 52 366 50 378 60 C394 74 400 104 394 128 C412 150 424 185 420 232 C416 300 340 318 256 318 Z"/>
+    <path id="sw-shape" d="M256 266 C336 266 380 332 382 398 C384 432 378 454 366 468 C330 480 182 480 146 468 C134 454 128 432 130 398 C132 332 176 266 256 266 Z"/>
+    <clipPath id="sw-clip"><use href="#sw-shape"/></clipPath>
+    <mask id="sw-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512">
+      <rect width="512" height="512" fill="#fff"/>
+      <use href="#sw-head" fill="#000" stroke="#000" stroke-width="8"/>
+      <ellipse class="paw-cut" cx="224" cy="474" rx="38" ry="28" fill="#000"/>
+      <ellipse class="paw-cut" cx="288" cy="474" rx="38" ry="28" fill="#000"/>
+    </mask>
+  </defs>
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <g mask="url(#sw-cut)">
+      
+      <g clip-path="url(#sw-clip)">
+        <rect x="100" y="250" width="312" height="240" fill="#B98060"/>
+        <!-- patron -->
+        <g><path d="M140 334 L156 350 L140 366 L124 350 Z" fill="#F2A9C4"/><path d="M180 334 L196 350 L180 366 L164 350 Z" fill="#E8C3A4"/><path d="M220 334 L236 350 L220 366 L204 350 Z" fill="#F2A9C4"/><path d="M260 334 L276 350 L260 366 L244 350 Z" fill="#E8C3A4"/><path d="M300 334 L316 350 L300 366 L284 350 Z" fill="#F2A9C4"/><path d="M340 334 L356 350 L340 366 L324 350 Z" fill="#E8C3A4"/><path d="M380 334 L396 350 L380 366 L364 350 Z" fill="#F2A9C4"/><path d="M160 362 L176 378 L160 394 L144 378 Z" fill="#E8C3A4"/><path d="M200 362 L216 378 L200 394 L184 378 Z" fill="#F2A9C4"/><path d="M240 362 L256 378 L240 394 L224 378 Z" fill="#E8C3A4"/><path d="M280 362 L296 378 L280 394 L264 378 Z" fill="#F2A9C4"/><path d="M320 362 L336 378 L320 394 L304 378 Z" fill="#E8C3A4"/><path d="M360 362 L376 378 L360 394 L344 378 Z" fill="#F2A9C4"/><path d="M400 362 L416 378 L400 394 L384 378 Z" fill="#E8C3A4"/><path d="M140 390 L156 406 L140 422 L124 406 Z" fill="#F2A9C4"/><path d="M180 390 L196 406 L180 422 L164 406 Z" fill="#E8C3A4"/><path d="M220 390 L236 406 L220 422 L204 406 Z" fill="#F2A9C4"/><path d="M260 390 L276 406 L260 422 L244 406 Z" fill="#E8C3A4"/><path d="M300 390 L316 406 L300 422 L284 406 Z" fill="#F2A9C4"/><path d="M340 390 L356 406 L340 422 L324 406 Z" fill="#E8C3A4"/><path d="M380 390 L396 406 L380 422 L364 406 Z" fill="#F2A9C4"/><path d="M160 418 L176 434 L160 450 L144 434 Z" fill="#E8C3A4"/><path d="M200 418 L216 434 L200 450 L184 434 Z" fill="#F2A9C4"/><path d="M240 418 L256 434 L240 450 L224 434 Z" fill="#E8C3A4"/><path d="M280 418 L296 434 L280 450 L264 434 Z" fill="#F2A9C4"/><path d="M320 418 L336 434 L320 450 L304 434 Z" fill="#E8C3A4"/><path d="M360 418 L376 434 L360 450 L344 434 Z" fill="#F2A9C4"/><path d="M400 418 L416 434 L400 450 L384 434 Z" fill="#E8C3A4"/>
+          <path fill="none" stroke="#FFF7EC" stroke-width="2.5" d="M120 334 L380 462 M120 462 L380 334" opacity="0.0"/></g>
+        <!-- elastico inferior -->
+        <rect x="100" y="446" width="312" height="40" fill="#8A5A3C"/>
+        <path fill="none" stroke="#6E4630" stroke-width="5" d="M150 452 L150 474 M170 454 L170 478 M342 454 L342 478 M362 452 L362 474"/>
+        <path fill="none" stroke="#4A3036" stroke-width="5" d="M128 446 L384 446"/>
+        <!-- sombra unica -->
+        <use href="#sw-head" fill="#000" fill-opacity="0.15" transform="translate(0 20)"/>
+        <path fill="#000" fill-opacity="0.15" d="M110 440 C170 470 342 470 402 440 L402 500 L110 500 Z"/>
+        <!-- cuello -->
+        <path d="M170 300 L256 396 L342 300 Z" fill="#FFF7EC" stroke="#4A3036" stroke-width="8" stroke-linejoin="round"/>
+        <path fill="none" stroke="#8A5A3C" stroke-width="22" d="M146 300 L256 424 L366 300"/>
+        <path fill="none" stroke="#4A3036" stroke-width="5" d="M138 296 L256 432 M374 296 L256 432" opacity="0"/>
+        <path fill="none" stroke="#6E4630" stroke-width="4" d="M158 316 L168 326 M178 336 L188 346 M198 358 L208 368 M354 316 L344 326 M334 336 L324 346 M314 358 L304 368"/>
+        <circle cx="256" cy="418" r="0"/>
+      </g>
+      
+      <use href="#sw-shape" fill="none" stroke="#4A3036" stroke-width="8"/>
+    </g>
+    <!-- punos sobre las patitas -->
+    
+
+    <!-- brillo -->
+    <ellipse fill="#FFFFFF" fill-opacity="0.5" cx="166" cy="372" rx="8" ry="22" transform="rotate(20 166 372)"/>
+    <circle fill="#FFFFFF" fill-opacity="0.5" cx="176" cy="404" r="4"/>
+  </g>
+</svg>

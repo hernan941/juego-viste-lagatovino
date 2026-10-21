@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- Viste Lagato · icono de "face/lentes-corazon". GENERADO por art/tools/build-art.mjs: no editar a mano. -->
+  <rect x="4" y="4" width="248" height="248" rx="32" fill="#FFF7EC" stroke="#FFD1E3" stroke-width="4"/>
+  <svg x="20" y="20" width="216" height="216" viewBox="100 70 312 312" preserveAspectRatio="xMidYMid meet" overflow="visible">
+<g stroke-linejoin="round" stroke-linecap="round">
+    <path fill="none" stroke="#4A3036" stroke-width="12" d="M146 214 L104 204 M366 214 L408 204"/><path fill="none" stroke="#FF8FB8" stroke-width="5" d="M140 213 L106 205 M372 213 L406 205"/><path fill="none" stroke="#4A3036" stroke-width="16" d="M236 216 C248 204 264 204 276 216"/><path fill="none" stroke="#FF8FB8" stroke-width="6" d="M236 216 C248 204 264 204 276 216"/>
+    <g transform="translate(192 230) scale(4.1)">
+      <path d="M0 10 C-8 4 -13 0 -13 -5 C-13 -9 -10 -12 -6.5 -12 C-3.5 -12 -1.5 -10 0 -7.5 C1.5 -10 3.5 -12 6.5 -12 C10 -12 13 -9 13 -5 C13 0 8 4 0 10 Z" fill="#FFD1E3" fill-opacity="0.25"/>
+      <path d="M0 10 C-8 4 -13 0 -13 -5 C-13 -9 -10 -12 -6.5 -12 C-3.5 -12 -1.5 -10 0 -7.5 C1.5 -10 3.5 -12 6.5 -12 C10 -12 13 -9 13 -5 C13 0 8 4 0 10 Z" fill="none" stroke="#4A3036" stroke-width="2.546103509815586"/>
+      <path d="M0 10 C-8 4 -13 0 -13 -5 C-13 -9 -10 -12 -6.5 -12 C-3.5 -12 -1.5 -10 0 -7.5 C1.5 -10 3.5 -12 6.5 -12 C10 -12 13 -9 13 -5 C13 0 8 4 0 10 Z" fill="none" stroke="#FF8FB8" stroke-width="0.5948839976204642"/>
+      
+    </g>
+    <g transform="translate(320 230) scale(4.1)">
+      <path d="M0 10 C-8 4 -13 0 -13 -5 C-13 -9 -10 -12 -6.5 -12 C-3.5 -12 -1.5 -10 0 -7.5 C1.5 -10 3.5 -12 6.5 -12 C10 -12 13 -9 13 -5 C13 0 8 4 0 10 Z" fill="#FFD1E3" fill-opacity="0.25"/>
+      <path d="M0 10 C-8 4 -13 0 -13 -5 C-13 -9 -10 -12 -6.5 -12 C-3.5 -12 -1.5 -10 0 -7.5 C1.5 -10 3.5 -12 6.5 -12 C10 -12 13 -9 13 -5 C13 0 8 4 0 10 Z" fill="none" stroke="#4A3036" stroke-width="2.546103509815586"/>
+      <path d="M0 10 C-8 4 -13 0 -13 -5 C-13 -9 -10 -12 -6.5 -12 C-3.5 -12 -1.5 -10 0 -7.5 C1.5 -10 3.5 -12 6.5 -12 C10 -12 13 -9 13 -5 C13 0 8 4 0 10 Z" fill="none" stroke="#FF8FB8" stroke-width="0.5948839976204642"/>
+      
+    </g>
+  </g>
+  </svg>
+</svg>

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!--
+    Viste Lagato · paws "botitas". Botitas cafe claro con borde de peluche crema y cordones.
+    Se dibuja ya en su lugar (lienzo de 512, anclas de art/anchors.json).
+    Contorno 8 px #4A3036, una sombra (negro 15 %) y un brillo (art-direction §3 y §5).
+  -->
+  <g stroke-linejoin="round" stroke-linecap="round">
+<g>
+    <path d="M190 446 L254 446 L258 480 C262 498 246 508 224 508 C202 508 188 500 188 482 Z" fill="#B98060" stroke="#4A3036" stroke-width="8"/>
+    <path fill="#000" fill-opacity="0.15" d="M236 448 L256 448 L260 482 C262 498 248 506 232 506 C244 488 244 468 236 448 Z"/>
+    <path d="M186 496 C186 504 202 510 224 510 C248 510 262 504 262 494 C256 500 244 502 224 502 C204 502 192 500 186 496 Z" fill="#8A5A3C" stroke="#4A3036" stroke-width="5"/>
+    <path fill="none" stroke="#E8C3A4" stroke-width="4" d="M204 466 L218 462 M206 478 L222 474 M232 468 L240 466"/>
+    <path d="M186 440 C190 428 204 432 214 434 C226 430 240 432 250 434 C258 430 262 442 256 450 C240 454 204 454 188 450 Z" fill="#FFFDF8" stroke="#4A3036" stroke-width="8"/>
+    <path fill="none" stroke="#E7D9C6" stroke-width="4" d="M200 440 C204 446 208 446 212 440 M224 442 C228 448 232 448 236 442"/>
+    <ellipse fill="#FFFFFF" fill-opacity="0.55" cx="204" cy="472" rx="4" ry="9" transform="rotate(14 204 472)"/></g><g transform="translate(512 0) scale(-1 1)">
+    <path d="M190 446 L254 446 L258 480 C262 498 246 508 224 508 C202 508 188 500 188 482 Z" fill="#B98060" stroke="#4A3036" stroke-width="8"/>
+    <path fill="#000" fill-opacity="0.15" d="M236 448 L256 448 L260 482 C262 498 248 506 232 506 C244 488 244 468 236 448 Z"/>
+    <path d="M186 496 C186 504 202 510 224 510 C248 510 262 504 262 494 C256 500 244 502 224 502 C204 502 192 500 186 496 Z" fill="#8A5A3C" stroke="#4A3036" stroke-width="5"/>
+    <path fill="none" stroke="#E8C3A4" stroke-width="4" d="M204 466 L218 462 M206 478 L222 474 M232 468 L240 466"/>
+    <path d="M186 440 C190 428 204 432 214 434 C226 430 240 432 250 434 C258 430 262 442 256 450 C240 454 204 454 188 450 Z" fill="#FFFDF8" stroke="#4A3036" stroke-width="8"/>
+    <path fill="none" stroke="#E7D9C6" stroke-width="4" d="M200 440 C204 446 208 446 212 440 M224 442 C228 448 232 448 236 442"/>
+    <ellipse fill="#FFFFFF" fill-opacity="0.55" cx="204" cy="472" rx="4" ry="9" transform="rotate(14 204 472)"/></g>
+  </g>
+</svg>

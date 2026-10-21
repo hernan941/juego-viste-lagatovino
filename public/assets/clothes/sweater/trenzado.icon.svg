@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- Viste Lagato · icono de "sweater/trenzado". GENERADO por art/tools/build-art.mjs: no editar a mano. -->
+  <rect x="4" y="4" width="248" height="248" rx="32" fill="#FFF7EC" stroke="#FFD1E3" stroke-width="4"/>
+  <svg x="20" y="20" width="216" height="216" viewBox="121 256 270 270" preserveAspectRatio="xMidYMid meet" overflow="visible">
+<defs>
+    <path id="sw-head" d="M256 318 C172 318 96 300 92 232 C88 185 100 150 118 128 C112 104 118 74 134 60 C146 50 160 52 170 62 C184 76 196 90 208 100 C236 94 276 94 304 100 C316 90 328 76 342 62 C352 52 366 50 378 60 C394 74 400 104 394 128 C412 150 424 185 420 232 C416 300 340 318 256 318 Z"/>
+    <path id="sw-shape" d="M256 266 C336 266 380 332 382 398 C383 430 382 456 374 470 C330 472 182 472 138 470 C130 456 129 430 130 398 C132 332 176 266 256 266 Z"/>
+    <clipPath id="sw-clip"><use href="#sw-shape"/></clipPath>
+    <mask id="sw-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512">
+      <rect width="512" height="512" fill="#fff"/>
+      <use href="#sw-head" fill="#000" stroke="#000" stroke-width="8"/>
+      </mask>
+  </defs>
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <g mask="url(#sw-cut)">
+      
+      <g clip-path="url(#sw-clip)">
+        <rect x="100" y="250" width="312" height="240" fill="#FBE3C0"/>
+        
+        <g fill="none" stroke="#E2B98C" stroke-width="7">
+          <path d="M158 340 C176 346 176 356 158 362 M174 340 C156 346 156 356 174 362 M158 368 C176 374 176 384 158 390 M174 368 C156 374 156 384 174 390 M158 396 C176 402 176 412 158 418 M174 396 C156 402 156 412 174 418 M158 424 C176 430 176 440 158 446 M174 424 C156 430 156 440 174 446"/>
+          <path d="M203 340 C221 346 221 356 203 362 M219 340 C201 346 201 356 219 362 M203 368 C221 374 221 384 203 390 M219 368 C201 374 201 384 219 390 M203 396 C221 402 221 412 203 418 M219 396 C201 402 201 412 219 418 M203 424 C221 430 221 440 203 446 M219 424 C201 430 201 440 219 446"/>
+          <path d="M248 340 C266 346 266 356 248 362 M264 340 C246 346 246 356 264 362 M248 368 C266 374 266 384 248 390 M264 368 C246 374 246 384 264 390 M248 396 C266 402 266 412 248 418 M264 396 C246 402 246 412 264 418 M248 424 C266 430 266 440 248 446 M264 424 C246 430 246 440 264 446"/>
+          <path d="M293 340 C311 346 311 356 293 362 M309 340 C291 346 291 356 309 362 M293 368 C311 374 311 384 293 390 M309 368 C291 374 291 384 309 390 M293 396 C311 402 311 412 293 418 M309 396 C291 402 291 412 309 418 M293 424 C311 430 311 440 293 446 M309 424 C291 430 291 440 309 446"/>
+          <path d="M338 340 C356 346 356 356 338 362 M354 340 C336 346 336 356 354 362 M338 368 C356 374 356 384 338 390 M354 368 C336 374 336 384 354 390 M338 396 C356 402 356 412 338 418 M354 396 C336 402 336 412 354 418 M338 424 C356 430 356 440 338 446 M354 424 C336 430 336 440 354 446"/>
+        </g>
+        <g fill="none" stroke="#F1CFA0" stroke-width="3" stroke-linecap="round">
+          <path d="M136 340 L136 440 M186 340 L186 440 M231 340 L231 440 M276 340 L276 440 M326 340 L326 440 M376 340 L376 440"/>
+        </g>
+        
+        <rect x="100" y="446" width="312" height="40" fill="#E8C3A4"/>
+        <path fill="none" stroke="#B98060" stroke-width="5" d="M150 452 L150 474 M170 454 L170 478 M342 454 L342 478 M362 452 L362 474"/>
+        <path fill="none" stroke="#4A3036" stroke-width="5" d="M128 446 L384 446"/>
+        
+        <use href="#sw-head" fill="#000" fill-opacity="0.15" transform="translate(0 20)"/>
+        <path fill="#000" fill-opacity="0.15" d="M110 440 C170 470 342 470 402 440 L402 500 L110 500 Z"/>
+        
+        <path fill="none" stroke="#4A3036" stroke-width="40" d="M92 238 C96 306 172 324 256 324 C340 324 416 306 420 238"/>
+        <path fill="none" stroke="#E8C3A4" stroke-width="32" d="M92 238 C96 306 172 324 256 324 C340 324 416 306 420 238"/>
+        <path fill="none" stroke="#B98060" stroke-width="4" d="M196 326 L196 336 M226 330 L226 340 M256 331 L256 341 M286 330 L286 340 M316 326 L316 336"/>
+        
+      </g>
+      
+      <path fill="none" stroke="#4A3036" stroke-width="5" d="M168 340 C186 372 194 404 199 456 M344 340 C326 372 318 404 313 456"/>
+      <use href="#sw-shape" fill="none" stroke="#4A3036" stroke-width="8"/>
+    </g>
+    
+    <g transform="translate(0 20)"><rect x="192" y="430" width="62" height="26" rx="12" fill="#E8C3A4" stroke="#4A3036" stroke-width="8"/>
+    <rect x="258" y="430" width="62" height="26" rx="12" fill="#E8C3A4" stroke="#4A3036" stroke-width="8"/>
+    <path fill="none" stroke="#B98060" stroke-width="4" d="M210 437 L210 449 M223 437 L223 449 M236 437 L236 449 M276 437 L276 449 M289 437 L289 449 M302 437 L302 449"/></g>
+
+    
+    <ellipse fill="#FFFFFF" fill-opacity="0.5" cx="166" cy="372" rx="8" ry="22" transform="rotate(20 166 372)"/>
+    <circle fill="#FFFFFF" fill-opacity="0.5" cx="176" cy="404" r="4"/>
+  </g>
+<use href="#sw-head" fill="none" stroke="#4A3036" stroke-width="8" clip-path="url(#sw-clip)"/>
+  </svg>
+</svg>

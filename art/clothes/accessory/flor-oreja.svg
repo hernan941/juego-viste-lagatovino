@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!--
+    Viste Lagato · accessory "flor-oreja". Florcita lavanda con hojitas sobre la oreja izquierda.
+    Se dibuja ya en su lugar (lienzo de 512, anclas de art/anchors.json).
+    Contorno 8 px #4A3036, una sombra (negro 15 %) y un brillo (art-direction §3 y §5).
+  -->
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <g fill="#6CC59A" stroke="#4A3036" stroke-width="6">
+      <path d="M150 104 C128 104 112 94 108 78 C128 74 146 84 152 100 Z"/>
+      <path d="M176 112 C186 128 202 134 218 130 C214 114 198 104 182 106 Z"/>
+    </g>
+    <g><circle cx="158.0" cy="50.5" r="24.3" fill="#D8CCFF" stroke="#4A3036" stroke-width="6"/><circle cx="189.8" cy="73.7" r="24.3" fill="#D8CCFF" stroke="#4A3036" stroke-width="6"/><circle cx="177.7" cy="111.1" r="24.3" fill="#D8CCFF" stroke="#4A3036" stroke-width="6"/><circle cx="138.3" cy="111.1" r="24.3" fill="#D8CCFF" stroke="#4A3036" stroke-width="6"/><circle cx="126.2" cy="73.7" r="24.3" fill="#D8CCFF" stroke="#4A3036" stroke-width="6"/><circle cx="158" cy="84" r="16.2" fill="#FFF0A8" stroke="#4A3036" stroke-width="6"/></g>
+    <ellipse fill="#FFFFFF" fill-opacity="0.6" cx="142" cy="64" rx="5" ry="9" transform="rotate(-30 142 64)"/>
+    <path fill="#000" fill-opacity="0.15" d="M146 104 C158 112 176 108 184 98 C182 110 168 120 154 118 Z" opacity="0"/>
+  </g>
+</svg>

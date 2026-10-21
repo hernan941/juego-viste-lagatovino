@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- Viste Lagato · icono de "accessory/taza-leche". GENERADO por art/tools/build-art.mjs: no editar a mano. -->
+  <rect x="4" y="4" width="248" height="248" rx="32" fill="#FFF7EC" stroke="#FFD1E3" stroke-width="4"/>
+  <svg x="20" y="20" width="216" height="216" viewBox="326 340 160 160" preserveAspectRatio="xMidYMid meet" overflow="visible">
+<g stroke-linejoin="round" stroke-linecap="round">
+    <path fill="none" stroke="#4A3036" stroke-width="12" d="M356 408 C356 400 344 392 344 424 C344 456 356 448 356 440" opacity="0"/>
+    <path fill="none" stroke="#4A3036" stroke-width="22" d="M420 420 C458 410 462 462 420 456"/>
+    <path fill="none" stroke="#8EC5F5" stroke-width="10" d="M420 420 C458 410 462 462 420 456"/>
+    <path d="M346 408 L424 408 L418 468 C416 484 400 490 385 490 C370 490 354 484 352 468 Z" fill="#C4E6FF" stroke="#4A3036" stroke-width="8"/>
+    <path fill="#000" fill-opacity="0.15" d="M400 410 L424 410 L418 468 C416 484 402 490 392 490 C404 470 408 436 400 410 Z"/>
+    <ellipse cx="385" cy="408" rx="39" ry="11" fill="#FFFDF8" stroke="#4A3036" stroke-width="8"/>
+    <path transform="translate(385 444) scale(1.4)" fill="#FF8FB8"  d="M0 10 C-8 4 -13 0 -13 -5 C-13 -9 -10 -12 -6.5 -12 C-3.5 -12 -1.5 -10 0 -7.5 C1.5 -10 3.5 -12 6.5 -12 C10 -12 13 -9 13 -5 C13 0 8 4 0 10 Z"/>
+    <path fill="none" stroke="#C9D6E6" stroke-width="4" d="M366 410 C376 414 396 414 404 410" opacity="0"/>
+    <ellipse fill="#FFFFFF" fill-opacity="0.6" cx="362" cy="440" rx="4" ry="12" transform="rotate(8 362 440)"/>
+    <path fill="none" stroke="#FFFFFF" stroke-width="7" stroke-opacity="0.9" d="M372 386 C362 372 382 366 372 352 M398 388 C388 374 408 366 398 352"/>
+    <path fill="none" stroke="#E7D9C6" stroke-width="2.5" d="M372 386 C362 372 382 366 372 352 M398 388 C388 374 408 366 398 352" opacity="0"/>
+  </g>
+  </svg>
+</svg>

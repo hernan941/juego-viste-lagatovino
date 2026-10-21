@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- Viste Lagato · icono de "head/corona-mini". GENERADO por art/tools/build-art.mjs: no editar a mano. -->
+  <rect x="4" y="4" width="248" height="248" rx="32" fill="#FFF7EC" stroke="#FFD1E3" stroke-width="4"/>
+  <svg x="20" y="20" width="216" height="216" viewBox="128 -38 256 256" preserveAspectRatio="xMidYMid meet" overflow="visible">
+<defs>
+    <path id="cr-shape" d="M186 116 L176 56 C176 48 184 46 190 52 L222 80 L246 40 C250 32 262 32 266 40 L290 80 L322 52 C328 46 336 48 336 56 L326 116 C300 124 212 124 186 116 Z"/>
+    <clipPath id="cr-clip"><use href="#cr-shape"/></clipPath>
+  </defs>
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <use href="#cr-shape" fill="#F5D86A"/>
+    <g clip-path="url(#cr-clip)">
+      <path fill="#000" fill-opacity="0.15" d="M290 30 L340 40 L336 124 L276 124 C300 96 300 64 290 30 Z"/>
+      <rect x="170" y="98" width="172" height="26" fill="#F2C94C"/>
+    </g>
+    <use href="#cr-shape" fill="none" stroke="#4A3036" stroke-width="8"/>
+    <path fill="none" stroke="#4A3036" stroke-width="5" d="M188 98 C220 106 292 106 324 98"/>
+    
+    <circle cx="256" cy="86" r="11" fill="#FF8FB8" stroke="#4A3036" stroke-width="5"/>
+    <circle cx="214" cy="106" r="7" fill="#8EC5F5" stroke="#4A3036" stroke-width="4"/>
+    <circle cx="298" cy="106" r="7" fill="#6CC59A" stroke="#4A3036" stroke-width="4"/>
+    <circle cx="180" cy="46" r="7" fill="#F0707A" stroke="#4A3036" stroke-width="4"/>
+    <circle cx="332" cy="46" r="7" fill="#F0707A" stroke="#4A3036" stroke-width="4"/>
+    <ellipse fill="#FFFFFF" fill-opacity="0.55" cx="206" cy="70" rx="6" ry="14" transform="rotate(28 206 70)"/><circle fill="#FFFFFF" fill-opacity="0.55" cx="252" cy="82" r="3"/>
+  </g>
+  </svg>
+</svg>

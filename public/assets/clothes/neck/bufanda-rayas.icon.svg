@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- Viste Lagato · icono de "neck/bufanda-rayas". GENERADO por art/tools/build-art.mjs: no editar a mano. -->
+  <rect x="4" y="4" width="248" height="248" rx="32" fill="#FFF7EC" stroke="#FFD1E3" stroke-width="4"/>
+  <svg x="20" y="20" width="216" height="216" viewBox="100 232 312 312" preserveAspectRatio="xMidYMid meet" overflow="visible">
+<defs>
+    <path id="sw-head" d="M256 318 C172 318 96 300 92 232 C88 185 100 150 118 128 C112 104 118 74 134 60 C146 50 160 52 170 62 C184 76 196 90 208 100 C236 94 276 94 304 100 C316 90 328 76 342 62 C352 52 366 50 378 60 C394 74 400 104 394 128 C412 150 424 185 420 232 C416 300 340 318 256 318 Z"/>
+    <mask id="sw-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512">
+      <rect width="512" height="512" fill="#fff"/>
+      <use href="#sw-head" fill="#000" stroke="#000" stroke-width="8"/>
+      
+    </mask>
+  </defs>
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <g >
+      <path fill="none" stroke="#4A3036" stroke-width="44" d="M112 250 C122 320 190 346 256 346 C322 346 390 320 400 250"/><path fill="none" stroke="#F0707A" stroke-width="34" d="M112 250 C122 320 190 346 256 346 C322 346 390 320 400 250" />
+      <path fill="none" stroke="#FFF7EC" stroke-width="34" stroke-linecap="butt" stroke-dasharray="14 18" d="M112 250 C122 320 190 346 256 346 C322 346 390 320 400 250"/>
+      <path fill="none" stroke="#000" stroke-opacity="0.15" stroke-width="12" d="M118 276 C130 330 190 356 256 356 C322 356 382 330 394 276" transform="translate(0 6)"/>
+    </g>
+    
+    <g transform="rotate(-6 328 390)">
+      <clipPath id="tail-clip"><path d="M304 332 L352 332 L356 412 C356 428 304 428 304 412 Z"/></clipPath>
+      <path d="M304 332 L352 332 L356 412 C356 428 304 428 304 412 Z" fill="#F0707A"/>
+      <g clip-path="url(#tail-clip)">
+        <rect x="298" y="350" width="62" height="14" fill="#FFF7EC"/><rect x="298" y="378" width="62" height="14" fill="#FFF7EC"/><rect x="298" y="406" width="62" height="14" fill="#FFF7EC"/>
+        <path fill="#000" fill-opacity="0.15" d="M336 330 L360 330 L360 430 L330 430 Z"/>
+      </g>
+      <path d="M304 332 L352 332 L356 412 C356 428 304 428 304 412 Z" fill="none" stroke="#4A3036" stroke-width="8"/>
+      <path fill="none" stroke="#FFF7EC" stroke-width="4" d="M310 428 L310 440 M322 430 L322 444 M334 430 L334 444 M346 428 L346 440"/>
+      <path fill="none" stroke="#4A3036" stroke-width="0" d=""/>
+    </g>
+    
+    <rect x="296" y="318" width="46" height="34" rx="14" fill="#F0707A" stroke="#4A3036" stroke-width="8"/>
+    <ellipse fill="#FFFFFF" fill-opacity="0.55" cx="168" cy="330" rx="6" ry="16" transform="rotate(55 168 330)"/><circle fill="#FFFFFF" fill-opacity="0.55" cx="186" cy="340" r="3"/>
+  </g>
+  </svg>
+</svg>

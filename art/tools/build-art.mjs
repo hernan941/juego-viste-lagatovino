@@ -98,6 +98,25 @@ const ICON_CROP = {
   // cuadrada y algo más ajustada que el sweater: deja ~9 % de margen lateral en la celda
   sweater: [121, 256, 270, 270],
   head: [128, -38, 256, 256],
+  // bufandas y collares: el icono los muestra enteros (ICON_FIX.neck)
+  neck: [100, 232, 312, 312],
+  // lentes: anchos y bajos, centrados en la altura de los ojos (y = 226)
+  face: [100, 70, 312, 312],
+  paws: [166, 380, 180, 180],
+  // accesorios: cada uno ocupa un rincon distinto del lienzo, asi que se recortan por prenda (ICON_CROP_ITEM)
+  accessory: [86, 230, 340, 340],
+};
+
+// Recortes por prenda ("slot/id") que pisan al del slot.
+const ICON_CROP_ITEM = {
+  'neck/capa-superheroe': [30, 250, 450, 450],
+  'face/monoculo': [180, 140, 270, 270],
+  'accessory/mochilita': [88, 270, 270, 270],
+  'accessory/flor-oreja': [98, 24, 120, 120],
+  'accessory/globo': [370, 66, 150, 150],
+  'accessory/taza-leche': [326, 340, 160, 160],
+  'accessory/ovillo': [40, 388, 180, 180],
+  'accessory/varita-estrella': [286, 240, 230, 230],
 };
 
 // Ajustes solo para el icono (la prenda suelta, sin gato debajo):
@@ -120,6 +139,8 @@ const ICON_FIX = {
         `<g transform="translate(0 ${SW_CUFF_DROP})">$1</g>`,
       ) +
     '\n<use href="#sw-head" fill="none" stroke="#4A3036" stroke-width="8" clip-path="url(#sw-clip)"/>',
+  // neck: el collar o la bufanda se ven enteros (sin el hueco de la cabeza ni del cuerpo)
+  neck: (inner) => inner.replaceAll('mask="url(#sw-cut)"', ''),
 };
 
 function buildIcons() {
@@ -127,11 +148,11 @@ function buildIcons() {
   const clothes = join(ART, 'clothes');
   if (!existsSync(clothes)) return out;
   for (const slot of readdirSync(clothes)) {
-    const crop = ICON_CROP[slot];
-    if (!crop) continue;
+    if (!ICON_CROP[slot]) continue;
     for (const f of readdirSync(join(clothes, slot))) {
       if (!f.endsWith('.svg') || f.endsWith('.icon.svg')) continue;
       const id = basename(f, '.svg');
+      const crop = ICON_CROP_ITEM[`${slot}/${id}`] ?? ICON_CROP[slot];
       const inner = (ICON_FIX[slot] ?? ((x) => x))(innerSvg(read(`clothes/${slot}/${f}`)));
       const icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
   <!-- Viste Lagato · icono de "${slot}/${id}". GENERADO por art/tools/build-art.mjs: no editar a mano. -->

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!--
+    Viste Lagato · neck "collar-cascabel". Collar rosa con un cascabel dorado.
+    Se dibuja ya en su lugar (lienzo de 512, anclas de art/anchors.json).
+    Contorno 8 px #4A3036, una sombra (negro 15 %) y un brillo (art-direction §3 y §5).
+  -->
+  <defs>
+    <path id="sw-head" d="M256 318 C172 318 96 300 92 232 C88 185 100 150 118 128 C112 104 118 74 134 60 C146 50 160 52 170 62 C184 76 196 90 208 100 C236 94 276 94 304 100 C316 90 328 76 342 62 C352 52 366 50 378 60 C394 74 400 104 394 128 C412 150 424 185 420 232 C416 300 340 318 256 318 Z"/>
+    <mask id="sw-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512">
+      <rect width="512" height="512" fill="#fff"/>
+      <use href="#sw-head" fill="#000" stroke="#000" stroke-width="8"/>
+      
+    </mask>
+  </defs>
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <g mask="url(#sw-cut)">
+      <path fill="none" stroke="#4A3036" stroke-width="26" d="M112 250 C122 320 190 346 256 346 C322 346 390 320 400 250"/><path fill="none" stroke="#FF8FB8" stroke-width="16" d="M112 250 C122 320 190 346 256 346 C322 346 390 320 400 250" />
+      <path fill="none" stroke="#FFD1E3" stroke-width="3" stroke-dasharray="3 9" d="M112 250 C122 320 190 346 256 346 C322 346 390 320 400 250" transform="translate(0 -3)"/>
+    </g>
+    <!-- cascabel -->
+    <circle cx="256" cy="362" r="22" fill="#F5D86A" stroke="#4A3036" stroke-width="8"/>
+    <path fill="#000" fill-opacity="0.15" d="M236 366 C240 382 272 382 276 366 C270 376 242 376 236 366 Z"/>
+    <path fill="none" stroke="#4A3036" stroke-width="5" d="M236 358 L276 358 M256 358 L256 372"/>
+    <circle cx="256" cy="372" r="3.5" fill="#4A3036"/>
+    <rect x="244" y="334" width="24" height="14" rx="6" fill="#FFD1E3" stroke="#4A3036" stroke-width="6"/>
+    <ellipse fill="#FFFFFF" fill-opacity="0.55" cx="248" cy="352" rx="3" ry="6" transform="rotate(25 248 352)"/>
+    <g transform="rotate(0)"><ellipse fill="#FFFFFF" fill-opacity="0.55" cx="246" cy="350" rx="4" ry="7" transform="rotate(20 246 350)"/></g>
+  </g>
+</svg>

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!--
+    Viste Lagato · head "vincha-mono". Vincha lavanda con un mono rosa grande.
+    Se dibuja ya en su lugar (lienzo de 512, anclas de art/anchors.json).
+    Contorno 8 px #4A3036, una sombra (negro 15 %) y un brillo (art-direction §3 y §5).
+  -->
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <path fill="none" stroke="#4A3036" stroke-width="30" d="M118 142 C150 84 362 84 394 142"/>
+    <path fill="none" stroke="#B8A6F2" stroke-width="22" d="M118 142 C150 84 362 84 394 142"/>
+    <path fill="none" stroke="#9E8BE0" stroke-width="5" d="M132 112 C170 82 342 82 380 112" opacity="0"/>
+    <path fill="#000" fill-opacity="0.15" d="M126 148 C160 98 352 98 386 148 C378 150 372 146 370 142 C342 108 170 108 142 142 C140 146 132 150 126 148 Z" opacity="0"/>
+    <!-- mono -->
+    <g transform="translate(336 100) rotate(14)">
+      <path d="M0 0 C-14 -30 -52 -34 -58 -14 C-62 8 -30 24 0 4 Z" fill="#FF8FB8" stroke="#4A3036" stroke-width="8"/>
+      <path d="M0 0 C14 -30 52 -34 58 -14 C62 8 30 24 0 4 Z" fill="#FF8FB8" stroke="#4A3036" stroke-width="8"/>
+      <path d="M0 4 C-10 24 -30 44 -44 46 C-48 34 -38 18 -14 6 Z" fill="#F2A9C4" stroke="#4A3036" stroke-width="7"/>
+      <path d="M0 4 C10 24 30 44 44 46 C48 34 38 18 14 6 Z" fill="#F2A9C4" stroke="#4A3036" stroke-width="7"/>
+      <path fill="#000" fill-opacity="0.15" d="M-56 -2 C-48 14 -26 20 -2 4 L-2 12 C-30 28 -58 10 -56 -2 Z"/>
+      <path fill="none" stroke="#F2A9C4" stroke-width="4" d="M-38 -14 C-30 -20 -18 -18 -12 -10" opacity="0"/>
+      <rect x="-14" y="-12" width="28" height="26" rx="12" fill="#FF8FB8" stroke="#4A3036" stroke-width="8"/>
+      <ellipse cx="-34" cy="-14" rx="6" ry="12" transform="rotate(50 -34 -14)" fill="#FFFFFF" fill-opacity="0.55"/>
+    </g>
+    <ellipse fill="#FFFFFF" fill-opacity="0.55" cx="190" cy="100" rx="14" ry="5" transform="rotate(-20 190 100)"/><circle fill="#FFFFFF" fill-opacity="0.55" cx="166" cy="114" r="3"/>
+  </g>
+</svg>

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!--
+    Viste Lagato · neck "mono". Mono de corbatin lavanda con lunares crema.
+    Se dibuja ya en su lugar (lienzo de 512, anclas de art/anchors.json).
+    Contorno 8 px #4A3036, una sombra (negro 15 %) y un brillo (art-direction §3 y §5).
+  -->
+  <defs>
+    <path id="sw-head" d="M256 318 C172 318 96 300 92 232 C88 185 100 150 118 128 C112 104 118 74 134 60 C146 50 160 52 170 62 C184 76 196 90 208 100 C236 94 276 94 304 100 C316 90 328 76 342 62 C352 52 366 50 378 60 C394 74 400 104 394 128 C412 150 424 185 420 232 C416 300 340 318 256 318 Z"/>
+    <mask id="sw-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512">
+      <rect width="512" height="512" fill="#fff"/>
+      <use href="#sw-head" fill="#000" stroke="#000" stroke-width="8"/>
+      
+    </mask>
+  </defs>
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <g transform="translate(256 338) scale(1.3)">
+      <path d="M0 0 C-22 -26 -62 -30 -66 -8 C-68 14 -30 26 0 6 Z" fill="#B8A6F2" stroke="#4A3036" stroke-width="8"/>
+      <path d="M0 0 C22 -26 62 -30 66 -8 C68 14 30 26 0 6 Z" fill="#B8A6F2" stroke="#4A3036" stroke-width="8"/>
+      <g fill="#FFF7EC"><circle cx="-38" cy="-4" r="5"/><circle cx="-22" cy="4" r="4"/><circle cx="38" cy="-4" r="5"/><circle cx="22" cy="4" r="4"/><circle cx="-48" cy="-4" r="3"/><circle cx="48" cy="-4" r="3"/></g>
+      <path fill="#000" fill-opacity="0.15" d="M-62 2 C-50 16 -26 20 -2 8 L-2 14 C-32 30 -66 14 -62 2 Z M62 2 C50 16 26 20 2 8 L2 14 C32 30 66 14 62 2 Z"/>
+      <rect x="-15" y="-15" width="30" height="30" rx="12" fill="#9E8BE0" stroke="#4A3036" stroke-width="8"/>
+      <ellipse fill="#FFFFFF" fill-opacity="0.55" cx="-40" cy="-16" rx="5" ry="12" transform="rotate(70 -40 -16)"/>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- Viste Lagato · icono de "neck/capa-superheroe". GENERADO por art/tools/build-art.mjs: no editar a mano. -->
+  <rect x="4" y="4" width="248" height="248" rx="32" fill="#FFF7EC" stroke="#FFD1E3" stroke-width="4"/>
+  <svg x="20" y="20" width="216" height="216" viewBox="30 250 450 450" preserveAspectRatio="xMidYMid meet" overflow="visible">
+<defs>
+    <path id="sw-head" d="M256 318 C172 318 96 300 92 232 C88 185 100 150 118 128 C112 104 118 74 134 60 C146 50 160 52 170 62 C184 76 196 90 208 100 C236 94 276 94 304 100 C316 90 328 76 342 62 C352 52 366 50 378 60 C394 74 400 104 394 128 C412 150 424 185 420 232 C416 300 340 318 256 318 Z"/>
+    <mask id="sw-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512">
+      <rect width="512" height="512" fill="#fff"/>
+      <use href="#sw-head" fill="#000" stroke="#000" stroke-width="8"/>
+      <path d="M256 262 C330 262 370 330 372 400 C374 452 340 490 256 490 C172 490 138 452 140 400 C142 330 182 262 256 262 Z" fill="#000" stroke="#000" stroke-width="8"/><path d="M350 462 C400 472 446 452 452 400 C456 362 440 334 416 336 C394 338 388 362 402 374 C414 384 420 396 416 410 C410 432 388 440 354 430 Z" fill="#000" stroke="#000" stroke-width="8"/><ellipse cx="224" cy="474" rx="38" ry="28" fill="#000"/><ellipse cx="288" cy="474" rx="38" ry="28" fill="#000"/>
+    </mask>
+  </defs>
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <g >
+      <path d="M160 300 C112 318 62 380 50 470 C66 486 84 478 98 492 C116 480 132 492 148 496 C166 482 184 492 196 496 L330 496 C342 492 358 482 374 496 C390 492 404 480 420 492 C434 478 452 486 464 470 C452 380 400 318 352 300 Z" fill="#F0707A" stroke="#4A3036" stroke-width="8"/>
+      <path fill="#FF9EB5" d="M160 300 C112 318 62 380 50 470 C66 400 118 340 176 316 Z"/>
+      <path fill="#FF9EB5" d="M352 300 C400 318 450 380 464 470 C448 400 394 340 336 316 Z"/>
+      <path fill="#000" fill-opacity="0.15" d="M60 432 C76 450 92 440 98 492 C84 478 66 486 50 470 Z M452 432 C436 450 420 440 414 492 C428 478 446 486 464 470 Z"/>
+      <path fill="none" stroke="#D95A66" stroke-width="5" d="M120 350 C100 400 90 440 90 480 M392 350 C412 400 422 440 422 480"/>
+    </g>
+    <path fill="none" stroke="#4A3036" stroke-width="32" d="M112 250 C122 320 190 346 256 346 C322 346 390 320 400 250"/><path fill="none" stroke="#F0707A" stroke-width="22" d="M112 250 C122 320 190 346 256 346 C322 346 390 320 400 250" />
+    <g ><path fill="none" stroke="#4A3036" stroke-width="32" d="M112 250 C122 320 190 346 256 346 C322 346 390 320 400 250"/><path fill="none" stroke="#F0707A" stroke-width="22" d="M112 250 C122 320 190 346 256 346 C322 346 390 320 400 250" /></g>
+    <path d="M256.0 326.0 L262.5 339.1 L276.9 341.2 L266.5 351.4 L268.9 365.8 L256.0 359.0 L243.1 365.8 L245.5 351.4 L235.1 341.2 L249.5 339.1 Z" fill="#F5D86A" stroke="#4A3036" stroke-width="6" stroke-linejoin="round"/>
+    <ellipse fill="#FFFFFF" fill-opacity="0.55" cx="140" cy="372" rx="6" ry="22" transform="rotate(24 140 372)"/><circle fill="#FFFFFF" fill-opacity="0.55" cx="128" cy="404" r="3"/>
+  </g>
+  </svg>
+</svg>

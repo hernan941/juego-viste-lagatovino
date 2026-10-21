@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- Viste Lagato · icono de "head/gorro-rana". GENERADO por art/tools/build-art.mjs: no editar a mano. -->
+  <rect x="4" y="4" width="248" height="248" rx="32" fill="#FFF7EC" stroke="#FFD1E3" stroke-width="4"/>
+  <svg x="20" y="20" width="216" height="216" viewBox="128 -38 256 256" preserveAspectRatio="xMidYMid meet" overflow="visible">
+<defs>
+    <path id="rn-dome" d="M156 126 C144 84 190 62 256 62 C322 62 368 84 356 126 C322 138 190 138 156 126 Z"/>
+    <clipPath id="rn-clip"><use href="#rn-dome"/></clipPath>
+  </defs>
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <use href="#rn-dome" fill="#6CC59A"/>
+    <g clip-path="url(#rn-clip)">
+      <g fill="#4FA77E"><circle cx="190" cy="108" r="9"/><circle cx="326" cy="112" r="8"/><circle cx="256" cy="100" r="7"/><circle cx="224" cy="124" r="6"/><circle cx="296" cy="126" r="6"/></g>
+      <path fill="#000" fill-opacity="0.15" d="M318 62 C366 80 368 112 354 130 L300 134 C320 112 324 84 318 62 Z"/>
+    </g>
+    <use href="#rn-dome" fill="none" stroke="#4A3036" stroke-width="8"/>
+    
+    <g>
+      <circle cx="204" cy="62" r="34" fill="#6CC59A" stroke="#4A3036" stroke-width="8"/>
+      <circle cx="308" cy="62" r="34" fill="#6CC59A" stroke="#4A3036" stroke-width="8"/>
+      <circle cx="204" cy="60" r="21" fill="#FFFDF8" stroke="#4A3036" stroke-width="5"/>
+      <circle cx="308" cy="60" r="21" fill="#FFFDF8" stroke="#4A3036" stroke-width="5"/>
+      <circle cx="208" cy="62" r="11" fill="#33242A"/><circle cx="304" cy="62" r="11" fill="#33242A"/>
+      <circle cx="212" cy="57" r="4" fill="#FFFFFF"/><circle cx="308" cy="57" r="4" fill="#FFFFFF"/>
+    </g>
+    
+    <circle cx="256" cy="96" r="3.5" fill="#4FA77E"/>
+    <ellipse fill="#FFFFFF" fill-opacity="0.55" cx="176" cy="98" rx="6" ry="16" transform="rotate(55 176 98)"/><circle fill="#FFFFFF" fill-opacity="0.55" cx="166" cy="114" r="4"/>
+  </g>
+  </svg>
+</svg>

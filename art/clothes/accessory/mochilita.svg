@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!--
+    Viste Lagato · accessory "mochilita". Mochilita rosa que cuelga de la cadera con una tira lavanda cruzada sobre el pecho.
+    Se dibuja ya en su lugar (lienzo de 512, anclas de art/anchors.json).
+    Contorno 8 px #4A3036, una sombra (negro 15 %) y un brillo (art-direction §3 y §5).
+  -->
+  <defs>
+    <path id="sw-head" d="M256 318 C172 318 96 300 92 232 C88 185 100 150 118 128 C112 104 118 74 134 60 C146 50 160 52 170 62 C184 76 196 90 208 100 C236 94 276 94 304 100 C316 90 328 76 342 62 C352 52 366 50 378 60 C394 74 400 104 394 128 C412 150 424 185 420 232 C416 300 340 318 256 318 Z"/>
+    <mask id="st-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512">
+      <rect width="512" height="512" fill="#fff"/>
+      <use href="#sw-head" fill="#000" stroke="#000" stroke-width="8"/>
+    </mask>
+    <path id="bag-body" d="M96 436 C96 412 108 404 132 404 L152 404 C176 404 188 412 188 436 L188 458 C188 474 176 482 160 482 L124 482 C108 482 96 474 96 458 Z"/>
+    <clipPath id="bag-clip"><use href="#bag-body"/></clipPath>
+  </defs>
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <!-- tira cruzada -->
+    <g mask="url(#st-cut)">
+      <path fill="none" stroke="#4A3036" stroke-width="30" d="M362 286 C334 346 232 388 160 412"/>
+      <path fill="none" stroke="#B8A6F2" stroke-width="22" d="M362 286 C334 346 232 388 160 412"/>
+      <path fill="none" stroke="#9E8BE0" stroke-width="3.5" stroke-dasharray="3 8" d="M352 296 C326 350 230 392 168 414"/>
+    </g>
+    <!-- bolsita -->
+    <use href="#bag-body" fill="#FF8FB8"/>
+    <g clip-path="url(#bag-clip)">
+      <path fill="#000" fill-opacity="0.15" d="M96 462 C110 480 170 484 190 460 L190 490 L96 490 Z"/>
+      <path d="M90 398 L194 398 L194 434 C176 450 156 452 142 442 C128 452 108 450 90 434 Z" fill="#FFB3CF"/>
+      <path fill="#000" fill-opacity="0.15" d="M90 432 C110 452 128 454 142 444 C156 454 176 452 194 432 L194 440 C176 458 156 460 142 450 C128 460 110 458 90 440 Z"/>
+    </g>
+    <use href="#bag-body" fill="none" stroke="#4A3036" stroke-width="8"/>
+    <path fill="none" stroke="#4A3036" stroke-width="5" d="M96 434 C108 450 128 452 142 442 C156 452 176 450 188 434"/>
+    <circle cx="142" cy="438" r="9" fill="#F5D86A" stroke="#4A3036" stroke-width="5"/>
+    <ellipse fill="#FFFFFF" fill-opacity="0.55" cx="112" cy="418" rx="5" ry="9" transform="rotate(14 112 418)"/>
+    <circle fill="#FFFFFF" fill-opacity="0.55" cx="110" cy="440" r="3.5" opacity="0"/>
+  </g>
+</svg>

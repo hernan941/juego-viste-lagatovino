@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!--
+    Viste Lagato · head "gorro-rana". Gorro de rana verde con dos ojotes y manchitas.
+    Se dibuja ya en su lugar (lienzo de 512, anclas de art/anchors.json).
+    Contorno 8 px #4A3036, una sombra (negro 15 %) y un brillo (art-direction §3 y §5).
+  -->
+  <defs>
+    <path id="rn-dome" d="M156 126 C144 84 190 62 256 62 C322 62 368 84 356 126 C322 138 190 138 156 126 Z"/>
+    <clipPath id="rn-clip"><use href="#rn-dome"/></clipPath>
+  </defs>
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <use href="#rn-dome" fill="#6CC59A"/>
+    <g clip-path="url(#rn-clip)">
+      <g fill="#4FA77E"><circle cx="190" cy="108" r="9"/><circle cx="326" cy="112" r="8"/><circle cx="256" cy="100" r="7"/><circle cx="224" cy="124" r="6"/><circle cx="296" cy="126" r="6"/></g>
+      <path fill="#000" fill-opacity="0.15" d="M318 62 C366 80 368 112 354 130 L300 134 C320 112 324 84 318 62 Z"/>
+    </g>
+    <use href="#rn-dome" fill="none" stroke="#4A3036" stroke-width="8"/>
+    <!-- ojotes -->
+    <g>
+      <circle cx="204" cy="62" r="34" fill="#6CC59A" stroke="#4A3036" stroke-width="8"/>
+      <circle cx="308" cy="62" r="34" fill="#6CC59A" stroke="#4A3036" stroke-width="8"/>
+      <circle cx="204" cy="60" r="21" fill="#FFFDF8" stroke="#4A3036" stroke-width="5"/>
+      <circle cx="308" cy="60" r="21" fill="#FFFDF8" stroke="#4A3036" stroke-width="5"/>
+      <circle cx="208" cy="62" r="11" fill="#33242A"/><circle cx="304" cy="62" r="11" fill="#33242A"/>
+      <circle cx="212" cy="57" r="4" fill="#FFFFFF"/><circle cx="308" cy="57" r="4" fill="#FFFFFF"/>
+    </g>
+    <!-- mejillas de rana y nariz -->
+    <circle cx="256" cy="96" r="3.5" fill="#4FA77E"/>
+    <ellipse fill="#FFFFFF" fill-opacity="0.55" cx="176" cy="98" rx="6" ry="16" transform="rotate(55 176 98)"/><circle fill="#FFFFFF" fill-opacity="0.55" cx="166" cy="114" r="4"/>
+  </g>
+</svg>

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!--
+    Viste Lagato · face "lentes-corazon-brillantes". SECRETO. Lentes de corazon grandes con marco dorado, cristales rosa brillante y destellos.
+    Se dibuja ya en su lugar (lienzo de 512, anclas de art/anchors.json).
+    Contorno 8 px #4A3036, una sombra (negro 15 %) y un brillo (art-direction §3 y §5).
+  -->
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <path fill="none" stroke="#4A3036" stroke-width="12" d="M146 214 L104 204 M366 214 L408 204"/><path fill="none" stroke="#F5D86A" stroke-width="5" d="M140 213 L106 205 M372 213 L406 205"/><path fill="none" stroke="#4A3036" stroke-width="16" d="M236 216 C248 204 264 204 276 216"/><path fill="none" stroke="#F5D86A" stroke-width="6" d="M236 216 C248 204 264 204 276 216"/>
+    <g transform="translate(192 230) scale(4.6)">
+      <path d="M0 10 C-8 4 -13 0 -13 -5 C-13 -9 -10 -12 -6.5 -12 C-3.5 -12 -1.5 -10 0 -7.5 C1.5 -10 3.5 -12 6.5 -12 C10 -12 13 -9 13 -5 C13 0 8 4 0 10 Z" fill="#FF8FB8" fill-opacity="0.45"/>
+      <path d="M0 10 C-8 4 -13 0 -13 -5 C-13 -9 -10 -12 -6.5 -12 C-3.5 -12 -1.5 -10 0 -7.5 C1.5 -10 3.5 -12 6.5 -12 C10 -12 13 -9 13 -5 C13 0 8 4 0 10 Z" fill="none" stroke="#4A3036" stroke-width="2.25897920604915"/>
+      <path d="M0 10 C-8 4 -13 0 -13 -5 C-13 -9 -10 -12 -6.5 -12 C-3.5 -12 -1.5 -10 0 -7.5 C1.5 -10 3.5 -12 6.5 -12 C10 -12 13 -9 13 -5 C13 0 8 4 0 10 Z" fill="none" stroke="#F5D86A" stroke-width="0.5198487712665407"/>
+      
+    </g>
+    <g transform="translate(320 230) scale(4.6)">
+      <path d="M0 10 C-8 4 -13 0 -13 -5 C-13 -9 -10 -12 -6.5 -12 C-3.5 -12 -1.5 -10 0 -7.5 C1.5 -10 3.5 -12 6.5 -12 C10 -12 13 -9 13 -5 C13 0 8 4 0 10 Z" fill="#FF8FB8" fill-opacity="0.45"/>
+      <path d="M0 10 C-8 4 -13 0 -13 -5 C-13 -9 -10 -12 -6.5 -12 C-3.5 -12 -1.5 -10 0 -7.5 C1.5 -10 3.5 -12 6.5 -12 C10 -12 13 -9 13 -5 C13 0 8 4 0 10 Z" fill="none" stroke="#4A3036" stroke-width="2.25897920604915"/>
+      <path d="M0 10 C-8 4 -13 0 -13 -5 C-13 -9 -10 -12 -6.5 -12 C-3.5 -12 -1.5 -10 0 -7.5 C1.5 -10 3.5 -12 6.5 -12 C10 -12 13 -9 13 -5 C13 0 8 4 0 10 Z" fill="none" stroke="#F5D86A" stroke-width="0.5198487712665407"/>
+      
+    </g>
+    <path transform="translate(160 196) scale(1.1)" fill="#FFFFFF" d="M0 -10 C1.5 -3 3 -1.5 10 0 C3 1.5 1.5 3 0 10 C-1.5 3 -3 1.5 -10 0 C-3 -1.5 -1.5 -3 0 -10 Z"/><path transform="translate(342 194) scale(1.3)" fill="#FFFFFF" d="M0 -10 C1.5 -3 3 -1.5 10 0 C3 1.5 1.5 3 0 10 C-1.5 3 -3 1.5 -10 0 C-3 -1.5 -1.5 -3 0 -10 Z"/><path transform="translate(214 250) scale(0.7)" fill="#FFFFFF" d="M0 -10 C1.5 -3 3 -1.5 10 0 C3 1.5 1.5 3 0 10 C-1.5 3 -3 1.5 -10 0 C-3 -1.5 -1.5 -3 0 -10 Z"/><path transform="translate(300 252) scale(0.7)" fill="#FFFFFF" d="M0 -10 C1.5 -3 3 -1.5 10 0 C3 1.5 1.5 3 0 10 C-1.5 3 -3 1.5 -10 0 C-3 -1.5 -1.5 -3 0 -10 Z"/><path transform="translate(128 250) scale(0.8)" fill="#FFF0A8" d="M0 -10 C1.5 -3 3 -1.5 10 0 C3 1.5 1.5 3 0 10 C-1.5 3 -3 1.5 -10 0 C-3 -1.5 -1.5 -3 0 -10 Z"/><path transform="translate(388 252) scale(0.9)" fill="#FFF0A8" d="M0 -10 C1.5 -3 3 -1.5 10 0 C3 1.5 1.5 3 0 10 C-1.5 3 -3 1.5 -10 0 C-3 -1.5 -1.5 -3 0 -10 Z"/>
+    <path d="M256.0 182.0 L258.4 186.8 L263.6 187.5 L259.8 191.2 L260.7 196.5 L256.0 194.0 L251.3 196.5 L252.2 191.2 L248.4 187.5 L253.6 186.8 Z" fill="#FFF0A8" stroke="#FFF0A8" stroke-width="3" stroke-linejoin="round"/>
+  </g>
+</svg>

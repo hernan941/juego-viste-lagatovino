@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!--
+    Viste Lagato · face "lentes-redondos". Lentes redondos con marco dorado.
+    Se dibuja ya en su lugar (lienzo de 512, anclas de art/anchors.json).
+    Contorno 8 px #4A3036, una sombra (negro 15 %) y un brillo (art-direction §3 y §5).
+  -->
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <path fill="none" stroke="#4A3036" stroke-width="12" d="M146 214 L104 204 M366 214 L408 204"/><path fill="none" stroke="#F5D86A" stroke-width="5" d="M140 213 L106 205 M372 213 L406 205"/><path fill="none" stroke="#4A3036" stroke-width="16" d="M236 216 C248 204 264 204 276 216"/><path fill="none" stroke="#F5D86A" stroke-width="6" d="M236 216 C248 204 264 204 276 216"/>
+    <g transform="translate(192 226) scale(1)">
+      <path d="M-40 0 A40 40 0 1 0 40 0 A40 40 0 1 0 -40 0 Z" fill="#C4E6FF" fill-opacity="0.25"/>
+      <path d="M-40 0 A40 40 0 1 0 40 0 A40 40 0 1 0 -40 0 Z" fill="none" stroke="#4A3036" stroke-width="18"/>
+      <path d="M-40 0 A40 40 0 1 0 40 0 A40 40 0 1 0 -40 0 Z" fill="none" stroke="#F5D86A" stroke-width="10"/>
+      <path fill="none" stroke="#FFFFFF" stroke-opacity="0.7" stroke-width="6" d="M-22 -10 C-20 -22 -10 -30 0 -30" transform="translate(-4 4)"/>
+    </g>
+    <g transform="translate(320 226) scale(1)">
+      <path d="M-40 0 A40 40 0 1 0 40 0 A40 40 0 1 0 -40 0 Z" fill="#C4E6FF" fill-opacity="0.25"/>
+      <path d="M-40 0 A40 40 0 1 0 40 0 A40 40 0 1 0 -40 0 Z" fill="none" stroke="#4A3036" stroke-width="18"/>
+      <path d="M-40 0 A40 40 0 1 0 40 0 A40 40 0 1 0 -40 0 Z" fill="none" stroke="#F5D86A" stroke-width="10"/>
+      <path fill="none" stroke="#FFFFFF" stroke-opacity="0.7" stroke-width="6" d="M-22 -10 C-20 -22 -10 -30 0 -30" transform="translate(-4 4)"/>
+    </g>
+  </g>
+</svg>

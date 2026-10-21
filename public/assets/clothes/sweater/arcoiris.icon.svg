@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- Viste Lagato · icono de "sweater/arcoiris". GENERADO por art/tools/build-art.mjs: no editar a mano. -->
+  <rect x="4" y="4" width="248" height="248" rx="32" fill="#FFF7EC" stroke="#FFD1E3" stroke-width="4"/>
+  <svg x="20" y="20" width="216" height="216" viewBox="121 256 270 270" preserveAspectRatio="xMidYMid meet" overflow="visible">
+<defs>
+    <path id="sw-head" d="M256 318 C172 318 96 300 92 232 C88 185 100 150 118 128 C112 104 118 74 134 60 C146 50 160 52 170 62 C184 76 196 90 208 100 C236 94 276 94 304 100 C316 90 328 76 342 62 C352 52 366 50 378 60 C394 74 400 104 394 128 C412 150 424 185 420 232 C416 300 340 318 256 318 Z"/>
+    <path id="sw-shape" d="M256 266 C336 266 380 332 382 398 C383 430 382 456 374 470 C330 472 182 472 138 470 C130 456 129 430 130 398 C132 332 176 266 256 266 Z"/>
+    <clipPath id="sw-clip"><use href="#sw-shape"/></clipPath>
+    <mask id="sw-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512">
+      <rect width="512" height="512" fill="#fff"/>
+      <use href="#sw-head" fill="#000" stroke="#000" stroke-width="8"/>
+      </mask>
+  </defs>
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <g mask="url(#sw-cut)">
+      
+      <g clip-path="url(#sw-clip)">
+        <rect x="100" y="250" width="312" height="240" fill="#FFFDF8"/>
+        
+        <g>
+          <path d="M164 446 A92 92 0 0 1 348 446" fill="none" stroke="#F0707A" stroke-width="13"/>
+          <path d="M176 446 A80 80 0 0 1 336 446" fill="none" stroke="#FFC27D" stroke-width="13"/>
+          <path d="M188 446 A68 68 0 0 1 324 446" fill="none" stroke="#FFF0A8" stroke-width="13"/>
+          <path d="M200 446 A56 56 0 0 1 312 446" fill="none" stroke="#6CC59A" stroke-width="13"/>
+          <path d="M212 446 A44 44 0 0 1 300 446" fill="none" stroke="#8EC5F5" stroke-width="13"/>
+          <path d="M224 446 A32 32 0 0 1 288 446" fill="none" stroke="#B8A6F2" stroke-width="13"/>
+          <g transform="translate(166 436) scale(0.85)"><path fill="#FFFFFF" stroke="#E7D9C6" stroke-width="4.705882352941177" stroke-linejoin="round" d="M-22 8 C-34 8 -34 -8 -22 -8 C-22 -22 -4 -26 2 -14 C10 -22 26 -16 22 -4 C34 -2 34 8 22 8 Z"/></g>
+          <g transform="translate(346 436) scale(0.85)"><path fill="#FFFFFF" stroke="#E7D9C6" stroke-width="4.705882352941177" stroke-linejoin="round" d="M-22 8 C-34 8 -34 -8 -22 -8 C-22 -22 -4 -26 2 -14 C10 -22 26 -16 22 -4 C34 -2 34 8 22 8 Z"/></g>
+        </g>
+        
+        <rect x="100" y="446" width="312" height="40" fill="#D8CCFF"/>
+        <path fill="none" stroke="#B8A6F2" stroke-width="5" d="M150 452 L150 474 M170 454 L170 478 M342 454 L342 478 M362 452 L362 474"/>
+        <path fill="none" stroke="#4A3036" stroke-width="5" d="M128 446 L384 446"/>
+        
+        <use href="#sw-head" fill="#000" fill-opacity="0.15" transform="translate(0 20)"/>
+        <path fill="#000" fill-opacity="0.15" d="M110 440 C170 470 342 470 402 440 L402 500 L110 500 Z"/>
+        
+        <path fill="none" stroke="#4A3036" stroke-width="40" d="M92 238 C96 306 172 324 256 324 C340 324 416 306 420 238"/>
+        <path fill="none" stroke="#D8CCFF" stroke-width="32" d="M92 238 C96 306 172 324 256 324 C340 324 416 306 420 238"/>
+        <path fill="none" stroke="#B8A6F2" stroke-width="4" d="M196 326 L196 336 M226 330 L226 340 M256 331 L256 341 M286 330 L286 340 M316 326 L316 336"/>
+        
+      </g>
+      
+      <path fill="none" stroke="#4A3036" stroke-width="5" d="M168 340 C186 372 194 404 199 456 M344 340 C326 372 318 404 313 456"/>
+      <use href="#sw-shape" fill="none" stroke="#4A3036" stroke-width="8"/>
+    </g>
+    
+    <g transform="translate(0 20)"><rect x="192" y="430" width="62" height="26" rx="12" fill="#D8CCFF" stroke="#4A3036" stroke-width="8"/>
+    <rect x="258" y="430" width="62" height="26" rx="12" fill="#D8CCFF" stroke="#4A3036" stroke-width="8"/>
+    <path fill="none" stroke="#B8A6F2" stroke-width="4" d="M210 437 L210 449 M223 437 L223 449 M236 437 L236 449 M276 437 L276 449 M289 437 L289 449 M302 437 L302 449"/></g>
+
+    
+    <ellipse fill="#FFFFFF" fill-opacity="0.5" cx="166" cy="372" rx="8" ry="22" transform="rotate(20 166 372)"/>
+    <circle fill="#FFFFFF" fill-opacity="0.5" cx="176" cy="404" r="4"/>
+  </g>
+<use href="#sw-head" fill="none" stroke="#4A3036" stroke-width="8" clip-path="url(#sw-clip)"/>
+  </svg>
+</svg>

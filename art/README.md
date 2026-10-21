@@ -81,7 +81,7 @@ El juego carga `tail/<id>.svg` detrás de `noface/<id>.svg` y la rota desde su b
    Los puños se dibujan fuera de la máscara, encima de las patitas.
 4. Los sweaters siguen la estructura de `clothes/sweater/rayas.svg`: `#sw-shape` (cuerpo inflado unos 8 px), `#sw-clip` y `#sw-cut`, más el cuello elástico, el elástico inferior, las costuras de las mangas y los puños. Para un sweater nuevo lo más fácil es copiar `rayas.svg` y cambiar el bloque de patrón.
 5. Los ids solo tienen que ser únicos dentro del archivo, porque cada SVG se carga por separado.
-6. Se ejecuta el compositor para crear el icono (`ICON_CROP` y `ICON_FIX` por slot en `tools/build-art.mjs`), se agrega la prenda a `preview.html` si hace falta y se revisa sobre los gatos claro, oscuro y con manchas.
+6. Se ejecuta el compositor para crear el icono (`ICON_CROP` y `ICON_FIX` por slot, y `ICON_CROP_ITEM` por prenda cuando el recorte del slot no sirve, en `tools/build-art.mjs`), se agrega la prenda a `preview.html` si hace falta y se revisa sobre los gatos claro, oscuro y con manchas.
 
 Para cargar en Phaser: `this.load.svg(key, 'assets/cats/naranja.svg', { width: 512, height: 512 })` o la escala que se necesite (ADR 0006). Las máscaras, los recortes y los `<use>` son SVG estándar y el navegador los rasteriza bien. Si en el futuro se pasa a PNG o atlas en el build, hay que usar un rasterizador con soporte de `mask` (Chromium o resvg).
 

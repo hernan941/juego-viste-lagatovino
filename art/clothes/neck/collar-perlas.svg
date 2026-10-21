@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!--
+    Viste Lagato · neck "collar-perlas". Collar de perlas con una perla central mas grande.
+    Se dibuja ya en su lugar (lienzo de 512, anclas de art/anchors.json).
+    Contorno 8 px #4A3036, una sombra (negro 15 %) y un brillo (art-direction §3 y §5).
+  -->
+  <defs>
+    <path id="sw-head" d="M256 318 C172 318 96 300 92 232 C88 185 100 150 118 128 C112 104 118 74 134 60 C146 50 160 52 170 62 C184 76 196 90 208 100 C236 94 276 94 304 100 C316 90 328 76 342 62 C352 52 366 50 378 60 C394 74 400 104 394 128 C412 150 424 185 420 232 C416 300 340 318 256 318 Z"/>
+    <mask id="sw-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512">
+      <rect width="512" height="512" fill="#fff"/>
+      <use href="#sw-head" fill="#000" stroke="#000" stroke-width="8"/>
+      
+    </mask>
+  </defs>
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <g mask="url(#sw-cut)">
+      <path fill="none" stroke="#4A3036" stroke-width="7" d="M126 268 C132 320 190 346 256 346 C322 346 380 320 386 268" opacity="0"/>
+      <circle cx="124.8" cy="292.1" r="10" fill="#FFFDF8" stroke="#4A3036" stroke-width="5"/><ellipse cx="121.8" cy="288.6" rx="2.6" ry="1.8" fill="#FFFFFF" transform="rotate(-30 121.8 288.6)"/>
+      <circle cx="136.5" cy="307.0" r="10" fill="#FFFDF8" stroke="#4A3036" stroke-width="5"/><ellipse cx="133.5" cy="303.5" rx="2.6" ry="1.8" fill="#FFFFFF" transform="rotate(-30 133.5 303.5)"/>
+      <circle cx="153.4" cy="320.2" r="10" fill="#FFFDF8" stroke="#4A3036" stroke-width="5"/><ellipse cx="150.4" cy="316.7" rx="2.6" ry="1.8" fill="#FFFFFF" transform="rotate(-30 150.4 316.7)"/>
+      <circle cx="174.9" cy="331.1" r="10" fill="#FFFDF8" stroke="#4A3036" stroke-width="5"/><ellipse cx="171.9" cy="327.6" rx="2.6" ry="1.8" fill="#FFFFFF" transform="rotate(-30 171.9 327.6)"/>
+      <circle cx="199.9" cy="339.3" r="10" fill="#FFFDF8" stroke="#4A3036" stroke-width="5"/><ellipse cx="196.9" cy="335.8" rx="2.6" ry="1.8" fill="#FFFFFF" transform="rotate(-30 196.9 335.8)"/>
+      <circle cx="227.3" cy="344.3" r="10" fill="#FFFDF8" stroke="#4A3036" stroke-width="5"/><ellipse cx="224.3" cy="340.8" rx="2.6" ry="1.8" fill="#FFFFFF" transform="rotate(-30 224.3 340.8)"/>
+      <circle cx="256.0" cy="346.0" r="13" fill="#FFFDF8" stroke="#4A3036" stroke-width="5"/><ellipse cx="253.0" cy="342.5" rx="2.6" ry="1.8" fill="#FFFFFF" transform="rotate(-30 253.0 342.5)"/>
+      <circle cx="284.7" cy="344.3" r="10" fill="#FFFDF8" stroke="#4A3036" stroke-width="5"/><ellipse cx="281.7" cy="340.8" rx="2.6" ry="1.8" fill="#FFFFFF" transform="rotate(-30 281.7 340.8)"/>
+      <circle cx="312.1" cy="339.3" r="10" fill="#FFFDF8" stroke="#4A3036" stroke-width="5"/><ellipse cx="309.1" cy="335.8" rx="2.6" ry="1.8" fill="#FFFFFF" transform="rotate(-30 309.1 335.8)"/>
+      <circle cx="337.1" cy="331.1" r="10" fill="#FFFDF8" stroke="#4A3036" stroke-width="5"/><ellipse cx="334.1" cy="327.6" rx="2.6" ry="1.8" fill="#FFFFFF" transform="rotate(-30 334.1 327.6)"/>
+      <circle cx="358.6" cy="320.2" r="10" fill="#FFFDF8" stroke="#4A3036" stroke-width="5"/><ellipse cx="355.6" cy="316.7" rx="2.6" ry="1.8" fill="#FFFFFF" transform="rotate(-30 355.6 316.7)"/>
+      <circle cx="375.5" cy="307.0" r="10" fill="#FFFDF8" stroke="#4A3036" stroke-width="5"/><ellipse cx="372.5" cy="303.5" rx="2.6" ry="1.8" fill="#FFFFFF" transform="rotate(-30 372.5 303.5)"/>
+      <circle cx="387.2" cy="292.1" r="10" fill="#FFFDF8" stroke="#4A3036" stroke-width="5"/><ellipse cx="384.2" cy="288.6" rx="2.6" ry="1.8" fill="#FFFFFF" transform="rotate(-30 384.2 288.6)"/>
+    </g>
+    <g fill="#000" fill-opacity="0.15"><path d="M236 354 C250 362 262 362 276 354 C272 364 240 364 236 354 Z" opacity="0"/></g>
+  </g>
+</svg>

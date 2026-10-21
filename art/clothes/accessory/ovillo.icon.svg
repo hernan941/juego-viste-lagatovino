@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- Viste Lagato · icono de "accessory/ovillo". GENERADO por art/tools/build-art.mjs: no editar a mano. -->
+  <rect x="4" y="4" width="248" height="248" rx="32" fill="#FFF7EC" stroke="#FFD1E3" stroke-width="4"/>
+  <svg x="20" y="20" width="216" height="216" viewBox="40 388 180 180" preserveAspectRatio="xMidYMid meet" overflow="visible">
+<g stroke-linejoin="round" stroke-linecap="round">
+    <path fill="none" stroke="#4A3036" stroke-width="12" d="M118 482 C150 506 190 506 214 492" />
+    <path fill="none" stroke="#B8A6F2" stroke-width="5" d="M118 482 C150 506 190 506 214 492"/>
+    <circle cx="96" cy="450" r="46" fill="#B8A6F2" stroke="#4A3036" stroke-width="8"/>
+    <clipPath id="ov-clip"><circle cx="96" cy="450" r="46"/></clipPath>
+    <g clip-path="url(#ov-clip)" fill="none" stroke="#9E8BE0" stroke-width="5">
+      <path d="M52 430 C80 410 116 416 140 436 M50 452 C78 430 118 436 142 458 M56 474 C82 456 116 460 136 478 M70 410 C92 440 92 468 76 494 M96 404 C116 436 116 470 100 498 M122 410 C136 436 134 462 124 488"/>
+      <path fill="#000" fill-opacity="0.15" stroke="none" d="M122 410 C150 430 150 476 112 504 L150 510 L150 400 Z"/>
+    </g>
+    <circle cx="96" cy="450" r="46" fill="none" stroke="#4A3036" stroke-width="8"/>
+    <ellipse fill="#FFFFFF" fill-opacity="0.55" cx="72" cy="430" rx="8" ry="16" transform="rotate(34 72 430)"/>
+    <circle fill="#FFFFFF" fill-opacity="0.55" cx="62" cy="456" r="4"/>
+  </g>
+  </svg>
+</svg>
