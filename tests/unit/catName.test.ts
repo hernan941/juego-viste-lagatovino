@@ -65,3 +65,24 @@ describe('nameOnSelect', () => {
     expect(nameOnSelect('Bigotes', 'Naranjito', 'Luna')).toBe('Bigotes');
   });
 });
+
+describe('applyNameKey while the default name is selected (replacing)', () => {
+  const sel = { replacing: true };
+
+  it('the first printable key replaces the whole default name', () => {
+    expect(applyNameKey('Tricolor', 'B', sel)).toBe('B');
+    expect(applyNameKey('Tricolor', 'ñ', sel)).toBe('ñ');
+  });
+
+  it('Backspace clears the whole default name', () => {
+    expect(applyNameKey('Tricolor', 'Backspace', sel)).toBe('');
+  });
+
+  it('keys that are not text leave the default name alone', () => {
+    for (const k of ['Shift', 'Enter', 'ArrowLeft', '<', ' ']) expect(applyNameKey('Tricolor', k, sel)).toBe('Tricolor');
+  });
+
+  it('without replacing, typing still appends', () => {
+    expect(applyNameKey('Tricolor', 'B', { replacing: false })).toBe('TricolorB');
+  });
+});

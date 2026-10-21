@@ -28,6 +28,8 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
   private cards: CatCard[] = [];
   private selected: CatDef | null = null;
   private name = '';
+  /** True while the field shows the cat's default name, which acts as selected text: the first key replaces it. */
+  private nameIsDefault = false;
   /** Default name of the previous pick, to know whether the player typed their own. */
   private lastDefault: string | null = null;
   private ready = false;
@@ -54,6 +56,7 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
     this.cards = [];
     this.selected = null;
     this.name = '';
+    this.nameIsDefault = false;
     this.lastDefault = null;
     this.ready = false;
     this.barShown = false;
@@ -157,6 +160,7 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
     else card.cat.react('drop');
     this.name = name ?? nameOnSelect(this.name, this.lastDefault ?? previous?.name ?? null, def.name);
     this.lastDefault = def.name;
+    this.nameIsDefault = this.name === def.name;
     this.refreshName();
     this.showBar();
   }
@@ -169,8 +173,9 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
   }
 
   private refreshName() {
-    this.nameText.setText(this.name);
-    this.caret.setX(this.nameText.x + this.nameText.width + 4);
+    this.nameText.setText(this.name).setAlpha(this.nameIsDefault ? 0.55 : 1);
+    // The default name looks selected: dimmed, with the caret at the start.
+    this.caret.setX(this.nameIsDefault ? this.nameText.x - 2 : this.nameText.x + this.nameText.width + 4);
     this.counter.setText(`${[...this.name].length}/${NAME_MAX}`);
   }
 
@@ -180,12 +185,13 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
       this.confirm();
       return;
     }
-    const next = applyNameKey(this.name, event.key);
+    const next = applyNameKey(this.name, event.key, { replacing: this.nameIsDefault });
     if (next === this.name) {
       if (event.key.length === 1) this.shakeBox();
       return;
     }
     this.name = next;
+    this.nameIsDefault = false;
     getAudio(this).play(SfxKeys.Key);
     this.refreshName();
     this.tweens.killTweensOf(this.nameText);
@@ -221,7 +227,7 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
       ready: this.ready,
       buttons: { ...(this.barShown ? { choose: this.choose.getCenter() } : {}), mute: this.mute.getCenter() },
       points: { ...cats, nameInput: { x: INPUT.x, y: INPUT.y } },
-      info: { selected: this.selected?.id ?? null, name: this.name, chooseVisible: this.barShown && this.bar.alpha > 0.99, warning: this.warning.alpha > 0.5 },
+      info: { selected: this.selected?.id ?? null, name: this.name, nameIsDefault: this.nameIsDefault, chooseVisible: this.barShown && this.bar.alpha > 0.99, warning: this.warning.alpha > 0.5 },
     };
   }
 }

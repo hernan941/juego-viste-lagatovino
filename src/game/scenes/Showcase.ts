@@ -24,7 +24,7 @@ const POSE_MS = 1500;
 
 /**
  * Showcase: the cat poses in front of the mirror with sparkles, alternating happy and in love, under a
- * "¡Qué guap@, {nombre}!" plaque. From here the player keeps dressing (the outfit is kept) or changes cat.
+ * "¡Qué lindo look, {nombre}!" plaque. From here the player keeps dressing (the outfit is kept) or changes cat.
  * The middle of the bottom row is free for the "download photo" button of F7.
  */
 export class Showcase extends Phaser.Scene implements E2EUi {

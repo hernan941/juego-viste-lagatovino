@@ -3,6 +3,6 @@ import { showcaseTitle } from '../../src/game/domain/copy';
 
 describe('copy', () => {
   it('praises the cat by name', () => {
-    expect(showcaseTitle('Luna')).toBe('¡Qué guap@, Luna!');
+    expect(showcaseTitle('Luna')).toBe('¡Qué lindo look, Luna!');
   });
 });

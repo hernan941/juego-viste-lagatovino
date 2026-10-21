@@ -16,8 +16,17 @@ export function validateCatName(raw: string): NameCheck {
   return { ok: true, name };
 }
 
-/** The name after a key press (`KeyboardEvent.key`): text is appended, Backspace deletes, the rest is ignored. */
-export function applyNameKey(current: string, key: string): string {
+/**
+ * The name after a key press (`KeyboardEvent.key`): text is appended, Backspace deletes, the rest is ignored.
+ * With `replacing` (the default name acts as selected text) the first printable key replaces it
+ * and Backspace clears it all.
+ */
+export function applyNameKey(current: string, key: string, { replacing = false }: { replacing?: boolean } = {}): string {
+  if (replacing) {
+    if (key === 'Backspace') return '';
+    if (length(key) !== 1 || !ALLOWED.test(key) || key === ' ') return current;
+    return key;
+  }
   if (key === 'Backspace') return [...current].slice(0, -1).join('');
   if (length(key) !== 1 || !ALLOWED.test(key)) return current;
   if (length(current) >= NAME_MAX) return current;

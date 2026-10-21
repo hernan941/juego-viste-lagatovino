@@ -42,7 +42,7 @@ test.describe('the complete flow (ADR 0007)', () => {
     // "¡Listo!" -> Showcase with the name and the outfit.
     await clickButton(page, 'finish');
     const show = await waitScene(page, 'Showcase');
-    expect(show.info.title).toBe(`¡Qué guap@, ${NAME}!`);
+    expect(show.info.title).toBe(`¡Qué lindo look, ${NAME}!`);
     expect(show.info.layers).toEqual([sweater.id]);
 
     // "Seguir vistiendo" keeps the outfit.
@@ -112,6 +112,32 @@ test.describe('the name of the cat', () => {
     await clickButton(page, 'choose');
     await waitScene(page, 'ShopEntrance');
     expect((await page.evaluate(() => window.__VISTE__?.session))?.catName).toBe('Mimi');
+  });
+
+  test('typing over the default name replaces it, and accepting without typing keeps it', async ({ page }) => {
+    await startGame(page);
+    await pickCat(page, CAT.id);
+    expect((await ui(page)).info).toMatchObject({ name: CAT.name, nameIsDefault: true });
+    await page.keyboard.type('Bigote');
+    expect((await ui(page)).info).toMatchObject({ name: 'Bigote', nameIsDefault: false });
+    await clickButton(page, 'choose');
+    await waitScene(page, 'ShopEntrance');
+    expect((await page.evaluate(() => window.__VISTE__?.session))?.catName).toBe('Bigote');
+  });
+
+  test('Backspace clears the whole default name at once', async ({ page }) => {
+    await startGame(page);
+    await pickCat(page, CAT.id);
+    await page.keyboard.press('Backspace');
+    expect((await ui(page)).info.name).toBe('');
+  });
+
+  test('without typing anything, "¡Este!" accepts the default name', async ({ page }) => {
+    await startGame(page);
+    await pickCat(page, CAT.id);
+    await clickButton(page, 'choose');
+    await waitScene(page, 'ShopEntrance');
+    expect((await page.evaluate(() => window.__VISTE__?.session))?.catName).toBe(CAT.name);
   });
 
   test('keeps the name that the player typed when picking another cat, and follows the default otherwise', async ({ page }) => {
