@@ -3,6 +3,7 @@
 import Phaser from 'phaser';
 import { FONT_FAMILY, Palette, SfxKeys, TextureKeys } from '../constants';
 import { comboReactionPlan } from '../domain/combos';
+import { RAINBOW, rainbowPoints } from '../domain/rainbow';
 import { SNOW, snowSpan } from '../domain/snow';
 import type { ComboDef } from '../domain/types';
 import { getAudio } from '../plugins/AudioPlugin';
@@ -158,17 +159,16 @@ function heartbeat({ scene, cat, hearts }: ComboFxContext): void {
 }
 
 const BANDS = [0xff8fb8, 0xffd9a8, 0xfff0a8, 0xbdefd8, 0xc4e6ff];
-/** The rainbow lives inside the mirror (it is 428 px wide, centered on the cat): outer radius 212 and bands of 18 px. */
-const RAINBOW = { outer: 212, band: 18, cy: 575 };
 
 function rainbowArc({ scene, cat, rainbow }: ComboFxContext): void {
   const cx = cat.x;
-  const cy = RAINBOW.cy;
   const turn = { p: 0 };
+  // An elliptical arch that goes over the head, inside the mirror (domain/rainbow.ts): drawn behind the cat.
   const draw = (progress: number) => {
     rainbow.clear();
     BANDS.forEach((color, i) => {
-      rainbow.lineStyle(RAINBOW.band, color, 0.95).beginPath().arc(cx, cy, RAINBOW.outer - RAINBOW.band / 2 - i * RAINBOW.band, Math.PI, Math.PI + progress * Math.PI, false).strokePath();
+      const pts = rainbowPoints(cx, progress, i).map((q) => new Phaser.Math.Vector2(q.x, q.y));
+      rainbow.lineStyle(RAINBOW.band, color, 0.95).strokePoints(pts, false, false);
     });
   };
   if (profileOf(scene).reduced) {
