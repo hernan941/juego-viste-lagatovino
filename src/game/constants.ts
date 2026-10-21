@@ -52,6 +52,8 @@ export const ObjectEvents = {
   TabSelect: 'tab-select',
   /** LayersPanel: (item: ClothingDef) */
   LayerRemove: 'layer-remove',
+  /** GiftBox: (box, itemImage) the bow was pulled and the prize came out */
+  GiftOpened: 'gift-opened',
   /** Button: pressed and released on it */
   ButtonClick: 'button-click',
   /** MuteButton: (muted: boolean) after toggling */
@@ -72,6 +74,9 @@ export const RegistryKeys = {
 export const TextureKeys = {
   Heart: 'particle-heart',
   Sparkle: 'particle-sparkle',
+  Snow: 'particle-snow',
+  Petal: 'particle-petal',
+  Confetti: 'particle-confetti',
 } as const;
 
 /** Global plugin keys (GameConfig.plugins.global). */

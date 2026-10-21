@@ -20,4 +20,24 @@ export function createParticleTextures(scene: Phaser.Scene): void {
     g.generateTexture(TextureKeys.Sparkle, 36, 36);
     g.destroy();
   }
+  if (!scene.textures.exists(TextureKeys.Snow)) {
+    const g = scene.make.graphics({}, false);
+    g.fillStyle(0xffffff, 1).fillCircle(9, 9, 8);
+    g.lineStyle(2, 0xc4e6ff, 1).strokeCircle(9, 9, 8);
+    g.generateTexture(TextureKeys.Snow, 18, 18);
+    g.destroy();
+  }
+  if (!scene.textures.exists(TextureKeys.Petal)) {
+    const g = scene.make.graphics({}, false);
+    g.fillStyle(0xffffff, 1).fillEllipse(12, 8, 22, 13);
+    g.lineStyle(2, 0xffffff, 0.6).strokeEllipse(12, 8, 22, 13);
+    g.generateTexture(TextureKeys.Petal, 24, 16);
+    g.destroy();
+  }
+  if (!scene.textures.exists(TextureKeys.Confetti)) {
+    const g = scene.make.graphics({}, false);
+    g.fillStyle(0xffffff, 1).fillRoundedRect(0, 0, 14, 8, 2);
+    g.generateTexture(TextureKeys.Confetti, 14, 8);
+    g.destroy();
+  }
 }

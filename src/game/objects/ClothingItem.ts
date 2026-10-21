@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { ObjectEvents, SfxKeys } from '../constants';
+import { ObjectEvents, SfxKeys, TextureKeys } from '../constants';
 import type { ClothingDef, Rect } from '../domain/types';
 import { getAudio } from '../plugins/AudioPlugin';
 import { addHover, hex, type ScaleTo } from './ui';
@@ -19,6 +19,8 @@ export class ClothingItem extends Phaser.GameObjects.Container {
   private readonly view: Phaser.GameObjects.Container;
   private readonly icon: Phaser.GameObjects.Image;
   private readonly wornRing: Phaser.GameObjects.Graphics;
+  /** Twinkling star on the secret items won from a combo (F8). */
+  private readonly badge?: Phaser.GameObjects.Image;
   private readonly scaleView: ScaleTo;
   private wiggleTween?: Phaser.Tweens.Tween;
   private dragged = false;
@@ -31,6 +33,11 @@ export class ClothingItem extends Phaser.GameObjects.Container {
     this.wornRing = scene.add.graphics().setAlpha(0);
     this.wornRing.lineStyle(5, hex('menta'), 1).strokeRoundedRect(-CELL_SIZE / 2 - 2, -CELL_SIZE / 2 - 2, CELL_SIZE + 4, CELL_SIZE + 4, 16);
     this.view = scene.add.container(0, 0, [this.icon, this.wornRing]);
+    if (item.secret) {
+      this.badge = scene.add.image(CELL_SIZE / 2 - 12, -CELL_SIZE / 2 + 12, TextureKeys.Sparkle).setScale(0.78);
+      this.view.add(this.badge);
+      scene.tweens.add({ targets: this.badge, angle: 90, scale: { from: 0.6, to: 0.95 }, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    }
     this.add(this.view);
 
     this.setSize(CELL_SIZE, CELL_SIZE);
@@ -87,6 +94,7 @@ export class ClothingItem extends Phaser.GameObjects.Container {
       this.ringFactor = visible.height / CELL_SIZE;
     }
     this.wornRing.setVisible(this.ringFactor >= 1);
+    this.badge?.setVisible(this.ringFactor >= 1);
   }
 
   /** A short side to side shake: angle -6 to 6, yoyo, 2 repeats, 60 ms. */
@@ -96,6 +104,17 @@ export class ClothingItem extends Phaser.GameObjects.Container {
     this.wiggleTween = this.scene.tweens.add({
       targets: this.view, angle: { from: -6, to: 6 }, duration: 60, yoyo: true, repeat: 2, ease: 'Sine.easeInOut',
       onComplete: () => this.view.setAngle(0),
+    });
+  }
+
+  /** A happy pop when a secret lands in its cell (the sparkles come from the scene). */
+  celebrate(): void {
+    this.scene.tweens.chain({
+      targets: this.view,
+      tweens: [
+        { scale: 1.3, duration: 140, ease: 'Sine.easeOut' },
+        { scale: 1, duration: 260, ease: 'Back.easeOut' },
+      ],
     });
   }
 
@@ -121,7 +140,7 @@ export class ClothingItem extends Phaser.GameObjects.Container {
   }
 
   destroy(fromScene?: boolean): void {
-    this.scene?.tweens.killTweensOf([this, this.view, this.icon, this.wornRing]);
+    this.scene?.tweens.killTweensOf([this, this.view, this.icon, this.wornRing, ...(this.badge ? [this.badge] : [])]);
     this.removeAllListeners();
     super.destroy(fromScene);
   }

@@ -20,16 +20,16 @@ function errorsOf(r: { ok: boolean; errors?: string[] }): string {
 
 describe('validateCombos (F8)', () => {
   it('rejects a reaction the scene does not know', () => {
-    expect(errorsOf(validateCombos([combo({ reaction: 'dance' })], [cloth(), secret]))).toContain('combos[0].reaction: "dance" no existe');
+    expect(errorsOf(validateCombos([combo({ reaction: 'dance' })], [cloth(), secret] as never))).toContain('combos[0].reaction: "dance" no existe');
   });
 
   it('rejects requirements that are secret items', () => {
-    const msg = errorsOf(validateCombos([combo({ requires: [{ itemId: 'gift-hat' }] })], [cloth(), secret]));
+    const msg = errorsOf(validateCombos([combo({ requires: [{ itemId: 'gift-hat' }] })], [cloth(), secret] as never));
     expect(msg).toContain('combos[0].requires[0]: "gift-hat" es secreta');
   });
 
   it('rejects a combo that no visible outfit can complete', () => {
-    const msg = errorsOf(validateCombos([combo({ requires: [{ slot: 'neck', tag: 'nada' }] })], [cloth(), secret]));
+    const msg = errorsOf(validateCombos([combo({ requires: [{ slot: 'neck', tag: 'nada' }] })], [cloth(), secret] as never));
     expect(msg).toContain('combos[0].requires: ninguna combinación de prendas visibles lo completa');
   });
 });

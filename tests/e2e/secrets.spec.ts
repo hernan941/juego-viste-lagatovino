@@ -1,0 +1,172 @@
+// F8 (ADR 0012, suite (d)): one test per combo of data/combos.json, generated from the data (no ids hardcoded).
+import { expect, type Page } from '@playwright/test';
+import clothesJson from '../../src/game/data/clothes.json' with { type: 'json' };
+import combosJson from '../../src/game/data/combos.json' with { type: 'json' };
+import { comboOutfit } from '../../src/game/domain/combos';
+import { SLOT_ORDER } from '../../src/game/domain/slots';
+import type { ClothingDef, ComboDef } from '../../src/game/domain/types';
+import { dragTo, equipItem, openGame, settled, showItem, state, test } from './helpers';
+
+const all = clothesJson as ClothingDef[];
+const combos = combosJson as ComboDef[];
+const byId = (id: string) => all.find((c) => c.id === id)!;
+
+/** The pieces of a combo in slot order (the last one completes it). */
+const pieces = (combo: ComboDef): ClothingDef[] => {
+  const outfit = comboOutfit(combo, all)!;
+  return SLOT_ORDER.filter((s) => outfit[s]).map((s) => byId(outfit[s]!));
+};
+
+async function waitGift(page: Page) {
+  await page.waitForFunction(() => window.__VISTE__?.dressUp?.gift?.ready === true, undefined, { timeout: 15_000 });
+  return state(page);
+}
+
+/** Puts the pieces on the cat through the test hook (no drag), so the real drop that follows is the one that matters. */
+async function wear(page: Page, items: ClothingDef[]) {
+  await page.evaluate((ids) => window.__VISTE__?.wear(ids), items.map((i) => i.id));
+  await page.waitForFunction((n) => window.__VISTE__?.dressUp?.layers.length === n, items.length);
+  await settled(page);
+}
+
+/** Opens the box by dragging the bow away, as a player would. */
+async function openGift(page: Page) {
+  const s = await waitGift(page);
+  const bow = s.gift!.bow;
+  await dragTo(page, bow, { x: bow.x + 40, y: bow.y - 150 });
+  await page.waitForFunction(() => window.__VISTE__?.dressUp?.gift === null && window.__VISTE__.dressUp.secrets.count > 0, undefined, { timeout: 15_000 });
+  return settled(page);
+}
+
+test.describe('secret combos (F8)', () => {
+  test.setTimeout(240_000);
+
+  test('the catalog has a combo for every secret item', () => {
+    expect(combos.length).toBeGreaterThanOrEqual(6);
+    expect(combos.map((c) => c.rewardItemId).sort()).toEqual(all.filter((c) => c.secret).map((c) => c.id).sort());
+  });
+
+  test('locked secrets are not in any tab and the counter starts at 0', async ({ page }) => {
+    await openGame(page);
+    const secrets = all.filter((c) => c.secret);
+    for (const category of new Set(secrets.map((c) => c.category))) {
+      let s = await settled(page);
+      if (s.activeTab !== category) {
+        await page.mouse.click(s.tabs[category].x, s.tabs[category].y);
+        await page.waitForFunction((c) => window.__VISTE__?.dressUp?.activeTab === c, category);
+        s = await settled(page);
+      }
+      for (const secret of secrets.filter((c) => c.category === category)) expect(Object.keys(s.cells)).not.toContain(secret.id);
+    }
+    expect((await state(page)).secrets).toMatchObject({ count: 0, total: combos.length, text: `Secretos 0/${combos.length}` });
+  });
+
+  for (const combo of combos) {
+    test(`combo "${combo.id}": reaction, gift, bow, wardrobe, counter and no second gift`, async ({ page }) => {
+      const reward = byId(combo.rewardItemId);
+      await openGame(page);
+      const worn = pieces(combo);
+      await wear(page, worn.slice(0, -1));
+      expect((await state(page)).gift).toBeNull();
+      expect((await state(page)).secrets.count).toBe(0);
+
+      await equipItem(page, worn[worn.length - 1]);
+      // The reaction of the combo plays and the gift box drops in.
+      const boxed = await waitGift(page);
+      expect(boxed.reactions).toEqual([combo.reaction]);
+      expect(boxed.gift).toMatchObject({ comboId: combo.id, itemId: reward.id, opened: false });
+      expect(await page.evaluate(() => window.__VISTE__?.sounds)).toContain('sfx-gift');
+      expect(boxed.secrets.count).toBe(0);
+
+      // Letting go of the bow too early does not open it.
+      const bow = boxed.gift!.bow;
+      await dragTo(page, bow, { x: bow.x + 10, y: bow.y - 20 });
+      await page.waitForTimeout(500);
+      expect((await state(page)).gift).toMatchObject({ opened: false });
+
+      const after = await openGift(page);
+      expect(after.secrets).toMatchObject({ count: 1, unlocked: [combo.id], text: `Secretos 1/${combos.length}` });
+      // The prize is in the wardrobe, on the tab of its slot, and it is saved.
+      expect(after.activeTab).toBe(reward.category);
+      expect(Object.keys(after.cells)).toContain(reward.id);
+      await page.waitForFunction((id) => window.__VISTE__?.saved.secrets.includes(id), combo.id);
+
+      // The same combo again: a short reaction, no second gift and the counter stays.
+      const gone = after.layerRows.find((r) => r.itemId === worn[worn.length - 1].id)!;
+      await page.mouse.click(gone.close.x, gone.close.y);
+      await page.waitForFunction((slot) => !window.__VISTE__?.dressUp?.outfit[slot as 'head'], worn[worn.length - 1].slot);
+      await equipItem(page, worn[worn.length - 1]);
+      await page.waitForFunction(() => (window.__VISTE__?.dressUp?.reactions.length ?? 0) >= 2);
+      await page.waitForTimeout(2200);
+      const again = await state(page);
+      expect(again.gift).toBeNull();
+      expect(again.pendingGifts).toBe(0);
+      expect(again.secrets.count).toBe(1);
+    });
+  }
+
+  test('an unlocked secret survives a reload, is draggable and the counter is restored', async ({ page }) => {
+    const combo = combos[0];
+    const reward = byId(combo.rewardItemId);
+    await openGame(page);
+    const worn = pieces(combo);
+    await wear(page, worn.slice(0, -1));
+    await equipItem(page, worn[worn.length - 1]);
+    await openGift(page);
+    await page.reload();
+    await settled(page);
+    expect((await state(page)).secrets).toMatchObject({ count: 1, unlocked: [combo.id], text: `Secretos 1/${combos.length}` });
+    // Loading the game with its combo already worn gives no gift.
+    expect((await state(page)).gift).toBeNull();
+    const s = await showItem(page, reward);
+    expect(s.cells[reward.id]).toBeDefined();
+    const wornSlot = (await equipItem(page, reward)).outfit[reward.slot];
+    expect(wornSlot).toBe(reward.id);
+  });
+
+  test('a locked second combo still gives its own gift', async ({ page }) => {
+    const [first, second] = combos;
+    await openGame(page);
+    const one = pieces(first);
+    await wear(page, one.slice(0, -1));
+    await equipItem(page, one[one.length - 1]);
+    await openGift(page);
+    // Start from a clean cat, then complete the second combo.
+    await page.evaluate(() => window.__VISTE__?.wear([]));
+    await page.waitForFunction(() => window.__VISTE__?.dressUp?.layers.length === 0);
+    const two = pieces(second);
+    await wear(page, two.slice(0, -1));
+    await equipItem(page, two[two.length - 1]);
+    const boxed = await waitGift(page);
+    expect(boxed.gift?.comboId).toBe(second.id);
+    const done = await openGift(page);
+    expect(done.secrets.count).toBe(2);
+  });
+
+  test('"¡Casi...!" hint shows when exactly one piece of a combo is missing', async ({ page }) => {
+    const combo = combos.find((c) => c.requires.length >= 3)!;
+    const worn = pieces(combo);
+    await openGame(page);
+    await equipItem(page, worn[0]);
+    expect((await state(page)).almost).not.toContain(combo.id);
+    for (const piece of worn.slice(1, -1)) await equipItem(page, piece);
+    await page.waitForFunction((id) => window.__VISTE__?.dressUp?.almost.includes(id), combo.id);
+    await equipItem(page, worn[worn.length - 1]);
+    await page.waitForFunction((id) => !window.__VISTE__?.dressUp?.almost.includes(id), combo.id);
+  });
+
+  test('leaving with an unopened gift keeps the prize', async ({ page }) => {
+    const combo = combos[0];
+    await openGame(page);
+    const worn = pieces(combo);
+    await wear(page, worn.slice(0, -1));
+    await equipItem(page, worn[worn.length - 1]);
+    await waitGift(page);
+    const u = await page.evaluate(() => JSON.parse(JSON.stringify(window.__VISTE__?.ui ?? null)));
+    await page.mouse.click(u.buttons.finish.x, u.buttons.finish.y);
+    await page.waitForFunction(() => window.__VISTE__?.scene === 'Showcase' && window.__VISTE__.ui?.ready === true, undefined, { timeout: 30_000 });
+    const info = await page.evaluate(() => window.__VISTE__?.ui?.info as { secrets: string });
+    expect(info.secrets).toBe(`Secretos 1/${combos.length}`);
+    expect(await page.evaluate(() => window.__VISTE__?.saved.secrets)).toEqual([combo.id]);
+  });
+});

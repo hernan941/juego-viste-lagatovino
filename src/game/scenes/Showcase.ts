@@ -11,6 +11,8 @@ import { Button } from '../objects/Button';
 import { Cat } from '../objects/Cat';
 import { takePhoto } from '../objects/photo';
 import { MuteButton } from '../objects/MuteButton';
+import { SecretCounter } from '../objects/SecretCounter';
+import { getSave } from '../plugins/SavePlugin';
 import { drawRoom } from '../objects/room';
 import { hex } from '../objects/ui';
 import { getAudio } from '../plugins/AudioPlugin';
@@ -43,6 +45,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
   private keep!: Button;
   private change!: Button;
   private mute!: MuteButton;
+  private counter!: SecretCounter;
   private hearts!: Phaser.GameObjects.Particles.ParticleEmitter;
   private pose: Expression = 'feliz';
   private title = '';
@@ -104,6 +107,8 @@ export class Showcase extends Phaser.Scene implements E2EUi {
     this.photo = new Button(this, GAME_WIDTH / 2, 646, 'Descargar foto', { width: 330, height: 84, fontSize: 34, tone: 'menta' }).setDepth(20);
     this.photo.on(ObjectEvents.ButtonClick, () => void this.snap());
     this.mute = new MuteButton(this, GAME_WIDTH - 56, 56).setDepth(50);
+    this.counter = new SecretCounter(this, 140, 50).setDepth(50);
+    this.counter.setCount(getSave(this).secrets.length, catalog.combos.length);
 
     this.time.delayedCall(450, () => {
       this.ready = true;
@@ -118,6 +123,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
       this.photo?.destroy();
       this.change?.destroy();
       this.mute?.destroy();
+      this.counter?.destroy();
       this.tweens.killAll();
     });
     transitionIn(this, this.enter);
@@ -215,7 +221,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
       ready: this.ready && !this.leaving,
       buttons: { keep: this.keep.getCenter(), photo: this.photo.getCenter(), change: this.change.getCenter(), mute: this.mute.getCenter() },
       points: {},
-      info: { title: this.title, pose: this.pose, layers: this.cat.wornIds, photos: this.photos, lastPhoto: this.lastPhoto, photoBusy: this.photoBusy },
+      info: { title: this.title, pose: this.pose, layers: this.cat.wornIds, photos: this.photos, lastPhoto: this.lastPhoto, photoBusy: this.photoBusy, secrets: this.counter.text },
     };
   }
 }

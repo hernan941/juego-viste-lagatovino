@@ -45,6 +45,6 @@ describe('seed catalog (F2)', () => {
 
   it('no combo asks for a secret item', () => {
     const secretIds = new Set((clothes as ClothingDef[]).filter((c) => c.secret).map((c) => c.id));
-    for (const c of combos) for (const r of c.requires) if ('itemId' in r) expect(secretIds.has(r.itemId)).toBe(false);
+    for (const c of combos) for (const r of c.requires) if ('itemId' in r) expect(secretIds.has(r.itemId as string)).toBe(false);
   });
 });

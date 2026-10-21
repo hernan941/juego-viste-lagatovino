@@ -47,6 +47,16 @@ export class SavePlugin extends Phaser.Plugins.BasePlugin {
     return this.service.load();
   }
 
+  /** Combo ids whose secret prize is already won. */
+  get secrets(): string[] {
+    return this.service.load().secrets;
+  }
+
+  /** Records a won secret (written at once, so a reload keeps it). */
+  unlockSecret(comboId: string): boolean {
+    return this.service.unlockSecret(comboId);
+  }
+
   /** Puts the saved cat, name and outfit in the registry (checked against the catalog), without saving again. */
   restoreInto(catalog: Catalog): Session {
     const session = sessionFromSave(this.service.load(), catalog.cats, catalog.clothes);

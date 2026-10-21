@@ -184,6 +184,19 @@ export class Cat extends Phaser.GameObjects.Container {
     if (ms > 0) this.revertTimer = this.scene.time.delayedCall(ms, () => this.setExpression('normal'));
   }
 
+  /** A combo face: an optional lead expression, then the main one for `ms`, then back to normal. */
+  playFaces(plan: { lead?: Expression; expression: Expression; ms: number }, leadMs = 450): void {
+    this.revertTimer?.remove();
+    this.held = false;
+    const main = () => {
+      this.setExpression(plan.expression);
+      this.revertTimer = this.scene.time.delayedCall(plan.ms, () => this.setExpression('normal'));
+    };
+    if (!plan.lead) return main();
+    this.setExpression(plan.lead);
+    this.revertTimer = this.scene.time.delayedCall(leadMs, main);
+  }
+
   /** The face drifts 4 to 6 px toward a point (the dragged item); `null` brings it back. */
   lookAt(target: Point | null): void {
     const base = this.canvasImagePosition();
@@ -207,6 +220,55 @@ export class Cat extends Phaser.GameObjects.Container {
         { scaleX: 1.14, scaleY: 0.84, duration: 90, ease: 'Quad.easeOut' },
         { scaleX: 0.95, scaleY: 1.08, duration: 110, ease: 'Quad.easeInOut' },
         { scaleX: 1, scaleY: 1, duration: 100, ease: 'Back.easeOut' },
+      ],
+    });
+  }
+
+  /** Two quick sniffs: the whole body shrinks a hair in height and comes back, twice (petals combo). */
+  sniff(): void {
+    this.scene.tweens.killTweensOf(this.rig);
+    this.scene.tweens.chain({
+      targets: this.rig,
+      tweens: [
+        { scaleY: 0.96, duration: 110, ease: 'Sine.easeOut' }, { scaleY: 1, duration: 110, ease: 'Sine.easeIn' },
+        { scaleY: 0.96, duration: 110, ease: 'Sine.easeOut' }, { scaleY: 1, duration: 130, ease: 'Back.easeOut' },
+      ],
+    });
+  }
+
+  /** A little jump (the sneeze). */
+  hop(): void {
+    this.scene.tweens.add({ targets: this.rig, y: -26, duration: 120, yoyo: true, ease: 'Quad.easeOut' });
+  }
+
+  /** Chin up: tilts -4 degrees and grows 4 % taller in 400 ms, holds, then settles (royal combo). */
+  raiseChin(holdMs: number): void {
+    this.scene.tweens.killTweensOf(this.rig);
+    this.scene.tweens.chain({
+      targets: this.rig,
+      tweens: [
+        { angle: -4, scaleY: 1.04, duration: 400, ease: 'Back.easeOut' },
+        { angle: -4, duration: holdMs },
+        { angle: 0, scaleY: 1, duration: 300, ease: 'Sine.easeInOut' },
+      ],
+    });
+  }
+
+  /** Rocks from side to side (rainbow combo). */
+  sway(): void {
+    this.scene.tweens.killTweensOf(this.rig);
+    this.rig.setAngle(0);
+    this.scene.tweens.add({ targets: this.rig, angle: { from: -5, to: 5 }, duration: 330, yoyo: true, repeat: 2, ease: 'Sine.easeInOut', onComplete: () => this.rig.setAngle(0) });
+  }
+
+  /** Two heartbeats: scale 1, 1.06, 1, twice (in-love combo). */
+  heartbeat(): void {
+    this.scene.tweens.killTweensOf(this.rig);
+    this.scene.tweens.chain({
+      targets: this.rig,
+      tweens: [
+        { scaleX: 1.06, scaleY: 1.06, duration: 130, ease: 'Sine.easeOut' }, { scaleX: 1, scaleY: 1, duration: 170, ease: 'Sine.easeIn' },
+        { scaleX: 1.06, scaleY: 1.06, duration: 130, ease: 'Sine.easeOut' }, { scaleX: 1, scaleY: 1, duration: 220, ease: 'Back.easeOut' },
       ],
     });
   }

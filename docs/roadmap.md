@@ -191,6 +191,15 @@ F0 Base ─► F1 Estética ─► F2 Vertical slice ─┬─► F3 Elenco de g
 - **Depende de**: F4, F5 y F7.
 - **Agentes**: game-designer (diseño de las combinaciones) y phaser-code-writer.
 - **Tamaño**: M
+- **Tareas** (con TDD):
+  1. `data/combos.json` con los 6 combos de `game-design.md` → "Combos de F8"; `domain/combos.ts` suma `comboOutfit` (prendas visibles que completan un combo), `almostCombos`, `secretRewards` y `comboReactionPlan`; `data/schema.ts` valida la reacción, que no se pidan prendas secretas y que cada combo se pueda completar con prendas visibles; `catalog.ts` muestra las secretas ganadas (primero en su pestaña).
+  2. `plugins/saveService.ts` y `SavePlugin.ts`: `unlockSecret` escribe al instante y `secrets` lee lo guardado.
+  3. Objetos: `GiftBox` (cajita que cae y se abre arrastrando el moño; soltar antes de tiempo lo devuelve), `SecretCounter` ("Secretos X/6" con pop al subir), `comboFx` (una reacción por combo: estrellas, nieve, pétalos con "¡achís!", pose real con confeti, latidos, arcoíris), brillito de "secreta" en la celda y métodos nuevos de `Cat`.
+  4. DressUp: reacción, cajita, desbloqueo, vuelo de la prenda a su pestaña y contador; un combo ya ganado da solo una reacción corta; si se sale con una cajita sin abrir, la prenda se entrega igual. Showcase: contador.
+  5. Pista "¡Casi...!" cuando falta exactamente 1 pieza (y hay al menos 2 puestas), sin decir cuál.
+  6. e2e `tests/e2e/secrets.spec.ts` generado desde `combos.json`; el hook suma `secrets`, `gift`, `reactions`, `almost` y la acción `wear(ids)` (solo modo test).
+- **Estado**: Implementada, pendiente de revisión del game-designer
+- **Notas para la revisión**: el nombre del look sale en un globo sobre la frente del gato; el sonido "tilín" y las campanitas reutilizan `sfx-hover` con distinta velocidad (no hay audio nuevo); la cajita aparece a la izquierda del gato, dentro del espejo.
 
 ### F9. Pulido, rendimiento y entrega en localhost 🔒
 - **Objetivo**: un MVP terminado y corriendo en localhost para que el usuario lo pruebe. El deploy público queda para después del MVP (ADR 0005 sigue vigente).

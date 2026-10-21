@@ -36,22 +36,34 @@ export interface DressUpE2EState {
   /** Rows of the layers panel, front first, with the position of each ✕. */
   layerRows: { itemId: string; close: Point }[];
   dragging: boolean;
+  /** F8: the secrets counter ("Secretos X/N") and the unlocked combo ids. */
+  secrets: { unlocked: string[]; count: number; total: number; text: string };
+  /** The gift box on screen, with the bow to drag; null when there is none. */
+  gift: { comboId: string; itemId: string; ready: boolean; opened: boolean; bow: Point; box: Point } | null;
+  /** Gifts waiting for the one on screen to be opened. */
+  pendingGifts: number;
+  /** Ids of the combos that lack exactly one piece (the "¡Casi...!" hint). */
+  almost: string[];
+  /** `reaction` of every combo reaction played in this visit, newest last. */
+  reactions: string[];
   /** True when no entrance animation or drag is running, so positions are stable. */
   settled: boolean;
 }
 
 export interface E2EScene {
   getE2EState(): DressUpE2EState;
+  e2eWear(ids: string[]): void;
 }
 
 /** The same state in page coordinates (CSS pixels), ready for `page.mouse`. */
-export interface VisteDressUpState extends Omit<DressUpE2EState, 'cells' | 'tabs' | 'dropZone' | 'layerGrab' | 'layerRows' | 'grid'> {
+export interface VisteDressUpState extends Omit<DressUpE2EState, 'cells' | 'tabs' | 'dropZone' | 'layerGrab' | 'layerRows' | 'grid' | 'gift'> {
   grid: DressUpE2EState['grid'] & { center: Point };
   cells: Record<string, Point>;
   tabs: Record<string, Point>;
   dropZone: Rect & { center: Point };
   layerGrab: Record<string, Point>;
   layerRows: { itemId: string; close: Point }[];
+  gift: (Omit<NonNullable<DressUpE2EState['gift']>, 'bow' | 'box'> & { bow: Point; box: Point }) | null;
 }
 
 /** What the scenes without a DressUp report: their buttons and points of interest, in game coordinates. */
@@ -89,6 +101,8 @@ export interface VisteHook {
   readonly sounds: string[];
   /** Test-only action (the rest of the hook is read-only): sets the mute through the AudioPlugin. */
   setMuted(muted: boolean): void;
+  /** Test-only action: puts exactly these items on the cat in DressUp without dragging (the last piece of a combo is still dragged). */
+  wear(ids: string[]): void;
 }
 
 /** ADR 0012: read-only test hook, only in test mode or with ?e2e=1. Never in a normal build. */
@@ -148,6 +162,9 @@ export function installE2EHook(game: Game): void {
     setMuted(muted: boolean): void {
       audio().setMuted(muted);
     },
+    wear(ids: string[]): void {
+      game.scene.getScenes(true).find(isE2EScene)?.e2eWear(ids);
+    },
     get session(): Session {
       return readSession(game.registry);
     },
@@ -177,6 +194,7 @@ export function installE2EHook(game: Game): void {
       return {
         ...s,
         grid: { ...grid, center: { x: grid.x + grid.width / 2, y: grid.y + grid.height / 2 } },
+        gift: s.gift && { ...s.gift, bow: map(s.gift.bow), box: map(s.gift.box) },
         cells: mapAll(s.cells),
         tabs: mapAll(s.tabs),
         layerGrab: mapAll(s.layerGrab),

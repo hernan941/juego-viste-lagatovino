@@ -145,6 +145,18 @@ describe('SavePlugin', () => {
     expect(plugin.restoreInto(catalog).catId).toBeNull();
   });
 
+  it('unlocks secrets at once, remembers them and keeps them across a later session save', () => {
+    const { store, registry, plugin } = setup(serialize({ ...defaultSave(), secrets: ['navidad'] }));
+    plugin.restoreInto(catalog);
+    expect(plugin.secrets).toEqual(['navidad']);
+    plugin.unlockSecret('fresas');
+    expect(JSON.parse(store.get(SAVE_KEY)!).secrets).toEqual(['navidad', 'fresas']);
+    registry.set(RegistryKeys.CatId, 'luna');
+    vi.advanceTimersByTime(1000);
+    expect(JSON.parse(store.get(SAVE_KEY)!)).toMatchObject({ catId: 'luna', secrets: ['navidad', 'fresas'] });
+    expect(plugin.secrets).toEqual(['navidad', 'fresas']);
+  });
+
   it('getSave finds the plugin of a scene', () => {
     const plugin = {};
     expect(getSave({ plugins: { get: () => plugin } } as never)).toBe(plugin);

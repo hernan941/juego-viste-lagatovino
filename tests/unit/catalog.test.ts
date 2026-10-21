@@ -31,8 +31,8 @@ describe('unlocked secrets in the grid', () => {
     expect(itemsInCategory(catalog, 'neck', new Set()).map((c) => c.id)).toEqual([]);
   });
 
-  it('keeps catalog order, secrets included', () => {
-    const cat = [item('x', 'head'), item('s2', 'head', true), item('y', 'head')];
-    expect(itemsInCategory(cat, 'head', new Set(['s2'])).map((c) => c.id)).toEqual(['x', 's2', 'y']);
+  it('puts the unlocked secrets first (easy to find) and keeps catalog order inside each group', () => {
+    const cat = [item('x', 'head'), item('s2', 'head', true), item('y', 'head'), item('s3', 'head', true)];
+    expect(itemsInCategory(cat, 'head', new Set(['s3', 's2'])).map((c) => c.id)).toEqual(['s2', 's3', 'x', 'y']);
   });
 });

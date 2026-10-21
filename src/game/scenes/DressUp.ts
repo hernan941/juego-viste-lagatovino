@@ -4,19 +4,23 @@ import {
 } from '../constants';
 import type { Catalog } from '../data/schema';
 import { itemsInCategory, visibleCategories } from '../domain/catalog';
-import { newlyCompleted } from '../domain/combos';
+import { almostCombos, newlyCompleted, secretRewards } from '../domain/combos';
 import { magnetSnap, resolveDrop, isInsideDropZone } from '../domain/dropZone';
 import { ghostFit, alphaBounds } from '../domain/imageBounds';
 import { equip, getLayers, unequip } from '../domain/outfit';
 import { anchorForSlot } from '../domain/slots';
-import type { AnchorsDef, Category, ClothingDef, Outfit, Point, Rect } from '../domain/types';
+import type { AnchorsDef, Category, ClothingDef, ComboDef, Outfit, Point, Rect } from '../domain/types';
 import type { DressUpE2EState, E2EScene, E2EUi, UiState } from '../e2eHook';
 import { Button } from '../objects/Button';
 import { MuteButton } from '../objects/MuteButton';
 import { getAudio } from '../plugins/AudioPlugin';
+import { getSave } from '../plugins/SavePlugin';
 import { go } from '../systems/navigate';
 import { readSession } from '../systems/sessionStore';
 import { Cat } from '../objects/Cat';
+import { playComboReaction, playShortReaction, showBubble, type ComboFxContext } from '../objects/comboFx';
+import { GiftBox } from '../objects/GiftBox';
+import { SecretCounter } from '../objects/SecretCounter';
 import type { ClothingItem } from '../objects/ClothingItem';
 import { ItemGrid } from '../objects/ItemGrid';
 import { LayersPanel } from '../objects/LayersPanel';
@@ -77,6 +81,17 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
   private mute!: MuteButton;
   private leaving = false;
   private lastDragSound = 0;
+  // F8: secrets and gifts.
+  private unlocked: string[] = [];
+  private gifts: ComboDef[] = [];
+  private gift: GiftBox | null = null;
+  /** Gift boxes whose arrival is already scheduled (after the reaction). */
+  private giftsComing = 0;
+  private counter!: SecretCounter;
+  private rainbow!: Phaser.GameObjects.Graphics;
+  private almost = new Set<string>();
+  /** Reactions played in this visit, newest last (for the e2e hook). */
+  private reactionLog: string[] = [];
 
   constructor() {
     super(SceneKeys.DressUp);
@@ -90,6 +105,12 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.outfit = session.outfit;
     this.drag = null;
     this.leaving = false;
+    this.unlocked = getSave(this).secrets;
+    this.gifts = [];
+    this.giftsComing = 0;
+    this.gift = null;
+    this.almost = new Set();
+    this.reactionLog = [];
     const wanted = session.catId ?? data?.catId;
     const cat = this.catalog.cats.find((c) => c.id === wanted) ?? this.catalog.cats[0];
     this.catId = cat.id;
@@ -100,6 +121,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.input.dragDistanceThreshold = 8;
     drawRoom(this, CAT_X, CAT_FEET_Y);
     this.zoneGlow = this.add.graphics().setAlpha(0);
+    this.rainbow = this.add.graphics();
 
     const def = this.catalog.cats.find((c) => c.id === this.catId)!;
     this.cat = new Cat(this, CAT_X, CAT_FEET_Y, def, this.anchors, CAT_SIZE);
@@ -141,6 +163,8 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
       .setDepth(4000);
 
     this.createNameSign();
+    this.counter = new SecretCounter(this, 1093, 34).setDepth(31);
+    this.counter.setCount(this.unlocked.length, this.catalog.combos.length);
     this.doneButton = new Button(this, 1093, 568, '¡Listo!', { width: 250, height: 88, fontSize: 42 });
     this.doneButton.on(ObjectEvents.ButtonClick, () => this.leave('finish'));
     this.changeButton = new Button(this, 1093, 652, 'Cambiar de gato', { width: 220, height: 62, fontSize: 24, tone: 'lavanda' });
@@ -184,6 +208,8 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     if (this.leaving) return;
     this.leaving = true;
     if (this.drag) this.endDragQuiet();
+    // A gift that was never opened is not lost: the player earned it, so it goes to the wardrobe quietly.
+    for (const combo of [...(this.gift ? [this.gift.comboId] : []), ...this.gifts.map((c) => c.id)]) getSave(this).unlockSecret(combo);
     go(this, action);
   }
 
@@ -200,6 +226,9 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.changeButton?.destroy();
     this.mute?.destroy();
     this.tweens.killAll();
+    this.gift?.destroy();
+    this.gift = null;
+    this.counter?.destroy();
     this.cat?.destroy();
     this.grid?.destroy();
     this.tabs?.destroy();
@@ -207,7 +236,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
   }
 
   private showCategory(category: Category) {
-    this.grid.setItems(itemsInCategory(this.catalog.clothes, category));
+    this.grid.setItems(itemsInCategory(this.catalog.clothes, category, secretRewards(this.unlocked, this.catalog.combos)));
   }
 
   // ---- Drag and drop (ADR 0008) --------------------------------------------
@@ -357,13 +386,90 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     }
     const previous = this.outfit;
     this.applyOutfit(equip(previous, item).outfit);
-    const combo = newlyCompleted(previous, this.outfit, this.catalog.combos, this.catalog.clothes).length > 0;
-    this.cat.react(combo ? 'combo' : 'drop');
+    const done = newlyCompleted(previous, this.outfit, this.catalog.combos, this.catalog.clothes);
+    const combo = done.length > 0;
+    if (!combo) this.cat.react('drop');
     this.time.delayedCall(90, () => getAudio(this).play(SfxKeys.Purr));
     if (combo || Math.random() < 0.25) this.time.delayedCall(250, () => getAudio(this).playRandom(MEOW_KEYS));
     this.cat.squash();
     this.cat.wiggle();
     this.celebrate(anchor, combo ? 2 : 1);
+    for (const c of done) this.onCombo(c);
+    this.updateAlmost();
+  }
+
+  // ---- Combos, gifts and secrets (F8) ---------------------------------------
+
+  private fx(): ComboFxContext {
+    return { scene: this, cat: this.cat, rainbow: this.rainbow, hearts: this.hearts };
+  }
+
+  /** A combo was completed: its own reaction, and a gift if the prize is still locked. */
+  private onCombo(combo: ComboDef) {
+    this.reactionLog.push(combo.reaction);
+    if (this.unlocked.includes(combo.id) || this.gifts.some((g) => g.id === combo.id) || this.gift?.comboId === combo.id) {
+      playShortReaction(this.fx(), combo);
+      return;
+    }
+    playComboReaction(this.fx(), combo);
+    this.gifts.push(combo);
+    this.giftsComing++;
+    this.time.delayedCall(1300, () => {
+      this.giftsComing--;
+      this.nextGift();
+    });
+  }
+
+  /** Brings the next gift box, one at a time. */
+  private nextGift() {
+    if (this.gift || this.leaving || this.gifts.length === 0) return;
+    const combo = this.gifts.shift()!;
+    const item = this.catalog.clothes.find((c) => c.id === combo.rewardItemId);
+    if (!item) return;
+    const box = new GiftBox(this, 570, 530, combo.id, item);
+    this.gift = box;
+    box.on(ObjectEvents.GiftOpened, (_b: GiftBox, prize: Phaser.GameObjects.Image) => this.onGiftOpened(combo, item, prize));
+  }
+
+  /** The prize is out: it becomes part of the wardrobe (saved at once) and flies to its cell. */
+  private onGiftOpened(combo: ComboDef, item: ClothingDef, prize: Phaser.GameObjects.Image) {
+    this.gift = null;
+    getSave(this).unlockSecret(combo.id);
+    this.unlocked = getSave(this).secrets;
+    this.counter.setCount(this.unlocked.length, this.catalog.combos.length, true);
+    showBubble(this, 700, 190, `¡${item.name}!`, 'rosa50');
+    // Show the tab of the prize so the cell is there when it lands.
+    this.tabs.select(item.category, true);
+    this.showCategory(item.category);
+    this.grid.setWorn(new Set(Object.values(this.outfit)));
+    const home = this.grid.getCellPositions()[item.id];
+    const finish = () => {
+      prize.destroy();
+      const cell = this.grid.getCell(item.id);
+      cell?.celebrate();
+      if (home) this.sparkles.explode(14, home.x, home.y);
+      getAudio(this).play(SfxKeys.Return, { rate: 1.3 });
+      this.time.delayedCall(250, () => this.nextGift());
+    };
+    this.tweens.add({
+      targets: prize, x: home?.x ?? prize.x, y: home?.y ?? prize.y, alpha: home ? 1 : 0, duration: 650, delay: 350, ease: 'Cubic.easeInOut',
+      onUpdate: (tween: Phaser.Tweens.Tween) => {
+        const k = 1 - tween.progress;
+        prize.setDisplaySize(GHOST_HOME_SIZE + 80 * k, GHOST_HOME_SIZE + 80 * k);
+      },
+      onComplete: finish,
+    });
+  }
+
+  /** "¡Casi!": a quiet twinkle on the cat when one piece is missing from a combo (no names, no spoilers). */
+  private updateAlmost() {
+    const now = new Set(almostCombos(this.outfit, this.catalog.combos, this.catalog.clothes, this.unlocked).map((c) => c.id));
+    const fresh = [...now].some((id) => !this.almost.has(id));
+    this.almost = now;
+    if (!fresh) return;
+    const head = this.cat.getAnchorWorld('head');
+    this.sparkles.explode(6, head.x + 90, head.y - 30);
+    showBubble(this, head.x + 110, head.y - 90, '¡Casi...!', 'rosa50');
   }
 
   private takeOff(d: DragState) {
@@ -372,6 +478,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.cat.react('remove');
     this.cat.shake();
     this.returnGhost(d);
+    this.updateAlmost();
   }
 
   private sendBack(d: DragState) {
@@ -418,6 +525,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     getAudio(this).play(SfxKeys.Remove);
     this.cat.react('remove');
     this.cat.shake();
+    this.updateAlmost();
   }
 
   private applyOutfit(next: Outfit) {
@@ -446,6 +554,17 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     };
   }
 
+  /** Test mode only: dresses the cat with these items at once (no drag, no reaction), to save time before the real drop. */
+  e2eWear(ids: string[]): void {
+    let next: Outfit = {};
+    for (const id of ids) {
+      const item = this.catalog.clothes.find((c) => c.id === id);
+      if (item) next = equip(next, item).outfit;
+    }
+    this.applyOutfit(next);
+    this.almost = new Set(almostCombos(next, this.catalog.combos, this.catalog.clothes, this.unlocked).map((c) => c.id));
+  }
+
   getE2EState(): DressUpE2EState {
     const z = this.dropZone();
     const layers = getLayers(this.outfit, this.catalog.clothes);
@@ -471,7 +590,12 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
       layerGrab: Object.fromEntries(layers.map((l) => [l.id, this.cat.getLayerGrabPoint(l)])),
       layerRows: this.layersPanel.getRows(),
       dragging: this.drag !== null,
-      settled: this.drag === null && cellsSettled && Math.abs(viewport.scroll - viewport.targetScroll) < 0.5 && this.cat.alpha > 0.99 && Math.abs(this.cat.scaleX - this.baseCatScale) < 0.001,
+      secrets: { unlocked: [...this.unlocked], count: this.unlocked.length, total: this.catalog.combos.length, text: this.counter.text },
+      gift: this.gift ? { comboId: this.gift.comboId, itemId: this.gift.item.id, ready: this.gift.ready, opened: this.gift.opened, bow: this.gift.getBowPoint(), box: this.gift.getCenter() } : null,
+      pendingGifts: this.gifts.length,
+      almost: [...this.almost],
+      reactions: [...this.reactionLog],
+      settled: this.drag === null && this.giftsComing === 0 && (this.gift === null || this.gift.ready) && cellsSettled && Math.abs(viewport.scroll - viewport.targetScroll) < 0.5 && this.cat.alpha > 0.99 && Math.abs(this.cat.scaleX - this.baseCatScale) < 0.001,
     };
   }
 }
