@@ -2,16 +2,19 @@ import Phaser from 'phaser';
 import { FONT_FAMILY, GAME_WIDTH, MEOW_KEYS, ObjectEvents, Palette, RegistryKeys, SceneKeys, SfxKeys, TextureKeys } from '../constants';
 import type { Catalog } from '../data/schema';
 import { showcaseTitle } from '../domain/copy';
+import { photoFileName } from '../domain/photo';
 import type { Expression } from '../domain/expressions';
 import { getLayers } from '../domain/outfit';
 import type { AnchorsDef } from '../domain/types';
 import type { E2EUi, UiState } from '../e2eHook';
 import { Button } from '../objects/Button';
 import { Cat } from '../objects/Cat';
+import { takePhoto } from '../objects/photo';
 import { MuteButton } from '../objects/MuteButton';
 import { drawRoom } from '../objects/room';
 import { hex } from '../objects/ui';
 import { getAudio } from '../plugins/AudioPlugin';
+import { downloadDataUrl } from '../systems/download';
 import { go } from '../systems/navigate';
 import { readSession } from '../systems/sessionStore';
 import { enterKind, transitionIn } from '../systems/transitions';
@@ -25,11 +28,18 @@ const POSE_MS = 1500;
 /**
  * Showcase: the cat poses in front of the mirror with sparkles, alternating happy and in love, under a
  * "¡Qué lindo look, {nombre}!" plaque. From here the player keeps dressing (the outfit is kept) or changes cat.
- * The middle of the bottom row is free for the "download photo" button of F7.
+ * The middle of the bottom row has the "Descargar foto" button (F7).
  */
 export class Showcase extends Phaser.Scene implements E2EUi {
   private enter: ReturnType<typeof enterKind> = null;
   private cat!: Cat;
+  private anchors!: AnchorsDef;
+  private catName = '';
+  private photo!: Button;
+  private photoBusy = false;
+  /** Photos downloaded in this visit and the name of the last file (for the e2e hook). */
+  private photos = 0;
+  private lastPhoto: string | null = null;
   private keep!: Button;
   private change!: Button;
   private mute!: MuteButton;
@@ -48,6 +58,9 @@ export class Showcase extends Phaser.Scene implements E2EUi {
     this.pose = 'feliz';
     this.ready = false;
     this.leaving = false;
+    this.photoBusy = false;
+    this.photos = 0;
+    this.lastPhoto = null;
   }
 
   create() {
@@ -55,7 +68,9 @@ export class Showcase extends Phaser.Scene implements E2EUi {
     const anchors = this.registry.get(RegistryKeys.Anchors) as AnchorsDef;
     const session = readSession(this.registry);
     const def = catalog.cats.find((c) => c.id === session.catId) ?? catalog.cats[0];
-    this.title = showcaseTitle(session.catName || def.name);
+    this.anchors = anchors;
+    this.catName = session.catName || def.name;
+    this.title = showcaseTitle(this.catName);
 
     drawRoom(this, CAT_X, CAT_FEET_Y);
     // A warm glow behind the cat that breathes.
@@ -86,7 +101,8 @@ export class Showcase extends Phaser.Scene implements E2EUi {
     this.keep.on(ObjectEvents.ButtonClick, () => this.leave('keepDressing'));
     this.change = new Button(this, GAME_WIDTH - 230, 646, 'Cambiar de gato', { width: 330, height: 84, fontSize: 34, tone: 'lavanda' }).setDepth(20);
     this.change.on(ObjectEvents.ButtonClick, () => this.leave('change'));
-    // Free space at the bottom center: the "Descargar foto" button of F7.
+    this.photo = new Button(this, GAME_WIDTH / 2, 646, 'Descargar foto', { width: 330, height: 84, fontSize: 34, tone: 'menta' }).setDepth(20);
+    this.photo.on(ObjectEvents.ButtonClick, () => void this.snap());
     this.mute = new MuteButton(this, GAME_WIDTH - 56, 56).setDepth(50);
 
     this.time.delayedCall(450, () => {
@@ -99,6 +115,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.cat?.destroy();
       this.keep?.destroy();
+      this.photo?.destroy();
       this.change?.destroy();
       this.mute?.destroy();
       this.tweens.killAll();
@@ -134,6 +151,59 @@ export class Showcase extends Phaser.Scene implements E2EUi {
     }
   }
 
+  /** "Descargar foto": shutter, a soft white flash, the cat poses, and the PNG is saved. */
+  private async snap() {
+    if (this.photoBusy || this.leaving) return;
+    this.photoBusy = true;
+    getAudio(this).play(SfxKeys.Shutter);
+    this.strike('amor');
+    this.flash();
+    // Let the flash start before the (short) work of drawing the picture.
+    await new Promise<void>((resolve) => this.time.delayedCall(140, resolve));
+    if (!this.scene.isActive()) return;
+    const url = await takePhoto(this, this.cat, this.anchors, this.catName);
+    if (!this.scene.isActive()) return;
+    const file = photoFileName(this.catName);
+    downloadDataUrl<HTMLAnchorElement>({ createElement: () => document.createElement('a'), body: document.body }, url, file);
+    this.photos++;
+    this.lastPhoto = file;
+    this.toast('¡Foto lista!');
+    this.photoBusy = false;
+  }
+
+  /** A camera flash: white that fades in fast and out softly. */
+  private flash() {
+    const veil = this.add.rectangle(GAME_WIDTH / 2, 360, GAME_WIDTH, 720, 0xffffff, 0).setDepth(90);
+    this.tweens.chain({
+      targets: veil,
+      tweens: [
+        { alpha: 0.8, duration: 70, ease: 'Sine.easeOut' },
+        { alpha: 0, duration: 420, ease: 'Sine.easeIn', onComplete: () => veil.destroy() },
+      ],
+    });
+  }
+
+  /** A small bubble that pops over the photo button and floats away. */
+  private toast(text: string) {
+    const label = this.add
+      .text(0, 0, text, { fontFamily: FONT_FAMILY, fontSize: '34px', color: Palette.texto, fontStyle: '600', padding: { x: 4, y: 8 } })
+      .setOrigin(0.5);
+    const g = this.add.graphics();
+    const w = label.width + 56;
+    g.fillStyle(hex('rosa600'), 0.18).fillRoundedRect(-w / 2 + 2, -26 + 8, w, 56, 28);
+    g.fillStyle(hex('menta'), 1).fillRoundedRect(-w / 2, -26, w, 56, 28);
+    g.lineStyle(4, hex('rosa200'), 1).strokeRoundedRect(-w / 2, -26, w, 56, 28);
+    const bubble = this.add.container(GAME_WIDTH / 2, 566, [g, label]).setDepth(60).setScale(0).setAlpha(0);
+    this.tweens.chain({
+      targets: bubble,
+      tweens: [
+        { scale: 1, alpha: 1, duration: 260, ease: 'Back.easeOut' },
+        { y: 556, duration: 1100, ease: 'Sine.easeInOut' },
+        { alpha: 0, y: 530, duration: 300, ease: 'Sine.easeIn', onComplete: () => bubble.destroy() },
+      ],
+    });
+  }
+
   private leave(action: 'keepDressing' | 'change') {
     if (this.leaving) return;
     this.leaving = true;
@@ -143,9 +213,9 @@ export class Showcase extends Phaser.Scene implements E2EUi {
   getE2EUi(): UiState {
     return {
       ready: this.ready && !this.leaving,
-      buttons: { keep: this.keep.getCenter(), change: this.change.getCenter(), mute: this.mute.getCenter() },
+      buttons: { keep: this.keep.getCenter(), photo: this.photo.getCenter(), change: this.change.getCenter(), mute: this.mute.getCenter() },
       points: {},
-      info: { title: this.title, pose: this.pose, layers: this.cat.wornIds },
+      info: { title: this.title, pose: this.pose, layers: this.cat.wornIds, photos: this.photos, lastPhoto: this.lastPhoto, photoBusy: this.photoBusy },
     };
   }
 }

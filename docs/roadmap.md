@@ -168,6 +168,14 @@ F0 Base ─► F1 Estética ─► F2 Vertical slice ─┬─► F3 Elenco de g
   - El PNG se descarga y se ve bien.
 - **Depende de**: F5.
 - **Agentes**: architect (formato de guardado), phaser-code-writer y game-designer.
+- **Estado**: Implementada, pendiente de revisión del game-designer
+- **Tareas** (hechas con TDD):
+  1. `domain/session.ts` → `sessionFromSave`: restaura el gato, el nombre y el outfit validados contra el catálogo.
+  2. `plugins/saveService.ts` (guardado con debounce de 300 ms sobre lo que ya hay: conserva mute y secretos) y `plugins/SavePlugin.ts` (Global Plugin que escucha el registry y vacía al cerrar la página). La clave es `viste-lagato:save:v1`, el JSON corrupto o de una versión futura arranca limpio, y `secrets` queda listo para F8.
+  3. `Preloader` restaura la sesión: "Iniciar" lleva a CatSelect con el gato y el nombre elegidos, y el probador muestra el outfit.
+  4. `domain/photo.ts` (nombre de archivo y composición), `objects/photo.ts` (RenderTexture con el gato vivo, `capture` y `snapshot`) y `systems/download.ts`.
+  5. Showcase: botón "Descargar foto" (sonido Shutter, flash blanco, el gato posa, burbuja "¡Foto lista!").
+  6. e2e: `tests/e2e/save.spec.ts` y `tests/e2e/photo.spec.ts`.
 - **Tamaño**: S
 
 ### F8. Sorpresas: combinaciones y regalitos
