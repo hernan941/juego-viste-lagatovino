@@ -1,72 +1,6 @@
-import { expect, test as base, type Page } from '@playwright/test';
-import clothesJson from '../../src/game/data/clothes.json' with { type: 'json' };
+import { expect } from '@playwright/test';
+import { bySlot, clothes, dragTo, equipItem, openGame, outsidePoint, settled, showItem, state, test } from './helpers';
 import { slotZIndex } from '../../src/game/domain/slots';
-import type { ClothingDef } from '../../src/game/domain/types';
-
-const clothes = (clothesJson as ClothingDef[]).filter((c) => !c.secret);
-const bySlot = (slot: string) => clothes.filter((c) => c.slot === slot);
-
-// Every test fails on any console error or uncaught exception (ADR 0012).
-const test = base.extend<{ errors: string[] }>({
-  errors: [
-    async ({ page }, use) => {
-      const errors: string[] = [];
-      page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
-      page.on('pageerror', (e) => errors.push(e.message));
-      await use(errors);
-      expect(errors).toEqual([]);
-    },
-    { auto: true },
-  ],
-});
-
-type State = NonNullable<Window['__VISTE__']>['dressUp'];
-
-async function state(page: Page): Promise<NonNullable<State>> {
-  const s = await page.evaluate(() => JSON.parse(JSON.stringify(window.__VISTE__?.dressUp ?? null)));
-  expect(s, 'DressUp scene is active').not.toBeNull();
-  return s;
-}
-
-/** Waits until the scene is idle (entrance, tab and drop animations finished). */
-async function settled(page: Page): Promise<NonNullable<State>> {
-  await page.waitForFunction(() => window.__VISTE__?.dressUp?.settled === true, undefined, { timeout: 15_000 });
-  return state(page);
-}
-
-async function openGame(page: Page): Promise<NonNullable<State>> {
-  await page.goto('/');
-  return settled(page);
-}
-
-async function dragTo(page: Page, from: { x: number; y: number }, to: { x: number; y: number }) {
-  await page.mouse.move(from.x, from.y);
-  await page.mouse.down();
-  await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2 - 30, { steps: 6 });
-  await page.mouse.move(to.x, to.y, { steps: 10 });
-  await page.mouse.up();
-}
-
-/** Opens the tab of the item (if needed) and returns the settled state where its cell is visible. */
-async function showItem(page: Page, item: ClothingDef): Promise<NonNullable<State>> {
-  let s = await settled(page);
-  if (!s.cells[item.id]) {
-    await page.mouse.click(s.tabs[item.category].x, s.tabs[item.category].y);
-    await page.waitForFunction((id) => !!window.__VISTE__?.dressUp?.cells[id], item.id);
-    s = await settled(page);
-  }
-  return s;
-}
-
-/** Drags an item from its cell onto the middle of the cat and waits for it to be worn. */
-async function equipItem(page: Page, item: ClothingDef) {
-  const s = await showItem(page, item);
-  await dragTo(page, s.cells[item.id], { x: s.dropZone.center.x, y: s.dropZone.center.y + 40 });
-  await page.waitForFunction(({ slot, id }) => window.__VISTE__?.dressUp?.outfit[slot] === id, { slot: item.slot, id: item.id });
-  return settled(page);
-}
-
-const outsidePoint = (s: NonNullable<State>) => ({ x: s.dropZone.x - 150, y: s.dropZone.y + s.dropZone.height - 80 });
 
 test('the game starts in DressUp with the cats and an empty outfit', async ({ page }) => {
   const s = await openGame(page);
@@ -146,6 +80,7 @@ test('the cross of the layers panel takes the item off', async ({ page }) => {
 });
 
 test('layers keep the slot order whatever the wearing order', async ({ page }) => {
+  test.setTimeout(180_000); // six worn layers on software WebGL render slowly
   // One item per slot, worn from the front-most slot to the back-most one.
   const picks = [...new Set(clothes.map((c) => c.slot))].map((slot) => bySlot(slot)[0]);
   expect(picks.length).toBeGreaterThanOrEqual(2);

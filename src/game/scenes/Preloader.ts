@@ -7,6 +7,7 @@ import clothesJson from '../data/clothes.json';
 import combosJson from '../data/combos.json';
 import { assertCatalog, validateAnchors } from '../data/schema';
 import { createParticleTextures } from '../objects/particleTextures';
+import { createTabIconTextures } from '../objects/tabIcons';
 import { enterKind, transitionIn, transitionTo } from '../systems/transitions';
 
 export class Preloader extends Scene {
@@ -45,6 +46,7 @@ export class Preloader extends Scene {
 
   create() {
     createParticleTextures(this);
+    createTabIconTextures(this);
     // F2 provisional flow: Boot -> Preloader -> DressUp (Title and CatSelect come in F5).
     transitionIn(this, this.enter, () => transitionTo(this, SceneKeys.DressUp, {}, 'iris'));
   }

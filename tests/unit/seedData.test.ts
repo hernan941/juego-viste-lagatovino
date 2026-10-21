@@ -17,16 +17,6 @@ describe('seed catalog (F2)', () => {
     ]);
   });
 
-  it('has 6 clothes in 2 categories, sweaters and head', () => {
-    expect(clothes).toHaveLength(6);
-    expect(new Set(clothes.map((c) => c.category))).toEqual(new Set(['sweater', 'head']));
-    const ids = clothes.map((c) => c.id);
-    expect(ids).toContain('sweater-rayas');
-    expect(ids).toContain('sweater-navideno');
-    expect(ids).toContain('head-beanie-pompon');
-    expect(ids).toContain('head-boina');
-  });
-
   it('starts with no combos', () => {
     expect(combos).toEqual([]);
   });

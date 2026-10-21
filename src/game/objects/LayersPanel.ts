@@ -1,11 +1,12 @@
 import Phaser from 'phaser';
 import { ObjectEvents, Palette } from '../constants';
 import type { ClothingDef, Point } from '../domain/types';
-import { addHover, drawPanel, hex, makeText } from './ui';
+import { addHover, addPress, drawPanel, hex, makeText } from './ui';
 
 const WIDTH = 250;
-const HEIGHT = 330;
-const ROW_H = 62;
+/** Room for the 6 slots: header (70) + 6 rows of 56 + bottom margin. */
+const HEIGHT = 450;
+const ROW_H = 56;
 const TOP = 70;
 
 class Row extends Phaser.GameObjects.Container {
@@ -28,6 +29,7 @@ class Row extends Phaser.GameObjects.Container {
     this.closeButton.setSize(34, 34);
     this.closeButton.setInteractive({ hitArea: new Phaser.Geom.Circle(17, 17, 20), hitAreaCallback: Phaser.Geom.Circle.Contains, useHandCursor: true });
     addHover(this.closeButton, 1.15);
+    addPress(this.closeButton);
     this.closeButton.on('pointerdown', () => this.emit(ObjectEvents.LayerRemove, item));
 
     this.add([bg, icon, label, this.closeButton]);

@@ -6,6 +6,7 @@ import type { Catalog } from '../data/schema';
 import { itemsInCategory, visibleCategories } from '../domain/catalog';
 import { newlyCompleted } from '../domain/combos';
 import { magnetSnap, resolveDrop, isInsideDropZone } from '../domain/dropZone';
+import { ghostFit, alphaBounds } from '../domain/imageBounds';
 import { equip, getLayers, unequip } from '../domain/outfit';
 import { anchorForSlot } from '../domain/slots';
 import type { AnchorsDef, Category, ClothingDef, Outfit, Point, Rect } from '../domain/types';
@@ -15,6 +16,7 @@ import type { ClothingItem } from '../objects/ClothingItem';
 import { ItemGrid } from '../objects/ItemGrid';
 import { LayersPanel } from '../objects/LayersPanel';
 import { Tabs } from '../objects/Tabs';
+import { tabIconKey } from '../objects/tabIcons';
 import { drawPanel, hex, makeText } from '../objects/ui';
 import { enterKind, transitionIn } from '../systems/transitions';
 
@@ -24,7 +26,12 @@ const CAT_SIZE = 540;
 /** Forgiving margin around the cat's drop zone and magnet radius, in game px (ADR 0008). */
 const DROP_MARGIN = 36;
 const MAGNET_RADIUS = 110;
-const GHOST_SIZE = 104;
+/** Longest side of the dragged item, and of the one that flies back to its cell, in game px. */
+const GHOST_SIZE = 150;
+const GHOST_HOME_SIZE = 90;
+/** Left panel: tabs, then the scrollable grid, then the hint (game px). */
+const PANEL = { x: 36, y: 36, width: 404, height: 648 };
+const GRID = { x: 62, y: 164, width: 368 - 12, height: 464 };
 const ROOM_TEXTURE = 'room-bg';
 
 interface DragState {
@@ -32,6 +39,11 @@ interface DragState {
   fromEquipped: boolean;
   cell?: ClothingItem;
   ghost: Phaser.GameObjects.Image;
+  /** Scale of the ghost in the hand, and scale it has when it flies back home. */
+  ghostScale: number;
+  homeScale: number;
+  /** Half transparent preview of the item worn by the cat while the magnet holds it. */
+  preview?: Phaser.GameObjects.Image;
   target: Point;
   overZone: boolean;
   lastLook: number;
@@ -47,6 +59,8 @@ export class DressUp extends Phaser.Scene implements E2EScene {
   private tabs!: Tabs;
   private layersPanel!: LayersPanel;
   private zoneGlow!: Phaser.GameObjects.Graphics;
+  private hint!: Phaser.GameObjects.Text;
+  private readonly itemBounds = new Map<string, Rect | null>();
   private hearts!: Phaser.GameObjects.Particles.ParticleEmitter;
   private sparkles!: Phaser.GameObjects.Particles.ParticleEmitter;
   private drag: DragState | null = null;
@@ -67,7 +81,7 @@ export class DressUp extends Phaser.Scene implements E2EScene {
   }
 
   create(data?: unknown) {
-    this.input.dragDistanceThreshold = 4;
+    this.input.dragDistanceThreshold = 8;
     this.drawRoom();
     this.zoneGlow = this.add.graphics().setAlpha(0);
 
@@ -80,17 +94,18 @@ export class DressUp extends Phaser.Scene implements E2EScene {
     this.cat.on(ObjectEvents.ItemDragEnd, (_item: ClothingDef, p: Phaser.Input.Pointer) => this.endDrag(p));
 
     // Left panel: tabs and grid.
-    const panel = this.add.graphics().setPosition(36, 36);
-    drawPanel(panel, 404, 648);
+    const panel = this.add.graphics().setPosition(PANEL.x, PANEL.y);
+    drawPanel(panel, PANEL.width, PANEL.height);
     const categories = visibleCategories(this.catalog.clothes);
-    this.tabs = new Tabs(this, 62, 62, categories.map((id) => ({ id, label: CATEGORY_LABELS[id] })), 168);
-    this.grid = new ItemGrid(this, 74, 150);
-    this.add.existing(this.grid);
+    const tabsWidth = categories.length * 54 + (categories.length - 1) * 10;
+    this.tabs = new Tabs(this, PANEL.x + (PANEL.width - tabsWidth) / 2, 58, categories.map((id) => ({ id, label: CATEGORY_LABELS[id], icon: tabIconKey(id) })));
+    this.grid = new ItemGrid(this, GRID.x, GRID.y, GRID.width, GRID.height);
     this.grid.on(ObjectEvents.ItemDragStart, (c: ClothingItem, p: Phaser.Input.Pointer) => this.beginDrag(c.item, p, false, c));
     this.grid.on(ObjectEvents.ItemDrag, (_c: ClothingItem, p: Phaser.Input.Pointer) => this.moveDrag(p));
     this.grid.on(ObjectEvents.ItemDragEnd, (_c: ClothingItem, p: Phaser.Input.Pointer) => this.endDrag(p));
+    this.grid.on(ObjectEvents.ItemClick, () => this.pulseHint());
     this.tabs.on(ObjectEvents.TabSelect, (id: Category) => this.showCategory(id));
-    makeText(this, 238, 640, 'Arrastra la ropa al gatito', 20).setAlpha(0.7);
+    this.hint = makeText(this, PANEL.x + PANEL.width / 2, 658, 'Arrastra la ropa al gatito', 20).setAlpha(0.7);
 
     // Right panel: layers.
     this.layersPanel = new LayersPanel(this, 968, 60);
@@ -178,13 +193,37 @@ export class DressUp extends Phaser.Scene implements E2EScene {
     return { x: z.x, y: z.y, width: z.width, height: z.height };
   }
 
+  /** Bounding box of the visible pixels of an item texture (cached), in texture px. */
+  private boundsOf(item: ClothingDef): Rect | null {
+    if (this.itemBounds.has(item.id)) return this.itemBounds.get(item.id)!;
+    const src = this.textures.get(item.texture).getSourceImage() as HTMLImageElement;
+    const side = 192;
+    const canvas = document.createElement('canvas');
+    canvas.width = side;
+    canvas.height = side;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    let bounds: Rect | null = null;
+    if (ctx) {
+      ctx.drawImage(src, 0, 0, side, side);
+      const found = alphaBounds(ctx.getImageData(0, 0, side, side).data, side, side);
+      const k = src.width / side;
+      bounds = found && { x: found.x * k, y: found.y * k, width: found.width * k, height: found.height * k };
+    }
+    this.itemBounds.set(item.id, bounds);
+    return bounds;
+  }
+
   private beginDrag(item: ClothingDef, pointer: Phaser.Input.Pointer, fromEquipped: boolean, cell?: ClothingItem) {
     if (this.drag) return;
-    const base = GHOST_SIZE / this.textures.get(item.icon).getSourceImage().width;
-    const ghost = this.add.image(pointer.x, pointer.y, item.icon).setScale(base).setDepth(5000);
+    // The ghost is the item itself (no cell card), centered on its own visible bounds, so it never hides the cat's face.
+    const src = this.textures.get(item.texture).getSourceImage();
+    const bounds = this.boundsOf(item);
+    const fit = ghostFit(bounds, src.width, src.height, GHOST_SIZE);
+    const home = ghostFit(bounds, src.width, src.height, GHOST_HOME_SIZE);
+    const ghost = this.add.image(pointer.x, pointer.y, item.texture).setOrigin(fit.origin.x, fit.origin.y).setScale(fit.scale).setDepth(5000);
     // Taking an item: it grows and tilts.
-    this.tweens.add({ targets: ghost, scale: base * 1.25, angle: 8, duration: 150, ease: 'Back.easeOut' });
-    this.drag = { item, fromEquipped, cell, ghost, target: { x: pointer.x, y: pointer.y }, overZone: false, lastLook: 0 };
+    this.tweens.add({ targets: ghost, scale: fit.scale * 1.15, angle: 8, duration: 150, ease: 'Back.easeOut' });
+    this.drag = { item, fromEquipped, cell, ghost, ghostScale: fit.scale * 1.15, homeScale: home.scale, target: { x: pointer.x, y: pointer.y }, overZone: false, lastLook: 0 };
     cell?.setLifted(true);
     if (fromEquipped) this.cat.setLayerLifted(item, true);
     this.cat.hold('sorpresa');
@@ -199,6 +238,7 @@ export class DressUp extends Phaser.Scene implements E2EScene {
     // Magnet: near the slot anchor the item settles onto it.
     const snap = over ? magnetSnap(point, this.cat.getAnchorWorld(anchorForSlot(d.item.slot)), MAGNET_RADIUS) : { point, snapped: false };
     d.target = snap.point;
+    this.setPreview(d, snap.snapped && !d.fromEquipped);
     if (over !== d.overZone) {
       d.overZone = over;
       this.setZoneHighlight(over);
@@ -207,6 +247,46 @@ export class DressUp extends Phaser.Scene implements E2EScene {
       d.lastLook = this.time.now;
       this.cat.lookAt(point);
     }
+  }
+
+  /** While the magnet holds the item: a half transparent preview on the cat, and a fainter ghost. */
+  private setPreview(d: DragState, on: boolean) {
+    if (on === (d.preview !== undefined)) return;
+    this.tweens.add({ targets: d.ghost, alpha: on ? 0.25 : 1, duration: 100 });
+    if (on) {
+      const c = this.cat.canvasToWorld({ x: this.anchors.canvas.width / 2, y: this.anchors.canvas.height / 2 });
+      const size = this.anchors.canvas.width * this.baseCatScale;
+      const preview = this.add.image(c.x, c.y, d.item.texture).setDisplaySize(size, size).setDepth(4500).setAlpha(0);
+      d.preview = preview;
+      this.tweens.add({ targets: preview, alpha: 0.5, duration: 100 });
+    } else {
+      this.fadePreview(d);
+    }
+  }
+
+  private fadePreview(d: DragState) {
+    const preview = d.preview;
+    d.preview = undefined;
+    if (!preview) return;
+    this.tweens.killTweensOf(preview);
+    this.tweens.add({ targets: preview, alpha: 0, duration: 100, onComplete: () => preview.destroy() });
+  }
+
+  /** On drop the preview becomes solid with a little pop, and leaves once the real layer has popped in. */
+  private settlePreview(d: DragState) {
+    const preview = d.preview;
+    d.preview = undefined;
+    if (!preview) return;
+    this.tweens.killTweensOf(preview);
+    const s = preview.scaleX;
+    this.tweens.chain({
+      targets: preview,
+      tweens: [
+        { alpha: 1, scaleX: s * 1.04, scaleY: s * 1.04, duration: 100, ease: 'Sine.easeOut' },
+        { scaleX: s, scaleY: s, duration: 160, ease: 'Back.easeOut' },
+      ],
+      onComplete: () => preview.destroy(),
+    });
   }
 
   private setZoneHighlight(on: boolean) {
@@ -230,10 +310,12 @@ export class DressUp extends Phaser.Scene implements E2EScene {
     else this.sendBack(d);
   }
 
-  private dropOnCat({ item, ghost, cell, fromEquipped }: DragState) {
+  private dropOnCat(d: DragState) {
+    const { item, ghost, cell, fromEquipped } = d;
     const anchor = this.cat.getAnchorWorld(anchorForSlot(item.slot));
     this.tweens.killTweensOf(ghost);
     this.tweens.add({ targets: ghost, x: anchor.x, y: anchor.y, scale: ghost.scale * 0.5, alpha: 0, angle: 0, duration: 160, ease: 'Quad.easeIn', onComplete: () => ghost.destroy() });
+    this.settlePreview(d);
     cell?.setLifted(false);
     if (fromEquipped) {
       // Dropped back on the cat: nothing changes, the item just settles again.
@@ -251,32 +333,47 @@ export class DressUp extends Phaser.Scene implements E2EScene {
     this.celebrate(anchor, combo ? 2 : 1);
   }
 
-  private takeOff({ item, ghost, cell }: DragState) {
-    this.applyOutfit(unequip(this.outfit, item.slot));
+  private takeOff(d: DragState) {
+    this.applyOutfit(unequip(this.outfit, d.item.slot));
     this.cat.react('remove');
     this.cat.shake();
-    this.returnGhost(ghost, item, cell);
+    this.returnGhost(d);
   }
 
-  private sendBack({ item, ghost, cell }: DragState) {
+  private sendBack(d: DragState) {
+    this.fadePreview(d);
     this.cat.release();
-    this.returnGhost(ghost, item, cell);
+    this.returnGhost(d);
   }
 
   /** Item that was let go outside the cat: back to its cell with a bounce (250 ms, Back.easeOut). */
-  private returnGhost(ghost: Phaser.GameObjects.Image, item: ClothingDef, cell?: ClothingItem) {
+  private returnGhost({ ghost, item, cell, homeScale }: DragState) {
     const home = this.grid.getCellPositions()[item.id];
     this.tweens.killTweensOf(ghost);
+    ghost.setAlpha(1);
     const done = () => {
       ghost.destroy();
       (cell ?? this.grid.getCell(item.id))?.setLifted(false);
     };
     if (home) {
-      const base = 104 / this.textures.get(item.icon).getSourceImage().width;
-      this.tweens.add({ targets: ghost, x: home.x, y: home.y, scale: base, angle: 0, duration: 250, ease: 'Back.easeOut', onComplete: done });
+      this.tweens.add({ targets: ghost, x: home.x, y: home.y, scale: homeScale, angle: 0, duration: 250, ease: 'Back.easeOut', onComplete: done });
     } else {
       this.tweens.add({ targets: ghost, alpha: 0, scale: ghost.scale * 0.6, duration: 200, onComplete: done });
     }
+  }
+
+  /** A click on a cell answers with a pulse of the hint: dragging is the only way to wear things (ADR 0008). */
+  private pulseHint() {
+    this.tweens.killTweensOf(this.hint);
+    this.hint.setScale(1).setAlpha(1);
+    this.tweens.chain({
+      targets: this.hint,
+      tweens: [
+        { scale: 1.15, duration: 110, ease: 'Sine.easeOut' },
+        { scale: 1, duration: 220, ease: 'Back.easeOut' },
+        { alpha: 0.7, duration: 500 },
+      ],
+    });
   }
 
   private removeItem(item: ClothingDef) {
@@ -311,8 +408,12 @@ export class DressUp extends Phaser.Scene implements E2EScene {
       const c = this.grid.getCell(id);
       return !!c && c.alpha > 0.99 && Math.abs(c.scale - 1) < 0.01;
     });
+    const viewport = this.grid.getViewport();
     return {
       catId: this.catId,
+      activeTab: this.tabs.selectedId,
+      visibleCells: this.grid.getVisibleIds(),
+      grid: viewport,
       catIds: this.catalog.cats.map((c) => c.id),
       outfit: { ...this.outfit },
       layers: layers.map((l) => l.id),
@@ -322,7 +423,7 @@ export class DressUp extends Phaser.Scene implements E2EScene {
       layerGrab: Object.fromEntries(layers.map((l) => [l.id, this.cat.getLayerGrabPoint(l)])),
       layerRows: this.layersPanel.getRows(),
       dragging: this.drag !== null,
-      settled: this.drag === null && cellsSettled && this.cat.alpha > 0.99 && Math.abs(this.cat.scaleX - this.baseCatScale) < 0.001,
+      settled: this.drag === null && cellsSettled && Math.abs(viewport.scroll - viewport.targetScroll) < 0.5 && this.cat.alpha > 0.99 && Math.abs(this.cat.scaleX - this.baseCatScale) < 0.001,
     };
   }
 }

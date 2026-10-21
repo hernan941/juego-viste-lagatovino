@@ -12,8 +12,14 @@ export interface DressUpE2EState {
   outfit: Outfit;
   /** Worn item ids, back to front (render order). */
   layers: string[];
-  /** Center of the grid cell of each visible item. */
+  /** Selected category tab. */
+  activeTab: string | null;
+  /** Center of the grid cell of each item of the tab, including the ones scrolled out of view. */
   cells: Record<string, Point>;
+  /** Ids of the cells that are completely inside the grid viewport (safe to drag). */
+  visibleCells: string[];
+  /** The grid viewport and its scroll (px of content), `targetScroll` being where the easing is going. */
+  grid: Rect & { scroll: number; targetScroll: number; maxScroll: number };
   /** Center of each category tab. */
   tabs: Record<string, Point>;
   /** The cat's drop zone, margin included. */
@@ -32,7 +38,8 @@ export interface E2EScene {
 }
 
 /** The same state in page coordinates (CSS pixels), ready for `page.mouse`. */
-export interface VisteDressUpState extends Omit<DressUpE2EState, 'cells' | 'tabs' | 'dropZone' | 'layerGrab' | 'layerRows'> {
+export interface VisteDressUpState extends Omit<DressUpE2EState, 'cells' | 'tabs' | 'dropZone' | 'layerGrab' | 'layerRows' | 'grid'> {
+  grid: DressUpE2EState['grid'] & { center: Point };
   cells: Record<string, Point>;
   tabs: Record<string, Point>;
   dropZone: Rect & { center: Point };
@@ -91,8 +98,11 @@ export function installE2EHook(game: Game): void {
       const f = game.canvas.getBoundingClientRect().width / GAME_WIDTH;
       const tl = map({ x: s.dropZone.x, y: s.dropZone.y });
       const zone = { x: tl.x, y: tl.y, width: s.dropZone.width * f, height: s.dropZone.height * f };
+      const gt = map({ x: s.grid.x, y: s.grid.y });
+      const grid = { ...s.grid, x: gt.x, y: gt.y, width: s.grid.width * f, height: s.grid.height * f };
       return {
         ...s,
+        grid: { ...grid, center: { x: grid.x + grid.width / 2, y: grid.y + grid.height / 2 } },
         cells: mapAll(s.cells),
         tabs: mapAll(s.tabs),
         layerGrab: mapAll(s.layerGrab),
