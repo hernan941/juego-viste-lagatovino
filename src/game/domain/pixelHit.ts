@@ -29,12 +29,14 @@ export function hitsAlpha(m: AlphaMap, x: number, y: number, tolerance = HIT_TOL
 /**
  * A pixel of `own` that is solid and that no map of `covers` (items drawn above) reaches, the closest one
  * to the middle of the visible pixels. Null when the item cannot be seen.
+ * The covers are checked with one more pixel of reach: the pointer lands anywhere inside a pixel (and the hit test floors it),
+ * so a pixel right at the edge of the reach of an item above could still be grabbed as that item.
  */
 export function grabPoint(own: AlphaMap, covers: readonly AlphaMap[], { reach = 2 } = {}): Point | null {
   const solid: Point[] = [];
   for (let y = 0; y < own.height; y++) {
     for (let x = 0; x < own.width; x++) {
-      if (alphaAt(own, x, y) >= 128 && !covers.some((c) => hitsAlpha(c, x, y, HIT_TOLERANCE, reach))) solid.push({ x, y });
+      if (alphaAt(own, x, y) >= 128 && !covers.some((c) => hitsAlpha(c, x, y, HIT_TOLERANCE, reach + 1))) solid.push({ x, y });
     }
   }
   if (solid.length === 0) return null;

@@ -54,6 +54,13 @@ describe('grabPoint', () => {
     expect(hitsAlpha(above, p.x, p.y, 32, 1)).toBe(false);
   });
 
+  it('keeps one more pixel away than the reach, because the pointer never lands exactly on the center of a pixel', () => {
+    const own = map(['.........', '#########', '.........']);
+    const above = map(['.........', '....#....', '.........']);
+    const p = grabPoint(own, [above], { reach: 1 })!;
+    expect(hitsAlpha(above, p.x, p.y, 32, 2)).toBe(false);
+  });
+
   it('is null when the item is invisible or fully covered', () => {
     expect(grabPoint(map(['...', '...']), [])).toBeNull();
     const own = map(['##', '##']);
