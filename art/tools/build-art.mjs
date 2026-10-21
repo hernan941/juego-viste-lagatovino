@@ -82,6 +82,7 @@ function buildCats() {
 const ICON_CROP = {
   // cuadrada y algo más ajustada que el sweater: deja ~9 % de margen lateral en la celda
   sweater: [121, 256, 270, 270],
+  head: [128, -38, 256, 256],
 };
 
 // Ajustes solo para el icono (la prenda suelta, sin gato debajo):

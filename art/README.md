@@ -48,7 +48,7 @@ En cada parte de `silhouette.svg`:
 3. **Sombra única**: formas `class="shade"` en negro al 15 % de opacidad. Equivale a cada color multiplicado por 0,85, es decir, el mismo color un 15 % más oscuro, también sobre manchas y rayas. Va abajo de cada parte y bajo la cabeza (la forma de la cabeza desplazada 18 px hacia abajo).
 4. **Contorno**: 8 px de `#4A3036`, con `stroke-linejoin` y `stroke-linecap` en round.
 
-La cabeza, además, lleva el interior rosa de las orejas y el **brillo** (blanco al 55 %), que son fijos para todos los gatos.
+La cabeza, además, lleva el interior rosa de las orejas y el **brillo**. El interior de las orejas es fijo para todos los gatos y el brillo es blanco al 55 %; en los pelajes claros (luminancia > 0,85) `composeCat` lo cambia a `#FFF0A8` al 50 %, para que se vea sobre el pelo blanco.
 
 ### Formato de `coats/<id>.svg`
 ```svg
@@ -87,3 +87,15 @@ Para cargar en Phaser: `this.load.svg(key, 'assets/cats/naranja.svg', { width: 5
 - [ ] ¿Formas redondeadas, sin puntas agresivas?
 - [ ] ¿Encaja en la plantilla y en las anclas del gato? (verlo en `preview.html` sobre naranja, negro y calicó)
 - [ ] ¿Se ve tierno junto a los demás assets?
+
+## Cómo llegan los SVG al juego (`npm run art`)
+Phaser carga los SVG desde `public/assets/` (ADR 0006), que es una **copia** de lo que hay en `art/`. La fuente de verdad sigue siendo `art/`.
+
+```
+npm run art     # node art/tools/build-art.mjs  +  node scripts/sync-art.mjs
+```
+
+- `scripts/sync-art.mjs` borra y vuelve a crear `public/assets/{cats,clothes,ui}/` con solo lo que el juego usa: `cats/noface/<id>.svg`, `cats/base/face-*.svg`, `clothes/<slot>/<id>.svg` y `<id>.icon.svg`, y `ui/*.svg`. No se copian los gatos completos, los pelajes, `preview.html` ni las herramientas.
+- `public/assets/` **se commitea**, así `npm run dev`, `build` y los tests funcionan sin ejecutar nada antes. Después de tocar `art/`, hay que correr `npm run art` y commitear el resultado.
+- El Preloader carga exactamente lo que dice `src/game/data/assets.ts` (derivado de `cats.json` y `clothes.json`): textura de cada gato sin cara, las 5 caras, y la prenda y el icono de cada prenda. La ruta sale del id (`sweater-rayas` en el slot `sweater` es `clothes/sweater/rayas.svg`; el icono, `rayas.icon.svg`). Un test (`tests/unit/assets.test.ts`) falla si falta algún archivo.
+- `art/anchors.json` se copia a mano a `src/game/data/anchors.json` (un test comprueba que son idénticos).
