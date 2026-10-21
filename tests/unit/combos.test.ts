@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { findCompletedCombos, newlyCompleted, unlockSecret } from '../../src/game/domain/combos';
+import {
+  COMBO_REACTIONS, almostCombos, comboOutfit, comboReactionPlan, findCompletedCombos, newlyCompleted, secretRewards, unlockSecret,
+} from '../../src/game/domain/combos';
 import type { ClothingDef, ComboDef } from '../../src/game/domain/types';
 
 const item = (id: string, slot: ClothingDef['slot'], tags: string[] = []): ClothingDef => ({
@@ -89,5 +91,79 @@ describe('unlockSecret', () => {
     const state = { unlocked: [] as string[] };
     unlockSecret(state, 'festive', combos);
     expect(state.unlocked).toEqual([]);
+  });
+});
+
+describe('comboOutfit (a visible outfit that completes the combo)', () => {
+  const hidden = { ...item('crown', 'head', ['navidad']), secret: true };
+  const all = [...catalog, hidden];
+
+  it('picks the first visible item for each requirement', () => {
+    expect(comboOutfit(navidad, all)).toEqual({ sweater: 'xmas', head: 'pompom', neck: 'scarf' });
+    expect(comboOutfit(festive, all)).toEqual({ sweater: 'xmas', head: 'pompom' });
+  });
+
+  it('never uses secret items, even when they carry the tag', () => {
+    const onlySecret: ComboDef = { ...festive, requires: [{ slot: 'head', tag: 'navidad' }] };
+    expect(comboOutfit(onlySecret, [hidden])).toBeNull();
+  });
+
+  it('shares one item between requirements of the same slot, or fails', () => {
+    const same: ComboDef = { ...festive, requires: [{ itemId: 'xmas' }, { slot: 'sweater', tag: 'navidad' }] };
+    expect(comboOutfit(same, all)).toEqual({ sweater: 'xmas' });
+    const clash: ComboDef = { ...festive, requires: [{ itemId: 'stripes' }, { slot: 'sweater', tag: 'navidad' }] };
+    expect(comboOutfit(clash, all)).toBeNull();
+  });
+
+  it('is null when a required item or tag does not exist', () => {
+    expect(comboOutfit({ ...festive, requires: [{ itemId: 'ghost' }] }, all)).toBeNull();
+    expect(comboOutfit({ ...festive, requires: [{ slot: 'neck', tag: 'nope' }] }, all)).toBeNull();
+  });
+
+  it('the outfit it returns completes the combo', () => {
+    for (const c of combos) expect(findCompletedCombos(comboOutfit(c, all)!, [c], all)).toEqual([c]);
+  });
+});
+
+describe('almostCombos (the "¡casi!" hint)', () => {
+  it('reports combos with exactly one missing requirement and at least two met', () => {
+    expect(almostCombos({ sweater: 'xmas', head: 'pompom' }, [navidad], catalog, []).map((c) => c.id)).toEqual(['navidad']);
+  });
+
+  it('stays quiet with fewer than two pieces, with every piece, or with two missing', () => {
+    expect(almostCombos({ sweater: 'xmas' }, [navidad], catalog, [])).toEqual([]);
+    expect(almostCombos({ sweater: 'xmas', head: 'pompom', neck: 'scarf' }, [navidad], catalog, [])).toEqual([]);
+    expect(almostCombos({ sweater: 'xmas', head: 'pompom' }, [{ ...navidad, requires: [...navidad.requires, { slot: 'face', tag: 'x' }] }], catalog, [])).toEqual([]);
+  });
+
+  it('does not hint combos whose gift is already unlocked', () => {
+    expect(almostCombos({ sweater: 'xmas', head: 'pompom' }, [navidad], catalog, ['navidad'])).toEqual([]);
+  });
+});
+
+describe('secretRewards', () => {
+  it('maps unlocked combo ids to the item ids of their prizes', () => {
+    expect([...secretRewards(['festive', 'ghost'], combos)]).toEqual(['gift2']);
+    expect(secretRewards([], combos).size).toBe(0);
+  });
+});
+
+describe('comboReactionPlan', () => {
+  it('has a plan for every known reaction, always ending in love or joy', () => {
+    for (const kind of COMBO_REACTIONS) {
+      const plan = comboReactionPlan(kind);
+      expect(['amor', 'feliz']).toContain(plan.expression);
+      expect(plan.ms).toBeGreaterThanOrEqual(900);
+    }
+  });
+
+  it('galactic starts surprised, heartbeat lasts 1.5 s, royal is happy', () => {
+    expect(comboReactionPlan('stars-orbit').lead).toBe('sorpresa');
+    expect(comboReactionPlan('heartbeat').ms).toBe(1500);
+    expect(comboReactionPlan('royal-pose').expression).toBe('feliz');
+  });
+
+  it('falls back to a love face for an unknown reaction', () => {
+    expect(comboReactionPlan('whatever')).toEqual({ expression: 'amor', ms: 1600 });
   });
 });

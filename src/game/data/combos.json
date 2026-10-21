@@ -1,1 +1,112 @@
-[]
+[
+  {
+    "id": "galactico",
+    "name": "¡Gatito galáctico!",
+    "requires": [
+      {
+        "itemId": "sweater-cohete"
+      },
+      {
+        "itemId": "face-lentes-estrella"
+      }
+    ],
+    "rewardItemId": "accessory-varita-estrella",
+    "reaction": "stars-orbit"
+  },
+  {
+    "id": "navidad",
+    "name": "¡Look Navidad!",
+    "requires": [
+      {
+        "itemId": "sweater-navideno"
+      },
+      {
+        "itemId": "head-beanie-pompon"
+      },
+      {
+        "slot": "neck",
+        "tag": "invierno"
+      }
+    ],
+    "rewardItemId": "sweater-dorado-estrella",
+    "reaction": "snowfall"
+  },
+  {
+    "id": "fresas",
+    "name": "¡Jardín de fresas!",
+    "requires": [
+      {
+        "slot": "sweater",
+        "tag": "frutal"
+      },
+      {
+        "itemId": "head-gorrito-fresa"
+      },
+      {
+        "itemId": "accessory-flor-oreja"
+      }
+    ],
+    "rewardItemId": "head-corona-flores",
+    "reaction": "petals"
+  },
+  {
+    "id": "realeza",
+    "name": "¡Su Majestad Gatuna!",
+    "requires": [
+      {
+        "slot": "head",
+        "tag": "realeza"
+      },
+      {
+        "slot": "neck",
+        "tag": "realeza"
+      },
+      {
+        "slot": "face",
+        "tag": "realeza"
+      }
+    ],
+    "rewardItemId": "neck-capa-superheroe",
+    "reaction": "royal-pose"
+  },
+  {
+    "id": "enamorado",
+    "name": "¡Gatito enamorado!",
+    "requires": [
+      {
+        "slot": "sweater",
+        "tag": "corazones"
+      },
+      {
+        "slot": "face",
+        "tag": "corazones"
+      },
+      {
+        "slot": "accessory",
+        "tag": "corazones"
+      }
+    ],
+    "rewardItemId": "face-lentes-corazon-brillantes",
+    "reaction": "heartbeat"
+  },
+  {
+    "id": "arcoiris",
+    "name": "¡Arcoíris calentito!",
+    "requires": [
+      {
+        "slot": "sweater",
+        "tag": "arcoiris"
+      },
+      {
+        "slot": "neck",
+        "tag": "lana"
+      },
+      {
+        "slot": "paws",
+        "tag": "lana"
+      }
+    ],
+    "rewardItemId": "neck-bufanda-arcoiris",
+    "reaction": "rainbow-arc"
+  }
+]

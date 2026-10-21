@@ -1,4 +1,6 @@
 // Combo detection and secret unlocking (docs/game-design.md, "Regalitos de la tienda").
+import type { Expression } from './expressions';
+import type { Slot } from './slots';
 import type { ClothingDef, ComboDef, ComboRequirement, Outfit } from './types';
 
 export interface SecretsState {
@@ -48,4 +50,73 @@ export function unlockSecret(state: SecretsState, comboId: string, combos: reado
   }
   const unlocked = [...state.unlocked, comboId];
   return { state: { unlocked }, newlyUnlocked: true, count: unlocked.length, total };
+}
+
+/** The reactions the DressUp scene knows how to play (data/combos.json `reaction`). */
+export const COMBO_REACTIONS = ['stars-orbit', 'snowfall', 'petals', 'royal-pose', 'heartbeat', 'rainbow-arc'] as const;
+export type ComboReaction = (typeof COMBO_REACTIONS)[number];
+
+export interface ComboReactionPlan {
+  /** Face shown first, before `expression` (surprise before the stars, for example). */
+  lead?: Expression;
+  expression: Expression;
+  /** How long `expression` is held before going back to normal. */
+  ms: number;
+}
+
+const PLANS: Record<ComboReaction, ComboReactionPlan> = {
+  'stars-orbit': { lead: 'sorpresa', expression: 'amor', ms: 1600 },
+  snowfall: { expression: 'amor', ms: 1600 },
+  petals: { expression: 'amor', ms: 1600 },
+  'royal-pose': { expression: 'feliz', ms: 1600 },
+  heartbeat: { expression: 'amor', ms: 1500 },
+  'rainbow-arc': { expression: 'amor', ms: 1600 },
+};
+
+/** The face the cat makes for a combo reaction (docs/game-design.md, "Combos de F8"); unknown kinds fall back to love. */
+export function comboReactionPlan(kind: string): ComboReactionPlan {
+  return (PLANS as Record<string, ComboReactionPlan | undefined>)[kind] ?? { expression: 'amor', ms: 1600 };
+}
+
+/** Item ids of the prizes of the unlocked combos. */
+export function secretRewards(unlocked: readonly string[], combos: readonly ComboDef[]): Set<string> {
+  return new Set(combos.filter((c) => unlocked.includes(c.id)).map((c) => c.rewardItemId));
+}
+
+const slotOf = (req: ComboRequirement, byId: ReadonlyMap<string, ClothingDef>) =>
+  'itemId' in req ? byId.get(req.itemId)?.slot : req.slot;
+
+/**
+ * An outfit made only of visible (non secret) items that completes the combo, or null if there is none.
+ * Requirements of one slot must be met by the same item. Used by the schema, the tests and the e2e.
+ */
+export function comboOutfit(combo: ComboDef, catalog: readonly ClothingDef[]): Outfit | null {
+  const byId = new Map(catalog.map((c) => [c.id, c]));
+  const visible = catalog.filter((c) => c.secret !== true);
+  const outfit: Partial<Record<Slot, string>> = {};
+  for (const req of combo.requires) {
+    const slot = slotOf(req, byId);
+    if (!slot) return null;
+    if (outfit[slot]) continue;
+    const reqs = combo.requires.filter((r) => slotOf(r, byId) === slot);
+    const pick = visible.find((c) => c.slot === slot && reqs.every((r) => meets(r, { [slot]: c.id }, byId)));
+    if (!pick) return null;
+    outfit[slot] = pick.id;
+  }
+  return outfit;
+}
+
+/** Combos that lack exactly one requirement while at least two are met, and whose gift is still locked. */
+export function almostCombos(
+  outfit: Outfit,
+  combos: readonly ComboDef[],
+  catalog: readonly ClothingDef[],
+  unlocked: readonly string[],
+): ComboDef[] {
+  const byId = new Map(catalog.map((c) => [c.id, c]));
+  return combos.filter((c) => {
+    if (unlocked.includes(c.id)) return false;
+    const met = c.requires.filter((r) => meets(r, outfit, byId)).length;
+    return c.requires.length - met === 1 && met >= 2;
+  });
 }

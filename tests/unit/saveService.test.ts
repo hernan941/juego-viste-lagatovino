@@ -88,3 +88,30 @@ describe('SaveService', () => {
     expect(deserialize(storage.getItem(SAVE_KEY))).toMatchObject({ catId: 'luna' });
   });
 });
+
+describe('SaveService secrets (F8)', () => {
+  it('unlockSecret writes at once, keeps the rest of the save and does not repeat ids', () => {
+    const storage = new MemoryStorage();
+    storage.setItem(SAVE_KEY, serialize({ ...defaultSave(), catId: 'luna', catName: 'Luna', muted: true }));
+    const svc = new SaveService({ storage, scheduler: new FakeScheduler() });
+    expect(svc.unlockSecret('navidad')).toBe(true);
+    expect(svc.unlockSecret('navidad')).toBe(true);
+    expect(svc.unlockSecret('fresas')).toBe(true);
+    expect(deserialize(storage.getItem(SAVE_KEY))).toMatchObject({ catId: 'luna', muted: true, secrets: ['navidad', 'fresas'] });
+  });
+
+  it('a queued session written later keeps the new secrets', () => {
+    const storage = new MemoryStorage();
+    const svc = new SaveService({ storage, scheduler: new FakeScheduler() });
+    svc.queue(luna);
+    svc.unlockSecret('navidad');
+    svc.flush();
+    expect(deserialize(storage.getItem(SAVE_KEY))).toMatchObject({ catId: 'luna', secrets: ['navidad'] });
+  });
+
+  it('reports a storage that refuses', () => {
+    const storage = new MemoryStorage();
+    storage.fail = true;
+    expect(new SaveService({ storage, scheduler: new FakeScheduler() }).unlockSecret('x')).toBe(false);
+  });
+});

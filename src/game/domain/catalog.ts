@@ -8,6 +8,11 @@ export function visibleCategories(catalog: readonly ClothingDef[]): Category[] {
   return CATEGORIES.filter((cat) => catalog.some((c) => c.category === cat && isVisible(c)));
 }
 
-export function itemsInCategory(catalog: readonly ClothingDef[], category: Category): ClothingDef[] {
-  return catalog.filter((c) => c.category === category && isVisible(c));
+/** Items of a tab; `unlocked` are the secret item ids already won (they show up in catalog order). */
+export function itemsInCategory(
+  catalog: readonly ClothingDef[],
+  category: Category,
+  unlocked: ReadonlySet<string> = new Set(),
+): ClothingDef[] {
+  return catalog.filter((c) => c.category === category && (isVisible(c) || unlocked.has(c.id)));
 }

@@ -1,5 +1,6 @@
 // Hand-written validation of the JSON catalog (no zod: three small shapes, zero dependencies,
 // and Spanish messages that name the exact path). Runs on load in the Preloader (ADR 0010).
+import { COMBO_REACTIONS, comboOutfit } from '../domain/combos';
 import { SLOT_ORDER } from '../domain/slots';
 import { ANCHOR_NAMES, BOX_NAMES, CATEGORIES } from '../domain/types';
 import type { AnchorsDef, CatDef, ClothingDef, ComboDef } from '../domain/types';
@@ -85,10 +86,14 @@ export function validateCombos(data: unknown, clothes: readonly ClothingDef[]): 
   const errors: string[] = [];
   const byId = new Map(clothes.map((c) => [c.id, c]));
   checkList('combos', data, ['id', 'name', 'reaction', 'rewardItemId'], errors, (combo, path) => {
+    const before = errors.length;
     const reward = byId.get(combo.rewardItemId as string);
     if (isText(combo.rewardItemId)) {
       if (!reward) errors.push(`${path}.rewardItemId: la prenda "${combo.rewardItemId}" no existe`);
       else if (reward.secret !== true) errors.push(`${path}.rewardItemId: "${reward.id}" debe tener secret: true`);
+    }
+    if (isText(combo.reaction) && !(COMBO_REACTIONS as readonly string[]).includes(combo.reaction)) {
+      errors.push(`${path}.reaction: "${combo.reaction}" no existe (usa ${COMBO_REACTIONS.join(', ')})`);
     }
     if (!Array.isArray(combo.requires)) {
       errors.push(`${path}.requires: debe ser un arreglo`);
@@ -99,11 +104,17 @@ export function validateCombos(data: unknown, clothes: readonly ClothingDef[]): 
       const rp = `${path}.requires[${j}]`;
       if (!isObj(req)) errors.push(`${rp}: debe ser un objeto`);
       else if (isText(req.itemId)) {
-        if (!byId.has(req.itemId)) errors.push(`${rp}: la prenda "${req.itemId}" no existe`);
+        const needed = byId.get(req.itemId);
+        if (!needed) errors.push(`${rp}: la prenda "${req.itemId}" no existe`);
+        else if (needed.secret === true) errors.push(`${rp}: "${needed.id}" es secreta y no puede ser un requisito`);
       } else if (isText(req.slot) && isText(req.tag)) {
         if (!isSlot(req.slot)) errors.push(`${rp}.slot: "${req.slot}" no existe`);
       } else errors.push(`${rp}: debe tener itemId o slot y tag`);
     });
+    // Only when everything above is fine: a combo must be completable with visible items.
+    if (combo.requires.length > 0 && errors.length === before && !comboOutfit(combo as unknown as ComboDef, clothes)) {
+      errors.push(`${path}.requires: ninguna combinación de prendas visibles lo completa`);
+    }
   });
   return finish(data, errors);
 }

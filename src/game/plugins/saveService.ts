@@ -57,6 +57,13 @@ export class SaveService {
     });
   }
 
+  /** Adds a combo to the unlocked secrets and writes at once (an unlock must survive a reload). False if the storage refused. */
+  unlockSecret(comboId: string): boolean {
+    const current = loadSave(this.storage);
+    if (current.secrets.includes(comboId)) return true;
+    return saveToStorage(this.storage, { ...current, secrets: [...current.secrets, comboId] });
+  }
+
   /** Writes what is queued now (also before closing the page). False if the storage refused. */
   flush(): boolean {
     this.cancel?.();

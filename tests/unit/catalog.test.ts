@@ -23,3 +23,16 @@ describe('itemsInCategory', () => {
     expect(itemsInCategory(catalog, 'neck')).toEqual([]);
   });
 });
+
+describe('unlocked secrets in the grid', () => {
+  it('shows a secret item only once it is unlocked', () => {
+    const unlocked = new Set(['s']);
+    expect(itemsInCategory(catalog, 'neck', unlocked).map((c) => c.id)).toEqual(['s']);
+    expect(itemsInCategory(catalog, 'neck', new Set()).map((c) => c.id)).toEqual([]);
+  });
+
+  it('keeps catalog order, secrets included', () => {
+    const cat = [item('x', 'head'), item('s2', 'head', true), item('y', 'head')];
+    expect(itemsInCategory(cat, 'head', new Set(['s2'])).map((c) => c.id)).toEqual(['x', 's2', 'y']);
+  });
+});
