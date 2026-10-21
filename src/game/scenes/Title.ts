@@ -6,10 +6,12 @@ import type { E2EUi, UiState } from '../e2eHook';
 import { Button } from '../objects/Button';
 import { Cat } from '../objects/Cat';
 import { MuteButton } from '../objects/MuteButton';
+import { MotionButton } from '../objects/MotionButton';
 import { addClouds, addHills, addSky, addSun } from '../objects/scenery';
 import { hex } from '../objects/ui';
 import { getAudio } from '../plugins/AudioPlugin';
 import { go } from '../systems/navigate';
+import { profileOf } from '../systems/motion';
 import { enterKind, transitionIn } from '../systems/transitions';
 
 const LOGO = 'Viste Lagato';
@@ -29,6 +31,7 @@ export class Title extends Phaser.Scene implements E2EUi {
   private enter: ReturnType<typeof enterKind> = null;
   private start!: Button;
   private mute!: MuteButton;
+  private motion!: MotionButton;
   private ready = false;
   private cats: Cat[] = [];
 
@@ -61,7 +64,7 @@ export class Title extends Phaser.Scene implements E2EUi {
       this.cats.push(cat);
       this.time.delayedCall(900 + i * 350, () => {
         this.tweens.add({
-          targets: cat, y: feetY, duration: 650, ease: 'Back.easeOut',
+          targets: cat, y: feetY, duration: 650, ease: profileOf(this).ease('Back.easeOut'),
           onComplete: () => this.wave(cat, i),
         });
         cat.react('drop');
@@ -72,10 +75,12 @@ export class Title extends Phaser.Scene implements E2EUi {
     this.createLogo();
     this.createStart();
     this.mute = new MuteButton(this, GAME_WIDTH - 56, 56).setDepth(50);
+    this.motion = new MotionButton(this, GAME_WIDTH - 128, 56).setDepth(50);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.start?.destroy();
       this.mute?.destroy();
+      this.motion?.destroy();
       for (const c of this.cats) c.destroy();
       this.tweens.killAll();
     });
@@ -100,11 +105,13 @@ export class Title extends Phaser.Scene implements E2EUi {
 
   /** The kitten sways a little once it is up. */
   private wave(cat: Cat, i: number) {
+    if (!profileOf(this).loops) return;
     this.tweens.add({ targets: cat, angle: { from: -2, to: 2 }, duration: 1400 + i * 200, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
   }
 
   /** "Viste Lagato" letter by letter: each one drops in and bounces, then the whole logo waves. */
   private createLogo() {
+    const p = profileOf(this);
     const letters = [...LOGO].map((ch, i) =>
       this.add
         .text(0, 0, ch, { fontFamily: FONT_FAMILY, fontSize: '132px', color: LETTER_COLORS[i % LETTER_COLORS.length], fontStyle: '700', stroke: Palette.contorno, strokeThickness: 14, padding: { x: 6, y: 14 } })
@@ -123,11 +130,11 @@ export class Title extends Phaser.Scene implements E2EUi {
         t.setVisible(false);
         return;
       }
-      t.setPosition(cx, -200).setScale(0.8, 1.25).setAngle(Phaser.Math.Between(-18, 18));
+      t.setPosition(cx, -200).setScale(1 - 0.2 * p.squash, 1 + 0.25 * p.squash).setAngle(Phaser.Math.Between(-18, 18) * p.shake);
       this.tweens.add({
-        targets: t, y: LOGO_Y, scaleX: 1, scaleY: 1, angle: 0, delay: 150 + i * 90, duration: 750, ease: 'Bounce.easeOut',
+        targets: t, y: LOGO_Y, scaleX: 1, scaleY: 1, angle: 0, delay: 150 + i * 90, duration: 750, ease: p.ease('Bounce.easeOut'),
         onStart: () => getAudio(this).play(SfxKeys.Drop, { volume: 0.35 }),
-        onComplete: () => this.tweens.add({ targets: t, y: LOGO_Y - 9, duration: 900, delay: i * 90, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }),
+        onComplete: () => p.loops && this.tweens.add({ targets: t, y: LOGO_Y - 9, duration: 900, delay: i * 90, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }),
       });
     });
     const sub = this.add
@@ -135,11 +142,11 @@ export class Title extends Phaser.Scene implements E2EUi {
       .setOrigin(0.5)
       .setAlpha(0)
       .setDepth(20);
-    this.tweens.add({ targets: sub, alpha: 1, y: LOGO_Y + 92, delay: 1500, duration: 400, ease: 'Back.easeOut' });
+    this.tweens.add({ targets: sub, alpha: 1, y: LOGO_Y + 92, delay: 1500, duration: 400, ease: p.ease('Back.easeOut') });
     // A few sparkles and hearts around the logo.
     this.add
       .particles(GAME_WIDTH / 2, LOGO_Y, TextureKeys.Sparkle, {
-        x: { min: -380, max: 380 }, y: { min: -80, max: 90 }, lifespan: 1400, frequency: 380, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, speed: 12,
+        x: { min: -380, max: 380 }, y: { min: -80, max: 90 }, lifespan: 1400, frequency: p.every(380), scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, speed: 12,
       })
       .setDepth(19);
   }
@@ -153,11 +160,12 @@ export class Title extends Phaser.Scene implements E2EUi {
     this.start.input!.enabled = false;
     this.time.delayedCall(1500, () => {
       this.tweens.add({
-        targets: this.start, scale: 1, duration: 450, ease: 'Back.easeOut',
+        targets: this.start, scale: 1, duration: 450, ease: profileOf(this).ease('Back.easeOut'),
         onComplete: () => {
           this.start.input!.enabled = true;
           this.ready = true;
-          this.tweens.add({ targets: halo, alpha: { from: 0.2, to: 0.9 }, scale: { from: 1, to: 1.12 }, duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+          if (profileOf(this).loops) this.tweens.add({ targets: halo, alpha: { from: 0.2, to: 0.9 }, scale: { from: 1, to: 1.12 }, duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+          else this.tweens.add({ targets: halo, alpha: 0.6, duration: 400 });
         },
       });
     });
@@ -166,12 +174,12 @@ export class Title extends Phaser.Scene implements E2EUi {
       this.ready = false;
       // The first click also unlocks the browser audio (ADR 0009).
       getAudio(this).playRandom(MEOW_KEYS);
-      this.start.scene.tweens.add({ targets: this.start, angle: { from: -3, to: 3 }, duration: 70, yoyo: true, repeat: 2 });
+      if (profileOf(this).shake > 0) this.start.scene.tweens.add({ targets: this.start, angle: { from: -3, to: 3 }, duration: 70, yoyo: true, repeat: 2 });
       this.time.delayedCall(260, () => go(this, 'start'));
     });
   }
 
   getE2EUi(): UiState {
-    return { ready: this.ready, buttons: { start: this.start.getCenter(), mute: this.mute.getCenter() }, points: {}, info: {} };
+    return { ready: this.ready, buttons: { start: this.start.getCenter(), mute: this.mute.getCenter(), motion: this.motion.getCenter() }, points: {}, info: {} };
   }
 }

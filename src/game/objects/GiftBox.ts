@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { FONT_FAMILY, ObjectEvents, Palette, SfxKeys, TextureKeys } from '../constants';
 import type { ClothingDef, Point } from '../domain/types';
 import { getAudio } from '../plugins/AudioPlugin';
+import { profileOf } from '../systems/motion';
 import { addHover, hex } from './ui';
 
 /** How far the bow has to be pulled from its knot to open the box (game px). */
@@ -90,21 +91,28 @@ export class GiftBox extends Phaser.GameObjects.Container {
 
   private drop(y: number): void {
     this.scene.tweens.add({
-      targets: this, y, duration: 650, ease: 'Bounce.easeOut',
+      targets: this, y, duration: 650, ease: profileOf(this.scene).ease('Bounce.easeOut'),
       onComplete: () => {
         this.landed = true;
         getAudio(this.scene).play(SfxKeys.Drop, { volume: 0.9 });
         this.scene.tweens.add({ targets: this.hint, alpha: 1, duration: 300 });
-        this.scene.tweens.add({ targets: this.hint, y: 116, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-        this.scene.tweens.add({ targets: this.bow, angle: { from: -9, to: 9 }, duration: 380, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+        this.wobbleBow();
+        if (profileOf(this.scene).loops) this.scene.tweens.add({ targets: this.hint, y: 116, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
       },
     });
+  }
+
+  /** The bow calls for a pull by wiggling; with reduced motion it breathes in scale instead (no angle swing). */
+  private wobbleBow(): void {
+    const p = profileOf(this.scene);
+    if (p.shake > 0) this.scene.tweens.add({ targets: this.bow, angle: { from: -9 * p.shake, to: 9 * p.shake }, duration: 380, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    else this.scene.tweens.add({ targets: this.bow, scale: { from: 1, to: 1.08 }, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
   }
 
   private onBowGrab(): void {
     if (!this.ready) return;
     this.scene.tweens.killTweensOf(this.bow);
-    this.bow.setAngle(0);
+    this.bow.setAngle(0).setScale(1);
     getAudio(this.scene).play(SfxKeys.Grab);
   }
 
@@ -113,7 +121,7 @@ export class GiftBox extends Phaser.GameObjects.Container {
     this.bow.setPosition(dragX, dragY);
     const pull = Math.hypot(dragX - this.bowRest.x, dragY - this.bowRest.y);
     // The lid shivers more the closer the bow is to coming off.
-    this.lid.setAngle(Math.sin(this.scene.time.now / 35) * Math.min(4, pull / 18));
+    this.lid.setAngle(Math.sin(this.scene.time.now / 35) * Math.min(4, pull / 18) * profileOf(this.scene).shake);
     if (pull >= BOW_PULL) this.openBox();
   }
 
@@ -121,8 +129,8 @@ export class GiftBox extends Phaser.GameObjects.Container {
     if (!this.ready) return;
     getAudio(this.scene).play(SfxKeys.Return, { volume: 0.5 });
     this.lid.setAngle(0);
-    this.scene.tweens.add({ targets: this.bow, x: this.bowRest.x, y: this.bowRest.y, duration: 260, ease: 'Back.easeOut' });
-    this.scene.tweens.add({ targets: this.bow, angle: { from: -9, to: 9 }, duration: 380, delay: 300, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    this.scene.tweens.add({ targets: this.bow, x: this.bowRest.x, y: this.bowRest.y, duration: 260, ease: profileOf(this.scene).ease('Back.easeOut') });
+    this.scene.time.delayedCall(300, () => this.scene && this.ready && this.wobbleBow());
   }
 
   private openBox(): void {
@@ -135,8 +143,8 @@ export class GiftBox extends Phaser.GameObjects.Container {
     audio.play(SfxKeys.Remove, { rate: 1.3, volume: 0.7 });
     scene.tweens.killTweensOf([this.hint, this.bow, this.lid]);
     scene.tweens.add({ targets: this.hint, alpha: 0, duration: 150 });
-    scene.tweens.add({ targets: this.bow, y: this.bow.y - 120, x: this.bow.x + 60, angle: 200, alpha: 0, duration: 450, ease: 'Quad.easeOut' });
-    scene.tweens.add({ targets: this.lid, y: -110, angle: -24, alpha: 0, duration: 500, ease: 'Back.easeOut' });
+    scene.tweens.add({ targets: this.bow, y: this.bow.y - 120, x: this.bow.x + 60, angle: 200 * profileOf(scene).spin, alpha: 0, duration: 450, ease: 'Quad.easeOut' });
+    scene.tweens.add({ targets: this.lid, y: -110, angle: -24 * profileOf(scene).shake, alpha: 0, duration: 500, ease: profileOf(scene).ease('Back.easeOut') });
 
     const at = this.getCenter();
     const burst = scene.add
@@ -145,7 +153,7 @@ export class GiftBox extends Phaser.GameObjects.Container {
         lifespan: { min: 600, max: 1000 }, scale: { start: 1.5, end: 0 }, alpha: { start: 1, end: 0 },
       })
       .setDepth(3600);
-    burst.explode(28, at.x, at.y - 20);
+    burst.explode(profileOf(scene).count(28), at.x, at.y - 20);
     scene.time.delayedCall(1200, () => burst.destroy());
 
     // The prize rises out of the box, growing and glowing.
@@ -157,10 +165,10 @@ export class GiftBox extends Phaser.GameObjects.Container {
     const grow = { size: 30 };
     scene.tweens.add({ targets: glow, alpha: 0.5, scale: { from: 0.3, to: 1.2 }, duration: 500, ease: 'Sine.easeOut' });
     scene.tweens.add({
-      targets: grow, size: 260, duration: 650, ease: 'Back.easeOut', onUpdate: () => prize.setDisplaySize(grow.size, grow.size),
+      targets: grow, size: 260, duration: 650, ease: profileOf(scene).ease('Back.easeOut'), onUpdate: () => prize.setDisplaySize(grow.size, grow.size),
     });
     scene.tweens.add({
-      targets: prize, y: at.y - 190, duration: 650, ease: 'Back.easeOut',
+      targets: prize, y: at.y - 190, duration: 650, ease: profileOf(scene).ease('Back.easeOut'),
       onComplete: () => {
         // It floats for a moment above the box, shining, so the player sees what it is.
         glow.setPosition(prize.x, prize.y);

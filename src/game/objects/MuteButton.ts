@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { ObjectEvents, SfxKeys } from '../constants';
 import type { Point } from '../domain/types';
 import { getAudio } from '../plugins/AudioPlugin';
+import { profileOf } from '../systems/motion';
 import { addHover, addPress, hex } from './ui';
 
 const SIZE = 60;
@@ -57,7 +58,7 @@ export class MuteButton extends Phaser.GameObjects.Container {
       instant ? g.setAlpha(alpha) : this.scene.tweens.add({ targets: g, alpha, duration: 120 });
     to(this.waves, muted ? 0 : 1);
     to(this.slash, muted ? 1 : 0);
-    if (!instant) {
+    if (!instant && profileOf(this.scene).shake > 0) {
       this.scene.tweens.add({ targets: this.face, angle: { from: -10, to: 0 }, duration: 220, ease: 'Back.easeOut' });
     }
   }

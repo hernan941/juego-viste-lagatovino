@@ -3,6 +3,7 @@ import { FONT_FAMILY, MEOW_KEYS, ObjectEvents, Palette, SfxKeys, TextureKeys } f
 import type { AnchorsDef, CatDef, Point } from '../domain/types';
 import { getAudio } from '../plugins/AudioPlugin';
 import { Cat } from './Cat';
+import { profileOf } from '../systems/motion';
 import { addHover, hex } from './ui';
 
 export const CARD_W = 172;
@@ -56,9 +57,9 @@ export class CatCard extends Phaser.GameObjects.Container {
 
   /** Pops in after `delay` ms and starts answering to the pointer. */
   appear(delay: number): void {
-    this.setScale(0.8).setAlpha(0);
+    this.setScale(1 - 0.2 * profileOf(this.scene).squash).setAlpha(0);
     this.scene.tweens.add({
-      targets: this, scale: 1, alpha: 1, delay, duration: 250, ease: 'Back.easeOut',
+      targets: this, scale: 1, alpha: 1, delay, duration: 250, ease: profileOf(this.scene).ease('Back.easeOut'),
       onComplete: () => {
         this.setInteractive({ useHandCursor: true });
         addHover(this, 1.05);
@@ -72,8 +73,12 @@ export class CatCard extends Phaser.GameObjects.Container {
     this.drawBg();
     this.scene.tweens.killTweensOf(this.glow);
     if (selected) {
-      this.glow.setAlpha(0.3);
-      this.scene.tweens.add({ targets: this.glow, alpha: 1, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      if (profileOf(this.scene).loops) {
+        this.glow.setAlpha(0.3);
+        this.scene.tweens.add({ targets: this.glow, alpha: 1, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      } else {
+        this.scene.tweens.add({ targets: this.glow, alpha: 0.8, duration: 200 });
+      }
     } else {
       this.scene.tweens.add({ targets: this.glow, alpha: 0, duration: 150 });
     }
@@ -82,19 +87,24 @@ export class CatCard extends Phaser.GameObjects.Container {
   /** The cat jumps, makes a happy face and meows. */
   hop(): void {
     const scene = this.scene;
+    const p = profileOf(scene);
     const baseY = this.cat.y;
     scene.tweens.killTweensOf(this.cat);
     this.cat.y = baseY;
-    scene.tweens.chain({
-      targets: this.cat,
-      tweens: [
-        { y: baseY - 44, duration: 170, ease: 'Quad.easeOut' },
-        { y: baseY, duration: 330, ease: 'Bounce.easeOut' },
-      ],
-    });
+    // Reduced motion: no jump, the squash and the happy face say it.
+    if (p.reduced) this.cat.squash();
+    else {
+      scene.tweens.chain({
+        targets: this.cat,
+        tweens: [
+          { y: baseY - 44, duration: 170, ease: 'Quad.easeOut' },
+          { y: baseY, duration: 330, ease: 'Bounce.easeOut' },
+        ],
+      });
+    }
     this.cat.react('drop');
-    scene.time.delayedCall(330, () => this.scene && this.cat.squash());
-    this.sparkles.explode(10, 0, -20);
+    if (!p.reduced) scene.time.delayedCall(330, () => this.scene && this.cat.squash());
+    this.sparkles.explode(p.count(10), 0, -20);
     getAudio(scene).playRandom(MEOW_KEYS);
   }
 

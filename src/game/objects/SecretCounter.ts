@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { Palette, SfxKeys, TextureKeys } from '../constants';
 import { getAudio } from '../plugins/AudioPlugin';
+import { profileOf } from '../systems/motion';
 import { makeText, hex } from './ui';
 
 const WIDTH = 210;
@@ -35,15 +36,16 @@ export class SecretCounter extends Phaser.GameObjects.Container {
     this.label.setText(`Secretos ${count}/${total}`);
     if (!(animate && up)) return;
     getAudio(this.scene).play(SfxKeys.Hover, { rate: 1.8, volume: 0.9 });
+    const p = profileOf(this.scene);
     this.scene.tweens.killTweensOf(this);
     this.scene.tweens.chain({
       targets: this,
       tweens: [
-        { scale: 1.3, duration: 150, ease: 'Sine.easeOut' },
-        { scale: 1, duration: 260, ease: 'Back.easeOut' },
+        { scale: 1 + 0.3 * p.squash, duration: 150, ease: 'Sine.easeOut' },
+        { scale: 1, duration: 260, ease: p.ease('Back.easeOut') },
       ],
     });
-    this.scene.tweens.add({ targets: this.star, angle: 360, duration: 500, ease: 'Sine.easeOut', onComplete: () => this.star.setAngle(0) });
+    if (p.spin > 0) this.scene.tweens.add({ targets: this.star, angle: 360, duration: 500, ease: 'Sine.easeOut', onComplete: () => this.star.setAngle(0) });
   }
 
   destroy(fromScene?: boolean): void {

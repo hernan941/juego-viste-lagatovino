@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { ObjectEvents, SfxKeys, TextureKeys } from '../constants';
 import type { ClothingDef, Rect } from '../domain/types';
 import { getAudio } from '../plugins/AudioPlugin';
+import { profileOf } from '../systems/motion';
 import { addHover, hex, type ScaleTo } from './ui';
 
 export const CELL_SIZE = 104;
@@ -36,7 +37,7 @@ export class ClothingItem extends Phaser.GameObjects.Container {
     if (item.secret) {
       this.badge = scene.add.image(CELL_SIZE / 2 - 12, -CELL_SIZE / 2 + 12, TextureKeys.Sparkle).setScale(0.78);
       this.view.add(this.badge);
-      scene.tweens.add({ targets: this.badge, angle: 90, scale: { from: 0.6, to: 0.95 }, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      if (profileOf(scene).loops) scene.tweens.add({ targets: this.badge, angle: 90, scale: { from: 0.6, to: 0.95 }, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     }
     this.add(this.view);
 
@@ -99,8 +100,14 @@ export class ClothingItem extends Phaser.GameObjects.Container {
 
   /** A short side to side shake: angle -6 to 6, yoyo, 2 repeats, 60 ms. */
   wiggle(): void {
+    const p = profileOf(this.scene);
     this.wiggleTween?.remove();
     this.view.setAngle(0);
+    if (p.shake === 0) {
+      // Reduced motion: no shake, a soft pulse answers the click instead.
+      this.wiggleTween = this.scene.tweens.add({ targets: this.view, scale: 1.06, duration: 90, yoyo: true, ease: 'Sine.easeOut' });
+      return;
+    }
     this.wiggleTween = this.scene.tweens.add({
       targets: this.view, angle: { from: -6, to: 6 }, duration: 60, yoyo: true, repeat: 2, ease: 'Sine.easeInOut',
       onComplete: () => this.view.setAngle(0),
@@ -109,11 +116,12 @@ export class ClothingItem extends Phaser.GameObjects.Container {
 
   /** A happy pop when a secret lands in its cell (the sparkles come from the scene). */
   celebrate(): void {
+    const p = profileOf(this.scene);
     this.scene.tweens.chain({
       targets: this.view,
       tweens: [
-        { scale: 1.3, duration: 140, ease: 'Sine.easeOut' },
-        { scale: 1, duration: 260, ease: 'Back.easeOut' },
+        { scale: 1 + 0.3 * p.squash, duration: 140, ease: 'Sine.easeOut' },
+        { scale: 1, duration: 260, ease: p.ease('Back.easeOut') },
       ],
     });
   }
@@ -130,22 +138,25 @@ export class ClothingItem extends Phaser.GameObjects.Container {
 
   /** Pop-in used when the grid fills (0.8 to 1.05 to 1, 250 ms). */
   popIn(delay: number): void {
-    this.setScale(0.8).setAlpha(0);
+    const p = profileOf(this.scene);
+    this.setScale(1 - 0.2 * p.squash).setAlpha(0);
     this.scene.tweens.add({ targets: this, alpha: 1, duration: 120, delay });
     this.scene.tweens.chain({
       targets: this,
       delay,
-      tweens: [{ scale: 1.05, duration: 150, ease: 'Sine.easeOut' }, { scale: 1, duration: 100, ease: 'Back.easeOut' }],
+      tweens: [{ scale: 1 + 0.05 * p.squash, duration: 150, ease: 'Sine.easeOut' }, { scale: 1, duration: 100, ease: p.ease('Back.easeOut') }],
     });
   }
 
   /** A prize cell that was kept invisible appears with a pop (0.2 to 1.15 to 1) right when the prize lands. */
   revealPop(): void {
+    const p = profileOf(this.scene);
     this.scene.tweens.killTweensOf(this);
-    this.setVisible(true).setAlpha(1).setScale(0.2);
+    this.setVisible(true).setAlpha(p.reduced ? 0 : 1).setScale(p.reduced ? 0.9 : 0.2);
+    if (p.reduced) this.scene.tweens.add({ targets: this, alpha: 1, duration: 220 });
     this.scene.tweens.chain({
       targets: this,
-      tweens: [{ scale: 1.15, duration: 160, ease: 'Sine.easeOut' }, { scale: 1, duration: 220, ease: 'Back.easeOut' }],
+      tweens: [{ scale: 1 + 0.15 * p.squash, duration: 160, ease: 'Sine.easeOut' }, { scale: 1, duration: 220, ease: p.ease('Back.easeOut') }],
     });
   }
 

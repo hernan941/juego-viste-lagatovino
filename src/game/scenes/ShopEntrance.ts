@@ -5,12 +5,14 @@ import type { AnchorsDef } from '../domain/types';
 import type { E2EUi, UiState } from '../e2eHook';
 import { Cat } from '../objects/Cat';
 import { MuteButton } from '../objects/MuteButton';
+import { MotionButton } from '../objects/MotionButton';
 import { addClouds, addSky, addSun } from '../objects/scenery';
 import { createShopFront, type ShopFront } from '../objects/shopFront';
 import { hex } from '../objects/ui';
 import { getAudio } from '../plugins/AudioPlugin';
 import { go } from '../systems/navigate';
 import { readSession } from '../systems/sessionStore';
+import { profileOf } from '../systems/motion';
 import { enterKind, transitionIn } from '../systems/transitions';
 
 const SHOP = { x: 570, y: 14, scale: 1.25 };
@@ -32,6 +34,7 @@ export class ShopEntrance extends Phaser.Scene implements E2EUi {
   private shop!: ShopFront;
   private cat!: Cat;
   private mute!: MuteButton;
+  private motion!: MotionButton;
   private phase: Phase = 'fading-in';
   private skipped = false;
   private bob?: Phaser.Tweens.Tween;
@@ -72,6 +75,7 @@ export class ShopEntrance extends Phaser.Scene implements E2EUi {
       .setAlpha(0);
     this.tweens.add({ targets: hint, alpha: 0.8, delay: 1200, duration: 400 });
     this.mute = new MuteButton(this, GAME_WIDTH - 56, 56).setDepth(50);
+    this.motion = new MotionButton(this, GAME_WIDTH - 128, 56).setDepth(50);
 
     this.input.on('pointerdown', this.skip, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -79,6 +83,7 @@ export class ShopEntrance extends Phaser.Scene implements E2EUi {
       this.bob?.remove();
       this.cat?.destroy();
       this.mute?.destroy();
+      this.motion?.destroy();
       this.tweens.killAll();
     });
     transitionIn(this, this.enter, () => this.walk());
@@ -114,13 +119,14 @@ export class ShopEntrance extends Phaser.Scene implements E2EUi {
     this.phase = 'walk';
     const stopX = this.shop.doorStep.x;
     // Waddle: a sway and a little hop at every step.
+    const p = profileOf(this);
     const waddle = { t: 0 };
     this.bob = this.tweens.add({
       targets: waddle, t: 1, duration: 520, repeat: -1,
       onUpdate: () => {
         const a = waddle.t * Math.PI * 2;
-        this.cat.setAngle(Math.sin(a) * 5);
-        this.cat.y = WALK_FEET_Y - Math.abs(Math.sin(a / 2)) * 14;
+        this.cat.setAngle(Math.sin(a) * 5 * p.shake);
+        this.cat.y = WALK_FEET_Y - Math.abs(Math.sin(a / 2)) * 14 * Math.max(p.squash, p.shake);
       },
     });
     this.tweens.add({
@@ -135,7 +141,7 @@ export class ShopEntrance extends Phaser.Scene implements E2EUi {
     this.bob?.remove();
     this.tweens.add({ targets: this.cat, angle: 0, y: WALK_FEET_Y, duration: 120 });
     getAudio(this).play(SfxKeys.Doorbell);
-    this.tweens.chain({
+    if (profileOf(this).shake > 0) this.tweens.chain({
       targets: this.shop.bell,
       tweens: [
         { angle: 28, duration: 110, ease: 'Sine.easeOut' }, { angle: -22, duration: 150, ease: 'Sine.easeInOut' },
@@ -168,6 +174,11 @@ export class ShopEntrance extends Phaser.Scene implements E2EUi {
   private zoom() {
     if (this.skipped) return;
     this.phase = 'zoom';
+    // Reduced motion: no camera dive; the screen simply fades into the fitting room.
+    if (!profileOf(this).zoom) {
+      this.finish(false);
+      return;
+    }
     const d = this.shop.doorCenter;
     const endX = GAME_WIDTH / 2 - ZOOM * d.x;
     const endY = GAME_HEIGHT / 2 - ZOOM * d.y;
@@ -198,7 +209,7 @@ export class ShopEntrance extends Phaser.Scene implements E2EUi {
   getE2EUi(): UiState {
     return {
       ready: this.phase !== 'fading-in',
-      buttons: { mute: this.mute.getCenter() },
+      buttons: { mute: this.mute.getCenter(), motion: this.motion.getCenter() },
       points: { cat: { x: this.cat.x, y: this.cat.y } },
       info: { phase: this.phase, skipped: this.skipped },
     };

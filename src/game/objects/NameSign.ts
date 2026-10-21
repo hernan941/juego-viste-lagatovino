@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { FONT_FAMILY, Palette } from '../constants';
+import { profileOf } from '../systems/motion';
 import { hex } from './ui';
 
 const SHOW_MS = 2000;
@@ -58,11 +59,25 @@ export class NameSign extends Phaser.GameObjects.Container {
 
   private flipTo(text: string): void {
     this.scene.tweens.killTweensOf(this);
+    const p = profileOf(this.scene);
+    if (p.reduced) {
+      // No flip: the text changes under a quick cross fade.
+      this.setScale(1);
+      this.scene.tweens.chain({
+        targets: this,
+        tweens: [
+          { alpha: 0, duration: 130, ease: 'Sine.easeIn', onComplete: () => this.draw(text) },
+          { alpha: 1, duration: 200, ease: 'Sine.easeOut' },
+        ],
+      });
+      return;
+    }
+    this.setAlpha(1);
     this.scene.tweens.chain({
       targets: this,
       tweens: [
         { scaleX: 0, scaleY: 0.88, duration: 130, ease: 'Sine.easeIn', onComplete: () => this.draw(text) },
-        { scaleX: 1, scaleY: 1, duration: 320, ease: 'Back.easeOut' },
+        { scaleX: 1, scaleY: 1, duration: 320, ease: p.ease('Back.easeOut') },
       ],
     });
   }

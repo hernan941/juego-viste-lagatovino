@@ -5,6 +5,7 @@ import { FONT_FAMILY, Palette, SfxKeys, TextureKeys } from '../constants';
 import { comboReactionPlan } from '../domain/combos';
 import type { ComboDef } from '../domain/types';
 import { getAudio } from '../plugins/AudioPlugin';
+import { profileOf } from '../systems/motion';
 import type { Cat } from './Cat';
 import type { NameSign } from './NameSign';
 import { hex } from './ui';
@@ -37,7 +38,7 @@ export function showBubble(scene: Phaser.Scene, x: number, y: number, text: stri
   scene.tweens.chain({
     targets: bubble,
     tweens: [
-      { scale: 1, alpha: 1, duration: 280, ease: 'Back.easeOut' },
+      { scale: 1, alpha: 1, duration: 280, ease: profileOf(scene).ease('Back.easeOut') },
       { y: y - 8, duration: 1500, ease: 'Sine.easeInOut' },
       { alpha: 0, y: y - 40, duration: 300, ease: 'Sine.easeIn', onComplete: () => bubble.destroy() },
     ],
@@ -58,6 +59,16 @@ function shortLived(scene: Phaser.Scene, emitter: Phaser.GameObjects.Particles.P
 
 function starsOrbit({ scene, cat }: ComboFxContext): void {
   const head = cat.getAnchorWorld('head');
+  if (profileOf(scene).spin === 0) {
+    // Reduced motion: the stars do not whirl; they fade in around the head, rest there and fade out.
+    const ring = Array.from({ length: 8 }, (_, i) => {
+      const a = (i * Math.PI) / 4;
+      return scene.add.image(head.x + Math.cos(a) * 130, head.y - 20 + Math.sin(a) * 60, TextureKeys.Sparkle).setDepth(FX_DEPTH).setAlpha(0);
+    });
+    scene.tweens.add({ targets: ring, alpha: 1, duration: 300, yoyo: true, hold: 500, onComplete: () => ring.forEach((s) => s.destroy()) });
+    chime(scene, [1, 1.26, 1.5, 2], 140);
+    return;
+  }
   const stars = Array.from({ length: 8 }, () => scene.add.image(head.x, head.y, TextureKeys.Sparkle).setDepth(FX_DEPTH).setAlpha(0));
   const turn = { t: 0 };
   scene.tweens.add({
@@ -76,7 +87,7 @@ function starsOrbit({ scene, cat }: ComboFxContext): void {
 function snowfall({ scene, cat }: ComboFxContext): void {
   const snow = scene.add.particles(0, 0, TextureKeys.Snow, {
     x: { min: MIRROR.left, max: MIRROR.right }, y: -10, speedX: { min: -25, max: 25 }, speedY: { min: 40, max: 80 }, gravityY: 30,
-    lifespan: 4200, frequency: 45, quantity: 1, scale: { min: 0.5, max: 1.1 }, alpha: { start: 1, end: 0.3 },
+    lifespan: 4200, frequency: profileOf(scene).every(45), quantity: 1, scale: { min: 0.5, max: 1.1 }, alpha: { start: 1, end: 0.3 },
   });
   shortLived(scene, snow, 2000, 4300);
   cat.squash();
@@ -86,10 +97,10 @@ function snowfall({ scene, cat }: ComboFxContext): void {
 function petals({ scene, cat }: ComboFxContext): void {
   const burst = scene.add.particles(0, 0, TextureKeys.Petal, {
     emitting: false, speed: { min: 120, max: 300 }, angle: { min: -130, max: -50 }, gravityY: 260, lifespan: { min: 1300, max: 2000 },
-    rotate: { min: -180, max: 180 }, scale: { start: 1.1, end: 0.6 }, alpha: { start: 1, end: 0 }, tint: [0xff8fb8, 0xffd1e3, 0xd8ccff],
+    rotate: { min: -180 * profileOf(scene).spin, max: 180 * profileOf(scene).spin }, scale: { start: 1.1, end: 0.6 }, alpha: { start: 1, end: 0 }, tint: [0xff8fb8, 0xffd1e3, 0xd8ccff],
   });
   burst.setDepth(FX_DEPTH);
-  burst.explode(32, cat.x, cat.y);
+  burst.explode(profileOf(scene).count(32), cat.x, cat.y);
   scene.time.delayedCall(2500, () => burst.destroy());
   cat.sniff();
   scene.time.delayedCall(560, () => {
@@ -102,7 +113,7 @@ function petals({ scene, cat }: ComboFxContext): void {
 function royalPose({ scene, cat }: ComboFxContext): void {
   const confetti = scene.add.particles(0, 0, TextureKeys.Confetti, {
     x: { min: MIRROR.left, max: MIRROR.right }, y: -10, speedX: { min: -40, max: 40 }, speedY: { min: 60, max: 140 }, gravityY: 120,
-    lifespan: 3200, frequency: 30, quantity: 1, rotate: { min: 0, max: 360 }, scaleX: { start: 1, end: 0.2 }, tint: [0xffe27a, 0xfff0a8, 0xf5d86a],
+    lifespan: 3200, frequency: profileOf(scene).every(30), quantity: 1, rotate: { min: 0, max: 360 * profileOf(scene).spin }, scaleX: { start: 1, end: 0.2 }, tint: [0xffe27a, 0xfff0a8, 0xf5d86a],
   });
   shortLived(scene, confetti, 1800, 3300);
   cat.raiseChin(1100);
@@ -112,11 +123,12 @@ function royalPose({ scene, cat }: ComboFxContext): void {
 function heartbeat({ scene, cat, hearts }: ComboFxContext): void {
   cat.heartbeat();
   const from = cat.getAnchorWorld('torso');
+  const p = profileOf(scene);
   const big = scene.add.image(from.x + 120, from.y - 60, TextureKeys.Heart).setDepth(FX_DEPTH).setScale(0.3);
   scene.tweens.add({
-    targets: big, y: from.y - 190, scale: 3, duration: 650, ease: 'Back.easeOut',
+    targets: big, y: from.y - 190, scale: 3, duration: 650, ease: p.ease('Back.easeOut'),
     onComplete: () => {
-      hearts.explode(26, big.x, big.y);
+      hearts.explode(p.count(26), big.x, big.y);
       scene.tweens.add({ targets: big, scale: 4.2, alpha: 0, duration: 200, onComplete: () => big.destroy() });
     },
   });
@@ -129,17 +141,26 @@ function rainbowArc({ scene, cat, rainbow }: ComboFxContext): void {
   const cx = cat.x;
   const cy = 540;
   const turn = { p: 0 };
-  rainbow.setAlpha(1);
-  scene.tweens.add({
-    targets: turn, p: 1, duration: 700, ease: 'Sine.easeOut',
-    onUpdate: () => {
-      rainbow.clear();
-      BANDS.forEach((color, i) => {
-        rainbow.lineStyle(22, color, 0.95).beginPath().arc(cx, cy, 380 - i * 21, Math.PI, Math.PI + turn.p * Math.PI, false).strokePath();
-      });
-    },
-    onComplete: () => scene.tweens.add({ targets: rainbow, alpha: 0, delay: 1000, duration: 600, onComplete: () => rainbow.clear() }),
-  });
+  const draw = (progress: number) => {
+    rainbow.clear();
+    BANDS.forEach((color, i) => {
+      rainbow.lineStyle(22, color, 0.95).beginPath().arc(cx, cy, 380 - i * 21, Math.PI, Math.PI + progress * Math.PI, false).strokePath();
+    });
+  };
+  if (profileOf(scene).reduced) {
+    // Reduced motion: no sweep. The whole rainbow fades in softly, stays and fades out.
+    draw(1);
+    rainbow.setAlpha(0);
+    scene.tweens.add({ targets: rainbow, alpha: 1, duration: 500, ease: 'Sine.easeOut' });
+    scene.tweens.add({ targets: rainbow, alpha: 0, delay: 1500, duration: 600, onComplete: () => rainbow.clear() });
+  } else {
+    rainbow.setAlpha(1);
+    scene.tweens.add({
+      targets: turn, p: 1, duration: 700, ease: 'Sine.easeOut',
+      onUpdate: () => draw(turn.p),
+      onComplete: () => scene.tweens.add({ targets: rainbow, alpha: 0, delay: 1000, duration: 600, onComplete: () => rainbow.clear() }),
+    });
+  }
   cat.sway();
   getAudio(scene).play(SfxKeys.Purr, { volume: 0.9 });
 }

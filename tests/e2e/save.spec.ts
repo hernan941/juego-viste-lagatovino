@@ -23,7 +23,7 @@ test.describe('saving (ADR 0004)', () => {
   // 'after a reload the cat, the name, the outfit and the mute come back' is replaced by the test below, which checks all of that
   // and the secrets in a single reload (same flow through the real Title and CatSelect, strictly more assertions).
 
-  test('one reload brings back everything together: cat, name, outfit, mute and secrets', async ({ page }) => {
+  test('one reload brings back everything together: cat, name, outfit, mute, motion and secrets', async ({ page }) => {
     const combo = combos[0];
     const reward = byId(combo.rewardItemId);
     const pieces = SLOT_ORDER.filter((slot) => comboOutfit(combo, all)![slot]).map((slot) => byId(comboOutfit(combo, all)![slot]!));
@@ -38,13 +38,17 @@ test.describe('saving (ADR 0004)', () => {
     await page.waitForFunction(() => window.__VISTE__?.dressUp?.gift === null && window.__VISTE__.dressUp.secrets.count === 1, undefined, { timeout: 15_000 });
     await clickButton(page, 'mute');
     await page.waitForFunction(() => window.__VISTE__?.muted === true);
+    // ... and calm the motion with the button (ADR 0013): it is a saved choice too.
+    await clickButton(page, 'motion');
+    await page.waitForFunction(() => window.__VISTE__?.motionPref === 'reduce' && window.__VISTE__.reducedMotion === true);
     const before = await page.evaluate(() => JSON.parse(JSON.stringify(window.__VISTE__?.saved)));
-    expect(before).toMatchObject({ catId: CAT.id, catName: NAME, muted: true, secrets: [combo.id] });
+    expect(before).toMatchObject({ catId: CAT.id, catName: NAME, muted: true, motion: 'reduce', secrets: [combo.id] });
 
     // A new visit (a full page load of "/", not the test shortcut): everything comes back through the real flow.
     await startGame(page);
     expect(await page.evaluate(() => JSON.parse(JSON.stringify(window.__VISTE__?.saved)))).toEqual(before);
     expect(await page.evaluate(() => window.__VISTE__?.muted)).toBe(true);
+    expect(await page.evaluate(() => [window.__VISTE__?.motionPref, window.__VISTE__?.reducedMotion])).toEqual(['reduce', true]);
     await page.waitForFunction(() => (window.__VISTE__?.ui?.info as { selected?: string | null } | undefined)?.selected != null);
     expect(await INFO(page)).toMatchObject({ selected: CAT.id, name: NAME });
     await clickButton(page, 'choose');

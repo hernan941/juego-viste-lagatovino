@@ -15,6 +15,7 @@ import { hex } from '../objects/ui';
 import { getSave } from '../plugins/SavePlugin';
 import { go } from '../systems/navigate';
 import { writeSession } from '../systems/sessionStore';
+import { profileOf } from '../systems/motion';
 import { enterKind, transitionIn, transitionTo } from '../systems/transitions';
 
 /** The ball of yarn rolls from the left to the right and unwinds as the assets load. */
@@ -51,7 +52,7 @@ export class Preloader extends Scene {
     this.label = this.add
       .text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 120, 'Cargando...', { fontFamily: FONT_FAMILY, fontSize: '40px', color: Palette.texto, fontStyle: '600' })
       .setOrigin(0.5);
-    this.tweens.add({ targets: this.label, scale: { from: 1, to: 1.06 }, duration: 600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    if (profileOf(this).loops) this.tweens.add({ targets: this.label, scale: { from: 1, to: 1.06 }, duration: 600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     this.drawYarn(0);
     this.load.on('progress', (progress: number) => {
       this.target = progress;
@@ -77,7 +78,24 @@ export class Preloader extends Scene {
     return this.add.container(YARN.x0, YARN.y, [g]);
   }
 
+  /** Reduced motion (ADR 0013): the ball sits still and a progress bar shows how far the loading is. */
+  private drawBar(progress: number) {
+    const w = 440;
+    const h = 26;
+    const x = GAME_WIDTH / 2 - w / 2;
+    const y = YARN.y + 70;
+    this.ball.setPosition(GAME_WIDTH / 2, YARN.y - 20).setRotation(0).setScale(1);
+    this.thread.clear();
+    this.thread.fillStyle(hex('rosa200'), 1).fillRoundedRect(x, y, w, h, h / 2);
+    if (progress > 0.01) this.thread.fillStyle(hex('rosa400'), 1).fillRoundedRect(x, y, Math.max(h, w * progress), h, h / 2);
+    this.thread.lineStyle(5, hex('contorno'), 1).strokeRoundedRect(x, y, w, h, h / 2);
+  }
+
   private drawYarn(progress: number) {
+    if (profileOf(this).reduced) {
+      this.drawBar(progress);
+      return;
+    }
     const s = yarnState(progress, YARN);
     this.thread.clear();
     if (s.thread.length > 1) {

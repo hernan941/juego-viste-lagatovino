@@ -58,6 +58,8 @@ export const ObjectEvents = {
   ButtonClick: 'button-click',
   /** MuteButton: (muted: boolean) after toggling */
   MuteToggle: 'mute-toggle',
+  /** MotionButton: (reduced: boolean) after toggling */
+  MotionToggle: 'motion-toggle',
 } as const;
 
 export const RegistryKeys = {
@@ -68,6 +70,8 @@ export const RegistryKeys = {
   Catalog: 'catalog',
   /** Validated cat template anchors, set by the Preloader. */
   Anchors: 'anchors',
+  /** Effective reduced motion (boolean), written by the MotionPlugin (ADR 0013). Scenes only read it. */
+  ReducedMotion: 'reducedMotion',
 } as const;
 
 /** Textures generated in code (particles). */
@@ -83,6 +87,7 @@ export const TextureKeys = {
 export const PluginKeys = {
   Audio: 'AudioPlugin',
   Save: 'SavePlugin',
+  Motion: 'MotionPlugin',
 } as const;
 
 /** Sound effect keys (docs/art-direction.md section 9). Files: public/assets/audio/<key>.{ogg,mp3}. */

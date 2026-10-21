@@ -6,6 +6,8 @@ import { blinkCount, lookOffset, nextBlinkDelay } from '../domain/idle';
 import { grabPoint, hitsAlpha } from '../domain/pixelHit';
 import { slotZIndex, hitBoxForSlot, anchorForSlot } from '../domain/slots';
 import { TAIL_FLICK_STEPS, TAIL_IDLE, tailPivot } from '../domain/tail';
+import { profileOf } from '../systems/motion';
+import { RegistryKeys } from '../constants';
 import { alphaMapOf } from './alphaMap';
 import type { AnchorName, AnchorsDef, CatDef, ClothingDef, Point, Rect } from '../domain/types';
 
@@ -33,6 +35,9 @@ export class Cat extends Phaser.GameObjects.Container {
   private readonly rig: Phaser.GameObjects.Container;
   private readonly breath: Phaser.GameObjects.Container;
   private readonly face: Phaser.GameObjects.Image;
+  private readonly fur: Phaser.GameObjects.Image;
+  private breathTween?: Phaser.Tweens.Tween;
+  private tintTimer?: Phaser.Time.TimerEvent;
   private readonly tail: Phaser.GameObjects.Image;
   private tailTween?: Phaser.Tweens.Tween | Phaser.Tweens.TweenChain;
   private readonly layers = new Map<string, Layer>();
@@ -54,13 +59,15 @@ export class Cat extends Phaser.GameObjects.Container {
     this.add(this.rig);
 
     this.tail = this.createTail();
-    const body = this.canvasImage(def.texture).setDepth(-1);
+    this.fur = this.canvasImage(def.texture).setDepth(-1);
     this.face = this.canvasImage(faceKey('normal')).setDepth(FACE_DEPTH);
-    this.breath.add([this.tail, body, this.face]);
+    this.breath.add([this.tail, this.fur, this.face]);
     this.breath.sort('depth');
 
     scene.add.existing(this);
     this.startIdle();
+    // The idle follows the reduced motion setting live (ADR 0013).
+    scene.registry?.events.on(`changedata-${RegistryKeys.ReducedMotion}`, this.startIdle, this);
   }
 
   /** Image of a full 512 canvas texture, placed so that canvas (0,0) is at the top left of the cat. */
@@ -119,10 +126,17 @@ export class Cat extends Phaser.GameObjects.Container {
 
   // ---- Idle: breathing, sway, blinking -----------------------------------
 
+  /** (Re)starts the idle loops with the current motion profile: reduced motion keeps only blinking and a tiny, slow sway. */
   private startIdle(): void {
-    this.scene.tweens.add({ targets: this.breath, scaleY: { from: 0.98, to: 1.02 }, duration: 1500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    const p = profileOf(this.scene);
+    this.breathTween?.remove();
+    this.breathTween = undefined;
+    this.breath.setScale(1);
+    if (p.breathe) {
+      this.breathTween = this.scene.tweens.add({ targets: this.breath, scaleY: { from: 0.98, to: 1.02 }, duration: 1500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    }
     this.swayTail();
-    this.scheduleBlink();
+    if (!this.blinkTimer) this.scheduleBlink();
   }
 
   /**
@@ -131,10 +145,12 @@ export class Cat extends Phaser.GameObjects.Container {
    */
   private swayTail(fromCurrent = false): void {
     this.tailTween?.stop();
+    const p = profileOf(this.scene);
+    const angle = TAIL_IDLE.angle * p.tailSwing;
     // After a flick the tail already rests at -angle (TAIL_FLICK_STEPS), so it must not be reset: no jump.
-    if (!fromCurrent) this.tail.setAngle(-TAIL_IDLE.angle);
+    if (!fromCurrent) this.tail.setAngle(-angle);
     this.tailTween = this.scene.tweens.add({
-      targets: this.tail, angle: TAIL_IDLE.angle, duration: TAIL_IDLE.duration, yoyo: true, repeat: -1, ease: TAIL_IDLE.ease,
+      targets: this.tail, angle, duration: TAIL_IDLE.duration * p.slow, yoyo: true, repeat: -1, ease: TAIL_IDLE.ease,
     });
   }
 
@@ -162,7 +178,7 @@ export class Cat extends Phaser.GameObjects.Container {
     this.face.setTexture(faceKey(expression));
     const base = this.face.scaleX;
     this.faceTween?.remove();
-    this.face.setScale(base, base * 0.9);
+    this.face.setScale(base, base * (1 - 0.1 * profileOf(this.scene).squash));
     this.faceTween = this.scene.tweens.add({ targets: this.face, scaleY: base, duration: 80, ease: 'Sine.easeOut' });
   }
 
@@ -216,42 +232,48 @@ export class Cat extends Phaser.GameObjects.Container {
 
   /** Squash and stretch in 300 ms. */
   squash(): void {
+    const p = profileOf(this.scene);
+    const k = p.squash;
     this.scene.tweens.killTweensOf(this.rig);
     this.scene.tweens.chain({
       targets: this.rig,
       tweens: [
-        { scaleX: 1.14, scaleY: 0.84, duration: 90, ease: 'Quad.easeOut' },
-        { scaleX: 0.95, scaleY: 1.08, duration: 110, ease: 'Quad.easeInOut' },
-        { scaleX: 1, scaleY: 1, duration: 100, ease: 'Back.easeOut' },
+        { scaleX: 1 + 0.14 * k, scaleY: 1 - 0.16 * k, duration: 90, ease: 'Quad.easeOut' },
+        { scaleX: 1 - 0.05 * k, scaleY: 1 + 0.08 * k, duration: 110, ease: 'Quad.easeInOut' },
+        { scaleX: 1, scaleY: 1, duration: 100, ease: p.ease('Back.easeOut') },
       ],
     });
   }
 
   /** Two quick sniffs: the whole body shrinks a hair in height and comes back, twice (petals combo). */
   sniff(): void {
+    const p = profileOf(this.scene);
+    const down = 1 - 0.04 * p.squash;
     this.scene.tweens.killTweensOf(this.rig);
     this.scene.tweens.chain({
       targets: this.rig,
       tweens: [
-        { scaleY: 0.96, duration: 110, ease: 'Sine.easeOut' }, { scaleY: 1, duration: 110, ease: 'Sine.easeIn' },
-        { scaleY: 0.96, duration: 110, ease: 'Sine.easeOut' }, { scaleY: 1, duration: 130, ease: 'Back.easeOut' },
+        { scaleY: down, duration: 110, ease: 'Sine.easeOut' }, { scaleY: 1, duration: 110, ease: 'Sine.easeIn' },
+        { scaleY: down, duration: 110, ease: 'Sine.easeOut' }, { scaleY: 1, duration: 130, ease: p.ease('Back.easeOut') },
       ],
     });
   }
 
   /** A little jump (the sneeze). */
   hop(): void {
-    this.scene.tweens.add({ targets: this.rig, y: -26, duration: 120, yoyo: true, ease: 'Quad.easeOut' });
+    this.scene.tweens.add({ targets: this.rig, y: -26 * profileOf(this.scene).squash, duration: 120, yoyo: true, ease: 'Quad.easeOut' });
   }
 
   /** Chin up: tilts -4 degrees and grows 4 % taller in 400 ms, holds, then settles (royal combo). */
   raiseChin(holdMs: number): void {
+    const p = profileOf(this.scene);
+    const angle = -4 * p.shake;
     this.scene.tweens.killTweensOf(this.rig);
     this.scene.tweens.chain({
       targets: this.rig,
       tweens: [
-        { angle: -4, scaleY: 1.04, duration: 400, ease: 'Back.easeOut' },
-        { angle: -4, duration: holdMs },
+        { angle, scaleY: 1 + 0.04 * p.squash, duration: 400, ease: p.ease('Back.easeOut') },
+        { angle, duration: holdMs },
         { angle: 0, scaleY: 1, duration: 300, ease: 'Sine.easeInOut' },
       ],
     });
@@ -261,34 +283,54 @@ export class Cat extends Phaser.GameObjects.Container {
   sway(): void {
     this.scene.tweens.killTweensOf(this.rig);
     this.rig.setAngle(0);
+    if (profileOf(this.scene).shake === 0) return;
     this.scene.tweens.add({ targets: this.rig, angle: { from: -5, to: 5 }, duration: 330, yoyo: true, repeat: 2, ease: 'Sine.easeInOut', onComplete: () => this.rig.setAngle(0) });
   }
 
   /** Two heartbeats: scale 1, 1.06, 1, twice (in-love combo). */
   heartbeat(): void {
+    const p = profileOf(this.scene);
+    const big = 1 + 0.06 * p.squash;
     this.scene.tweens.killTweensOf(this.rig);
     this.scene.tweens.chain({
       targets: this.rig,
       tweens: [
-        { scaleX: 1.06, scaleY: 1.06, duration: 130, ease: 'Sine.easeOut' }, { scaleX: 1, scaleY: 1, duration: 170, ease: 'Sine.easeIn' },
-        { scaleX: 1.06, scaleY: 1.06, duration: 130, ease: 'Sine.easeOut' }, { scaleX: 1, scaleY: 1, duration: 220, ease: 'Back.easeOut' },
+        { scaleX: big, scaleY: big, duration: 130, ease: 'Sine.easeOut' }, { scaleX: 1, scaleY: 1, duration: 170, ease: 'Sine.easeIn' },
+        { scaleX: big, scaleY: big, duration: 130, ease: 'Sine.easeOut' }, { scaleX: 1, scaleY: 1, duration: 220, ease: p.ease('Back.easeOut') },
       ],
     });
   }
 
-  /** Quick side to side shake (when an item is taken off). */
+  /** Quick side to side shake (when an item is taken off). With reduced motion there is no shake: a soft tint says it instead. */
   shake(): void {
+    const p = profileOf(this.scene);
     this.scene.tweens.killTweensOf(this.rig);
     this.rig.setAngle(0);
-    this.scene.tweens.add({ targets: this.rig, angle: { from: -4, to: 4 }, duration: 55, yoyo: true, repeat: 3, ease: 'Sine.easeInOut', onComplete: () => this.rig.setAngle(0) });
+    if (p.shake === 0) {
+      this.tintPulse(0xffc2d9);
+      return;
+    }
+    this.scene.tweens.add({ targets: this.rig, angle: { from: -4 * p.shake, to: 4 * p.shake }, duration: 55, yoyo: true, repeat: 3, ease: 'Sine.easeInOut', onComplete: () => this.rig.setAngle(0) });
+  }
+
+  /** The fur takes a tint for a moment and goes back: the calm way to say "no" or "oh" (no movement). */
+  tintPulse(color: number, ms = 260): void {
+    this.tintTimer?.remove();
+    this.fur.setTint(color);
+    this.tail.setTint(color);
+    this.tintTimer = this.scene.time.delayedCall(ms, () => {
+      this.fur.clearTint();
+      this.tail.clearTint();
+    });
   }
 
   /** Tail whip when an item is dropped: snaps to ±8° and settles with Back.easeOut, then sways again. */
   tailFlick(): void {
     this.tailTween?.stop();
+    const p = profileOf(this.scene);
     this.tailTween = this.scene.tweens.chain({
       targets: this.tail,
-      tweens: TAIL_FLICK_STEPS.map((step) => ({ ...step })),
+      tweens: TAIL_FLICK_STEPS.map((step) => ({ ...step, angle: step.angle * p.tailSwing, ease: p.ease(step.ease) })),
       // The chain is finishing: forget it before swaying again so it is not removed twice.
       onComplete: () => {
         this.tailTween = undefined;
@@ -304,13 +346,14 @@ export class Cat extends Phaser.GameObjects.Container {
 
   /** Pop-in when the cat appears: 0.8 to 1.05 to 1 in 250 ms. */
   appear(): void {
+    const p = profileOf(this.scene);
     const s = this.scaleX;
-    this.setScale(s * 0.8).setAlpha(0);
+    this.setScale(s * (1 - 0.2 * p.squash)).setAlpha(0);
     this.scene.tweens.chain({
       targets: this,
       tweens: [
-        { scaleX: s * 1.05, scaleY: s * 1.05, alpha: 1, duration: 150, ease: 'Sine.easeOut' },
-        { scaleX: s, scaleY: s, duration: 100, ease: 'Back.easeOut' },
+        { scaleX: s * (1 + 0.05 * p.squash), scaleY: s * (1 + 0.05 * p.squash), alpha: 1, duration: 150, ease: 'Sine.easeOut' },
+        { scaleX: s, scaleY: s, duration: 100, ease: p.ease('Back.easeOut') },
       ],
     });
   }
@@ -349,9 +392,10 @@ export class Cat extends Phaser.GameObjects.Container {
   private createLayer(item: ClothingDef): Phaser.GameObjects.Image {
     const img = this.canvasImage(item.texture).setDepth(slotZIndex(item.slot));
     const finalScale = { x: img.scaleX, y: img.scaleY };
-    img.setAlpha(0).setScale(finalScale.x * 0.9, finalScale.y * 0.9);
+    const p = profileOf(this.scene);
+    img.setAlpha(0).setScale(finalScale.x * (1 - 0.1 * p.squash), finalScale.y * (1 - 0.1 * p.squash));
     this.breath.add(img);
-    this.scene.tweens.add({ targets: img, alpha: 1, scaleX: finalScale.x, scaleY: finalScale.y, duration: 250, ease: 'Back.easeOut' });
+    this.scene.tweens.add({ targets: img, alpha: 1, scaleX: finalScale.x, scaleY: finalScale.y, duration: 250, ease: p.ease('Back.easeOut') });
     // Hit area: the visible pixels of the item (plus a small reach), so the topmost item under the pointer is the one
     // that is dragged: an accessory never hides the sweater and items outside the torso box can be grabbed.
     const alpha = alphaMapOf(this.scene, item.texture);
@@ -385,8 +429,11 @@ export class Cat extends Phaser.GameObjects.Container {
   }
 
   destroy(fromScene?: boolean): void {
+    this.scene?.registry?.events.off(`changedata-${RegistryKeys.ReducedMotion}`, this.startIdle, this);
     this.blinkTimer?.remove();
     this.revertTimer?.remove();
+    this.tintTimer?.remove();
+    this.breathTween?.remove();
     this.tailTween?.stop();
     this.scene?.tweens.killTweensOf([this, this.rig, this.breath, this.face, this.tail, ...[...this.layers.values()].map((l) => l.image)]);
     this.removeAllListeners();

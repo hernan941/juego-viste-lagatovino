@@ -8,6 +8,7 @@ import { DressUp } from './scenes/DressUp';
 import { Showcase } from './scenes/Showcase';
 import { AudioPlugin } from './plugins/AudioPlugin';
 import { SavePlugin } from './plugins/SavePlugin';
+import { MotionPlugin } from './plugins/MotionPlugin';
 import { GAME_HEIGHT, GAME_WIDTH, Palette, PluginKeys } from './constants';
 import { installE2EHook } from './e2eHook';
 
@@ -26,6 +27,7 @@ const config: Phaser.Types.Core.GameConfig = {
     global: [
       { key: PluginKeys.Audio, plugin: AudioPlugin, start: true },
       { key: PluginKeys.Save, plugin: SavePlugin, start: true },
+      { key: PluginKeys.Motion, plugin: MotionPlugin, start: true },
     ],
   },
   scene: [Boot, Preloader, Title, CatSelect, ShopEntrance, DressUp, Showcase],

@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { ObjectEvents, Palette, SfxKeys } from '../constants';
 import type { Point } from '../domain/types';
 import { getAudio } from '../plugins/AudioPlugin';
+import { profileOf } from '../systems/motion';
 import { addHover, addPress, hex, makeText, type ScaleTo } from './ui';
 
 export interface TabDef {
@@ -41,8 +42,9 @@ class Tab extends Phaser.GameObjects.Container {
     this.bg.fillStyle(active ? hex('rosa400') : hex('rosa200'), 1);
     this.bg.fillRoundedRect(-TAB_SIZE / 2, -TAB_SIZE / 2, TAB_SIZE, TAB_SIZE, 20);
     if (active && !silent) {
-      this.scaleView(1.18, 90);
-      this.scene.time.delayedCall(90, () => this.scene && this.scaleView(1, 160, 'Back.easeOut'));
+      const p = profileOf(this.scene);
+      this.scaleView(1 + 0.18 * p.squash, 90);
+      this.scene.time.delayedCall(90, () => this.scene && this.scaleView(1, 160, p.ease('Back.easeOut')));
     }
   }
 }
@@ -99,7 +101,7 @@ export class Tabs extends Phaser.GameObjects.Container {
     this.caption.setText(label);
     this.scene.tweens.killTweensOf(this.caption);
     this.caption.setAlpha(0).setY(TAB_SIZE + 36);
-    this.scene.tweens.add({ targets: this.caption, alpha: 1, y: TAB_SIZE + 30, duration: 160, ease: 'Back.easeOut' });
+    this.scene.tweens.add({ targets: this.caption, alpha: 1, y: TAB_SIZE + 30, duration: 160, ease: profileOf(this.scene).ease('Back.easeOut') });
   }
 
   /** Tab centers in game coordinates, by id. */

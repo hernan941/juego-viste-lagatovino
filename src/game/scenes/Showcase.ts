@@ -11,6 +11,7 @@ import { Button } from '../objects/Button';
 import { Cat } from '../objects/Cat';
 import { takePhoto } from '../objects/photo';
 import { MuteButton } from '../objects/MuteButton';
+import { MotionButton } from '../objects/MotionButton';
 import { SecretCounter } from '../objects/SecretCounter';
 import { getSave } from '../plugins/SavePlugin';
 import { drawRoom } from '../objects/room';
@@ -19,6 +20,7 @@ import { getAudio } from '../plugins/AudioPlugin';
 import { downloadDataUrl } from '../systems/download';
 import { go } from '../systems/navigate';
 import { readSession } from '../systems/sessionStore';
+import { profileOf } from '../systems/motion';
 import { enterKind, transitionIn } from '../systems/transitions';
 
 const CAT_X = GAME_WIDTH / 2;
@@ -45,6 +47,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
   private keep!: Button;
   private change!: Button;
   private mute!: MuteButton;
+  private motion!: MotionButton;
   private counter!: SecretCounter;
   private hearts!: Phaser.GameObjects.Particles.ParticleEmitter;
   private pose: Expression = 'feliz';
@@ -79,7 +82,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
     // A warm glow behind the cat that breathes.
     const glow = this.add.graphics().setDepth(1);
     glow.fillStyle(hex('mantequilla'), 0.5).fillEllipse(CAT_X, 380, 430, 520);
-    this.tweens.add({ targets: glow, alpha: { from: 0.45, to: 1 }, duration: 1100, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    if (profileOf(this).loops) this.tweens.add({ targets: glow, alpha: { from: 0.45, to: 1 }, duration: 1100, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
 
     this.cat = new Cat(this, CAT_X, CAT_FEET_Y, def, anchors, CAT_SIZE).setDepth(5);
     this.cat.setOutfit(getLayers(session.outfit, catalog.clothes));
@@ -89,7 +92,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
     // Sparkles drift around the cat, and hearts pop up when it is in love.
     this.add
       .particles(CAT_X, 340, TextureKeys.Sparkle, {
-        x: { min: -230, max: 230 }, y: { min: -200, max: 250 }, lifespan: 1100, frequency: 110, quantity: 1,
+        x: { min: -230, max: 230 }, y: { min: -200, max: 250 }, lifespan: 1100, frequency: profileOf(this).every(110), quantity: 1,
         scale: { start: 1.3, end: 0 }, alpha: { start: 1, end: 0 }, speed: 18,
       })
       .setDepth(8);
@@ -107,6 +110,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
     this.photo = new Button(this, GAME_WIDTH / 2, 646, 'Descargar foto', { width: 330, height: 84, fontSize: 34, tone: 'menta' }).setDepth(20);
     this.photo.on(ObjectEvents.ButtonClick, () => void this.snap());
     this.mute = new MuteButton(this, GAME_WIDTH - 56, 56).setDepth(50);
+    this.motion = new MotionButton(this, GAME_WIDTH - 128, 56).setDepth(50);
     this.counter = new SecretCounter(this, 140, 50).setDepth(50);
     this.counter.setCount(getSave(this).secrets.length, catalog.combos.length);
 
@@ -123,6 +127,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
       this.photo?.destroy();
       this.change?.destroy();
       this.mute?.destroy();
+      this.motion?.destroy();
       this.counter?.destroy();
       this.tweens.killAll();
     });
@@ -141,8 +146,8 @@ export class Showcase extends Phaser.Scene implements E2EUi {
     g.fillStyle(hex('rosa400'), 1).fillRoundedRect(-width / 2, -40, width, 80, 40);
     g.fillStyle(0xffffff, 0.55).fillRoundedRect(-width / 2 + 28, -31, width * 0.3, 9, 4);
     const plaque = this.add.container(CAT_X, -90, [g, text]).setDepth(30);
-    this.tweens.add({ targets: plaque, y: 76, duration: 700, delay: 200, ease: 'Bounce.easeOut' });
-    this.tweens.add({ targets: plaque, angle: { from: -1, to: 1 }, duration: 1600, delay: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    this.tweens.add({ targets: plaque, y: 76, duration: 700, delay: 200, ease: profileOf(this).ease('Bounce.easeOut') });
+    if (profileOf(this).loops) this.tweens.add({ targets: plaque, angle: { from: -1, to: 1 }, duration: 1600, delay: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
   }
 
   /** Switches the pose with a little hop; love also sends hearts up. */
@@ -152,7 +157,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
     this.cat.hold(pose);
     this.cat.squash();
     if (pose === 'amor') {
-      this.hearts.explode(8, CAT_X, 250);
+      this.hearts.explode(profileOf(this).count(8), CAT_X, 250);
       getAudio(this).play(SfxKeys.Purr, { volume: 0.7 });
     }
   }
@@ -177,14 +182,16 @@ export class Showcase extends Phaser.Scene implements E2EUi {
     this.photoBusy = false;
   }
 
-  /** A camera flash: white that fades in fast and out softly. */
+  /** A camera flash: white that fades in fast and out softly. With reduced motion, a soft cream fade (alpha at most 0.3). */
   private flash() {
-    const veil = this.add.rectangle(GAME_WIDTH / 2, 360, GAME_WIDTH, 720, 0xffffff, 0).setDepth(90);
+    const f = profileOf(this).flash;
+    const slow = profileOf(this).reduced;
+    const veil = this.add.rectangle(GAME_WIDTH / 2, 360, GAME_WIDTH, 720, f.color, 0).setDepth(90);
     this.tweens.chain({
       targets: veil,
       tweens: [
-        { alpha: 0.8, duration: 70, ease: 'Sine.easeOut' },
-        { alpha: 0, duration: 420, ease: 'Sine.easeIn', onComplete: () => veil.destroy() },
+        { alpha: f.alpha, duration: slow ? 160 : 70, ease: 'Sine.easeOut' },
+        { alpha: 0, duration: slow ? 500 : 420, ease: 'Sine.easeIn', onComplete: () => veil.destroy() },
       ],
     });
   }
@@ -203,7 +210,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
     this.tweens.chain({
       targets: bubble,
       tweens: [
-        { scale: 1, alpha: 1, duration: 260, ease: 'Back.easeOut' },
+        { scale: 1, alpha: 1, duration: 260, ease: profileOf(this).ease('Back.easeOut') },
         { y: 556, duration: 1100, ease: 'Sine.easeInOut' },
         { alpha: 0, y: 530, duration: 300, ease: 'Sine.easeIn', onComplete: () => bubble.destroy() },
       ],
@@ -219,7 +226,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
   getE2EUi(): UiState {
     return {
       ready: this.ready && !this.leaving,
-      buttons: { keep: this.keep.getCenter(), photo: this.photo.getCenter(), change: this.change.getCenter(), mute: this.mute.getCenter() },
+      buttons: { keep: this.keep.getCenter(), photo: this.photo.getCenter(), change: this.change.getCenter(), mute: this.mute.getCenter(), motion: this.motion.getCenter() },
       points: {},
       info: { title: this.title, pose: this.pose, layers: this.cat.wornIds, photos: this.photos, lastPhoto: this.lastPhoto, photoBusy: this.photoBusy, secrets: this.counter.text },
     };

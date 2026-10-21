@@ -8,10 +8,12 @@ import type { E2EUi, UiState } from '../e2eHook';
 import { Button } from '../objects/Button';
 import { CARD_H, CARD_W, CatCard } from '../objects/CatCard';
 import { MuteButton } from '../objects/MuteButton';
+import { MotionButton } from '../objects/MotionButton';
 import { drawPanel, hex } from '../objects/ui';
 import { getAudio } from '../plugins/AudioPlugin';
 import { go } from '../systems/navigate';
 import { readSession, writeSession } from '../systems/sessionStore';
+import { profileOf } from '../systems/motion';
 import { enterKind, transitionIn } from '../systems/transitions';
 
 const COLUMNS = 6;
@@ -35,6 +37,7 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
   private ready = false;
   private choose!: Button;
   private mute!: MuteButton;
+  private motion!: MotionButton;
   private hint!: Phaser.GameObjects.Text;
   private bar!: Phaser.GameObjects.Container;
   private box!: Phaser.GameObjects.Graphics;
@@ -84,6 +87,7 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
 
     this.createBar();
     this.mute = new MuteButton(this, GAME_WIDTH - 56, 56).setDepth(50);
+    this.motion = new MotionButton(this, GAME_WIDTH - 128, 56).setDepth(50);
 
     // Coming back from the fitting room keeps the cat and the name that were chosen.
     const session = readSession(this.registry);
@@ -99,6 +103,7 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
       for (const c of this.cards) c.destroy();
       this.choose?.destroy();
       this.mute?.destroy();
+      this.motion?.destroy();
       this.tweens.killAll();
     });
     transitionIn(this, this.enter);
@@ -124,7 +129,7 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
     this.hint = this.add
       .text(GAME_WIDTH / 2, BAR.y + BAR.height / 2, 'Toca al gatito que más te guste', { fontFamily: FONT_FAMILY, fontSize: '36px', color: Palette.texto, fontStyle: '600' })
       .setOrigin(0.5);
-    this.tweens.add({ targets: this.hint, y: this.hint.y - 6, duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    if (profileOf(this).loops) this.tweens.add({ targets: this.hint, y: this.hint.y - 6, duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
 
     const label = this.add.text(BAR.x + 40, INPUT.y, 'Su nombre:', { fontFamily: FONT_FAMILY, fontSize: '26px', color: Palette.rosa600, fontStyle: '600' }).setOrigin(0, 0.5);
     this.box = this.add.graphics();
@@ -169,7 +174,7 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
     if (this.barShown) return;
     this.barShown = true;
     this.tweens.add({ targets: this.hint, alpha: 0, duration: 150 });
-    this.tweens.add({ targets: this.bar, alpha: 1, y: 0, duration: 300, ease: 'Back.easeOut', onComplete: () => { this.choose.input!.enabled = true; } });
+    this.tweens.add({ targets: this.bar, alpha: 1, y: 0, duration: 300, ease: profileOf(this).ease('Back.easeOut'), onComplete: () => { this.choose.input!.enabled = true; } });
   }
 
   private refreshName() {
@@ -195,15 +200,22 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
     getAudio(this).play(SfxKeys.Key);
     this.refreshName();
     this.tweens.killTweensOf(this.nameText);
-    this.nameText.setScale(1.08);
-    this.tweens.add({ targets: this.nameText, scale: 1, duration: 120, ease: 'Back.easeOut' });
+    this.nameText.setScale(1 + 0.08 * profileOf(this).squash);
+    this.tweens.add({ targets: this.nameText, scale: 1, duration: 120, ease: profileOf(this).ease('Back.easeOut') });
     this.tweens.add({ targets: this.warning, alpha: 0, duration: 100 });
   }
 
   private shakeBox() {
     this.tweens.killTweensOf(this.field);
     this.field.x = 0;
-    this.tweens.add({ targets: this.field, x: { from: -7, to: 7 }, duration: 50, yoyo: true, repeat: 2, onComplete: () => { this.field.x = 0; } });
+    const k = profileOf(this).shake;
+    if (k === 0) {
+      // Reduced motion: no shake, the box changes color for a moment instead.
+      this.drawBox(true);
+      this.time.delayedCall(400, () => this.scene.isActive() && this.drawBox(false));
+      return;
+    }
+    this.tweens.add({ targets: this.field, x: { from: -7 * k, to: 7 * k }, duration: 50, yoyo: true, repeat: 2, onComplete: () => { this.field.x = 0; } });
   }
 
   private confirm() {
@@ -225,9 +237,9 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
     const cats = Object.fromEntries(this.cards.map((c) => [c.def.id, c.getCenter()]));
     return {
       ready: this.ready,
-      buttons: { ...(this.barShown ? { choose: this.choose.getCenter() } : {}), mute: this.mute.getCenter() },
+      buttons: { ...(this.barShown ? { choose: this.choose.getCenter() } : {}), mute: this.mute.getCenter(), motion: this.motion.getCenter() },
       points: { ...cats, nameInput: { x: INPUT.x, y: INPUT.y } },
-      info: { selected: this.selected?.id ?? null, name: this.name, nameIsDefault: this.nameIsDefault, chooseVisible: this.barShown && this.bar.alpha > 0.99, warning: this.warning.alpha > 0.5 },
+      info: { enter: this.enter, selected: this.selected?.id ?? null, name: this.name, nameIsDefault: this.nameIsDefault, chooseVisible: this.barShown && this.bar.alpha > 0.99, warning: this.warning.alpha > 0.5 },
     };
   }
 }

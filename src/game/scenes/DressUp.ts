@@ -13,6 +13,7 @@ import type { AnchorsDef, Category, ClothingDef, ComboDef, Outfit, Point, Rect }
 import type { DressUpE2EState, E2EScene, E2EUi, UiState } from '../e2eHook';
 import { Button } from '../objects/Button';
 import { MuteButton } from '../objects/MuteButton';
+import { MotionButton } from '../objects/MotionButton';
 import { getAudio } from '../plugins/AudioPlugin';
 import { getSave } from '../plugins/SavePlugin';
 import { go } from '../systems/navigate';
@@ -30,6 +31,7 @@ import { Tabs } from '../objects/Tabs';
 import { tabIconKey } from '../objects/tabIcons';
 import { drawRoom } from '../objects/room';
 import { drawPanel, hex, makeText } from '../objects/ui';
+import { profileOf } from '../systems/motion';
 import { enterKind, transitionIn } from '../systems/transitions';
 
 const CAT_X = 700;
@@ -81,6 +83,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
   private doneButton!: Button;
   private changeButton!: Button;
   private mute!: MuteButton;
+  private motion!: MotionButton;
   private leaving = false;
   private lastDragSound = 0;
   // F8: secrets and gifts.
@@ -160,7 +163,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.hearts = this.add
       .particles(0, 0, TextureKeys.Heart, {
         emitting: false, speed: { min: 120, max: 320 }, angle: { min: -160, max: -20 }, gravityY: 420,
-        lifespan: { min: 700, max: 1100 }, scale: { start: 1.4, end: 0.3 }, alpha: { start: 1, end: 0 }, rotate: { min: -40, max: 40 },
+        lifespan: { min: 700, max: 1100 }, scale: { start: 1.4, end: 0.3 }, alpha: { start: 1, end: 0 }, rotate: { min: -40 * profileOf(this).spin, max: 40 * profileOf(this).spin },
       })
       .setDepth(4000);
     this.sparkles = this.add
@@ -178,6 +181,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.changeButton = new Button(this, 1093, 652, 'Cambiar de gato', { width: 220, height: 62, fontSize: 24, tone: 'lavanda' });
     this.changeButton.on(ObjectEvents.ButtonClick, () => this.leave('change'));
     this.mute = new MuteButton(this, 1240, 686).setScale(0.8);
+    this.motion = new MotionButton(this, 1240, 636).setScale(0.8);
 
     this.tabs.select(categories[0], true);
     this.showCategory(categories[0]);
@@ -198,8 +202,8 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
   private createNameSign() {
     const sign = new NameSign(this, CAT_X, -60, this.catName).setDepth(30);
     this.sign = sign;
-    this.tweens.add({ targets: sign, y: 92, duration: 500, delay: 250, ease: 'Back.easeOut' });
-    this.tweens.add({ targets: sign, angle: { from: -1.5, to: 1.5 }, duration: 1800, delay: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    this.tweens.add({ targets: sign, y: 92, duration: 500, delay: 250, ease: profileOf(this).ease('Back.easeOut') });
+    if (profileOf(this).loops) this.tweens.add({ targets: sign, angle: { from: -1.5, to: 1.5 }, duration: 1800, delay: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
   }
 
   private leave(action: 'finish' | 'change') {
@@ -223,6 +227,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.doneButton?.destroy();
     this.changeButton?.destroy();
     this.mute?.destroy();
+    this.motion?.destroy();
     this.tweens.killAll();
     this.gift?.destroy();
     this.gift = null;
@@ -276,8 +281,9 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     const home = ghostFit(bounds, src.width, src.height, GHOST_HOME_SIZE);
     const ghost = this.add.image(pointer.x, pointer.y, item.texture).setOrigin(fit.origin.x, fit.origin.y).setScale(fit.scale).setDepth(5000);
     // Taking an item: it grows and tilts.
-    this.tweens.add({ targets: ghost, scale: fit.scale * 1.15, angle: 8, duration: 150, ease: 'Back.easeOut' });
-    this.drag = { item, fromEquipped, cell, ghost, ghostScale: fit.scale * 1.15, homeScale: home.scale, target: { x: pointer.x, y: pointer.y }, overZone: false, lastLook: 0 };
+    const p = profileOf(this);
+    this.tweens.add({ targets: ghost, scale: fit.scale * (1 + 0.15 * p.squash), angle: 8 * p.shake, duration: 150, ease: p.ease('Back.easeOut') });
+    this.drag = { item, fromEquipped, cell, ghost, ghostScale: fit.scale * (1 + 0.15 * p.squash), homeScale: home.scale, target: { x: pointer.x, y: pointer.y }, overZone: false, lastLook: 0 };
     getAudio(this).play(SfxKeys.Grab);
     cell?.setLifted(true);
     if (fromEquipped) this.cat.setLayerLifted(item, true);
@@ -343,7 +349,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
       targets: preview,
       tweens: [
         { alpha: 1, scaleX: s * 1.04, scaleY: s * 1.04, duration: 100, ease: 'Sine.easeOut' },
-        { scaleX: s, scaleY: s, duration: 160, ease: 'Back.easeOut' },
+        { scaleX: s, scaleY: s, duration: 160, ease: profileOf(this).ease('Back.easeOut') },
       ],
       onComplete: () => preview.destroy(),
     });
@@ -453,7 +459,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
       this.time.delayedCall(380, () => cell?.active && cell.celebrate());
       this.counter.setCount(this.reveal.shownCount(this.unlocked), this.catalog.combos.length, true);
       this.traceSecrets();
-      if (home) this.sparkles.explode(14, home.x, home.y);
+      if (home) this.sparkles.explode(profileOf(this).count(14), home.x, home.y);
       getAudio(this).play(SfxKeys.Return, { rate: 1.3 });
       this.time.delayedCall(250, () => this.nextGift());
     };
@@ -475,7 +481,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.almost = now;
     if (!fresh) return;
     const head = this.cat.getAnchorWorld('head');
-    this.sparkles.explode(6, head.x + 90, head.y - 30);
+    this.sparkles.explode(profileOf(this).count(6), head.x + 90, head.y - 30);
     showBubble(this, head.x + 110, head.y - 90, '¡Casi...!', 'rosa50');
   }
 
@@ -505,7 +511,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
       (cell ?? this.grid.getCell(item.id))?.setLifted(false);
     };
     if (home) {
-      this.tweens.add({ targets: ghost, x: home.x, y: home.y, scale: homeScale, angle: 0, duration: 250, ease: 'Back.easeOut', onComplete: done });
+      this.tweens.add({ targets: ghost, x: home.x, y: home.y, scale: homeScale, angle: 0, duration: 250, ease: profileOf(this).ease('Back.easeOut'), onComplete: done });
     } else {
       this.tweens.add({ targets: ghost, alpha: 0, scale: ghost.scale * 0.6, duration: 200, onComplete: done });
     }
@@ -519,8 +525,8 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.tweens.chain({
       targets: this.hint,
       tweens: [
-        { scale: 1.15, duration: 110, ease: 'Sine.easeOut' },
-        { scale: 1, duration: 220, ease: 'Back.easeOut' },
+        { scale: 1 + 0.15 * profileOf(this).squash, duration: 110, ease: 'Sine.easeOut' },
+        { scale: 1, duration: 220, ease: profileOf(this).ease('Back.easeOut') },
         { alpha: 0.7, duration: 500 },
       ],
     });
@@ -546,8 +552,9 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
 
   /** Hearts and sparkles where the item lands; combos get a bigger burst. */
   private celebrate(at: Point, power: number) {
-    this.hearts.explode(7 * power, at.x, at.y);
-    this.sparkles.explode(9 * power, at.x, at.y);
+    const p = profileOf(this);
+    this.hearts.explode(p.count(7 * power), at.x, at.y);
+    this.sparkles.explode(p.count(9 * power), at.x, at.y);
   }
 
   // ---- Test hook (ADR 0012) --------------------------------------------------
@@ -559,7 +566,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
   getE2EUi(): UiState {
     return {
       ready: this.cat.alpha > 0.99 && !this.leaving,
-      buttons: { finish: this.doneButton.getCenter(), change: this.changeButton.getCenter(), mute: this.mute.getCenter() },
+      buttons: { finish: this.doneButton.getCenter(), change: this.changeButton.getCenter(), mute: this.mute.getCenter(), motion: this.motion.getCenter() },
       points: {},
       info: { catName: this.catName },
     };

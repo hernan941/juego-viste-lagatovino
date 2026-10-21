@@ -4,6 +4,8 @@ import type { Outfit, Point, Rect, SaveData } from './domain/types';
 import { GAME_WIDTH, PluginKeys, RegistryKeys, SceneKeys, SfxKeys } from './constants';
 import type { AudioPlugin } from './plugins/AudioPlugin';
 import type { SavePlugin } from './plugins/SavePlugin';
+import type { MotionPlugin } from './plugins/MotionPlugin';
+import type { MotionPref } from './domain/types';
 import { SAVE_KEY } from './plugins/saveCore';
 import type { Session } from './domain/session';
 import { chooseCat, emptySession } from './domain/session';
@@ -107,6 +109,12 @@ export interface VisteHook {
   readonly saved: SaveData;
   /** Audio mute state (persisted in the save). */
   readonly muted: boolean;
+  /** ADR 0013: the effective reduced motion, as the registry says (preference over the browser). */
+  readonly reducedMotion: boolean;
+  /** ADR 0013: the saved preference ('auto' follows the browser). */
+  readonly motionPref: MotionPref;
+  /** Test-only action: sets the motion preference through the MotionPlugin, as the button does. */
+  setMotionPref(pref: MotionPref): void;
   /** Sound keys present in the audio cache, to check that the Preloader loaded them. */
   readonly loadedSounds: string[];
   /** Every sound that the game asked the AudioPlugin to play, in order (also when it was muted or limited). `random(a,b,c)` is a playRandom. */
@@ -125,7 +133,7 @@ export interface VisteHook {
   readonly frames: number;
   /** Test-only action: stops (or restarts) the game loop, so a page that is not being tested does not use the CPU. */
   park(parked: boolean): void;
-  /** Test-only action: forgets the saved progress (cat, name, outfit, secrets), unmutes and empties the sound log, as a first visit would. */
+  /** Test-only action: forgets the saved progress (cat, name, outfit, secrets), unmutes, puts the motion back on 'auto' and empties the sound log, as a first visit would. */
   reset(): void;
 }
 
@@ -158,6 +166,7 @@ export function installE2EHook(game: Game): void {
     return (p) => ({ x: r.left + p.x * f, y: r.top + p.y * f });
   };
   const audio = () => game.plugins.get(PluginKeys.Audio) as AudioPlugin;
+  const motion = () => game.plugins.get(PluginKeys.Motion) as MotionPlugin;
   const sounds: string[] = [];
   const plugin = audio();
   const play = plugin.play.bind(plugin);
@@ -180,6 +189,15 @@ export function installE2EHook(game: Game): void {
     get muted(): boolean {
       return audio().muted;
     },
+    get reducedMotion(): boolean {
+      return game.registry.get(RegistryKeys.ReducedMotion) === true;
+    },
+    get motionPref(): MotionPref {
+      return motion().pref;
+    },
+    setMotionPref(pref: MotionPref): void {
+      motion().setPref(pref);
+    },
     get loadedSounds(): string[] {
       return Object.values(SfxKeys).filter((k) => game.cache.audio.exists(k));
     },
@@ -198,6 +216,7 @@ export function installE2EHook(game: Game): void {
     },
     reset(): void {
       audio().setMuted(false);
+      motion().setPref('auto');
       const save = game.plugins.get(PluginKeys.Save) as SavePlugin;
       save.flush();
       window.localStorage.removeItem(SAVE_KEY);

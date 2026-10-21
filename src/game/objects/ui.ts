@@ -1,6 +1,7 @@
 // Small UI helpers shared by the game objects (art-direction section 6).
 import Phaser from 'phaser';
 import { FONT_FAMILY, Palette, colorToNumber } from '../constants';
+import { profileOf } from '../systems/motion';
 
 export const hex = (token: keyof typeof Palette) => colorToNumber(Palette[token]);
 
@@ -57,5 +58,5 @@ export function addPress(target: Phaser.GameObjects.Container, visual: Phaser.Ga
     tween = scene.tweens.add({ targets: visual, y, duration, ease, onComplete: () => { tween = undefined; } });
   };
   target.on('pointerdown', () => to(baseY + dy, 60, 'Sine.easeOut'));
-  for (const ev of ['pointerup', 'pointerout']) target.on(ev, () => to(baseY, 150, 'Back.easeOut'));
+  for (const ev of ['pointerup', 'pointerout']) target.on(ev, () => to(baseY, 150, profileOf(scene).ease('Back.easeOut')));
 }

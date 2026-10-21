@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { ObjectEvents, Palette, SfxKeys } from '../constants';
 import type { ClothingDef, Point } from '../domain/types';
 import { getAudio } from '../plugins/AudioPlugin';
+import { profileOf } from '../systems/motion';
 import { addHover, addPress, drawPanel, hex, makeText } from './ui';
 
 const WIDTH = 250;
@@ -72,7 +73,7 @@ export class LayersPanel extends Phaser.GameObjects.Container {
       const y = this.rowY(i);
       const existing = this.rows.get(item.id);
       if (existing) {
-        this.scene.tweens.add({ targets: existing, y, duration: 200, ease: 'Back.easeOut' });
+        this.scene.tweens.add({ targets: existing, y, duration: 200, ease: profileOf(this.scene).ease('Back.easeOut') });
         return;
       }
       const row = new Row(this.scene, item);
@@ -80,7 +81,7 @@ export class LayersPanel extends Phaser.GameObjects.Container {
       row.setPosition(WIDTH / 2 + 40, y).setAlpha(0);
       this.add(row);
       this.rows.set(item.id, row);
-      this.scene.tweens.add({ targets: row, x: WIDTH / 2, alpha: 1, duration: 260, ease: 'Back.easeOut' });
+      this.scene.tweens.add({ targets: row, x: WIDTH / 2, alpha: 1, duration: 260, ease: profileOf(this.scene).ease('Back.easeOut') });
     });
     this.scene.tweens.add({ targets: this.empty, alpha: ordered.length === 0 ? 0.6 : 0, duration: 200 });
   }
