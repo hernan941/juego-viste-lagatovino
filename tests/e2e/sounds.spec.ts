@@ -1,15 +1,21 @@
 import { expect, type Page } from '@playwright/test';
 import { MEOW_KEYS, SfxKeys } from '../../src/game/constants';
-import { bySlot, cats, clickButton, dragTo, equipItem, outsidePoint, pickCat, settled, showItem, state, test, typeName, waitScene } from './helpers';
+import { bySlot, layerGrabAtRest, cats, clickButton, dragTo, equipItem, openScene, openTitle, outsidePoint, pickCat, settled, sharedTest as test, showItem, state, typeName, waitScene } from './helpers';
 
 const sounds = (page: Page) => page.evaluate(() => window.__VISTE__?.sounds ?? []);
 const MEOW = `random(${MEOW_KEYS.join(',')})`;
 
-/** Sounds requested while `action` runs (plus a short wait for the delayed ones, like the purr). */
-async function during(page: Page, action: () => Promise<unknown>): Promise<string[]> {
+/** Sounds requested while `action` runs, waiting until the delayed ones listed in `expected` (like the purr) have been asked for. */
+async function during(page: Page, action: () => Promise<unknown>, ...expected: string[]): Promise<string[]> {
   const before = (await sounds(page)).length;
   await action();
-  await page.waitForTimeout(500);
+  await page.waitForFunction(
+    ({ n, keys }) => {
+      const now = (window.__VISTE__?.sounds ?? []).slice(n);
+      return keys.every((k) => now.includes(k));
+    },
+    { n: before, keys: expected },
+  );
   return (await sounds(page)).slice(before);
 }
 
@@ -17,7 +23,7 @@ test.describe('sounds are connected to every action (art-direction section 9)', 
   test.setTimeout(120_000);
 
   test('fitting room: grab, drag, drop with purr, return, remove, tabs, cells and buttons', async ({ page }) => {
-    await page.goto('/?start=DressUp');
+    await openScene(page, 'DressUp');
     const item = bySlot('sweater')[0];
     let s = await showItem(page, item);
 
@@ -25,7 +31,7 @@ test.describe('sounds are connected to every action (art-direction section 9)', 
     const returned = await during(page, async () => {
       await page.mouse.move(s.cells[item.id].x, s.cells[item.id].y);
       await dragTo(page, s.cells[item.id], outsidePoint(s));
-    });
+    }, SfxKeys.Return);
     expect(returned).toContain(SfxKeys.Hover);
     expect(returned).toContain(SfxKeys.Grab);
     expect(returned).toContain(SfxKeys.Drag);
@@ -33,7 +39,7 @@ test.describe('sounds are connected to every action (art-direction section 9)', 
 
     // Drop on the cat: pop and purr.
     s = await settled(page);
-    const dropped = await during(page, () => dragTo(page, s.cells[item.id], { x: s.dropZone.center.x, y: s.dropZone.center.y + 40 }));
+    const dropped = await during(page, () => dragTo(page, s.cells[item.id], { x: s.dropZone.center.x, y: s.dropZone.center.y + 40 }), SfxKeys.Purr);
     expect(dropped).toContain(SfxKeys.Drop);
     expect(dropped).toContain(SfxKeys.Purr);
 
@@ -42,13 +48,13 @@ test.describe('sounds are connected to every action (art-direction section 9)', 
     const withX = await during(page, async () => {
       await page.mouse.move(s.layerRows[0].close.x, s.layerRows[0].close.y);
       await page.mouse.click(s.layerRows[0].close.x, s.layerRows[0].close.y);
-    });
+    }, SfxKeys.Remove);
     expect(withX).toContain(SfxKeys.Hover);
     expect(withX).toContain(SfxKeys.Remove);
 
     await equipItem(page, item);
     s = await settled(page);
-    const dragged = await during(page, () => dragTo(page, s.layerGrab[item.id], outsidePoint(s)));
+    const dragged = await during(page, async () => dragTo(page, await layerGrabAtRest(page, item.id), outsidePoint(s)), SfxKeys.Remove);
     expect(dragged).toContain(SfxKeys.Remove);
 
     // Tabs: hover and click.
@@ -57,26 +63,25 @@ test.describe('sounds are connected to every action (art-direction section 9)', 
     const tab = await during(page, async () => {
       await page.mouse.move(s.tabs[other].x, s.tabs[other].y);
       await page.mouse.click(s.tabs[other].x, s.tabs[other].y);
-    });
+    }, SfxKeys.Click);
     expect(tab).toContain(SfxKeys.Hover);
     expect(tab).toContain(SfxKeys.Click);
 
     // Buttons: hover and click.
-    const button = await during(page, () => clickButton(page, 'finish'));
+    const button = await during(page, () => clickButton(page, 'finish'), SfxKeys.Click);
     expect(button).toContain(SfxKeys.Hover);
     expect(button).toContain(SfxKeys.Click);
   });
 
   test('title, cat selection, typing and the shop door', async ({ page }) => {
-    await page.goto('/');
-    await waitScene(page, 'Title');
-    const start = await during(page, () => clickButton(page, 'start'));
+    await openTitle(page);
+    const start = await during(page, () => clickButton(page, 'start'), SfxKeys.Click, MEOW);
     expect(start).toContain(SfxKeys.Hover);
     expect(start).toContain(SfxKeys.Click);
     expect(start).toContain(MEOW);
 
     await waitScene(page, 'CatSelect');
-    const picked = await during(page, () => pickCat(page, cats[2].id));
+    const picked = await during(page, () => pickCat(page, cats[2].id), MEOW);
     expect(picked).toContain(MEOW);
 
     const typed = await during(page, () => typeName(page, 'Mimi'));

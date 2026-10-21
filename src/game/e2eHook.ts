@@ -1,11 +1,14 @@
 import type Phaser from 'phaser';
 import type { Game } from 'phaser';
 import type { Outfit, Point, Rect, SaveData } from './domain/types';
-import { GAME_WIDTH, PluginKeys, SfxKeys } from './constants';
+import { GAME_WIDTH, PluginKeys, RegistryKeys, SceneKeys, SfxKeys } from './constants';
 import type { AudioPlugin } from './plugins/AudioPlugin';
 import type { SavePlugin } from './plugins/SavePlugin';
+import { SAVE_KEY } from './plugins/saveCore';
 import type { Session } from './domain/session';
-import { readSession } from './systems/sessionStore';
+import { chooseCat, emptySession } from './domain/session';
+import { readSession, writeSession } from './systems/sessionStore';
+import type { Catalog } from './data/schema';
 
 /** What a scene reports to the test hook, in game coordinates (1280 x 720). */
 export interface DressUpE2EState {
@@ -36,6 +39,12 @@ export interface DressUpE2EState {
   /** Rows of the layers panel, front first, with the position of each ✕. */
   layerRows: { itemId: string; close: Point }[];
   dragging: boolean;
+  /** F9: true while the magnet holds the dragged item on its anchor (the half transparent preview is up). */
+  magnet: boolean;
+  /** F9: where the magnet of each slot pulls to (the slot anchor of the cat). */
+  slotAnchors: Record<string, Point>;
+  /** F9: worn item ids in the order the cat really draws them, back to front (display list, not the domain). */
+  drawOrder: string[];
   /** F8: the secrets counter ("Secretos X/N") and the unlocked combo ids. */
   secrets: { unlocked: string[]; count: number; total: number; text: string; revealing: string[]; sign: string; signLog: string[] };
   /** The gift box on screen, with the bow to drag; null when there is none. */
@@ -56,8 +65,11 @@ export interface E2EScene {
 }
 
 /** The same state in page coordinates (CSS pixels), ready for `page.mouse`. */
-export interface VisteDressUpState extends Omit<DressUpE2EState, 'cells' | 'tabs' | 'dropZone' | 'layerGrab' | 'layerRows' | 'grid' | 'gift'> {
+export interface VisteDressUpState extends Omit<DressUpE2EState, 'cells' | 'tabs' | 'slotAnchors' | 'dropZone' | 'layerGrab' | 'layerRows' | 'grid' | 'gift'> {
   grid: DressUpE2EState['grid'] & { center: Point };
+  /** CSS pixels per game pixel (the canvas is scaled to fit the window). */
+  pxPerGamePx: number;
+  slotAnchors: Record<string, Point>;
   cells: Record<string, Point>;
   tabs: Record<string, Point>;
   dropZone: Rect & { center: Point };
@@ -103,6 +115,18 @@ export interface VisteHook {
   setMuted(muted: boolean): void;
   /** Test-only action: puts exactly these items on the cat in DressUp without dragging (the last piece of a combo is still dragged). */
   wear(ids: string[]): void;
+  /**
+   * Test-only action: stops the active scenes and starts `scene` without reloading the page (the boot is the slowest part of a test).
+   * Title and CatSelect start like a visit (the saved cat comes back); any other scene gets a naked cat (the first one, or `catId`)
+   * named `name`, as the `?start=` shortcut does.
+   */
+  jump(scene: string, catId?: string, name?: string): void;
+  /** Number of frames the game loop has run (stops growing while parked). */
+  readonly frames: number;
+  /** Test-only action: stops (or restarts) the game loop, so a page that is not being tested does not use the CPU. */
+  park(parked: boolean): void;
+  /** Test-only action: forgets the saved progress (cat, name, outfit, secrets), unmutes and empties the sound log, as a first visit would. */
+  reset(): void;
 }
 
 /** ADR 0012: read-only test hook, only in test mode or with ?e2e=1. Never in a normal build. */
@@ -165,6 +189,32 @@ export function installE2EHook(game: Game): void {
     wear(ids: string[]): void {
       game.scene.getScenes(true).find(isE2EScene)?.e2eWear(ids);
     },
+    get frames(): number {
+      return game.loop.frame;
+    },
+    park(parked: boolean): void {
+      if (parked) game.loop.sleep();
+      else game.loop.wake();
+    },
+    reset(): void {
+      audio().setMuted(false);
+      const save = game.plugins.get(PluginKeys.Save) as SavePlugin;
+      save.flush();
+      window.localStorage.removeItem(SAVE_KEY);
+      sounds.length = 0;
+    },
+    jump(scene: string, catId?: string, name?: string): void {
+      const catalog = game.registry.get(RegistryKeys.Catalog) as Catalog;
+      if (scene === SceneKeys.Title || scene === SceneKeys.CatSelect) {
+        // The start of a visit: what was saved comes back (a first visit has nothing), as the Preloader does.
+        (game.plugins.get(PluginKeys.Save) as SavePlugin).restoreInto(catalog);
+      } else {
+        const cat = catalog.cats.find((c) => c.id === catId) ?? catalog.cats[0];
+        writeSession(game.registry, chooseCat(emptySession(), cat.id, name ?? cat.name));
+      }
+      for (const active of game.scene.getScenes(true)) game.scene.stop(active.scene.key);
+      game.scene.start(scene);
+    },
     get session(): Session {
       return readSession(game.registry);
     },
@@ -195,6 +245,8 @@ export function installE2EHook(game: Game): void {
         ...s,
         grid: { ...grid, center: { x: grid.x + grid.width / 2, y: grid.y + grid.height / 2 } },
         gift: s.gift && { ...s.gift, bow: map(s.gift.bow), box: map(s.gift.box) },
+        pxPerGamePx: f,
+        slotAnchors: mapAll(s.slotAnchors),
         cells: mapAll(s.cells),
         tabs: mapAll(s.tabs),
         layerGrab: mapAll(s.layerGrab),

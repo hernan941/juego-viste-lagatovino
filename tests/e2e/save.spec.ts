@@ -1,35 +1,49 @@
 import { expect } from '@playwright/test';
 import { SAVE_KEY } from '../../src/game/plugins/saveCore';
+import clothesJson from '../../src/game/data/clothes.json' with { type: 'json' };
+import combosJson from '../../src/game/data/combos.json' with { type: 'json' };
+import { comboOutfit } from '../../src/game/domain/combos';
+import { SLOT_ORDER } from '../../src/game/domain/slots';
+import type { ClothingDef, ComboDef } from '../../src/game/domain/types';
 import {
-  bySlot, cats, clickButton, equipItem, pickCat, settled, startGame, test, ui, waitScene,
+  bySlot, cats, clickButton, dragTo, dressWith, equipItem, openScene, pickCat, sharedTest, settled, showItem, startGame, state, test, ui, waitScene,
 } from './helpers';
+
+const all = clothesJson as ClothingDef[];
+const combos = combosJson as ComboDef[];
+const byId = (id: string) => all.find((c) => c.id === id)!;
 
 const CAT = cats[2];
 const NAME = 'Bigotes';
 const INFO = (page: import('@playwright/test').Page) => page.evaluate(() => window.__VISTE__?.ui?.info as Record<string, unknown>);
 
 test.describe('saving (ADR 0004)', () => {
-  test.setTimeout(150_000);
+  test.setTimeout(120_000);
 
-  test('after a reload the cat, the name, the outfit and the mute come back', async ({ page }) => {
+  // 'after a reload the cat, the name, the outfit and the mute come back' is replaced by the test below, which checks all of that
+  // and the secrets in a single reload (same flow through the real Title and CatSelect, strictly more assertions).
+
+  test('one reload brings back everything together: cat, name, outfit, mute and secrets', async ({ page }) => {
+    const combo = combos[0];
+    const reward = byId(combo.rewardItemId);
+    const pieces = SLOT_ORDER.filter((slot) => comboOutfit(combo, all)![slot]).map((slot) => byId(comboOutfit(combo, all)![slot]!));
     await page.goto(`/?start=DressUp&cat=${CAT.id}&name=${NAME}`);
     await settled(page);
-    const sweater = bySlot('sweater')[0];
-    const head = bySlot('head')[0];
-    await equipItem(page, sweater);
-    await equipItem(page, head);
+    await dressWith(page, pieces.slice(0, -1).map((p) => p.id));
+    await equipItem(page, pieces[pieces.length - 1]);
+    // Open the gift (drag the bow away) so that the secret is unlocked, then mute.
+    await page.waitForFunction(() => window.__VISTE__?.dressUp?.gift?.ready === true, undefined, { timeout: 15_000 });
+    const bow = (await state(page)).gift!.bow;
+    await dragTo(page, bow, { x: bow.x + 40, y: bow.y - 150 }, { smooth: true });
+    await page.waitForFunction(() => window.__VISTE__?.dressUp?.gift === null && window.__VISTE__.dressUp.secrets.count === 1, undefined, { timeout: 15_000 });
     await clickButton(page, 'mute');
     await page.waitForFunction(() => window.__VISTE__?.muted === true);
-    await page.waitForFunction(
-      ([c, n, s, h]) => {
-        const v = window.__VISTE__?.saved;
-        return v?.catId === c && v.catName === n && v.outfit.sweater === s && v.outfit.head === h && v.muted === true;
-      },
-      [CAT.id, NAME, sweater.id, head.id] as const,
-    );
+    const before = await page.evaluate(() => JSON.parse(JSON.stringify(window.__VISTE__?.saved)));
+    expect(before).toMatchObject({ catId: CAT.id, catName: NAME, muted: true, secrets: [combo.id] });
 
-    // A new visit: "Iniciar" leads to CatSelect with the cat and the name already chosen.
+    // A new visit (a full page load of "/", not the test shortcut): everything comes back through the real flow.
     await startGame(page);
+    expect(await page.evaluate(() => JSON.parse(JSON.stringify(window.__VISTE__?.saved)))).toEqual(before);
     expect(await page.evaluate(() => window.__VISTE__?.muted)).toBe(true);
     await page.waitForFunction(() => (window.__VISTE__?.ui?.info as { selected?: string | null } | undefined)?.selected != null);
     expect(await INFO(page)).toMatchObject({ selected: CAT.id, name: NAME });
@@ -37,14 +51,18 @@ test.describe('saving (ADR 0004)', () => {
     await waitScene(page, 'ShopEntrance');
     await page.mouse.click(300, 300);
     await waitScene(page, 'DressUp', 20_000);
-    const dress = await settled(page);
-    expect(dress.catId).toBe(CAT.id);
-    expect(dress.catName).toBe(NAME);
-    expect(dress.layers).toEqual([sweater.id, head.id]);
+    const s = await settled(page);
+    expect(s.catId).toBe(CAT.id);
+    expect(s.catName).toBe(NAME);
+    expect(s.layers.sort()).toEqual(pieces.map((p) => p.id).sort());
+    expect(s.secrets).toMatchObject({ count: 1, unlocked: [combo.id], text: `Secretos 1/${combos.length}` });
+    expect(s.gift).toBeNull();
+    expect((await showItem(page, reward)).cells[reward.id]).toBeDefined();
   });
 
-  test('removing a piece and changing cat are saved too', async ({ page }) => {
-    await page.goto(`/?start=DressUp&cat=${CAT.id}&name=${NAME}`);
+  // No reload here, so it runs on the page that the worker shares.
+  sharedTest('removing a piece and changing cat are saved too', async ({ page }) => {
+    await openScene(page, 'DressUp', { cat: CAT.id, name: NAME });
     await settled(page);
     const sweater = bySlot('sweater')[0];
     const s = await equipItem(page, sweater);

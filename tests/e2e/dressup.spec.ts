@@ -1,6 +1,5 @@
 import { expect } from '@playwright/test';
-import { bySlot, clothes, dragTo, equipItem, openGame, outsidePoint, settled, showItem, state, test } from './helpers';
-import { slotZIndex } from '../../src/game/domain/slots';
+import { bySlot, layerGrabAtRest, clearCat, clothes, dragTo, equipItem, openGame, outsidePoint, rowsAtRest, settled, showItem, state, sharedTest as test } from './helpers';
 
 test('the game starts in DressUp with the cats and an empty outfit', async ({ page }) => {
   const s = await openGame(page);
@@ -10,13 +9,28 @@ test('the game starts in DressUp with the cats and an empty outfit', async ({ pa
   expect(Object.keys(s.tabs).length).toBeGreaterThanOrEqual(2);
 });
 
-for (const item of clothes) {
-  test(`dropping "${item.id}" on the cat wears it`, async ({ page }) => {
+// One boot per category (not per item): every item of clothes.json is still dragged with the mouse, one at a time, from a bare cat.
+// In chunks of 6 so that no test is long (the sweaters are 16).
+const categories = [...new Set(clothes.map((c) => c.category))];
+const CHUNK = 6;
+const chunks = categories.flatMap((category) => {
+  const items = clothes.filter((c) => c.category === category);
+  return Array.from({ length: Math.ceil(items.length / CHUNK) }, (_, i) => ({ category, part: i + 1, of: Math.ceil(items.length / CHUNK), items: items.slice(i * CHUNK, (i + 1) * CHUNK) }));
+});
+for (const { category, part, of, items } of chunks) {
+  test(`dropping each item of "${category}" on the cat wears it (${part}/${of})`, async ({ page }) => {
+    test.setTimeout(120_000);
     await openGame(page);
-    const s = await equipItem(page, item);
-    expect(s.outfit).toEqual({ [item.slot]: item.id });
-    expect(s.layers).toEqual([item.id]);
-    await expect.poll(async () => (await state(page)).layerRows.map((r) => r.itemId)).toEqual([item.id]);
+    for (const item of items) {
+      await test.step(item.id, async () => {
+        const s = await equipItem(page, item);
+        expect(s.outfit).toEqual({ [item.slot]: item.id });
+        expect(s.layers).toEqual([item.id]);
+        expect(s.drawOrder).toEqual([item.id]);
+        await expect.poll(async () => (await state(page)).layerRows.map((r) => r.itemId)).toEqual([item.id]);
+        await clearCat(page);
+      });
+    }
   });
 }
 
@@ -48,7 +62,7 @@ test('dragging a worn item off the cat takes it off', async ({ page }) => {
   const item = clothes[0];
   await openGame(page);
   const worn = await equipItem(page, item);
-  await dragTo(page, worn.layerGrab[item.id], outsidePoint(worn));
+  await dragTo(page, await layerGrabAtRest(page, item.id), outsidePoint(worn));
   await page.waitForFunction(() => Object.keys(window.__VISTE__?.dressUp?.outfit ?? {}).length === 0);
   const s = await settled(page);
   expect(s.layers).toEqual([]);
@@ -59,7 +73,7 @@ test('dropping a worn item back on the cat keeps it', async ({ page }) => {
   const item = clothes[0];
   await openGame(page);
   const worn = await equipItem(page, item);
-  await dragTo(page, worn.layerGrab[item.id], { x: worn.dropZone.center.x, y: worn.dropZone.center.y });
+  await dragTo(page, await layerGrabAtRest(page, item.id), { x: worn.dropZone.center.x, y: worn.dropZone.center.y });
   const s = await settled(page);
   expect(s.outfit).toEqual({ [item.slot]: item.id });
 });
@@ -69,8 +83,7 @@ test('the cross of the layers panel takes the item off', async ({ page }) => {
   await openGame(page);
   await equipItem(page, item);
   await expect.poll(async () => (await state(page)).layerRows.length).toBe(1);
-  await page.waitForTimeout(400); // the row slides in
-  const row = (await state(page)).layerRows[0];
+  const row = (await rowsAtRest(page))[0];
   await page.mouse.move(row.close.x, row.close.y);
   await page.mouse.click(row.close.x, row.close.y);
   await page.waitForFunction(() => Object.keys(window.__VISTE__?.dressUp?.outfit ?? {}).length === 0);
@@ -78,18 +91,5 @@ test('the cross of the layers panel takes the item off', async ({ page }) => {
   expect(s.layers).toEqual([]);
   await expect.poll(async () => (await state(page)).layerRows).toEqual([]);
 });
-
-test('layers keep the slot order whatever the wearing order', async ({ page }) => {
-  test.setTimeout(180_000); // six worn layers on software WebGL render slowly
-  // One item per slot, worn from the front-most slot to the back-most one.
-  const picks = [...new Set(clothes.map((c) => c.slot))].map((slot) => bySlot(slot)[0]);
-  expect(picks.length).toBeGreaterThanOrEqual(2);
-  const wearOrder = [...picks].sort((a, b) => slotZIndex(b.slot) - slotZIndex(a.slot));
-  await openGame(page);
-  for (const item of wearOrder) await equipItem(page, item);
-  const s = await state(page);
-  const expected = [...picks].sort((a, b) => slotZIndex(a.slot) - slotZIndex(b.slot)).map((c) => c.id);
-  expect(s.layers).toEqual(expected);
-  // The panel lists the front layer first.
-  await expect.poll(async () => (await state(page)).layerRows.map((r) => r.itemId)).toEqual([...expected].reverse());
-});
+// 'layers keep the slot order whatever the wearing order' moved to dragdrop.spec.ts: same assertions (domain order and panel)
+// plus the real drawing order, with 2 real drags and the rest put on through the hook (it used 6 drags and took 100 s).

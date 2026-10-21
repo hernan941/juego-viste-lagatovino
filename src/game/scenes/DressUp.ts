@@ -8,7 +8,7 @@ import { almostCombos, newlyCompleted, secretRewards } from '../domain/combos';
 import { magnetSnap, resolveDrop, isInsideDropZone } from '../domain/dropZone';
 import { ghostFit, alphaBounds } from '../domain/imageBounds';
 import { equip, getLayers, unequip } from '../domain/outfit';
-import { anchorForSlot } from '../domain/slots';
+import { anchorForSlot, SLOT_ORDER } from '../domain/slots';
 import type { AnchorsDef, Category, ClothingDef, ComboDef, Outfit, Point, Rect } from '../domain/types';
 import type { DressUpE2EState, E2EScene, E2EUi, UiState } from '../e2eHook';
 import { Button } from '../objects/Button';
@@ -592,6 +592,9 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
       layerGrab: Object.fromEntries(layers.map((l) => [l.id, this.cat.getLayerGrabPoint(l)])),
       layerRows: this.layersPanel.getRows(),
       dragging: this.drag !== null,
+      magnet: this.drag?.preview !== undefined,
+      slotAnchors: Object.fromEntries(SLOT_ORDER.map((slot) => [slot, this.cat.getAnchorWorld(anchorForSlot(slot))])),
+      drawOrder: this.cat.getDrawOrder(),
       secrets: { unlocked: this.reveal.shownUnlocked(this.unlocked), count: this.reveal.shownCount(this.unlocked), revealing: this.reveal.hiddenItems(), sign: this.sign.text, signLog: [...this.sign.announced], total: this.catalog.combos.length, text: this.counter.text },
       gift: this.gift ? { comboId: this.gift.comboId, itemId: this.gift.item.id, ready: this.gift.ready, opened: this.gift.opened, bow: this.gift.getBowPoint(), box: this.gift.getCenter() } : null,
       pendingGifts: this.gifts.length,

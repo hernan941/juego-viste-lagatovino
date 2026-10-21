@@ -1,11 +1,13 @@
 import { expect, type Page } from '@playwright/test';
-import { bySlot, cats, clickButton, equipItem, settled, test, ui, waitScene } from './helpers';
+import { bySlot, cats, clickButton, equipItem, openScene, settled, sharedTest as test, ui, waitScene } from './helpers';
 
 const CAT = cats[1];
 
 /** Keeps the links that the game clicks to download (the data URL and the file name), since the link is removed right away. */
 async function recordDownloads(page: Page) {
-  await page.addInitScript(() => {
+  await page.evaluate(() => {
+    const w = window as unknown as { __downloads?: unknown };
+    if (w.__downloads) return; // already recording in this page
     const seen: { href: string; download: string }[] = [];
     (window as unknown as { __downloads: typeof seen }).__downloads = seen;
     const click = HTMLAnchorElement.prototype.click;
@@ -40,9 +42,9 @@ test.describe('"Descargar foto" in the Showcase', () => {
   test.setTimeout(120_000);
 
   test('downloads a named PNG of the dressed cat, with shutter, flash and a confirmation', async ({ page }, testInfo) => {
-    await recordDownloads(page);
-    await page.goto(`/?start=DressUp&cat=${CAT.id}&name=${encodeURIComponent('Doña Bigotes')}`);
+    await openScene(page, 'DressUp', { cat: CAT.id, name: 'Doña Bigotes' });
     await settled(page);
+    await recordDownloads(page);
     await equipItem(page, bySlot('sweater')[0]);
     await equipItem(page, bySlot('head')[0]);
     await clickButton(page, 'finish');
@@ -65,9 +67,9 @@ test.describe('"Descargar foto" in the Showcase', () => {
   });
 
   test('the photo is not blank: it has many different colors', async ({ page }) => {
-    await recordDownloads(page);
-    await page.goto(`/?start=Showcase&cat=${CAT.id}&name=Mimi`);
+    await openScene(page, 'Showcase', { cat: CAT.id, name: 'Mimi' });
     await waitScene(page, 'Showcase');
+    await recordDownloads(page);
     const download = page.waitForEvent('download');
     await clickButton(page, 'photo');
     expect((await download).suggestedFilename()).toBe('viste-lagato-mimi.png');
@@ -75,15 +77,19 @@ test.describe('"Descargar foto" in the Showcase', () => {
   });
 
   test('a double click downloads one photo', async ({ page }) => {
-    await page.goto(`/?start=Showcase&cat=${CAT.id}&name=Mimi`);
+    await openScene(page, 'Showcase', { cat: CAT.id, name: 'Mimi' });
     await waitScene(page, 'Showcase');
     const downloads: string[] = [];
     page.on('download', (d) => downloads.push(d.suggestedFilename()));
     const { x, y } = (await ui(page)).buttons.photo;
     await page.mouse.move(x, y);
     await page.mouse.dblclick(x, y);
-    await page.waitForFunction(() => (window.__VISTE__?.ui?.info as { photos?: number } | undefined)?.photos === 1);
-    await page.waitForTimeout(600);
-    expect(downloads).toEqual(['viste-lagato-mimi.png']);
+    // The whole capture is over (counted, confirmed and unlocked again) when the second click would have had its chance.
+    await page.waitForFunction(() => {
+      const i = window.__VISTE__?.ui?.info as { photos?: number; photoBusy?: boolean } | undefined;
+      return i?.photos === 1 && i.photoBusy === false;
+    });
+    // The download event travels to the test a moment after the page is done.
+    await expect.poll(() => downloads).toEqual(['viste-lagato-mimi.png']);
   });
 });

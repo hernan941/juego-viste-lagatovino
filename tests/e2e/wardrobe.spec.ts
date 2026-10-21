@@ -1,7 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 import clothesJson from '../../src/game/data/clothes.json' with { type: 'json' };
 import type { ClothingDef } from '../../src/game/domain/types';
-import { bySlot, clothes, dragTo, equipItem, openGame, scrollToItem, settled, showItem, state, test } from './helpers';
+import { bySlot, clearCat, clothes, dragTo, dressWith, equipItem, openGame, scrollToItem, settled, showItem, state, sharedTest as test } from './helpers';
 
 const secrets = (clothesJson as ClothingDef[]).filter((c) => c.secret);
 const categories = [...new Set(clothes.map((c) => c.category))];
@@ -22,23 +22,25 @@ test('the game has one tab per category of clothes.json', async ({ page }) => {
   expect(categories.length).toBeGreaterThanOrEqual(6);
 });
 
-for (const category of categories) {
-  test(`the "${category}" tab opens and lists exactly its visible items`, async ({ page }) => {
-    await openGame(page);
-    const s = await openTab(page, category);
-    expect(s.activeTab).toBe(category);
-    expect(Object.keys(s.cells).sort()).toEqual(bySlot(category).map((c) => c.id).sort());
-    for (const secret of secrets) expect(s.cells[secret.id], `${secret.id} is secret`).toBeUndefined();
-    expect(s.visibleCells.length).toBeGreaterThan(0);
-  });
+// One boot for all the categories: every tab is opened with the mouse and its last item is dragged on from the end of the scroll.
+test('every category tab opens and lists exactly its visible items, and its last item is reachable by scrolling and can be worn', async ({ page }) => {
+  test.setTimeout(120_000);
+  await openGame(page);
+  for (const category of categories) {
+    await test.step(category, async () => {
+      const s = await openTab(page, category);
+      expect(s.activeTab).toBe(category);
+      expect(Object.keys(s.cells).sort()).toEqual(bySlot(category).map((c) => c.id).sort());
+      for (const secret of secrets) expect(s.cells[secret.id], `${secret.id} is secret`).toBeUndefined();
+      expect(s.visibleCells.length).toBeGreaterThan(0);
 
-  test(`the last item of "${category}" is reachable by scrolling and can be worn`, async ({ page }) => {
-    await openGame(page);
-    const last = bySlot(category).at(-1)!;
-    const s = await equipItem(page, last);
-    expect(s.outfit).toEqual({ [last.slot]: last.id });
-  });
-}
+      const last = bySlot(category).at(-1)!;
+      const worn = await equipItem(page, last);
+      expect(worn.outfit).toEqual({ [last.slot]: last.id });
+      await clearCat(page);
+    });
+  }
+});
 
 test('no secret item shows up in any tab', async ({ page }) => {
   expect(secrets).toHaveLength(6);
@@ -50,11 +52,14 @@ test('no secret item shows up in any tab', async ({ page }) => {
 });
 
 test('one item per category can be worn at once and the layers panel lists all of them', async ({ page }) => {
-  test.setTimeout(180_000); // six worn layers on software WebGL render slowly
+  test.setTimeout(120_000);
   await openGame(page);
-  let s = await settled(page);
-  for (const category of categories) s = await equipItem(page, bySlot(category)[0]);
+  // Five categories are put on through the hook and the last one is dragged: the point is that they all stay worn together.
+  const picks = categories.map((category) => bySlot(category)[0]);
+  await dressWith(page, picks.slice(0, -1).map((i) => i.id));
+  const s = await equipItem(page, picks[picks.length - 1]);
   expect(Object.keys(s.outfit).sort()).toEqual([...categories].sort());
+  expect(s.drawOrder.sort()).toEqual(picks.map((i) => i.id).sort());
   await expect.poll(async () => (await state(page)).layerRows.length).toBe(categories.length);
 });
 
@@ -80,8 +85,10 @@ test('the wheel over the rest of the screen does not scroll the grid', async ({ 
   const s = await openTab(page, longest);
   await page.mouse.move(s.dropZone.center.x, s.dropZone.center.y);
   await page.mouse.wheel(0, 400);
-  await page.waitForTimeout(300);
-  expect((await state(page)).grid.scroll).toBe(0);
+  // The wheel is handled when it is dispatched: once the scene is idle neither the scroll nor its target moved.
+  const after = await settled(page);
+  expect(after.grid.targetScroll).toBe(0);
+  expect(after.grid.scroll).toBe(0);
 });
 
 test('switching tab goes back to the top of the grid', async ({ page }) => {

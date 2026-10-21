@@ -5,7 +5,7 @@ import combosJson from '../../src/game/data/combos.json' with { type: 'json' };
 import { comboOutfit } from '../../src/game/domain/combos';
 import { SLOT_ORDER } from '../../src/game/domain/slots';
 import type { ClothingDef, ComboDef } from '../../src/game/domain/types';
-import { dragTo, equipItem, openGame, settled, showItem, state, test } from './helpers';
+import { dragTo, dressWith, equipItem, openGame, settled, sharedTest as test, showItem, state } from './helpers';
 
 const all = clothesJson as ClothingDef[];
 const combos = combosJson as ComboDef[];
@@ -23,23 +23,19 @@ async function waitGift(page: Page) {
 }
 
 /** Puts the pieces on the cat through the test hook (no drag), so the real drop that follows is the one that matters. */
-async function wear(page: Page, items: ClothingDef[]) {
-  await page.evaluate((ids) => window.__VISTE__?.wear(ids), items.map((i) => i.id));
-  await page.waitForFunction((n) => window.__VISTE__?.dressUp?.layers.length === n, items.length);
-  await settled(page);
-}
+const wear = (page: Page, items: ClothingDef[]) => dressWith(page, items.map((i) => i.id));
 
 /** Opens the box by dragging the bow away, as a player would. */
 async function openGift(page: Page) {
   const s = await waitGift(page);
   const bow = s.gift!.bow;
-  await dragTo(page, bow, { x: bow.x + 40, y: bow.y - 150 });
+  await dragTo(page, bow, { x: bow.x + 40, y: bow.y - 150 }, { smooth: true });
   await page.waitForFunction(() => window.__VISTE__?.dressUp?.gift === null && window.__VISTE__.dressUp.secrets.count > 0, undefined, { timeout: 15_000 });
   return settled(page);
 }
 
 test.describe('secret combos (F8)', () => {
-  test.setTimeout(240_000);
+  test.setTimeout(120_000);
 
   test('the catalog has a combo for every secret item', () => {
     expect(combos.length).toBeGreaterThanOrEqual(6);
@@ -62,7 +58,7 @@ test.describe('secret combos (F8)', () => {
   });
 
   for (const combo of combos) {
-    test(`combo "${combo.id}": reaction, gift, bow, wardrobe, counter and no second gift`, async ({ page }) => {
+    test(`combo "${combo.id}": reaction, gift, bow, wardrobe, counter, no second gift and reload`, async ({ page }) => {
       const reward = byId(combo.rewardItemId);
       await openGame(page);
       const worn = pieces(combo);
@@ -83,9 +79,8 @@ test.describe('secret combos (F8)', () => {
 
       // Letting go of the bow too early does not open it.
       const bow = boxed.gift!.bow;
-      await dragTo(page, bow, { x: bow.x + 10, y: bow.y - 20 });
-      await page.waitForTimeout(500);
-      expect((await state(page)).gift).toMatchObject({ opened: false });
+      await dragTo(page, bow, { x: bow.x + 10, y: bow.y - 20 }, { smooth: true });
+      expect((await settled(page)).gift).toMatchObject({ opened: false });
 
       const after = await openGift(page);
       expect(after.secrets).toMatchObject({ count: 1, unlocked: [combo.id], text: `Secretos 1/${combos.length}` });
@@ -100,32 +95,26 @@ test.describe('secret combos (F8)', () => {
       await page.waitForFunction((slot) => !window.__VISTE__?.dressUp?.outfit[slot as 'head'], worn[worn.length - 1].slot);
       await equipItem(page, worn[worn.length - 1]);
       await page.waitForFunction(() => (window.__VISTE__?.dressUp?.reactions.length ?? 0) >= 2);
-      await page.waitForTimeout(2200);
-      const again = await state(page);
+      // A gift would show up as a pending one right away; "settled" waits for the reaction and any gift to finish.
+      const again = await settled(page);
       expect(again.gift).toBeNull();
       expect(again.pendingGifts).toBe(0);
       expect(again.secrets.count).toBe(1);
+
+      // After a reload (ADR 0004): the counter, the saved secret and the prize in its tab are restored, and the prize can be worn.
+      await page.reload();
+      await settled(page);
+      await page.waitForFunction((id) => window.__VISTE__?.saved.secrets.includes(id), combo.id);
+      const back = await state(page);
+      expect(back.secrets).toMatchObject({ count: 1, unlocked: [combo.id], text: `Secretos 1/${combos.length}` });
+      expect(back.gift).toBeNull();
+      const shown = await showItem(page, reward);
+      expect(shown.cells[reward.id]).toBeDefined();
+      expect((await equipItem(page, reward)).outfit[reward.slot]).toBe(reward.id);
     });
   }
 
-  test('an unlocked secret survives a reload, is draggable and the counter is restored', async ({ page }) => {
-    const combo = combos[0];
-    const reward = byId(combo.rewardItemId);
-    await openGame(page);
-    const worn = pieces(combo);
-    await wear(page, worn.slice(0, -1));
-    await equipItem(page, worn[worn.length - 1]);
-    await openGift(page);
-    await page.reload();
-    await settled(page);
-    expect((await state(page)).secrets).toMatchObject({ count: 1, unlocked: [combo.id], text: `Secretos 1/${combos.length}` });
-    // Loading the game with its combo already worn gives no gift.
-    expect((await state(page)).gift).toBeNull();
-    const s = await showItem(page, reward);
-    expect(s.cells[reward.id]).toBeDefined();
-    const wornSlot = (await equipItem(page, reward)).outfit[reward.slot];
-    expect(wornSlot).toBe(reward.id);
-  });
+  // 'an unlocked secret survives a reload, is draggable and the counter is restored' is now the last part of every combo test above.
 
   test('a locked second combo still gives its own gift', async ({ page }) => {
     const [first, second] = combos;
@@ -156,16 +145,23 @@ test.describe('secret combos (F8)', () => {
     const bow = s.gift!.bow;
     // Samples of the scene every frame-ish, so the short flight cannot be missed by slow polling.
     await page.evaluate(() => {
-      const w = window as unknown as { __samples: { revealing: string[]; count: number; text: string }[] };
+      const w = window as unknown as { __samples: { revealing: string[]; count: number; text: string }[]; __sampler?: number };
       w.__samples = [];
-      setInterval(() => {
+      window.clearInterval(w.__sampler);
+      w.__sampler = window.setInterval(() => {
         const d = window.__VISTE__?.dressUp;
         if (d) w.__samples.push({ revealing: d.secrets.revealing, count: d.secrets.count, text: d.secrets.text });
       }, 16);
     });
-    await dragTo(page, bow, { x: bow.x + 40, y: bow.y - 150 });
+    await dragTo(page, bow, { x: bow.x + 40, y: bow.y - 150 }, { smooth: true });
     await page.waitForFunction(() => window.__VISTE__?.dressUp?.secrets.count === 1, undefined, { timeout: 10_000 });
-    const samples = await page.evaluate(() => (window as unknown as { __samples: { revealing: string[]; count: number; text: string }[] }).__samples);
+    // The sampler runs on its own timer: wait until it has seen the counter at 1.
+    await page.waitForFunction(() => (window as unknown as { __samples: { count: number }[] }).__samples.some((x) => x.count === 1));
+    const samples = await page.evaluate(() => {
+      const w = window as unknown as { __samples: { revealing: string[]; count: number; text: string }[]; __sampler?: number };
+      window.clearInterval(w.__sampler); // the page is reused by the next test
+      return w.__samples;
+    });
     // While the prize flew the cell was held back and the counter had not moved...
     const flying = samples.filter((x) => x.revealing.length > 0);
     expect(flying.length).toBeGreaterThan(0);
@@ -185,9 +181,10 @@ test.describe('secret combos (F8)', () => {
     const combo = combos.find((c) => c.requires.length >= 3)!;
     const worn = pieces(combo);
     await openGame(page);
-    await equipItem(page, worn[0]);
+    // The first and the middle pieces are put on through the hook; the piece that completes the combo is dragged.
+    await wear(page, [worn[0]]);
     expect((await state(page)).almost).not.toContain(combo.id);
-    for (const piece of worn.slice(1, -1)) await equipItem(page, piece);
+    await wear(page, worn.slice(0, -1));
     await page.waitForFunction((id) => window.__VISTE__?.dressUp?.almost.includes(id), combo.id);
     await equipItem(page, worn[worn.length - 1]);
     await page.waitForFunction((id) => !window.__VISTE__?.dressUp?.almost.includes(id), combo.id);

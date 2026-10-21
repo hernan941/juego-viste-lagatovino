@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test';
 import {
-  bySlot, cats, clickButton, equipItem, pickCat, settled, startGame, test, typeName, ui, waitScene,
+  bySlot, cats, clickButton, equipItem, openScene, pickCat, settled, sharedTest as test, startGame, test as fresh, typeName, ui, waitScene,
 } from './helpers';
 
 /** The N-th cat of cats.json (not the first, so the test shows that the pick travels). */
@@ -18,9 +18,9 @@ async function chooseCat(page: import('@playwright/test').Page) {
 }
 
 test.describe('the complete flow (ADR 0007)', () => {
-  test.setTimeout(150_000);
+  test.setTimeout(120_000);
 
-  test('Title to CatSelect to the shop, waiting for the walk, then dress, admire, keep dressing and change cat', async ({ page }) => {
+  test('smoke of the whole game: Title, CatSelect, name, the shop walk, dress by dragging, admire, download the PNG, keep dressing and change cat', async ({ page }) => {
     await chooseCat(page);
     expect(await page.evaluate(() => window.__VISTE__?.session)).toMatchObject({ catId: CAT.id, catName: NAME });
 
@@ -44,6 +44,13 @@ test.describe('the complete flow (ADR 0007)', () => {
     const show = await waitScene(page, 'Showcase');
     expect(show.info.title).toBe(`¡Qué lindo look, ${NAME}!`);
     expect(show.info.layers).toEqual([sweater.id]);
+
+    // "Descargar foto": a PNG named after the cat is downloaded.
+    const download = page.waitForEvent('download');
+    await clickButton(page, 'photo');
+    const file = await download;
+    expect(file.suggestedFilename()).toBe(`viste-lagato-${NAME.toLowerCase()}.png`);
+    expect(file.suggestedFilename()).toMatch(/\.png$/);
 
     // "Seguir vistiendo" keeps the outfit.
     await clickButton(page, 'keep');
@@ -74,7 +81,7 @@ test.describe('the complete flow (ADR 0007)', () => {
   });
 
   test('the cat that was worn does not follow to another cat: changing cat starts naked', async ({ page }) => {
-    await page.goto('/?start=DressUp');
+    await openScene(page, 'DressUp');
     const sweater = bySlot('sweater')[0];
     await settled(page);
     await equipItem(page, sweater);
@@ -152,10 +159,10 @@ test.describe('the name of the cat', () => {
   });
 });
 
-test.describe('mute button', () => {
-  test.setTimeout(90_000);
+fresh.describe('mute button', () => {
+  fresh.setTimeout(120_000);
 
-  test('toggles the sound from the Title, the fitting room and the Showcase, and persists', async ({ page }) => {
+  fresh('toggles the sound from the Title, the fitting room and the Showcase, and persists', async ({ page }) => {
     await page.goto('/');
     await waitScene(page, 'Title');
     expect(await page.evaluate(() => window.__VISTE__?.muted)).toBe(false);
@@ -167,7 +174,7 @@ test.describe('mute button', () => {
     await clickButton(page, 'mute');
     await page.waitForFunction(() => window.__VISTE__?.muted === false);
 
-    await page.goto('/?start=DressUp');
+    await openScene(page, 'DressUp');
     await waitScene(page, 'DressUp');
     await clickButton(page, 'mute');
     await page.waitForFunction(() => window.__VISTE__?.muted === true);
@@ -180,7 +187,7 @@ test.describe('mute button', () => {
 
 test('dragging still works after coming back from the Showcase', async ({ page }) => {
   test.setTimeout(120_000);
-  await page.goto('/?start=Showcase');
+  await openScene(page, 'Showcase');
   await waitScene(page, 'Showcase');
   await clickButton(page, 'keep');
   await waitScene(page, 'DressUp');
