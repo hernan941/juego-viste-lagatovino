@@ -76,7 +76,7 @@ test.describe('secret combos (F8)', () => {
     const worn = pieces(combo);
     await wear(page, worn.slice(0, -1));
     expect((await state(page)).fxEmitters).toBe(0);
-    // The page itself times the effect in game time (the scene clock): from the first emitter alive to the moment there is none.
+    // The page itself times the effect in game time (sum of the frame deltas): from the first emitter alive to the moment there is none.
     const timing = page.evaluate(() => new Promise<number>((resolve) => {
       let t0 = 0;
       const tick = () => {

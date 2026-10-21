@@ -63,7 +63,7 @@ export interface DressUpE2EState {
   reactions: string[];
   /** Particle emitters of the combo effects that are still alive (the permanent hearts and sparkles do not count). */
   fxEmitters: number;
-  /** The scene clock in ms (game time: it runs slower than the wall clock when the machine is loaded). */
+  /** Sum of the frame deltas in ms: what timers and tweens count (it runs slower than the wall clock when the machine is loaded). */
   clockMs: number;
   /** True when no entrance animation or drag is running, so positions are stable. */
   settled: boolean;
