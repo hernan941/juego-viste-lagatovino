@@ -11,8 +11,7 @@ import type { Session } from './domain/session';
 import { chooseCat, emptySession } from './domain/session';
 import { readSession, writeSession } from './systems/sessionStore';
 import type { Catalog } from './data/schema';
-import { EventBus } from './EventBus';
-import { countListeners, type PerfCounts } from './systems/perf';
+import type { PerfCounts } from './systems/perf';
 
 /** What a scene reports to the test hook, in game coordinates (1280 x 720). */
 export interface DressUpE2EState {
@@ -170,12 +169,10 @@ export function e2eStart(): { scene: string; catId: string | null; name: string 
 const isE2EScene = (s: Phaser.Scene): s is Phaser.Scene & E2EScene =>
   typeof (s as Partial<E2EScene>).getE2EState === 'function';
 
-/** Objects in a display list, counting what containers hold. */
-function countDisplay(list: Phaser.GameObjects.GameObject[]): number {
-  return list.reduce((n, o) => n + 1 + ((o as Phaser.GameObjects.Container).list ? countDisplay((o as Phaser.GameObjects.Container).list) : 0), 0);
-}
+/** Reads what is alive in the game (see `e2ePerf.ts`); injected so this file does not import the EventBus (Cat imports `isE2EEnabled` from here). */
+export type PerfReader = (game: Game) => PerfCounts & { fps: number };
 
-export function installE2EHook(game: Game): void {
+export function installE2EHook(game: Game, readPerf: PerfReader): void {
   if (!isE2EEnabled()) return;
   const toPage = (): ((p: Point) => Point) => {
     const r = game.canvas.getBoundingClientRect();
@@ -225,17 +222,7 @@ export function installE2EHook(game: Game): void {
       game.scene.getScenes(true).find(isE2EScene)?.e2eWear(ids);
     },
     get perf(): PerfCounts & { fps: number } {
-      const total: PerfCounts & { fps: number } = { tweens: 0, timers: 0, eventBus: countListeners(EventBus), registry: countListeners(game.registry.events), input: 0, sceneEvents: 0, displayList: 0, fps: game.loop.actualFps };
-      for (const scene of game.scene.getScenes(true)) {
-        // `_active` and `_pendingInsertion` are the clock's private lists of timers: there is no public count.
-        const clock = scene.time as unknown as { _active: unknown[]; _pendingInsertion: unknown[] };
-        total.tweens += scene.tweens.getTweens().length;
-        total.timers += clock._active.length + clock._pendingInsertion.length;
-        total.input += countListeners(scene.input) + (scene.input.keyboard ? countListeners(scene.input.keyboard) : 0);
-        total.sceneEvents += countListeners(scene.events);
-        total.displayList += countDisplay(scene.children.list);
-      }
-      return total;
+      return readPerf(game);
     },
     get frames(): number {
       return game.loop.frame;
