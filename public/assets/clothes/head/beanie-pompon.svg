@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!--
+    Viste Lagato · gorro "beanie-pompon" (slot head). Coral con doblez crema y pompon.
+    Se dibuja ya en su lugar sobre la coronilla (ancla head 256,98); las orejas asoman a los lados.
+    Contorno 8 px #4A3036, una sombra (negro 15 %) y un brillo (art-direction §3 y §5).
+  -->
+  <defs>
+    <path id="bn-dome" d="M164 112 C156 62 198 38 256 38 C314 38 356 62 348 112 Z"/>
+    <clipPath id="bn-clip"><use href="#bn-dome"/></clipPath>
+  </defs>
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <!-- cupula -->
+    <use href="#bn-dome" fill="#F0707A"/>
+    <g clip-path="url(#bn-clip)">
+      <path fill="none" stroke="#D95A66" stroke-width="5" d="M206 48 L200 112 M236 40 L234 112 M276 40 L278 112 M306 48 L312 112"/>
+      <!-- sombra unica -->
+      <path fill="#000" fill-opacity="0.15" d="M304 36 C350 56 358 90 352 116 L296 116 C312 90 312 62 304 36 Z"/>
+    </g>
+    <use href="#bn-dome" fill="none" stroke="#4A3036" stroke-width="8"/>
+    <!-- doblez -->
+    <rect x="150" y="96" width="212" height="48" rx="22" fill="#FFFDF8" stroke="#4A3036" stroke-width="8"/>
+    <path fill="none" stroke="#E7D9C6" stroke-width="5" d="M184 108 L184 132 M212 108 L212 132 M240 108 L240 132 M268 108 L268 132 M296 108 L296 132 M324 108 L324 132"/>
+    <path fill="#000" fill-opacity="0.15" d="M162 128 C200 138 312 138 350 128 C348 138 340 140 330 140 L182 140 C172 140 164 138 162 128 Z"/>
+    <!-- pompon -->
+    <circle cx="256" cy="36" r="26" fill="#FFFDF8" stroke="#4A3036" stroke-width="8"/>
+    <path fill="none" stroke="#E7D9C6" stroke-width="4" d="M242 40 C248 46 262 46 270 40 M246 28 C252 24 260 24 266 28"/>
+    <!-- brillo -->
+    <ellipse fill="#FFFFFF" fill-opacity="0.5" cx="206" cy="72" rx="8" ry="20" transform="rotate(24 206 72)"/>
+    <circle fill="#FFFFFF" fill-opacity="0.5" cx="196" cy="98" r="4"/>
+  </g>
+</svg>

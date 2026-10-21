@@ -1,12 +1,7 @@
 // Pure drag & drop helpers (ADR 0008): drop zone, magnet and drop resolution.
-import type { Point } from './types';
+import type { Point, Rect } from './types';
 
-export interface Rect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+export type { Rect };
 
 export type DropAction = 'equip' | 'return' | 'unequip';
 

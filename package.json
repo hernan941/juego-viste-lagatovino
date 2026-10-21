@@ -13,7 +13,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "art": "node art/tools/build-art.mjs && node scripts/sync-art.mjs"
   },
   "dependencies": {
     "phaser": "~4.2.1"

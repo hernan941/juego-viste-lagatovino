@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Viste Lagato · cara "parpadeo" (capa intercambiable, art-direction §2). Ojos cerrados (para el idle cada 3-5 s). -->
+<g stroke-linejoin="round" stroke-linecap="round">
+  <!-- mejillas -->
+  <ellipse fill="#FF9EB5" fill-opacity="0.6" cx="158" cy="258" rx="24" ry="14"/>
+  <ellipse fill="#FF9EB5" fill-opacity="0.6" cx="354" cy="258" rx="24" ry="14"/>
+  <!-- bigotes -->
+  <path fill="none" stroke="#4A3036" stroke-width="4" d="M126 238 L104 232 M126 252 L106 258 M386 238 L408 232 M386 252 L406 258"/>
+  <!-- ojos -->
+  <path fill="none" stroke="#4A3036" stroke-width="8" d="M178 222 C184 236 200 236 206 222 M306 222 C312 236 328 236 334 222"/>
+  <!-- boca :3 -->
+  <path fill="none" stroke="#4A3036" stroke-width="6" d="M236 240 C236 254 254 256 256 242 C258 256 276 254 276 240"/>
+</g>
+</svg>

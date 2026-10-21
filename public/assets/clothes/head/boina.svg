@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!--
+    Viste Lagato · gorro "boina" (slot head). Boina lavanda ladeada con rabito.
+    Se dibuja ya en su lugar sobre la coronilla (ancla head 256,98); las orejas asoman a los lados.
+    Contorno 8 px #4A3036, una sombra (negro 15 %) y un brillo (art-direction §3 y §5).
+  -->
+  <defs>
+    <ellipse id="bt-cap" cx="254" cy="94" rx="124" ry="46" transform="rotate(-9 254 94)"/>
+    <clipPath id="bt-clip"><use href="#bt-cap"/></clipPath>
+  </defs>
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <!-- cinta -->
+    <path fill="#B8A6F2" stroke="#4A3036" stroke-width="8" d="M156 108 C190 142 322 148 366 100 L360 126 C324 160 196 156 160 128 Z"/>
+    <!-- rabito -->
+    <rect x="240" y="38" width="28" height="30" rx="12" fill="#B8A6F2" stroke="#4A3036" stroke-width="8" transform="rotate(-9 254 53)"/>
+    <!-- boina -->
+    <use href="#bt-cap" fill="#D8CCFF"/>
+    <g clip-path="url(#bt-clip)">
+      <path fill="none" stroke="#B8A6F2" stroke-width="5" d="M214 58 C224 80 224 104 210 130 M260 52 C268 78 268 106 258 136 M306 56 C312 80 312 104 304 128"/>
+      <!-- sombra unica -->
+      <path fill="#000" fill-opacity="0.15" d="M150 106 C190 150 330 150 384 96 L384 150 L150 150 Z"/>
+    </g>
+    <use href="#bt-cap" fill="none" stroke="#4A3036" stroke-width="8"/>
+    <!-- brillo -->
+    <ellipse fill="#FFFFFF" fill-opacity="0.55" cx="190" cy="82" rx="10" ry="22" transform="rotate(58 190 82)"/>
+    <circle fill="#FFFFFF" fill-opacity="0.55" cx="168" cy="98" r="4"/>
+  </g>
+</svg>

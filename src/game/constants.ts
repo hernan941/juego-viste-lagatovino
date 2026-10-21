@@ -40,8 +40,41 @@ export const Events = {
   SceneReady: 'scene-ready',
 } as const;
 
+/** Events emitted by the game objects (Cat, ItemGrid, Tabs, LayersPanel). */
+export const ObjectEvents = {
+  /** ItemGrid / Cat: (item: ClothingDef, pointer) */
+  ItemDragStart: 'item-drag-start',
+  ItemDrag: 'item-drag',
+  ItemDragEnd: 'item-drag-end',
+  /** Tabs: (category) */
+  TabSelect: 'tab-select',
+  /** LayersPanel: (item: ClothingDef) */
+  LayerRemove: 'layer-remove',
+} as const;
+
 export const RegistryKeys = {
   CatId: 'catId',
   CatName: 'catName',
   Outfit: 'outfit',
+  /** Validated catalog (cats, clothes, combos), set by the Preloader. */
+  Catalog: 'catalog',
+  /** Validated cat template anchors, set by the Preloader. */
+  Anchors: 'anchors',
+} as const;
+
+/** Textures generated in code (particles). */
+export const TextureKeys = {
+  Heart: 'particle-heart',
+  Sparkle: 'particle-sparkle',
+} as const;
+
+/** Tab labels by catalog category (UI text in Spanish). */
+export const CATEGORY_LABELS = {
+  sweater: 'Sweaters',
+  head: 'Gorros',
+  neck: 'Bufandas',
+  face: 'Lentes',
+  paws: 'Patitas',
+  accessory: 'Accesorios',
+  bottom: 'Abajo',
 } as const;

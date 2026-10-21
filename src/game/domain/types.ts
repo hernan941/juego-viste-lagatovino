@@ -10,6 +10,30 @@ export interface Point {
   y: number;
 }
 
+export interface Rect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/** Anchor names of the cat template (art/anchors.json). */
+export const ANCHOR_NAMES = ['head', 'eyes', 'neck', 'torso', 'paws'] as const;
+export type AnchorName = (typeof ANCHOR_NAMES)[number];
+
+/** Box names of the cat template, used as hit areas of worn items. */
+export const BOX_NAMES = ['head', 'torso', 'paws', 'tail'] as const;
+export type BoxName = (typeof BOX_NAMES)[number];
+
+/** Shared canvas geometry of every cat and item (ADR 0003), in px of the 512 canvas. */
+export interface AnchorsDef {
+  canvas: { width: number; height: number };
+  anchors: Record<AnchorName, Point>;
+  details: Record<string, Point>;
+  boxes: Record<BoxName, Rect>;
+  dropZone: Rect;
+}
+
 export interface CatDef {
   id: string;
   name: string;

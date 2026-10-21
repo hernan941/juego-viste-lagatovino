@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" width="480" height="360">
+  <!--
+    Viste Lagato · panel de muestra (art-direction §6).
+    Radio 32 (>= 24), borde rosa-200 #FFD1E3 de 4 px, fondo rosa-50 #FFF0F6,
+    sombra suave desplazada hacia abajo y decoracion minima (corazon, estrellita, huellita).
+    Para escalar sin deformar las esquinas en Phaser usar NineSlice con margenes de 40 px.
+  -->
+  <!-- sombra suave -->
+  <rect x="8" y="16" width="464" height="336" rx="32" fill="#E2578B" fill-opacity="0.16"/>
+  <!-- panel -->
+  <rect x="6" y="6" width="468" height="336" rx="32" fill="#FFF0F6" stroke="#FFD1E3" stroke-width="4"/>
+  <!-- brillo superior -->
+  <rect x="40" y="18" width="120" height="8" rx="4" fill="#FFFFFF" fill-opacity="0.8"/>
+  <circle cx="174" cy="22" r="4" fill="#FFFFFF" fill-opacity="0.8"/>
+  <!-- decoracion -->
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <path transform="translate(436 44)" fill="#FF8FB8" d="M0 10 C-8 4 -13 0 -13 -5 C-13 -9 -10 -12 -6.5 -12 C-3.5 -12 -1.5 -10 0 -7.5 C1.5 -10 3.5 -12 6.5 -12 C10 -12 13 -9 13 -5 C13 0 8 4 0 10 Z"/>
+    <path transform="translate(410 30)" fill="#FFF0A8" stroke="#F5D86A" stroke-width="2" d="M0 -9 L2.6 -2.8 L9 -2.6 L4 1.6 L5.6 8 L0 4.4 L-5.6 8 L-4 1.6 L-9 -2.6 L-2.6 -2.8 Z"/>
+    <g transform="translate(44 316)" fill="#D8CCFF">
+      <ellipse cx="0" cy="4" rx="8" ry="6.5"/>
+      <circle cx="-8" cy="-6" r="3.4"/><circle cx="-2.6" cy="-10" r="3.4"/><circle cx="2.6" cy="-10" r="3.4"/><circle cx="8" cy="-6" r="3.4"/>
+    </g>
+  </g>
+</svg>

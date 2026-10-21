@@ -16,6 +16,9 @@ const config: Phaser.Types.Core.GameConfig = {
   parent: 'game-container',
   backgroundColor: Palette.rosa50,
   scale: { mode: Scale.FIT, autoCenter: Scale.CENTER_BOTH },
+  // One texture per batch: software WebGL (SwiftShader: headless Chromium, VMs) renders multi-texture batches
+  // with flickering, half-drawn layers. The scene is small, so the extra draw calls cost nothing.
+  render: { maxTextures: 1 },
   scene: [Boot, Preloader, Title, CatSelect, ShopEntrance, DressUp, Showcase],
 };
 

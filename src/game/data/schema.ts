@@ -1,8 +1,8 @@
 // Hand-written validation of the JSON catalog (no zod: three small shapes, zero dependencies,
 // and Spanish messages that name the exact path). Runs on load in the Preloader (ADR 0010).
 import { SLOT_ORDER } from '../domain/slots';
-import { CATEGORIES } from '../domain/types';
-import type { CatDef, ClothingDef, ComboDef } from '../domain/types';
+import { ANCHOR_NAMES, BOX_NAMES, CATEGORIES } from '../domain/types';
+import type { AnchorsDef, CatDef, ClothingDef, ComboDef } from '../domain/types';
 
 export type Result<T> = { ok: true; value: T } | { ok: false; errors: string[] };
 
@@ -125,4 +125,32 @@ export function assertCatalog(raw: { cats: unknown; clothes: unknown; combos: un
   const r = validateCatalog(raw);
   if (!r.ok) throw new CatalogError(r.errors);
   return r.value;
+}
+
+const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+const isPoint = (v: unknown): boolean => isObj(v) && isNum(v.x) && isNum(v.y);
+const isRect = (v: unknown): boolean =>
+  isObj(v) && isNum(v.x) && isNum(v.y) && isNum(v.width) && isNum(v.height) && v.width > 0 && v.height > 0;
+
+/** Checks art/anchors.json (copied to data/anchors.json): canvas, anchors, details, boxes and drop zone. */
+export function validateAnchors(data: unknown): Result<AnchorsDef> {
+  const errors: string[] = [];
+  if (!isObj(data)) return { ok: false, errors: ['anchors: debe ser un objeto'] };
+  const canvas = data.canvas;
+  if (!(isObj(canvas) && isNum(canvas.width) && isNum(canvas.height) && canvas.width > 0 && canvas.height > 0)) {
+    errors.push('anchors.canvas: debe tener width y height positivos');
+  }
+  const group = (name: string, keys: readonly string[] | null, ok: (v: unknown) => boolean, what: string) => {
+    const g = data[name];
+    if (!isObj(g)) {
+      errors.push(`anchors.${name}: debe ser un objeto`);
+      return;
+    }
+    for (const k of keys ?? Object.keys(g)) if (!ok(g[k])) errors.push(`anchors.${name}.${k}: debe ser ${what}`);
+  };
+  group('anchors', ANCHOR_NAMES, isPoint, 'un punto {x, y}');
+  group('details', null, isPoint, 'un punto {x, y}');
+  group('boxes', BOX_NAMES, isRect, 'una caja {x, y, width, height}');
+  if (!isRect(data.dropZone)) errors.push('anchors.dropZone: debe ser una caja {x, y, width, height}');
+  return finish(data, errors);
 }
