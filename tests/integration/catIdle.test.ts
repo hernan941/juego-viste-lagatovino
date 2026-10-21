@@ -96,7 +96,10 @@ describe('Cat idle extras (F9): a glance aside, a spontaneous tail wag and the p
   it('the spontaneous wag is a soft 6 degree flick that ends where the sway starts, and it schedules the next one', () => {
     const { scene, timers, chains } = fakeScene();
     new Cat(scene as never, 0, 0, def, anchors as never, 512);
-    const wag = timers.find((t) => t.delay >= 6000 && t.delay < 10_000)!;
+    // Created in order: blink, glance, wag (the delay ranges of the glance and the wag overlap, so the order is what tells them apart).
+    const wag = timers[2];
+    expect(wag.delay).toBeGreaterThanOrEqual(6000);
+    expect(wag.delay).toBeLessThan(10_000);
     const before = timers.length;
     wag.fn();
     expect(chains).toHaveLength(1);
