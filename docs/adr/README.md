@@ -17,6 +17,7 @@ Aquí se registran las decisiones de arquitectura del proyecto (formato Nygard).
 | [0010](0010-arquitectura-estructura-oficial-de-phaser.md) | Arquitectura: estructura oficial de Phaser | Aceptado |
 | [0011](0011-phaser-4.md) | Usar Phaser 4 en vez de Phaser 3 | Aceptado |
 | [0012](0012-desarrollo-guiado-por-tests-tdd.md) | Desarrollo guiado por tests (TDD) | Aceptado |
+| [0013](0013-movimiento-reducido.md) | Movimiento reducido | Aceptado |
 
 ## Estados
 `Propuesto` → `Aceptado` → (`Obsoleto` | `Reemplazado por NNNN`)
