@@ -2,7 +2,8 @@ import Phaser from 'phaser';
 import { FONT_FAMILY, ObjectEvents, Palette, SfxKeys } from '../constants';
 import type { Point } from '../domain/types';
 import { getAudio } from '../plugins/AudioPlugin';
-import { addHover, addPress, hex } from './ui';
+import { addHover, addPress, hex, hitRect } from './ui';
+import { hoverSfx } from './hoverSfx';
 
 export type ButtonTone = 'rosa' | 'mantequilla' | 'menta' | 'lavanda';
 
@@ -49,12 +50,13 @@ export class Button extends Phaser.GameObjects.Container {
     this.add([bg, this.face]);
     scene.add.existing(this);
     this.setSize(width, height);
-    this.setInteractive({ useHandCursor: true });
+    // Phone: the touch area grows to 44 CSS px (up to half a button's height more); the drawing stays.
+    this.setInteractive({ hitArea: hitRect(width, height, { height: height + 24 }), hitAreaCallback: Phaser.Geom.Rectangle.Contains, useHandCursor: true });
 
     addHover(this, 1.05);
     addPress(this, this.face);
     const audio = getAudio(scene);
-    this.on('pointerover', () => audio.play(SfxKeys.Hover, { volume: 0.5 }));
+    this.on('pointerover', (p: Phaser.Input.Pointer) => hoverSfx(scene, p, 0.5));
     this.on('pointerdown', () => { this.pressed = true; });
     this.on('pointerout', () => { this.pressed = false; });
     this.on('pointerup', () => {

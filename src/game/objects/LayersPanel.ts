@@ -1,9 +1,9 @@
 import Phaser from 'phaser';
-import { ObjectEvents, Palette, SfxKeys } from '../constants';
+import { ObjectEvents, Palette } from '../constants';
 import type { ClothingDef, Point } from '../domain/types';
-import { getAudio } from '../plugins/AudioPlugin';
 import { profileOf } from '../systems/motion';
-import { addHover, addPress, drawPanel, hex, makeText } from './ui';
+import { addHover, addPress, drawPanel, hex, hitCircle, makeText } from './ui';
+import { hoverSfx } from './hoverSfx';
 
 const WIDTH = 250;
 /** Room for the 6 slots: header (70) + 6 rows of 56 + bottom margin. */
@@ -29,9 +29,9 @@ class Row extends Phaser.GameObjects.Container {
     cross.lineStyle(4, 0xffffff, 1).beginPath().moveTo(-6, -6).lineTo(6, 6).moveTo(6, -6).lineTo(-6, 6).strokePath();
     this.closeButton = scene.add.container(WIDTH / 2 - 40, 0, [cross]);
     this.closeButton.setSize(34, 34);
-    this.closeButton.setInteractive({ hitArea: new Phaser.Geom.Circle(17, 17, 20), hitAreaCallback: Phaser.Geom.Circle.Contains, useHandCursor: true });
+    this.closeButton.setInteractive({ hitArea: hitCircle(34, 3, 60), hitAreaCallback: Phaser.Geom.Circle.Contains, useHandCursor: true });
     addHover(this.closeButton, 1.15);
-    this.closeButton.on('pointerover', () => getAudio(scene).play(SfxKeys.Hover, { volume: 0.5 }));
+    this.closeButton.on('pointerover', (p: Phaser.Input.Pointer) => hoverSfx(scene, p, 0.5));
     addPress(this.closeButton);
     this.closeButton.on('pointerdown', () => this.emit(ObjectEvents.LayerRemove, item));
 

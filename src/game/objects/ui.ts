@@ -2,6 +2,8 @@
 import Phaser from 'phaser';
 import { FONT_FAMILY, Palette, colorToNumber } from '../constants';
 import { profileOf } from '../systems/motion';
+import { liftOffset, minHitExtent } from '../systems/touch';
+import { readTouchEnv } from '../systems/touchEnv';
 
 export const hex = (token: keyof typeof Palette) => colorToNumber(Palette[token]);
 
@@ -85,3 +87,27 @@ export function addPress(target: Phaser.GameObjects.Container, visual: Phaser.Ga
   target.on('pointerdown', () => to(baseY + dy, 60, 'Sine.easeOut'));
   for (const ev of ['pointerup', 'pointerout']) target.on(ev, () => to(baseY, 150, profileOf(scene).ease('Back.easeOut')));
 }
+
+// ---- Touch (ADR 0014) ---------------------------------------------------------
+
+/** Whether a finger can play here and the game units per CSS px (read from the window each time: it changes with the phone's turn). */
+export const touchEnv = () => readTouchEnv(window);
+
+/** Hit area for a container of `width` x `height` (setSize): the drawing on a mouse, at least 44 CSS px on a touch device (the art does not change). */
+export function hitRect(width: number, height: number, cap: { width?: number; height?: number } = {}): Phaser.Geom.Rectangle {
+  const env = touchEnv();
+  if (!env.touch) return new Phaser.Geom.Rectangle(0, 0, width, height);
+  const w = minHitExtent(width, env.scale, cap.width);
+  const h = minHitExtent(height, env.scale, cap.height);
+  return new Phaser.Geom.Rectangle(-(w - width) / 2, -(h - height) / 2, w, h);
+}
+
+/** Circular hit area for a round container of `size` (setSize): `reach` px beyond the drawing, and at least 44 CSS px on a touch device. */
+export function hitCircle(size: number, reach = 4, cap = Infinity): Phaser.Geom.Circle {
+  const env = touchEnv();
+  const diameter = env.touch ? minHitExtent(size + reach * 2, env.scale, cap) : size + reach * 2;
+  return new Phaser.Geom.Circle(size / 2, size / 2, diameter / 2);
+}
+
+/** How far above the finger a dragged garment is drawn for this pointer (zero for a mouse). */
+export const liftFor = (pointer: Phaser.Input.Pointer) => liftOffset(pointer.wasTouch, touchEnv().scale);

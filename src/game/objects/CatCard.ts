@@ -1,10 +1,11 @@
 import Phaser from 'phaser';
-import { FONT_FAMILY, MEOW_KEYS, ObjectEvents, Palette, SfxKeys, TextureKeys } from '../constants';
+import { FONT_FAMILY, MEOW_KEYS, ObjectEvents, Palette, TextureKeys } from '../constants';
 import type { AnchorsDef, CatDef, Point } from '../domain/types';
 import { getAudio } from '../plugins/AudioPlugin';
 import { Cat } from './Cat';
 import { profileOf } from '../systems/motion';
 import { addHover, hex } from './ui';
+import { hoverSfx } from './hoverSfx';
 
 export const CARD_W = 172;
 export const CARD_H = 196;
@@ -36,8 +37,7 @@ export class CatCard extends Phaser.GameObjects.Container {
     scene.add.existing(this);
     this.setSize(CARD_W, CARD_H);
 
-    const audio = getAudio(scene);
-    this.on('pointerover', () => audio.play(SfxKeys.Hover, { volume: 0.4 }));
+    this.on('pointerover', (p: Phaser.Input.Pointer) => hoverSfx(scene, p, 0.4));
     this.on('pointerdown', () => { this.pressed = true; });
     this.on('pointerout', () => { this.pressed = false; });
     this.on('pointerup', () => {

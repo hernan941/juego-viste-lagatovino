@@ -1,9 +1,9 @@
 import Phaser from 'phaser';
-import { ObjectEvents, SfxKeys, TextureKeys } from '../constants';
+import { ObjectEvents, TextureKeys } from '../constants';
 import type { ClothingDef, Rect } from '../domain/types';
-import { getAudio } from '../plugins/AudioPlugin';
 import { profileOf } from '../systems/motion';
 import { addHover, hex, type ScaleTo } from './ui';
+import { hoverSfx } from './hoverSfx';
 
 export const CELL_SIZE = 104;
 
@@ -49,7 +49,7 @@ export class ClothingItem extends Phaser.GameObjects.Container {
       useHandCursor: true,
     });
     this.scaleView = addHover(this, 1.05, this.view);
-    this.on('pointerover', () => getAudio(scene).play(SfxKeys.Hover, { volume: 0.35 }));
+    this.on('pointerover', (p: Phaser.Input.Pointer) => hoverSfx(scene, p, 0.35));
     this.on('pointerdown', () => {
       this.dragged = false;
       this.scaleView(0.92, 60);

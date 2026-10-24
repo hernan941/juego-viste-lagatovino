@@ -3,7 +3,8 @@ import { FONT_FAMILY, ObjectEvents, Palette, SfxKeys, TextureKeys } from '../con
 import type { ClothingDef, Point } from '../domain/types';
 import { getAudio } from '../plugins/AudioPlugin';
 import { profileOf } from '../systems/motion';
-import { addHover, hex } from './ui';
+import { addHover, hex, hitRect } from './ui';
+import { hoverSfx } from './hoverSfx';
 
 /** How far the bow has to be pulled from its knot to open the box (game px). */
 export const BOW_PULL = 70;
@@ -53,9 +54,9 @@ export class GiftBox extends Phaser.GameObjects.Container {
     bowArt.fillStyle(hex('rosa200'), 1).fillCircle(0, 4, 11).strokeCircle(0, 4, 11);
     this.bow = scene.add.container(this.bowRest.x, this.bowRest.y, [bowArt]);
     this.bow.setSize(90, 56);
-    this.bow.setInteractive({ hitArea: new Phaser.Geom.Rectangle(0, 0, 90, 56), hitAreaCallback: Phaser.Geom.Rectangle.Contains, draggable: true, useHandCursor: true });
+    this.bow.setInteractive({ hitArea: hitRect(90, 56), hitAreaCallback: Phaser.Geom.Rectangle.Contains, draggable: true, useHandCursor: true });
     addHover(this.bow, 1.12);
-    this.bow.on('pointerover', () => getAudio(scene).play(SfxKeys.Hover, { volume: 0.4 }));
+    this.bow.on('pointerover', (p: Phaser.Input.Pointer) => hoverSfx(scene, p, 0.4));
     this.bow.on('dragstart', () => this.onBowGrab());
     this.bow.on('drag', (_p: Phaser.Input.Pointer, dragX: number, dragY: number) => this.onBowDrag(dragX, dragY));
     this.bow.on('dragend', () => this.onBowRelease());

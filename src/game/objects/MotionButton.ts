@@ -4,7 +4,8 @@ import type { Point } from '../domain/types';
 import { getAudio } from '../plugins/AudioPlugin';
 import { getMotion } from '../plugins/MotionPlugin';
 import { profileOf } from '../systems/motion';
-import { addHover, addPress, hex } from './ui';
+import { addHover, addPress, hex, hitCircle } from './ui';
+import { hoverSfx } from './hoverSfx';
 
 const SIZE = 60;
 
@@ -45,14 +46,14 @@ export class MotionButton extends Phaser.GameObjects.Container {
     this.add([bg, this.face, this.caption]);
     scene.add.existing(this);
     this.setSize(SIZE, SIZE);
-    this.setInteractive({ hitArea: new Phaser.Geom.Circle(SIZE / 2, SIZE / 2, SIZE / 2 + 4), hitAreaCallback: Phaser.Geom.Circle.Contains, useHandCursor: true });
+    this.setInteractive({ hitArea: hitCircle(SIZE, 4, 80), hitAreaCallback: Phaser.Geom.Circle.Contains, useHandCursor: true });
     addHover(this, 1.1);
     addPress(this, this.face);
 
     const audio = getAudio(scene);
     this.refresh(profileOf(scene).reduced, true);
-    this.on('pointerover', () => {
-      audio.play(SfxKeys.Hover, { volume: 0.5 });
+    this.on('pointerover', (p: Phaser.Input.Pointer) => {
+      hoverSfx(scene, p, 0.5);
       this.showCaption(true);
     });
     this.on('pointerout', () => this.showCaption(false));

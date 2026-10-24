@@ -3,7 +3,8 @@ import { ObjectEvents, Palette, SfxKeys } from '../constants';
 import type { Point } from '../domain/types';
 import { getAudio } from '../plugins/AudioPlugin';
 import { profileOf } from '../systems/motion';
-import { addHover, addPress, hex, makeText, type ScaleTo } from './ui';
+import { addHover, addPress, hex, hitRect, makeText, type ScaleTo } from './ui';
+import { hoverSfx } from './hoverSfx';
 
 export interface TabDef {
   id: string;
@@ -29,7 +30,7 @@ class Tab extends Phaser.GameObjects.Container {
     this.view = scene.add.container(0, 0, [this.bg, icon]);
     this.add(this.view);
     this.setSize(TAB_SIZE, TAB_SIZE);
-    this.setInteractive({ hitArea: new Phaser.Geom.Rectangle(0, 0, TAB_SIZE, TAB_SIZE), hitAreaCallback: Phaser.Geom.Rectangle.Contains, useHandCursor: true });
+    this.setInteractive({ hitArea: hitRect(TAB_SIZE, TAB_SIZE, { width: TAB_SIZE + TAB_GAP, height: TAB_SIZE + 16 }), hitAreaCallback: Phaser.Geom.Rectangle.Contains, useHandCursor: true });
     this.scaleView = addHover(this, 1.1, this.view);
     addPress(this, this.view);
     this.setSelected(false, true);
@@ -64,9 +65,9 @@ export class Tabs extends Phaser.GameObjects.Container {
     defs.forEach((def, i) => {
       const tab = new Tab(scene, i * (TAB_SIZE + TAB_GAP), def);
       tab.on('pointerdown', () => this.select(def.id));
-      tab.on('pointerover', () => {
+      tab.on('pointerover', (p: Phaser.Input.Pointer) => {
         this.showCaption(def.id);
-        getAudio(scene).play(SfxKeys.Hover, { volume: 0.5 });
+        hoverSfx(scene, p, 0.5);
       });
       tab.on('pointerout', () => this.showCaption(null));
       this.add(tab);
