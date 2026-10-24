@@ -14,12 +14,13 @@ import { Cat } from '../objects/Cat';
 import { PHOTO_POSE, takePhoto } from '../objects/photo';
 import { MuteButton } from '../objects/MuteButton';
 import { MotionButton } from '../objects/MotionButton';
+import { FullscreenButton } from '../objects/FullscreenButton';
 import { SecretCounter } from '../objects/SecretCounter';
 import { getSave } from '../plugins/SavePlugin';
 import { drawRoom } from '../objects/room';
-import { hex } from '../objects/ui';
+import { hex, touchEnv } from '../objects/ui';
 import { getAudio } from '../plugins/AudioPlugin';
-import { downloadDataUrl } from '../systems/download';
+import { savePhoto } from '../systems/download';
 import { go } from '../systems/navigate';
 import { readSession } from '../systems/sessionStore';
 import { profileOf } from '../systems/motion';
@@ -52,6 +53,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
   private change!: Button;
   private mute!: MuteButton;
   private motion!: MotionButton;
+  private fullscreen: FullscreenButton | null = null;
   private counter!: SecretCounter;
   private hearts!: Phaser.GameObjects.Particles.ParticleEmitter;
   private pose: Expression = 'feliz';
@@ -134,6 +136,8 @@ export class Showcase extends Phaser.Scene implements E2EUi {
     this.photo.on(ObjectEvents.ButtonClick, () => void this.snap());
     this.mute = new MuteButton(this, GAME_WIDTH - 56, 56).setDepth(50);
     this.motion = new MotionButton(this, GAME_WIDTH - 128, 56).setDepth(50);
+    this.fullscreen = FullscreenButton.create(this, GAME_WIDTH - 200, 56);
+    this.fullscreen?.setDepth(50);
     this.counter = new SecretCounter(this, 140, 50).setDepth(50);
     // A prize that was delivered quietly: the counter shows the old number and pops to the new one with the toast.
     const won = getSave(this).secrets.length;
@@ -159,6 +163,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
       this.change?.destroy();
       this.mute?.destroy();
       this.motion?.destroy();
+      this.fullscreen?.destroy();
       this.counter?.destroy();
       this.dropReveal();
       this.tweens.killAll();
@@ -215,7 +220,9 @@ export class Showcase extends Phaser.Scene implements E2EUi {
     const url = await takePhoto(this, this.cat, this.anchors, this.catName, PHOTO_POSE);
     if (!this.scene.isActive()) return;
     const file = photoFileName(this.catName);
-    downloadDataUrl<HTMLAnchorElement>({ createElement: () => document.createElement('a'), body: document.body }, url, file);
+    // A computer downloads the PNG; a phone opens the share sheet (ADR 0014).
+    await savePhoto<HTMLAnchorElement>({ doc: { createElement: () => document.createElement('a'), body: document.body }, nav: navigator, touch: touchEnv().touch }, url, file);
+    if (!this.scene.isActive()) return;
     this.photos++;
     this.lastPhoto = file;
     this.showReveal(url);
@@ -327,7 +334,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
   getE2EUi(): UiState {
     return {
       ready: this.ready && !this.leaving,
-      buttons: { keep: this.keep.getCenter(), photo: this.photo.getCenter(), change: this.change.getCenter(), mute: this.mute.getCenter(), motion: this.motion.getCenter() },
+      buttons: { keep: this.keep.getCenter(), photo: this.photo.getCenter(), change: this.change.getCenter(), mute: this.mute.getCenter(), motion: this.motion.getCenter(), ...(this.fullscreen ? { fullscreen: this.fullscreen.getCenter() } : {}) },
       points: {},
       info: { title: this.title, pose: this.pose, layers: this.cat.wornIds, photos: this.photos, lastPhoto: this.lastPhoto, photoBusy: this.photoBusy, revealing: this.revealImage !== null, revealSettled: this.revealSettled, reveals: this.reveals, revealTextures: this.textures.getTextureKeys().filter((k) => k.startsWith('photo-reveal')).length, toasts: [...this.toastLog], secrets: this.counter.text },
     };

@@ -58,6 +58,8 @@ export const ObjectEvents = {
   ButtonClick: 'button-click',
   /** MuteButton: (muted: boolean) after toggling */
   MuteToggle: 'mute-toggle',
+  /** FullscreenButton: (entering: boolean) after the tap */
+  FullscreenToggle: 'fullscreen-toggle',
   /** MotionButton: (reduced: boolean) after toggling */
   MotionToggle: 'motion-toggle',
   /** Cat: the player petted it (a click on its body, with a cooldown) */

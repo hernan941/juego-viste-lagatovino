@@ -7,6 +7,7 @@ import { Button } from '../objects/Button';
 import { Cat } from '../objects/Cat';
 import { MuteButton } from '../objects/MuteButton';
 import { MotionButton } from '../objects/MotionButton';
+import { FullscreenButton } from '../objects/FullscreenButton';
 import { addClouds, addHills, addSky, addSun } from '../objects/scenery';
 import { Cooldown } from '../domain/cooldown';
 import { hex } from '../objects/ui';
@@ -33,6 +34,7 @@ export class Title extends Phaser.Scene implements E2EUi {
   private start!: Button;
   private mute!: MuteButton;
   private motion!: MotionButton;
+  private fullscreen: FullscreenButton | null = null;
   private ready = false;
   private cats: Cat[] = [];
 
@@ -77,11 +79,14 @@ export class Title extends Phaser.Scene implements E2EUi {
     this.createStart();
     this.mute = new MuteButton(this, GAME_WIDTH - 56, 56).setDepth(50);
     this.motion = new MotionButton(this, GAME_WIDTH - 128, 56).setDepth(50);
+    this.fullscreen = FullscreenButton.create(this, GAME_WIDTH - 200, 56);
+    this.fullscreen?.setDepth(50);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.start?.destroy();
       this.mute?.destroy();
       this.motion?.destroy();
+      this.fullscreen?.destroy();
       for (const c of this.cats) c.destroy();
       this.tweens.killAll();
     });
@@ -182,6 +187,6 @@ export class Title extends Phaser.Scene implements E2EUi {
   }
 
   getE2EUi(): UiState {
-    return { ready: this.ready, buttons: { start: this.start.getCenter(), mute: this.mute.getCenter(), motion: this.motion.getCenter() }, points: {}, info: {} };
+    return { ready: this.ready, buttons: { start: this.start.getCenter(), mute: this.mute.getCenter(), motion: this.motion.getCenter(), ...(this.fullscreen ? { fullscreen: this.fullscreen.getCenter() } : {}) }, points: {}, info: {} };
   }
 }
