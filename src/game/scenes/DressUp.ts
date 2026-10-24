@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import {
-  CATEGORY_LABELS, MEOW_KEYS, ObjectEvents, RegistryKeys, SceneKeys, SfxKeys, TextureKeys,
+  CATEGORY_LABELS, GAME_HEIGHT, GAME_WIDTH, MEOW_KEYS, ObjectEvents, RegistryKeys, SceneKeys, SfxKeys, TextureKeys,
 } from '../constants';
 import type { Catalog } from '../data/schema';
 import { DROP_BURST, petHeartSpots } from '../domain/petHearts';
@@ -17,6 +17,7 @@ import type { DressUpE2EState, E2EScene, E2EUi, UiState } from '../e2eHook';
 import { Button } from '../objects/Button';
 import { MuteButton } from '../objects/MuteButton';
 import { MotionButton } from '../objects/MotionButton';
+import { FullscreenButton } from '../objects/FullscreenButton';
 import { getAudio } from '../plugins/AudioPlugin';
 import { getSave } from '../plugins/SavePlugin';
 import { go } from '../systems/navigate';
@@ -34,8 +35,9 @@ import { LayersPanel } from '../objects/LayersPanel';
 import { Tabs } from '../objects/Tabs';
 import { tabIconKey } from '../objects/tabIcons';
 import { drawRoom } from '../objects/room';
-import { drawPanel, hex, makeText } from '../objects/ui';
+import { drawPanel, hex, liftFor, makeText, touchEnv } from '../objects/ui';
 import { profileOf } from '../systems/motion';
+import { applyLift, dragThreshold, isDragPointer } from '../systems/touch';
 import { enterKind, transitionIn } from '../systems/transitions';
 
 const CAT_X = 700;
@@ -62,6 +64,11 @@ interface DragState {
   /** Half transparent preview of the item worn by the cat while the magnet holds it. */
   preview?: Phaser.GameObjects.Image;
   target: Point;
+  /** The pointer that grabbed the item (a second finger is ignored) and how far above it the item is held (touch only). */
+  pointerId: number;
+  lift: Point;
+  /** Where the item is held now (the pointer plus the lift): what the drop zone and the magnet look at. */
+  held: Point;
   overZone: boolean;
   lastLook: number;
   /** True during the first 150 ms (the grab tween owns the angle); afterwards the tilt follows the speed. */
@@ -90,6 +97,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
   private changeButton!: Button;
   private mute!: MuteButton;
   private motion!: MotionButton;
+  private fullscreen: FullscreenButton | null = null;
   private leaving = false;
   private lastDragSound = 0;
   // F8: secrets and gifts.
@@ -151,7 +159,9 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
   }
 
   create(data?: unknown) {
-    this.input.dragDistanceThreshold = 8;
+    // A finger jitters more than a mouse (ADR 0014): the press becomes a drag after ~10 CSS px.
+    const env = touchEnv();
+    this.input.dragDistanceThreshold = dragThreshold(env.touch, env.scale);
     drawRoom(this, CAT_X, CAT_FEET_Y);
     this.zoneGlow = this.add.graphics().setAlpha(0);
     this.rainbow = this.add.graphics();
@@ -207,6 +217,8 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.changeButton.on(ObjectEvents.ButtonClick, () => this.leave('change'));
     this.mute = new MuteButton(this, 1240, 686).setScale(0.8);
     this.motion = new MotionButton(this, 1240, 636).setScale(0.8);
+    this.fullscreen = FullscreenButton.create(this, 1244, 36);
+    this.fullscreen?.setScale(0.8);
 
     // The prizes shine: every 2.5 s, a golden twinkle on each secret garment that is worn.
     this.time.addEvent({ delay: 2500, loop: true, callback: () => this.twinkleSecrets() });
@@ -312,6 +324,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.changeButton?.destroy();
     this.mute?.destroy();
     this.motion?.destroy();
+    this.fullscreen?.destroy();
     this.tweens.killAll();
     this.gift?.destroy();
     this.gift = null;
@@ -363,6 +376,9 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     const bounds = this.boundsOf(item);
     const fit = ghostFit(bounds, src.width, src.height, GHOST_SIZE);
     const home = ghostFit(bounds, src.width, src.height, GHOST_HOME_SIZE);
+    // With a finger the item is held above it so the finger does not cover it (ADR 0014); it starts under the finger and floats up.
+    const lift = liftFor(pointer);
+    const held = applyLift(pointer, lift, { width: GAME_WIDTH, height: GAME_HEIGHT });
     const ghost = this.add.image(pointer.x, pointer.y, item.texture).setOrigin(fit.origin.x, fit.origin.y).setScale(fit.scale).setDepth(5000);
     // Taking an item: it grows and tilts.
     const p = profileOf(this);
@@ -370,18 +386,19 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
       targets: ghost, scale: fit.scale * (1 + 0.15 * p.squash), angle: 8 * p.shake, duration: 150, ease: p.ease('Back.easeOut'),
       onComplete: () => { if (this.drag?.ghost === ghost) this.drag.grabbing = false; },
     });
-    this.drag = { item, fromEquipped, cell, ghost, ghostScale: fit.scale * (1 + 0.15 * p.squash), homeScale: home.scale, target: { x: pointer.x, y: pointer.y }, overZone: false, lastLook: 0, grabbing: true };
+    this.drag = { item, fromEquipped, cell, ghost, ghostScale: fit.scale * (1 + 0.15 * p.squash), homeScale: home.scale, target: held, pointerId: pointer.id, lift, held, overZone: false, lastLook: 0, grabbing: true };
     getAudio(this).play(SfxKeys.Grab);
     cell?.setLifted(true);
     if (fromEquipped) this.cat.setLayerLifted(item, true);
     // The cat only looks at the item (normal eyes that follow it); it is surprised once the item is over the drop zone.
-    this.cat.lookAt({ x: pointer.x, y: pointer.y });
+    this.cat.lookAt(held);
   }
 
   private moveDrag(pointer: Phaser.Input.Pointer) {
     const d = this.drag;
-    if (!d) return;
-    const point = { x: pointer.x, y: pointer.y };
+    if (!d || !isDragPointer(d.pointerId, pointer.id)) return;
+    const point = applyLift(pointer, d.lift, { width: GAME_WIDTH, height: GAME_HEIGHT });
+    d.held = point;
     const over = isInsideDropZone(point, this.dropZone(), DROP_MARGIN);
     // Magnet: near the slot anchor the item settles onto it.
     const snap = over ? magnetSnap(point, this.cat.getAnchorWorld(anchorForSlot(d.item.slot)), MAGNET_RADIUS) : { point, snapped: false };
@@ -495,12 +512,12 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
 
   private endDrag(pointer: Phaser.Input.Pointer) {
     const d = this.drag;
-    if (!d) return;
+    if (!d || !isDragPointer(d.pointerId, pointer.id)) return;
     this.drag = null;
     this.setZoneHighlight(false);
     this.hideAnchorDot();
     this.cat.lookAt(null);
-    const action = resolveDrop({ x: pointer.x, y: pointer.y }, this.dropZone(), DROP_MARGIN, d.fromEquipped);
+    const action = resolveDrop(applyLift(pointer, d.lift, { width: GAME_WIDTH, height: GAME_HEIGHT }), this.dropZone(), DROP_MARGIN, d.fromEquipped);
     if (action === 'equip') this.dropOnCat(d);
     else if (action === 'unequip') this.takeOff(d);
     else this.sendBack(d);
@@ -744,7 +761,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
   getE2EUi(): UiState {
     return {
       ready: this.cat.alpha > 0.99 && !this.leaving,
-      buttons: { finish: this.doneButton.getCenter(), change: this.changeButton.getCenter(), mute: this.mute.getCenter(), motion: this.motion.getCenter() },
+      buttons: { finish: this.doneButton.getCenter(), change: this.changeButton.getCenter(), mute: this.mute.getCenter(), motion: this.motion.getCenter(), ...(this.fullscreen ? { fullscreen: this.fullscreen.getCenter() } : {}) },
       points: {},
       info: { catName: this.catName },
     };
