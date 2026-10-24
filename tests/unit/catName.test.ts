@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { NAME_MAX, applyNameKey, nameOnSelect, validateCatName } from '../../src/game/domain/catName';
+import { NAME_MAX, applyNameKey, sanitizeName, nameOnSelect, validateCatName } from '../../src/game/domain/catName';
 
 describe('validateCatName', () => {
   it('trims the spaces around the name', () => {
@@ -84,5 +84,28 @@ describe('applyNameKey while the default name is selected (replacing)', () => {
 
   it('without replacing, typing still appends', () => {
     expect(applyNameKey('Tricolor', 'B', { replacing: false })).toBe('TricolorB');
+  });
+});
+
+describe('sanitizeName (what a virtual keyboard typed or pasted)', () => {
+  it('keeps what the name field would accept key by key', () => {
+    expect(sanitizeName('Mochi')).toBe('Mochi');
+    expect(sanitizeName('Ana María')).toBe('Ana María');
+  });
+
+  it('drops characters the field refuses', () => {
+    expect(sanitizeName('Mo<chi>/#')).toBe('Mochi');
+  });
+
+  it('cuts at the maximum length', () => {
+    expect(sanitizeName('abcdefghijklmnopqrstuvwxyz')).toBe('abcdefghijkl');
+  });
+
+  it('does not start with a space nor repeat spaces', () => {
+    expect(sanitizeName('  Mo   chi')).toBe('Mo chi');
+  });
+
+  it('is empty for an empty field', () => {
+    expect(sanitizeName('')).toBe('');
   });
 });

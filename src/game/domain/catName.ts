@@ -38,3 +38,8 @@ export function applyNameKey(current: string, key: string, { replacing = false }
 export function nameOnSelect(current: string, previousDefault: string | null, newDefault: string): string {
   return current === '' || current === previousDefault ? newDefault : current;
 }
+
+/** The name for text that arrived whole (a virtual keyboard, a paste): the same rules as typing it key by key. */
+export function sanitizeName(raw: string): string {
+  return [...raw].reduce((name, ch) => applyNameKey(name, ch), '');
+}

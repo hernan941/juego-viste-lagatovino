@@ -1,15 +1,17 @@
 import Phaser from 'phaser';
 import { FONT_FAMILY, GAME_WIDTH, ObjectEvents, Palette, RegistryKeys, SceneKeys, SfxKeys } from '../constants';
 import type { Catalog } from '../data/schema';
-import { NAME_MAX, applyNameKey, nameOnSelect, validateCatName } from '../domain/catName';
+import { NAME_MAX, applyNameKey, nameOnSelect, sanitizeName, validateCatName } from '../domain/catName';
 import { chooseCat } from '../domain/session';
 import type { AnchorsDef, CatDef } from '../domain/types';
 import type { E2EUi, UiState } from '../e2eHook';
 import { Button } from '../objects/Button';
 import { CARD_H, CARD_W, CatCard } from '../objects/CatCard';
+import { DomNameInput, canvasOf } from '../objects/DomNameInput';
 import { MuteButton } from '../objects/MuteButton';
 import { MotionButton } from '../objects/MotionButton';
-import { drawPanel, hex } from '../objects/ui';
+import { FullscreenButton } from '../objects/FullscreenButton';
+import { drawPanel, hex, touchEnv } from '../objects/ui';
 import { getAudio } from '../plugins/AudioPlugin';
 import { go } from '../systems/navigate';
 import { readSession, writeSession } from '../systems/sessionStore';
@@ -38,6 +40,7 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
   private choose!: Button;
   private mute!: MuteButton;
   private motion!: MotionButton;
+  private fullscreen: FullscreenButton | null = null;
   private hint!: Phaser.GameObjects.Text;
   private bar!: Phaser.GameObjects.Container;
   private box!: Phaser.GameObjects.Graphics;
@@ -48,6 +51,9 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
   private barShown = false;
   /** Box, text and caret of the name field, shaken together. */
   private field!: Phaser.GameObjects.Container;
+  /** Phone only (ADR 0014): the tap target over the name field and the real <input> that opens the virtual keyboard. */
+  private nameZone: Phaser.GameObjects.Zone | null = null;
+  private dom!: DomNameInput;
 
   constructor() {
     super(SceneKeys.CatSelect);
@@ -63,6 +69,7 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
     this.lastDefault = null;
     this.ready = false;
     this.barShown = false;
+    this.nameZone = null;
   }
 
   create() {
@@ -88,6 +95,8 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
     this.createBar();
     this.mute = new MuteButton(this, GAME_WIDTH - 56, 56).setDepth(50);
     this.motion = new MotionButton(this, GAME_WIDTH - 128, 56).setDepth(50);
+    this.fullscreen = FullscreenButton.create(this, GAME_WIDTH - 200, 56);
+    this.fullscreen?.setDepth(50);
 
     // Coming back from the fitting room keeps the cat and the name that were chosen.
     const session = readSession(this.registry);
@@ -97,13 +106,19 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
       if (previous) this.pick(previous, session.catName, true);
     });
 
+    this.dom = new DomNameInput(canvasOf(this), { onInput: (v) => this.onDomInput(v), onEnter: () => this.confirm() }, NAME_MAX);
     this.input.keyboard?.on('keydown', this.onKey, this);
+    // A tap anywhere else puts the keyboard away (Phaser prevents the default of touches, so the browser does not blur by itself).
+    this.input.on('pointerdown', this.onPointerDown, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.input.keyboard?.off('keydown', this.onKey, this);
+      this.input.off('pointerdown', this.onPointerDown, this);
+      this.dom?.destroy();
       for (const c of this.cards) c.destroy();
       this.choose?.destroy();
       this.mute?.destroy();
       this.motion?.destroy();
+      this.fullscreen?.destroy();
       this.tweens.killAll();
     });
     transitionIn(this, this.enter);
@@ -144,6 +159,13 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
 
     this.field = this.add.container(0, 0, [this.box, this.nameText, this.caret, this.counter]);
     this.bar = this.add.container(0, 0, [label, this.field, this.warning, this.choose]);
+    if (touchEnv().touch) {
+      // Tapping the field opens the keyboard (the focus has to be given inside the tap). Taller than the field: 44 CSS px at least.
+      this.nameZone = this.add.zone(INPUT.x, INPUT.y, INPUT.width, INPUT.height + 24).setInteractive({ useHandCursor: true });
+      this.nameZone.input!.enabled = false;
+      this.nameZone.on('pointerup', () => this.openKeyboard());
+      this.bar.add(this.nameZone);
+    }
     this.bar.setAlpha(0).setY(30);
     this.choose.input!.enabled = false;
   }
@@ -174,7 +196,7 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
     if (this.barShown) return;
     this.barShown = true;
     this.tweens.add({ targets: this.hint, alpha: 0, duration: 150 });
-    this.tweens.add({ targets: this.bar, alpha: 1, y: 0, duration: 300, ease: profileOf(this).ease('Back.easeOut'), onComplete: () => { this.choose.input!.enabled = true; } });
+    this.tweens.add({ targets: this.bar, alpha: 1, y: 0, duration: 300, ease: profileOf(this).ease('Back.easeOut'), onComplete: () => { this.choose.input!.enabled = true; if (this.nameZone) this.nameZone.input!.enabled = true; } });
   }
 
   private refreshName() {
@@ -184,8 +206,31 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
     this.counter.setText(`${[...this.name].length}/${NAME_MAX}`);
   }
 
+  private openKeyboard() {
+    if (!this.selected || !this.barShown) return;
+    // The default name acts as selected text: the field starts empty, so the first key replaces it.
+    this.dom.open({ x: INPUT.x - INPUT.width / 2, y: INPUT.y - INPUT.height / 2, width: INPUT.width, height: INPUT.height }, this.nameIsDefault ? '' : this.name);
+  }
+
+  private onPointerDown(_pointer: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) {
+    if (this.nameZone && !over.includes(this.nameZone)) this.dom.close();
+  }
+
+  /** The text of the real <input> changed (virtual keyboard, paste): the same rules as typing key by key. */
+  private onDomInput(value: string) {
+    const next = sanitizeName(value);
+    if (next !== value) {
+      this.dom.setValue(next);
+      this.shakeBox();
+    }
+    if (next === this.name && !this.nameIsDefault) return;
+    this.commitName(next);
+  }
+
   private onKey(event: KeyboardEvent) {
     if (!this.selected || !this.barShown) return;
+    // While the real <input> has the focus it handles the text (and Enter): the keys must not count twice.
+    if (this.dom.focused) return;
     if (event.key === 'Enter') {
       this.confirm();
       return;
@@ -195,6 +240,10 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
       if (event.key.length === 1) this.shakeBox();
       return;
     }
+    this.commitName(next);
+  }
+
+  private commitName(next: string) {
     this.name = next;
     this.nameIsDefault = false;
     getAudio(this).play(SfxKeys.Key);
@@ -231,6 +280,7 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
       return;
     }
     this.ready = false;
+    this.dom.close();
     writeSession(this.registry, chooseCat(readSession(this.registry), this.selected.id, check.name));
     go(this, 'choose');
   }
@@ -239,9 +289,9 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
     const cats = Object.fromEntries(this.cards.map((c) => [c.def.id, c.getCenter()]));
     return {
       ready: this.ready,
-      buttons: { ...(this.barShown ? { choose: this.choose.getCenter() } : {}), mute: this.mute.getCenter(), motion: this.motion.getCenter() },
+      buttons: { ...(this.barShown ? { choose: this.choose.getCenter() } : {}), mute: this.mute.getCenter(), motion: this.motion.getCenter(), ...(this.fullscreen ? { fullscreen: this.fullscreen.getCenter() } : {}) },
       points: { ...cats, nameInput: { x: INPUT.x, y: INPUT.y } },
-      info: { enter: this.enter, selected: this.selected?.id ?? null, name: this.name, nameIsDefault: this.nameIsDefault, chooseVisible: this.barShown && this.bar.alpha > 0.99, warning: this.warning.alpha > 0.5 },
+      info: { enter: this.enter, selected: this.selected?.id ?? null, name: this.name, nameIsDefault: this.nameIsDefault, nameKeyboard: this.dom?.focused ?? false, chooseVisible: this.barShown && this.bar.alpha > 0.99, warning: this.warning.alpha > 0.5 },
     };
   }
 }
