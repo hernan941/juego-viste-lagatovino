@@ -1,6 +1,6 @@
 # 0008. Plataforma PC e interacción solo arrastrando
 
-- **Estado**: Aceptado
+- **Estado**: Aceptado. Enmendado por ADR 0014 (el celular en horizontal pasa a ser una plataforma soportada; PC sigue siendo primero)
 - **Fecha**: 2026-10-20
 
 ## Contexto

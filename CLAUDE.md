@@ -95,7 +95,7 @@ docs/                      # adr/, game-design.md, art-direction.md, roadmap.md
 - **Data-driven**: los gatos y las prendas se definen en JSON (`id`, `name`, `slot`, `texture`, `zIndex`, `tags`…). Para agregar un sweater no hace falta tocar código.
 - **Separar dominio y render**: `src/game/domain/` no importa Phaser.
 - **Assets**: PNG con fondo transparente. Todos los gatos comparten la **misma pose base y lienzo**, con anclas comunes por slot (cabeza, torso, cuello…), para que una prenda sirva para cualquier gato (ADR 0003). Se usan texture atlas cuando haya muchas piezas.
-- **PC primero** (ADR 0008): lienzo base de 1280 × 720 horizontal, `Phaser.Scale.FIT`, interacción con mouse, estados de hover en todo lo interactivo y cursor de mano. Las prendas se ponen **solo arrastrando**.
+- **PC primero, celular soportado** (ADRs 0008 y 0014): lienzo base de 1280 × 720 horizontal, `Phaser.Scale.FIT`, interacción con mouse, estados de hover en todo lo interactivo y cursor de mano. Las prendas se ponen **solo arrastrando**. En el celular se juega en horizontal (en vertical aparece el aviso "gira el teléfono"). Se usa el Pointer de Phaser, nada depende solo del hover (siempre hay feedback de press) y los objetivos táctiles miden unos 44 px CSS como mínimo.
 - **Nombres**: código en inglés; textos de UI y documentación en español.
 
 ## Comandos previstos
@@ -118,7 +118,7 @@ npm run lint       # ESLint + typecheck (tsc --noEmit)
 - [ ] `npm run coverage` cumple los umbrales (≥ 90 % en `domain/`, ≥ 80 % en `plugins/` y `systems/`)
 - [ ] `npm run e2e` pasa con el flujo completo (una vez que existe, desde F5)
 - [ ] **Cierre del proyecto**: la **suite e2e completa** del ADR 0012 está en verde (todas las mecánicas, todos los secretos, persistencia y cero errores de consola), usando el hook `window.__VISTE__` en modo test
-- [ ] Probado en el navegador de PC (Chrome y Firefox) en 1280 × 720 y en 1920 × 1080
+- [ ] Probado en el navegador de PC (Chrome y Firefox) en 1280 × 720 y en 1920 × 1080, y en celular horizontal (táctil, ADR 0014)
 - [ ] Es **divertido**: feedback visual y sonoro en cada interacción y transiciones suaves (revisado y aprobado por `game-designer`)
 - [ ] Los assets cumplen el checklist de `docs/art-direction.md`
 - [ ] Sin listeners ni timers colgados al cambiar de escena

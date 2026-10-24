@@ -12,12 +12,13 @@ Aquí se registran las decisiones de arquitectura del proyecto (formato Nygard).
 | [0005](0005-despliegue-estatico.md) | Despliegue estático | Aceptado |
 | [0006](0006-arte-vectorial-propio-en-svg.md) | Arte vectorial propio en SVG | Aceptado |
 | [0007](0007-flujo-de-escenas-y-transiciones.md) | Flujo de escenas y transiciones | Aceptado |
-| [0008](0008-plataforma-pc-y-solo-arrastrar.md) | Plataforma PC e interacción solo arrastrando | Aceptado |
+| [0008](0008-plataforma-pc-y-solo-arrastrar.md) | Plataforma PC e interacción solo arrastrando | Aceptado (enmendado por 0014) |
 | [0009](0009-audio-solo-sfx-asmr.md) | Audio: solo efectos de sonido ASMR, sin música | Aceptado |
 | [0010](0010-arquitectura-estructura-oficial-de-phaser.md) | Arquitectura: estructura oficial de Phaser | Aceptado |
 | [0011](0011-phaser-4.md) | Usar Phaser 4 en vez de Phaser 3 | Aceptado |
 | [0012](0012-desarrollo-guiado-por-tests-tdd.md) | Desarrollo guiado por tests (TDD) | Aceptado |
 | [0013](0013-movimiento-reducido.md) | Movimiento reducido | Aceptado |
+| [0014](0014-soporte-para-celular-tactil.md) | Soporte para celular (táctil) | Aceptado |
 
 ## Estados
 `Propuesto` → `Aceptado` → (`Obsoleto` | `Reemplazado por NNNN`)
