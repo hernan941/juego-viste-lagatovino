@@ -20,6 +20,8 @@ const config: Phaser.Types.Core.GameConfig = {
   height: GAME_HEIGHT,
   parent: 'game-container',
   backgroundColor: Palette.rosa50,
+  // ADR 0014: a long press must not open the browser menu over the game.
+  disableContextMenu: true,
   scale: { mode: Scale.FIT, autoCenter: Scale.CENTER_BOTH },
   // Test mode only: software WebGL (SwiftShader, which headless Chromium in the e2e uses) renders
   // multi-texture batches with flickering, half-drawn layers, so tests batch one texture at a time.

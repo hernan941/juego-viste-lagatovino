@@ -1,16 +1,90 @@
-body {
+html, body {
     margin: 0;
     padding: 0;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
     color: #5A3A48;
     background-color: #FFF0F6;
     font-family: 'Fredoka', sans-serif;
+    /* ADR 0014: a finger must never scroll, zoom, select or open a menu over the game. */
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 #app {
     width: 100%;
     height: 100vh;
+    height: 100dvh;
     overflow: hidden;
     display: flex;
     justify-content: center;
     align-items: center;
+    /* Notches and rounded corners (viewport-fit=cover). */
+    box-sizing: border-box;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+#game-container, #game-container canvas {
+    touch-action: none;
+    -webkit-touch-callout: none;
+    outline: none;
+}
+
+/* "Gira tu teléfono": a phone held in portrait (class set by systems/touchEnv.ts). */
+#rotate-hint {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background: #FFF0F6;
+}
+
+html.rotate-hint #rotate-hint {
+    display: flex;
+}
+
+.rotate-card {
+    padding: 28px 32px;
+    max-width: 80vw;
+    border: 4px solid #FFD1E3;
+    border-radius: 36px;
+    background: #FFF7EC;
+    box-shadow: 0 10px 0 rgba(226, 87, 139, 0.16);
+}
+
+.rotate-phone {
+    animation: rotate-wobble 2.4s ease-in-out infinite;
+}
+
+.rotate-title {
+    margin: 8px 0 4px;
+    font-size: 32px;
+    font-weight: 700;
+    color: #E2578B;
+}
+
+.rotate-text {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 500;
+}
+
+@keyframes rotate-wobble {
+    0%, 20% { transform: rotate(0deg); }
+    55%, 80% { transform: rotate(-90deg); }
+    100% { transform: rotate(0deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rotate-phone {
+        animation: none;
+        transform: rotate(-90deg);
+    }
 }
