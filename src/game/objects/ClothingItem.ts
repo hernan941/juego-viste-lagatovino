@@ -22,6 +22,8 @@ export class ClothingItem extends Phaser.GameObjects.Container {
   private readonly wornRing: Phaser.GameObjects.Graphics;
   /** Twinkling star on the secret items won from a combo (F8). */
   private readonly badge?: Phaser.GameObjects.Image;
+  /** Decorations that features hang on the cell (price tag, lock...); hidden with the badge while the cell is clipped (ADR 0019). */
+  private readonly decorations: Phaser.GameObjects.Container;
   private readonly scaleView: ScaleTo;
   private wiggleTween?: Phaser.Tweens.Tween;
   private dragged = false;
@@ -39,6 +41,8 @@ export class ClothingItem extends Phaser.GameObjects.Container {
       this.view.add(this.badge);
       if (profileOf(scene).loops) scene.tweens.add({ targets: this.badge, angle: 90, scale: { from: 0.6, to: 0.95 }, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     }
+    this.decorations = scene.add.container(0, 0);
+    this.view.add(this.decorations);
     this.add(this.view);
 
     this.setSize(CELL_SIZE, CELL_SIZE);
@@ -96,6 +100,21 @@ export class ClothingItem extends Phaser.GameObjects.Container {
     }
     this.wornRing.setVisible(this.ringFactor >= 1);
     this.badge?.setVisible(this.ringFactor >= 1);
+    this.decorations.setVisible(this.ringFactor >= 1);
+  }
+
+  /**
+   * Hangs a decoration on the cell, in cell-local px (the cell is centered on 0, 0 and measures CELL_SIZE). It moves, scales
+   * and hides with the cell, and is destroyed with it. The grid calls the decorators again on every new cell.
+   */
+  addDecoration<T extends Phaser.GameObjects.GameObject>(object: T): T {
+    this.decorations.add(object);
+    return object;
+  }
+
+  /** Removes (and destroys) every decoration. */
+  clearDecorations(): void {
+    this.decorations.removeAll(true);
   }
 
   /** A short side to side shake: angle -6 to 6, yoyo, 2 repeats, 60 ms. */

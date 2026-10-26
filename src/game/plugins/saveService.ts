@@ -1,7 +1,8 @@
 // Testable heart of SavePlugin (ADR 0004): debounced writes of the session over what is already stored.
 // No Phaser here: the plugin passes a scheduler (setTimeout) and the storage (localStorage).
 import { toSaveData, type Session } from '../domain/session';
-import type { SaveData } from '../domain/types';
+import { toStoredProgress } from '../domain/progress';
+import type { Progress, SaveData } from '../domain/types';
 import { loadSave, saveToStorage, type StorageLike } from './saveCore';
 
 /** `after` runs `fn` once in `ms` and returns the function that cancels it. */
@@ -57,11 +58,16 @@ export class SaveService {
     });
   }
 
-  /** Adds a combo to the unlocked secrets and writes at once (an unlock must survive a reload). False if the storage refused. */
+  /** Replaces the stored progress and writes at once (a purchase or a keychain must survive a reload). False if the storage refused. */
+  commitProgress(progress: Progress): boolean {
+    return saveToStorage(this.storage, { ...loadSave(this.storage), progress: toStoredProgress(progress) });
+  }
+
+  /** Adds a combo to the stored secrets and writes at once (an unlock must survive a reload). False if the storage refused. */
   unlockSecret(comboId: string): boolean {
     const current = loadSave(this.storage);
-    if (current.secrets.includes(comboId)) return true;
-    return saveToStorage(this.storage, { ...current, secrets: [...current.secrets, comboId] });
+    if (current.progress.secrets.includes(comboId)) return true;
+    return saveToStorage(this.storage, { ...current, progress: { ...current.progress, secrets: [...current.progress.secrets, comboId] } });
   }
 
   /** Writes what is queued now (also before closing the page). False if the storage refused. */
@@ -71,7 +77,7 @@ export class SaveService {
     if (!this.queued) return true;
     const session = this.queued;
     this.queued = null;
-    // The mute and the secrets are not part of the session: keep whatever is stored.
+    // The preferences and the progress are not part of the session: keep whatever is stored.
     return saveToStorage(this.storage, toSaveData(session, loadSave(this.storage)));
   }
 }

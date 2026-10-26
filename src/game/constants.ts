@@ -126,7 +126,7 @@ export const DressUpEvents = {
   ItemRemoved: 'item-removed',
   /** the player pressed Ready */
   ReadyPressed: 'ready-pressed',
-  /** (outfit: Outfit) the outfit changed */
+  /** (outfit: Outfit, cause: 'drop' | 'remove' | 'restore' | 'test') the outfit changed */
   OutfitChanged: 'outfit-changed',
   /** (catId: string) the cat changed */
   CatChanged: 'cat-changed',

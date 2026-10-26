@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import type { Game } from 'phaser';
-import type { Outfit, Point, Rect, SaveData } from './domain/types';
+import type { ItemDye, KeychainRecipe, Outfit, Point, Progress, RatingResult, Rect, SaveData, Stars, TasteKey } from './domain/types';
+import { emptyProgress } from './domain/progress';
 import { GAME_WIDTH, PluginKeys, RegistryKeys, SceneKeys, SfxKeys } from './constants';
 import type { AudioPlugin } from './plugins/AudioPlugin';
 import type { SavePlugin } from './plugins/SavePlugin';
@@ -130,6 +131,32 @@ export interface VisteHook {
   readonly sounds: string[];
   /** Test-only action (the rest of the hook is read-only): sets the mute through the AudioPlugin. */
   setMuted(muted: boolean): void;
+  // ---- Second stage (ADR 0017): the progress, read from the registry and changed without playing ----
+  /** Buttons in the wallet. */
+  readonly wallet: number;
+  /** Bought items (not the starters nor the secrets, which are derived). */
+  readonly owned: string[];
+  /** Bought bottles. */
+  readonly dyesOwned: string[];
+  /** Dye by worn item (the session). */
+  readonly itemDye: ItemDye;
+  readonly tastesFound: Record<string, TasteKey[]>;
+  readonly bestStars: Record<string, Stars>;
+  /** The last rating, or null before the first one. */
+  readonly lastRating: RatingResult | null;
+  readonly keychains: Record<string, KeychainRecipe>;
+  /** Phase of the keychain transformation (F19); null while there is none. */
+  readonly keychainPhase: string | null;
+  /** Test-only action: adds items to the bought ones (written at once, like a purchase). */
+  grant(ids: string[]): void;
+  /** Test-only action: adds bottles to the bought ones. */
+  grantDyes(ids: string[]): void;
+  /** Test-only action: sets the wallet. */
+  setWallet(n: number): void;
+  /** Test-only action: dyes a worn item in the session (no payment). */
+  dye(itemId: string, dyeId: string): void;
+  /** Test-only action: merges a partial progress over the current one (written at once). */
+  setProgress(partial: Partial<Progress>): void;
   /** Test-only action: puts exactly these items on the cat in DressUp without dragging (the last piece of a combo is still dragged). */
   wear(ids: string[]): void;
   /**
@@ -144,7 +171,7 @@ export interface VisteHook {
   readonly frames: number;
   /** Test-only action: stops (or restarts) the game loop, so a page that is not being tested does not use the CPU. */
   park(parked: boolean): void;
-  /** Test-only action: forgets the saved progress (cat, name, outfit, secrets), unmutes, puts the motion back on 'auto' and empties the sound log, as a first visit would. */
+  /** Test-only action: forgets the saved progress (cat, name, outfit, dyes, wallet, bought items, secrets, keychains), unmutes, puts the motion back on 'auto' and empties the sound log, as a first visit would. */
   reset(): void;
 }
 
@@ -181,6 +208,10 @@ export function installE2EHook(game: Game, readPerf: PerfReader): void {
   };
   const audio = () => game.plugins.get(PluginKeys.Audio) as AudioPlugin;
   const motion = () => game.plugins.get(PluginKeys.Motion) as MotionPlugin;
+  const progress = (): Progress => (game.registry.get(RegistryKeys.Progress) as Progress | undefined) ?? emptyProgress(0);
+  const setProgress = (partial: Partial<Progress>): void => {
+    game.registry.set(RegistryKeys.Progress, { ...progress(), ...partial });
+  };
   const sounds: string[] = [];
   const plugin = audio();
   const play = plugin.play.bind(plugin);
@@ -218,6 +249,51 @@ export function installE2EHook(game: Game, readPerf: PerfReader): void {
     setMuted(muted: boolean): void {
       audio().setMuted(muted);
     },
+    get wallet(): number {
+      return progress().wallet;
+    },
+    get owned(): string[] {
+      return [...progress().owned];
+    },
+    get dyesOwned(): string[] {
+      return [...progress().dyesOwned];
+    },
+    get itemDye(): ItemDye {
+      return { ...readSession(game.registry).itemDye };
+    },
+    get tastesFound(): Record<string, TasteKey[]> {
+      return JSON.parse(JSON.stringify(progress().tastesFound));
+    },
+    get bestStars(): Record<string, Stars> {
+      return { ...progress().bestStars };
+    },
+    get lastRating(): RatingResult | null {
+      return (game.registry.get(RegistryKeys.LastRating) as RatingResult | undefined) ?? null;
+    },
+    get keychains(): Record<string, KeychainRecipe> {
+      return JSON.parse(JSON.stringify(progress().keychains));
+    },
+    get keychainPhase(): string | null {
+      return null;
+    },
+    grant(ids: string[]): void {
+      const p = progress();
+      setProgress({ owned: [...new Set([...p.owned, ...ids])] });
+    },
+    grantDyes(ids: string[]): void {
+      const p = progress();
+      setProgress({ dyesOwned: [...new Set([...p.dyesOwned, ...ids])] });
+    },
+    setWallet(n: number): void {
+      setProgress({ wallet: n });
+    },
+    dye(itemId: string, dyeId: string): void {
+      const session = readSession(game.registry);
+      game.registry.set(RegistryKeys.ItemDye, { ...session.itemDye, [itemId]: dyeId });
+    },
+    setProgress(partial: Partial<Progress>): void {
+      setProgress(partial);
+    },
     wear(ids: string[]): void {
       game.scene.getScenes(true).find(isE2EScene)?.e2eWear(ids);
     },
@@ -237,6 +313,7 @@ export function installE2EHook(game: Game, readPerf: PerfReader): void {
       const save = game.plugins.get(PluginKeys.Save) as SavePlugin;
       save.flush();
       window.localStorage.removeItem(SAVE_KEY);
+      save.resetProgress(0);
       sounds.length = 0;
     },
     jump(scene: string, catId?: string, name?: string): void {

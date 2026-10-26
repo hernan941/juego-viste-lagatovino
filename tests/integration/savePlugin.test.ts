@@ -21,11 +21,13 @@ import { RegistryKeys } from '../../src/game/constants';
 import { SavePlugin, getSave } from '../../src/game/plugins/SavePlugin';
 import { SAVE_KEY, defaultSave, serialize } from '../../src/game/plugins/saveCore';
 import type { Catalog } from '../../src/game/data/schema';
+import { emptyProgress, emptyStoredProgress } from '../../src/game/domain/progress';
+import type { Progress } from '../../src/game/domain/types';
 
 const catalog = {
   cats: [{ id: 'luna', name: 'Luna' }],
   clothes: [{ id: 'sweater-a', slot: 'sweater' }],
-  combos: [],
+  combos: [{ id: 'navidad' }, { id: 'fresas' }],
 } as unknown as Catalog;
 
 type Listener = (...args: unknown[]) => void;
@@ -85,7 +87,7 @@ describe('SavePlugin', () => {
   it('restores the saved cat, name and outfit into the registry', () => {
     const { registry, plugin } = setup(serialize({ ...defaultSave(), catId: 'luna', catName: 'Mimi', outfit: { sweater: 'sweater-a' } }));
     const s = plugin.restoreInto(catalog);
-    expect(s).toEqual({ catId: 'luna', catName: 'Mimi', outfit: { sweater: 'sweater-a' } });
+    expect(s).toEqual({ catId: 'luna', catName: 'Mimi', outfit: { sweater: 'sweater-a' }, itemDye: {} });
     expect(registry.get(RegistryKeys.CatId)).toBe('luna');
     expect(registry.get(RegistryKeys.CatName)).toBe('Mimi');
     expect(registry.get(RegistryKeys.Outfit)).toEqual({ sweater: 'sweater-a' });
@@ -146,19 +148,100 @@ describe('SavePlugin', () => {
   });
 
   it('unlocks secrets at once, remembers them and keeps them across a later session save', () => {
-    const { store, registry, plugin } = setup(serialize({ ...defaultSave(), secrets: ['navidad'] }));
+    const { store, registry, plugin } = setup(serialize({ ...defaultSave(), progress: { ...emptyStoredProgress(), secrets: ['navidad'] } }));
     plugin.restoreInto(catalog);
     expect(plugin.secrets).toEqual(['navidad']);
     plugin.unlockSecret('fresas');
-    expect(JSON.parse(store.get(SAVE_KEY)!).secrets).toEqual(['navidad', 'fresas']);
+    expect(JSON.parse(store.get(SAVE_KEY)!).progress.secrets).toEqual(['navidad', 'fresas']);
     registry.set(RegistryKeys.CatId, 'luna');
     vi.advanceTimersByTime(1000);
-    expect(JSON.parse(store.get(SAVE_KEY)!)).toMatchObject({ catId: 'luna', secrets: ['navidad', 'fresas'] });
+    expect(JSON.parse(store.get(SAVE_KEY)!)).toMatchObject({ catId: 'luna', progress: { secrets: ['navidad', 'fresas'] } });
     expect(plugin.secrets).toEqual(['navidad', 'fresas']);
+  });
+
+  it('saves the dyes of the session with the debounce', () => {
+    const { store, registry, plugin } = setup();
+    plugin.restoreInto(catalog);
+    registry.set(RegistryKeys.ItemDye, { 'sweater-a': 'rosa' });
+    expect(store.has(SAVE_KEY)).toBe(false);
+    vi.advanceTimersByTime(1000);
+    expect(JSON.parse(store.get(SAVE_KEY)!).itemDye).toEqual({ 'sweater-a': 'rosa' });
   });
 
   it('getSave finds the plugin of a scene', () => {
     const plugin = {};
     expect(getSave({ plugins: { get: () => plugin } } as never)).toBe(plugin);
+  });
+
+  describe('progress (F11.11, ADR 0017)', () => {
+    const progressInRegistry = (registry: FakeRegistry) => registry.get(RegistryKeys.Progress) as Progress;
+
+    it('restores the progress into the registry with the start wallet, without writing', () => {
+      const { store, registry, plugin } = setup();
+      plugin.restoreInto(catalog, { startWallet: 100 });
+      expect(progressInRegistry(registry)).toEqual(emptyProgress(100));
+      vi.advanceTimersByTime(1000);
+      expect(store.has(SAVE_KEY)).toBe(false);
+    });
+
+    it('a v1 save comes back as v2: the secrets, what was worn and the start wallet', () => {
+      const v1 = JSON.stringify({ version: 1, catId: 'luna', catName: 'Luna', outfit: { sweater: 'sweater-a' }, secrets: ['navidad'], muted: true, motion: 'auto' });
+      const withCombos = { ...catalog, combos: [{ id: 'navidad' }], clothes: [{ id: 'sweater-a', slot: 'sweater' }, { id: 'sweater-b', slot: 'sweater' }] } as unknown as Catalog;
+      const { registry, plugin } = setup(v1);
+      plugin.restoreInto(withCombos, { startWallet: 100 });
+      expect(progressInRegistry(registry)).toEqual({ ...emptyProgress(100), owned: ['sweater-a'], secrets: ['navidad'] });
+    });
+
+    it('writes at once, with no debounce, when the progress changes in the registry', () => {
+      const { store, registry, plugin } = setup();
+      plugin.restoreInto(catalog, { startWallet: 100 });
+      const next = { ...progressInRegistry(registry), wallet: 60, owned: ['sweater-a'] };
+      registry.set(RegistryKeys.Progress, next);
+      expect(JSON.parse(store.get(SAVE_KEY)!).progress).toMatchObject({ wallet: 60, owned: ['sweater-a'] });
+      expect(plugin.saved.progress.wallet).toBe(60);
+    });
+
+    it('a progress write keeps the session that was already saved and survives a later session save', () => {
+      const { store, registry, plugin } = setup();
+      plugin.restoreInto(catalog, { startWallet: 100 });
+      registry.set(RegistryKeys.CatId, 'luna');
+      registry.set(RegistryKeys.Progress, { ...progressInRegistry(registry), wallet: 5 });
+      registry.set(RegistryKeys.CatName, 'Luna');
+      vi.advanceTimersByTime(1000);
+      expect(JSON.parse(store.get(SAVE_KEY)!)).toMatchObject({ catId: 'luna', catName: 'Luna', progress: { wallet: 5 } });
+    });
+
+    it('unlockSecret updates the progress in the registry (the HUD hears it) and writes at once', () => {
+      const { store, registry, plugin } = setup();
+      plugin.restoreInto(catalog, { startWallet: 100 });
+      const seen: string[][] = [];
+      registry.events.on('changedata', (_p: unknown, key: unknown, value: unknown) => {
+        if (key === RegistryKeys.Progress) seen.push((value as Progress).secrets);
+      });
+      plugin.unlockSecret('navidad');
+      plugin.unlockSecret('navidad');
+      expect(seen).toEqual([['navidad']]);
+      expect(progressInRegistry(registry).secrets).toEqual(['navidad']);
+      expect(JSON.parse(store.get(SAVE_KEY)!).progress.secrets).toEqual(['navidad']);
+    });
+
+    it('resetProgress puts the empty progress in the registry without writing', () => {
+      const { store, registry, plugin } = setup();
+      plugin.restoreInto(catalog, { startWallet: 100 });
+      plugin.unlockSecret('navidad');
+      store.clear();
+      plugin.resetProgress(100);
+      expect(progressInRegistry(registry)).toEqual(emptyProgress(100));
+      vi.advanceTimersByTime(1000);
+      expect(store.has(SAVE_KEY)).toBe(false);
+    });
+
+    it('ignores the progress after being destroyed', () => {
+      const { store, registry, plugin } = setup();
+      plugin.restoreInto(catalog);
+      plugin.destroy();
+      registry.set(RegistryKeys.Progress, emptyProgress(1));
+      expect(store.has(SAVE_KEY)).toBe(false);
+    });
   });
 });

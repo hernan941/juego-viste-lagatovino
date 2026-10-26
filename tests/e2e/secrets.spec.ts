@@ -125,7 +125,7 @@ test.describe('secret combos (F8)', () => {
       // The prize is in the wardrobe, on the tab of its slot, and it is saved.
       expect(after.activeTab).toBe(reward.category);
       expect(Object.keys(after.cells)).toContain(reward.id);
-      await page.waitForFunction((id) => window.__VISTE__?.saved.secrets.includes(id), combo.id);
+      await page.waitForFunction((id) => window.__VISTE__?.saved.progress.secrets.includes(id), combo.id);
 
       // The same combo again: a short reaction, no second gift and the counter stays.
       const gone = after.layerRows.find((r) => r.itemId === worn[worn.length - 1].id)!;
@@ -142,7 +142,7 @@ test.describe('secret combos (F8)', () => {
       // After a reload (ADR 0004): the counter, the saved secret and the prize in its tab are restored, and the prize can be worn.
       await page.reload();
       await settled(page);
-      await page.waitForFunction((id) => window.__VISTE__?.saved.secrets.includes(id), combo.id);
+      await page.waitForFunction((id) => window.__VISTE__?.saved.progress.secrets.includes(id), combo.id);
       const back = await state(page);
       expect(back.secrets).toMatchObject({ count: 1, unlocked: [combo.id], text: `Secretos 1/${combos.length}` });
       expect(back.gift).toBeNull();
@@ -225,6 +225,6 @@ test.describe('secret combos (F8)', () => {
     await page.waitForFunction(() => window.__VISTE__?.scene === 'Showcase' && window.__VISTE__.ui?.ready === true, undefined, { timeout: 30_000 });
     // The prize was kept. The Showcase shows the old count first and pops to the new one with its "¡Te guardé tu regalito!" toast.
     await page.waitForFunction((n) => (window.__VISTE__?.ui?.info as { secrets?: string } | undefined)?.secrets === `Secretos 1/${n}`, combos.length, { timeout: 15_000 });
-    expect(await page.evaluate(() => window.__VISTE__?.saved.secrets)).toEqual([combo.id]);
+    expect(await page.evaluate(() => window.__VISTE__?.saved.progress.secrets)).toEqual([combo.id]);
   });
 });

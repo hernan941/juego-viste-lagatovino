@@ -5,6 +5,7 @@ import {
 } from '../domain/scroll';
 import type { ClothingDef, Point, Rect } from '../domain/types';
 import { CELL_SIZE, ClothingItem } from './ClothingItem';
+import { DecoratorRegistry, type CellDecorator } from './dressup/decorators';
 import { hex } from './ui';
 
 export const GRID_COLUMNS = 3;
@@ -26,6 +27,7 @@ const SCROLLBAR_MIN = 44;
  */
 export class ItemGrid extends Phaser.GameObjects.Container {
   private cells = new Map<string, ClothingItem>();
+  private readonly decorators = new DecoratorRegistry<ClothingItem>();
   private worn = new Set<string>();
   private readonly content: Phaser.GameObjects.Container;
   private readonly scrollbar: Phaser.GameObjects.Graphics;
@@ -81,9 +83,29 @@ export class ItemGrid extends Phaser.GameObjects.Container {
       this.content.add(cell);
       cell.popIn(120 + Math.min(i, 11) * 45);
       if (this.worn.has(item.id)) cell.setWorn(true);
+      this.decorators.apply(cell);
       this.cells.set(item.id, cell);
     });
     this.applyScroll();
+  }
+
+  /**
+   * Extension point (ADR 0019): `decorate` runs on every cell the grid builds (on each tab change too), so a decoration
+   * survives the tab and the scroll (it is a child of the cell). It also runs now on the cells that are already there.
+   * Returns the function that removes the decorator (the decorations already hung stay until `refreshDecorations`).
+   */
+  addCellDecorator(decorate: CellDecorator<ClothingItem>): () => void {
+    const remove = this.decorators.add(decorate);
+    for (const cell of this.cells.values()) decorate(cell);
+    return remove;
+  }
+
+  /** Clears the decorations of every cell and runs the decorators again (for example, after a purchase changes a price tag). */
+  refreshDecorations(): void {
+    for (const cell of this.cells.values()) {
+      cell.clearDecorations();
+      this.decorators.apply(cell);
+    }
   }
 
   private retire(cell: ClothingItem): void {
@@ -191,6 +213,11 @@ export class ItemGrid extends Phaser.GameObjects.Container {
     }).map(([id]) => id);
   }
 
+  /** True when every cell has finished popping in (full opacity, scale 1). */
+  cellsSettled(): boolean {
+    return [...this.cells.values()].every((c) => c.alpha > 0.99 && Math.abs(c.scale - 1) < 0.01);
+  }
+
   /** Viewport in game coordinates plus the scroll state. */
   getViewport(): Rect & { scroll: number; targetScroll: number; maxScroll: number } {
     const o = this.worldOrigin();
@@ -210,6 +237,7 @@ export class ItemGrid extends Phaser.GameObjects.Container {
     this.scene?.input.off('wheel', this.onWheel, this);
     this.scene?.events.off(Phaser.Scenes.Events.UPDATE, this.onUpdate, this);
     this.scrollbarTween?.remove();
+    this.decorators.clear();
     this.removeAllListeners();
     super.destroy(fromScene);
   }

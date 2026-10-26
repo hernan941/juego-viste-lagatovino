@@ -2,7 +2,7 @@
 import { RegistryKeys } from '../constants';
 import { emptySession, type Session } from '../domain/session';
 import { SLOT_ORDER } from '../domain/slots';
-import type { Outfit } from '../domain/types';
+import type { ItemDye, Outfit } from '../domain/types';
 
 /** The slice of Phaser's DataManager we need, so tests do not need Phaser. */
 export interface RegistryLike {
@@ -20,6 +20,11 @@ function asOutfit(value: unknown): Outfit {
   return out;
 }
 
+function asItemDye(value: unknown): ItemDye {
+  if (typeof value !== 'object' || value === null) return {};
+  return Object.fromEntries(Object.entries(value).filter((e): e is [string, string] => typeof e[1] === 'string'));
+}
+
 export function readSession(reg: RegistryLike): Session {
   const base = emptySession();
   const catId = reg.get(RegistryKeys.CatId);
@@ -28,6 +33,7 @@ export function readSession(reg: RegistryLike): Session {
     catId: typeof catId === 'string' ? catId : base.catId,
     catName: typeof name === 'string' ? name : base.catName,
     outfit: asOutfit(reg.get(RegistryKeys.Outfit)),
+    itemDye: asItemDye(reg.get(RegistryKeys.ItemDye)),
   };
 }
 
@@ -35,4 +41,5 @@ export function writeSession(reg: RegistryLike, s: Session): void {
   reg.set(RegistryKeys.CatId, s.catId);
   reg.set(RegistryKeys.CatName, s.catName);
   reg.set(RegistryKeys.Outfit, s.outfit);
+  reg.set(RegistryKeys.ItemDye, s.itemDye);
 }

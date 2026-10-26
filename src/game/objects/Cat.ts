@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { ObjectEvents } from '../constants';
 import { catTailKey, faceKey } from '../data/assets';
+import { catPose, headNoSteps, type CatPoseId } from '../domain/catPose';
 import { reactionFor, type Expression, type ReactionEvent } from '../domain/expressions';
 import { Cooldown } from '../domain/cooldown';
 import { blinkCount, idleLookOffset, lookOffset, nextBlinkDelay, nextFlickDelay, nextIdleLookDelay } from '../domain/idle';
@@ -45,6 +46,8 @@ interface Layer {
  */
 export class Cat extends Phaser.GameObjects.Container {
   readonly def: CatDef;
+  /** Holds the photo pose (tilt, lift, squash). Above the rig, so the tweens of the reactions never undo it. */
+  private readonly poseNode: Phaser.GameObjects.Container;
   private readonly rig: Phaser.GameObjects.Container;
   private readonly breath: Phaser.GameObjects.Container;
   private readonly face: Phaser.GameObjects.Image;
@@ -76,6 +79,12 @@ export class Cat extends Phaser.GameObjects.Container {
   private revertTimer?: Phaser.Time.TimerEvent;
   private lookTween?: Phaser.Tweens.Tween;
   private faceTween?: Phaser.Tweens.Tween;
+  private poseId: CatPoseId | null = null;
+  private poseTween?: Phaser.Tweens.Tween;
+  /** Texture that each worn layer shows right now (a dyed copy replaces the base one, F11.15). */
+  private readonly shown = new Map<Phaser.GameObjects.Image, string>();
+  /** Texture to use for an item, by item id (the dye lives on the item, ADR 0018). */
+  private readonly textureOverrides = new Map<string, string>();
 
   constructor(
     scene: Phaser.Scene, x: number, y: number, def: CatDef, private readonly anchors: AnchorsDef, displaySize: number,
@@ -85,7 +94,8 @@ export class Cat extends Phaser.GameObjects.Container {
     this.setScale(displaySize / anchors.canvas.width);
     this.breath = scene.add.container(0, 0);
     this.rig = scene.add.container(0, 0, [this.breath]);
-    this.add(this.rig);
+    this.poseNode = scene.add.container(0, 0, [this.rig]);
+    this.add(this.poseNode);
 
     this.tail = this.createTail();
     this.fur = this.canvasImage(def.texture).setDepth(-1);
@@ -126,7 +136,7 @@ export class Cat extends Phaser.GameObjects.Container {
   getAccessoryTip(): Point {
     const layer = this.layers.get('accessory');
     if (layer) {
-      const b = opaqueBounds(this.scene, layer.item.texture);
+      const b = opaqueBounds(this.scene, this.textureOf(layer));
       const { width, height } = this.anchors.canvas;
       if (b) return this.canvasToWorld({ x: (b.x + b.width / 2) * width, y: (b.y + b.height * 0.2) * height });
     }
@@ -146,10 +156,11 @@ export class Cat extends Phaser.GameObjects.Container {
    * drawn above covers. Thin items that are fully hidden fall back to the center of the slot box.
    */
   getLayerGrabPoint(item: ClothingDef): Point {
-    const own = alphaMapOf(this.scene, item.texture);
+    const mine = this.layers.get(item.slot);
+    const own = alphaMapOf(this.scene, mine && mine.item.id === item.id ? this.textureOf(mine) : item.texture);
     const covers = [...this.layers.values()]
       .filter((l) => slotZIndex(l.item.slot) > slotZIndex(item.slot))
-      .map((l) => alphaMapOf(this.scene, l.item.texture));
+      .map((l) => alphaMapOf(this.scene, this.textureOf(l)));
     const p = grabPoint(own, covers, { reach: HIT_REACH });
     if (p) {
       const k = this.anchors.canvas.width / own.width;
@@ -228,10 +239,78 @@ export class Cat extends Phaser.GameObjects.Container {
 
   /** A glance to one side (1 right, -1 left) for a moment, then back (a flourish of the Showcase pose). */
   glance(dir: 1 | -1, ms = 700): void {
-    this.glanceTimer?.remove();
     const eyes = this.canvasToWorld(this.anchors.anchors.eyes);
-    this.lookAt({ x: eyes.x + dir * 300, y: eyes.y });
+    this.glanceAt({ x: eyes.x + dir * 300, y: eyes.y }, ms);
+  }
+
+  /** The eyes go to a point (game coordinates) for a moment and come back: the cat noticed something there. */
+  glanceAt(point: Point, ms = 700): void {
+    this.glanceTimer?.remove();
+    this.lookAt(point);
     this.glanceTimer = this.scene.time.delayedCall(ms, () => this.lookAt(null));
+  }
+
+  /** A look at its own belly (the sweater being tried on), for a moment. */
+  lookAtBelly(ms = 900): void {
+    this.glanceAt(this.getAnchorWorld('torso'), ms);
+  }
+
+  /**
+   * "No, thanks": the puaj face and the head (the face and the garments of the head and face slots) shaking 4 degrees twice,
+   * then back to normal. Reduced motion changes only the face (ADR 0013).
+   */
+  sayNo(): void {
+    const p = profileOf(this.scene);
+    this.revertTimer?.remove();
+    this.held = false;
+    this.setExpression('puaj');
+    if (p.shake > 0) {
+      const head = [this.face, ...[...this.layers.values()].filter((l) => l.item.slot === 'head' || l.item.slot === 'face').map((l) => l.image)];
+      this.scene.tweens.killTweensOf(head);
+      this.scene.tweens.chain({
+        targets: head,
+        tweens: headNoSteps(p.shake).map((angle) => ({ angle, duration: 90, ease: 'Sine.easeInOut' })),
+      });
+    }
+    this.revertTimer = this.scene.time.delayedCall(900, () => this.setExpression('normal'));
+  }
+
+  // ---- Photo pose (S6) -----------------------------------------------------
+
+  /** The pose that is applied now, or null. */
+  get currentPose(): CatPoseId | null {
+    return this.poseId;
+  }
+
+  /**
+   * Puts the cat in a photo pose (a transformation of the render and a held face, no new art). False for an unknown id.
+   * The anchors and boxes of the cat do not follow the pose: it is for still pictures, not for dressing.
+   */
+  applyPose(id: string): boolean {
+    const pose = catPose(id);
+    if (!pose) return false;
+    this.poseId = pose.id;
+    this.moveToPose({ angle: pose.angle, y: -pose.lift, scaleX: pose.scaleX, scaleY: pose.scaleY });
+    if (pose.expression === 'normal') this.release();
+    else this.hold(pose.expression);
+    return true;
+  }
+
+  /** Back to sitting normally. */
+  clearPose(): void {
+    this.poseId = null;
+    this.moveToPose({ angle: 0, y: 0, scaleX: 1, scaleY: 1 });
+    this.release();
+  }
+
+  private moveToPose(to: { angle: number; y: number; scaleX: number; scaleY: number }): void {
+    this.poseTween?.remove();
+    const p = profileOf(this.scene);
+    if (p.reduced) {
+      this.poseNode.setAngle(to.angle).setY(to.y).setScale(to.scaleX, to.scaleY);
+      return;
+    }
+    this.poseTween = this.scene.tweens.add({ targets: this.poseNode, ...to, duration: 220, ease: p.ease('Back.easeOut') });
   }
 
   private scheduleBlink(): void {
@@ -524,18 +603,19 @@ export class Cat extends Phaser.GameObjects.Container {
   /**
    * Renders `items` (already ordered by `getLayers`). New ones pop in; the ones that leave (or are
    * replaced in their slot) animate out before being destroyed. Nothing appears or vanishes abruptly.
+   * `instant` skips every animation (layers at full opacity at once, leaving ones destroyed at once): to capture a dressed cat.
    */
-  setOutfit(items: readonly ClothingDef[], { stagger = false }: { stagger?: boolean } = {}): void {
+  setOutfit(items: readonly ClothingDef[], { stagger = false, instant = false }: { stagger?: boolean; instant?: boolean } = {}): void {
     const next = new Map(items.map((i) => [i.slot, i]));
     for (const [slot, layer] of [...this.layers]) {
       if (next.get(slot as ClothingDef['slot'])?.id === layer.item.id) continue;
       this.layers.delete(slot);
-      this.dismiss(layer);
+      this.dismiss(layer, instant);
     }
     // `stagger`: the new layers pop one after another (80 ms apart), back to front, as when the look arrives on another cat.
     const fresh = items.filter((item) => !this.layers.has(item.slot));
-    const delays = stagger ? staggerDelays(fresh.length) : [];
-    fresh.forEach((item, i) => this.layers.set(item.slot, { item, image: this.createLayer(item, delays[i] ?? 0) }));
+    const delays = stagger && !instant ? staggerDelays(fresh.length) : [];
+    fresh.forEach((item, i) => this.layers.set(item.slot, { item, image: this.createLayer(item, delays[i] ?? 0, instant) }));
     this.breath.sort('depth');
   }
 
@@ -544,25 +624,32 @@ export class Cat extends Phaser.GameObjects.Container {
     return this.popping.size > 0;
   }
 
-  private createLayer(item: ClothingDef, delay = 0): Phaser.GameObjects.Image {
-    const img = this.canvasImage(item.texture).setDepth(slotZIndex(item.slot));
+  private createLayer(item: ClothingDef, delay = 0, instant = false): Phaser.GameObjects.Image {
+    const texture = this.textureOverrides.get(item.id) ?? item.texture;
+    const img = this.canvasImage(texture).setDepth(slotZIndex(item.slot));
+    this.shown.set(img, texture);
     const finalScale = { x: img.scaleX, y: img.scaleY };
     const p = profileOf(this.scene);
-    img.setAlpha(0).setScale(finalScale.x * (1 - 0.1 * p.squash), finalScale.y * (1 - 0.1 * p.squash));
     this.breath.add(img);
     this.rockLayer(img, item);
-    this.popping.add(img);
-    this.scene.tweens.add({
-      targets: img, alpha: 1, scaleX: finalScale.x, scaleY: finalScale.y, duration: 250, delay, ease: p.ease('Back.easeOut'),
-      onComplete: () => this.popping.delete(img),
-    });
+    if (!instant) {
+      img.setAlpha(0).setScale(finalScale.x * (1 - 0.1 * p.squash), finalScale.y * (1 - 0.1 * p.squash));
+      this.popping.add(img);
+      this.scene.tweens.add({
+        targets: img, alpha: 1, scaleX: finalScale.x, scaleY: finalScale.y, duration: 250, delay, ease: p.ease('Back.easeOut'),
+        onComplete: () => this.popping.delete(img),
+      });
+    }
     // Hit area: the visible pixels of the item (plus a small reach), so the topmost item under the pointer is the one
     // that is dragged: an accessory never hides the sweater and items outside the torso box can be grabbed.
-    const alpha = alphaMapOf(this.scene, item.texture);
-    const k = alpha.width / img.width;
+    // The silhouette is looked up at each test: a dyed copy of the item (setItemTexture) has the same shape but its own map.
     img.setInteractive({
       hitArea: new Phaser.Geom.Rectangle(0, 0, img.width, img.height),
-      hitAreaCallback: (_area: Phaser.Geom.Rectangle, x: number, y: number) => hitsAlpha(alpha, x * k, y * k, undefined, HIT_REACH),
+      hitAreaCallback: (_area: Phaser.Geom.Rectangle, x: number, y: number) => {
+        const alpha = alphaMapOf(this.scene, this.shown.get(img) ?? item.texture);
+        const k = alpha.width / img.width;
+        return hitsAlpha(alpha, x * k, y * k, undefined, HIT_REACH);
+      },
       draggable: true,
       useHandCursor: true,
     });
@@ -627,7 +714,7 @@ export class Cat extends Phaser.GameObjects.Container {
   private createHalo(img: Phaser.GameObjects.Image, item: ClothingDef): Phaser.GameObjects.Image[] {
     const copies = Array.from({ length: HALO_COPIES }, (_, i) => {
       const a = (i * Math.PI * 2) / HALO_COPIES;
-      return this.canvasImage(item.texture)
+      return this.canvasImage(this.shown.get(img) ?? item.texture)
         .setPosition(img.x + Math.cos(a) * HALO_PX, img.y + Math.sin(a) * HALO_PX)
         .setScale(img.scaleX, img.scaleY)
         .setTint(hex('rosa200')).setTintMode(Phaser.TintModes.FILL)
@@ -647,16 +734,40 @@ export class Cat extends Phaser.GameObjects.Container {
     this.scene.tweens.add({ targets: copies, alpha: 0, duration: 120, onComplete: () => copies.forEach((c) => c.destroy()) });
   }
 
-  private dismiss(layer: Layer): void {
+  private dismiss(layer: Layer, instant = false): void {
     const { image } = layer;
     this.clearHover(image);
     image.disableInteractive();
     this.popping.delete(image);
+    this.shown.delete(image);
     this.scene.tweens.killTweensOf(image);
+    if (instant) {
+      image.destroy();
+      return;
+    }
     this.scene.tweens.add({
       targets: image, alpha: 0, y: image.y + 24, scaleX: image.scaleX * 0.94, scaleY: image.scaleY * 0.94, duration: 220, ease: 'Quad.easeIn',
       onComplete: () => image.destroy(),
     });
+  }
+
+  private textureOf(layer: Layer): string {
+    return this.shown.get(layer.image) ?? layer.item.texture;
+  }
+
+  /**
+   * Shows `textureKey` (the dyed copy) on the worn item, or the base texture again with null. The choice is remembered, so the
+   * item keeps its color if it is taken off and worn again. The silhouette is the same, so the pixel hit test follows the new map.
+   */
+  setItemTexture(itemId: string, textureKey: string | null): void {
+    if (textureKey === null) this.textureOverrides.delete(itemId);
+    else this.textureOverrides.set(itemId, textureKey);
+    for (const layer of this.layers.values()) {
+      if (layer.item.id !== itemId) continue;
+      const key = textureKey ?? layer.item.texture;
+      layer.image.setTexture(key);
+      this.shown.set(layer.image, key);
+    }
   }
 
   /** Dims the layer of an item while it is being dragged off. */
@@ -677,7 +788,8 @@ export class Cat extends Phaser.GameObjects.Container {
     this.tintTimer?.remove();
     this.breathTween?.remove();
     this.tailTween?.stop();
-    this.scene?.tweens.killTweensOf([this, this.rig, this.breath, this.face, this.tail, ...[...this.layers.values()].map((l) => l.image)]);
+    this.poseTween?.remove();
+    this.scene?.tweens.killTweensOf([this, this.poseNode, this.rig, this.breath, this.face, this.tail, ...[...this.layers.values()].map((l) => l.image)]);
     this.removeAllListeners();
     super.destroy(fromScene);
   }

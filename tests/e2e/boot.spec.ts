@@ -47,7 +47,7 @@ test('the test hook resets the progress (save, mute and sound log) so a running 
 
   await page.evaluate(() => window.__VISTE__?.reset());
   const saved = await page.evaluate(() => JSON.parse(JSON.stringify(window.__VISTE__?.saved)));
-  expect(saved).toMatchObject({ catId: null, catName: '', outfit: {}, secrets: [], muted: false });
+  expect(saved).toMatchObject({ catId: null, catName: '', outfit: {}, muted: false, progress: { secrets: [] } });
   expect(await page.evaluate(() => window.__VISTE__?.muted)).toBe(false);
   expect(await page.evaluate(() => window.__VISTE__?.sounds)).toEqual([]);
 });
