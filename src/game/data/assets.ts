@@ -29,6 +29,16 @@ export function clothingAssetName(item: Pick<ClothingDef, 'id' | 'slot'>): strin
   return item.id.startsWith(prefix) ? item.id.slice(prefix.length) : item.id;
 }
 
+/** Cache key of the SVG source text of a dyeable item (loaded with `load.text`, ADR 0018). */
+export const dyeSvgKey = (texture: string) => `${texture}:svg`;
+
+/** The SVG texts the DyePlugin recolors: only the dyeable items. Paths are relative to public/. */
+export function buildDyeSourceEntries(clothes: readonly ClothingDef[]): { key: string; path: string }[] {
+  return clothes
+    .filter((c) => c.dyeable)
+    .map((c) => ({ key: dyeSvgKey(c.texture), path: `assets/clothes/${c.slot}/${clothingAssetName(c)}.svg` }));
+}
+
 /** Pieces of the photo mode by section: key prefix of the textures and folder of the files (art/photo/). */
 export const PHOTO_SECTIONS = {
   backgrounds: { prefix: 'photo-bg-', dir: 'backgrounds', width: 540, height: 675 },
