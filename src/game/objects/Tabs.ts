@@ -1,9 +1,10 @@
 import Phaser from 'phaser';
-import { ObjectEvents, Palette, SfxKeys } from '../constants';
+import { Ink, ObjectEvents, Palette, SfxKeys, colorToNumber, type InkToken } from '../constants';
 import type { Point } from '../domain/types';
 import { getAudio } from '../plugins/AudioPlugin';
+import { TAB_RISE, tabLayout } from '../systems/kit';
 import { profileOf } from '../systems/motion';
-import { addHover, addPress, hex, hitRect, makeText, type ScaleTo } from './ui';
+import { addHover, addKitFeedback, addPress, hex, hitRect, kitHitRect, makeText, type ScaleTo } from './ui';
 import { hoverSfx } from './hoverSfx';
 
 export interface TabDef {
@@ -12,6 +13,14 @@ export interface TabDef {
   label: string;
   /** Texture key of the silhouette icon. */
   icon: string;
+  /** Color of the index tab (a brand token of `Ink`); only the index style reads it. */
+  color?: InkToken;
+}
+
+/** 'chip': the round pink tabs of the first stage. 'index': notebook index tabs of the brand colors (opt-in, F12.2). */
+export type TabsStyle = 'chip' | 'index';
+export interface TabsOptions {
+  style?: TabsStyle;
 }
 
 export const TAB_SIZE = 54;
@@ -22,21 +31,31 @@ class Tab extends Phaser.GameObjects.Container {
   private readonly view: Phaser.GameObjects.Container;
   private readonly bg: Phaser.GameObjects.Graphics;
   private readonly scaleView: ScaleTo;
+  private readonly index: boolean;
+  private drawn = false;
 
-  constructor(scene: Phaser.Scene, x: number, readonly def: TabDef) {
+  constructor(scene: Phaser.Scene, x: number, readonly def: TabDef, style: TabsStyle = 'chip') {
     super(scene, x + TAB_SIZE / 2, TAB_SIZE / 2);
+    this.index = style === 'index';
     this.bg = scene.add.graphics();
     const icon = scene.add.image(0, 0, def.icon).setDisplaySize(ICON_SIZE, ICON_SIZE);
     this.view = scene.add.container(0, 0, [this.bg, icon]);
     this.add(this.view);
     this.setSize(TAB_SIZE, TAB_SIZE);
-    this.setInteractive({ hitArea: hitRect(TAB_SIZE, TAB_SIZE, { width: TAB_SIZE + TAB_GAP, height: TAB_SIZE + 16 }), hitAreaCallback: Phaser.Geom.Rectangle.Contains, useHandCursor: true });
-    this.scaleView = addHover(this, 1.1, this.view);
-    addPress(this, this.view);
+    const cap = { width: TAB_SIZE + TAB_GAP, height: TAB_SIZE + 16 };
+    this.setInteractive({ hitArea: this.index ? kitHitRect(TAB_SIZE, TAB_SIZE, cap) : hitRect(TAB_SIZE, TAB_SIZE, cap), hitAreaCallback: Phaser.Geom.Rectangle.Contains, useHandCursor: true });
+    if (this.index) {
+      addKitFeedback(this, this.view);
+      this.scaleView = () => undefined;
+    } else {
+      this.scaleView = addHover(this, 1.1, this.view);
+      addPress(this, this.view);
+    }
     this.setSelected(false, true);
   }
 
   setSelected(active: boolean, silent = false): void {
+    if (this.index) return this.setSelectedIndex(active, silent);
     this.bg.clear();
     this.bg.fillStyle(hex('rosa600'), 0.18);
     this.bg.fillRoundedRect(-TAB_SIZE / 2, -TAB_SIZE / 2 + 5, TAB_SIZE, TAB_SIZE, 20);
@@ -47,6 +66,25 @@ class Tab extends Phaser.GameObjects.Container {
       this.scaleView(1 + 0.18 * p.squash, 90);
       this.scene.time.delayedCall(90, () => this.scene && this.scaleView(1, 160, p.ease('Back.easeOut')));
     }
+  }
+
+  /** Index tab: a flat card-colored tab with an ink border, rounded on top; the selected one sticks out TAB_RISE px. */
+  private setSelectedIndex(active: boolean, silent: boolean): void {
+    if (!this.drawn) {
+      this.drawn = true;
+      const color = colorToNumber(Ink[this.def.color ?? 'cielo']);
+      const w = TAB_SIZE;
+      const h = TAB_SIZE + TAB_RISE;
+      this.bg.fillStyle(color, 1).fillRoundedRect(-w / 2, -TAB_SIZE / 2, w, h, { tl: 14, tr: 14, bl: 0, br: 0 });
+      this.bg.lineStyle(3, colorToNumber(Ink.tinta), 1).strokeRoundedRect(-w / 2, -TAB_SIZE / 2, w, h, { tl: 14, tr: 14, bl: 0, br: 0 });
+    }
+    const y = active ? -TAB_RISE : 0;
+    this.scene.tweens.killTweensOf(this.view);
+    if (silent) {
+      this.view.y = y;
+      return;
+    }
+    this.scene.tweens.add({ targets: this.view, y, duration: 160, ease: profileOf(this.scene).ease('Back.easeOut') });
   }
 }
 
@@ -60,10 +98,10 @@ export class Tabs extends Phaser.GameObjects.Container {
   private current: string | null = null;
   private hovered: string | null = null;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, defs: readonly TabDef[]) {
+  constructor(scene: Phaser.Scene, x: number, y: number, defs: readonly TabDef[], options: TabsOptions = {}) {
     super(scene, x, y);
     defs.forEach((def, i) => {
-      const tab = new Tab(scene, i * (TAB_SIZE + TAB_GAP), def);
+      const tab = new Tab(scene, tabLayout(defs.length, -1, TAB_SIZE, TAB_GAP)[i]!.x, def, options.style);
       tab.on('pointerdown', () => this.select(def.id));
       tab.on('pointerover', (p: Phaser.Input.Pointer) => {
         this.showCaption(def.id);

@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
-import { FONT_FAMILY, ObjectEvents, Palette, SfxKeys } from '../constants';
+import { FONT_FAMILY, Fonts, Ink, ObjectEvents, Palette, SfxKeys, colorToNumber } from '../constants';
 import type { Point } from '../domain/types';
 import { getAudio } from '../plugins/AudioPlugin';
-import { addHover, addPress, hex, hitRect } from './ui';
+import { addHover, addKitFeedback, addPress, hex, hitRect, kitHitRect } from './ui';
 import { hoverSfx } from './hoverSfx';
 
 export type ButtonTone = 'rosa' | 'mantequilla' | 'menta' | 'lavanda';
@@ -20,7 +20,12 @@ export interface ButtonOptions {
   height?: number;
   fontSize?: number;
   tone?: ButtonTone;
+  /** Lagatovino flat pill (art-direction section 6.3): opt-in, the scenes of the first stage keep the chubby look until F20. */
+  pill?: 'primary' | 'secondary';
 }
+
+const INK = colorToNumber(Ink.tinta);
+const CARD = colorToNumber(Ink.tarjeta);
 
 const LIFT = 8;
 
@@ -36,6 +41,13 @@ export class Button extends Phaser.GameObjects.Container {
   constructor(scene: Phaser.Scene, x: number, y: number, label: string, options: ButtonOptions = {}) {
     super(scene, x, y);
     const { width = 240, height = 84, fontSize = 36, tone = 'rosa' } = options;
+    if (options.pill) {
+      // The pill builds its own parts and skips the chubby look below.
+      this.text = scene.add.text(0, 0, label, { fontFamily: Fonts.Title, fontSize: `${fontSize}px`, color: Ink.cremaPapel }).setOrigin(0.5);
+      this.face = scene.add.container(0, 0);
+      this.buildPill(scene, width, height, options.pill);
+      return;
+    }
     const t = TONES[tone];
     const bg = scene.add.graphics();
     bg.fillStyle(hex('rosa600'), 0.18).fillEllipse(0, height / 2 + 2, width - 20, 14);
@@ -59,6 +71,36 @@ export class Button extends Phaser.GameObjects.Container {
     this.on('pointerover', (p: Phaser.Input.Pointer) => hoverSfx(scene, p, 0.5));
     this.on('pointerdown', () => { this.pressed = true; });
     this.on('pointerout', () => { this.pressed = false; });
+    this.on('pointerup', () => {
+      if (!this.pressed) return;
+      this.pressed = false;
+      audio.play(SfxKeys.Click);
+      this.emit(ObjectEvents.ButtonClick);
+    });
+  }
+
+  /** Flat pill: primary is ink with paper text, secondary is a card with an ink border; hover swaps the colors. */
+  private buildPill(scene: Phaser.Scene, width: number, height: number, kind: 'primary' | 'secondary'): void {
+    const gfx = scene.add.graphics();
+    const paint = (hovered: boolean) => {
+      const inverted = (kind === 'primary') !== hovered;
+      const fill = inverted ? INK : CARD;
+      gfx.clear();
+      gfx.fillStyle(fill, 1).fillRoundedRect(-width / 2, -height / 2, width, height, height / 2);
+      gfx.lineStyle(3, INK, 1).strokeRoundedRect(-width / 2, -height / 2, width, height, height / 2);
+      this.text.setColor(inverted ? Ink.cremaPapel : Ink.tinta);
+    };
+    paint(false);
+    this.face.add([gfx, this.text]);
+    this.add(this.face);
+    scene.add.existing(this);
+    this.setSize(width, height);
+    this.setInteractive({ hitArea: kitHitRect(width, height), hitAreaCallback: Phaser.Geom.Rectangle.Contains, useHandCursor: true });
+    addKitFeedback(this, this.face);
+    const audio = getAudio(scene);
+    this.on('pointerover', (p: Phaser.Input.Pointer) => { paint(true); hoverSfx(scene, p, 0.5); });
+    this.on('pointerdown', () => { this.pressed = true; });
+    this.on('pointerout', () => { this.pressed = false; paint(false); });
     this.on('pointerup', () => {
       if (!this.pressed) return;
       this.pressed = false;
