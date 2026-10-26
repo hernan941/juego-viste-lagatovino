@@ -54,7 +54,7 @@ html, body {
     overflow: hidden;
     overscroll-behavior: none;
     color: #5A3A48;
-    background-color: #FFF0F6;
+    background-color: #FFFCF5;
     font-family: 'Fredoka', sans-serif;
     /* ADR 0014: a finger must never scroll, zoom, select or open a menu over the game. */
     touch-action: none;
@@ -92,7 +92,7 @@ html, body {
     align-items: center;
     justify-content: center;
     text-align: center;
-    background: #FFF0F6;
+    background: #FFFCF5;
 }
 
 html.rotate-hint #rotate-hint {
