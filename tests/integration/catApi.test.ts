@@ -224,6 +224,15 @@ describe('Cat.applyPose / clearPose (F11.15)', () => {
     expect(f.added.some((t) => t.angle === 8)).toBe(false);
   });
 
+  it('instant puts the pose on at once with no tween, to capture it (F19.2)', () => {
+    const { f, cat } = make();
+    const pose = f.containers[2];
+    f.added.length = 0;
+    expect(cat.applyPose('coqueto', { instant: true })).toBe(true);
+    expect(pose.angle).toBe(8);
+    expect(f.added.some((t) => t.angle === 8)).toBe(false);
+  });
+
   it('an unknown pose changes nothing', () => {
     const { cat } = make();
     expect(cat.applyPose('volando')).toBe(false);

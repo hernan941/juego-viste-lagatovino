@@ -4,9 +4,11 @@
 // scene list of a production build. Nothing here is game code: the real object comes later (F19.2).
 import Phaser from 'phaser';
 import { RegistryKeys } from '../../constants';
-import type { Catalog } from '../../data/schema';
+import type { GameData } from '../../data/schema';
 import type { AnchorsDef, CatDef, ClothingDef } from '../../domain/types';
 import { Cat } from '../../objects/Cat';
+import { Keychain, keychainData } from '../../objects/keychain/Keychain';
+import type { KeychainRecipe, Stars } from '../../domain/types';
 
 export const LAB_SCENE_KEY = 'PorcelainLab';
 
@@ -74,7 +76,7 @@ function porcelainMatrix(): number[] {
 }
 
 export class PorcelainLab extends Phaser.Scene {
-  private catalog!: Catalog;
+  private catalog!: GameData;
   private anchors!: AnchorsDef;
   private live!: Cat;
   private shown: Phaser.GameObjects.GameObject[] = [];
@@ -95,7 +97,7 @@ export class PorcelainLab extends Phaser.Scene {
   }
 
   create(): void {
-    this.catalog = this.registry.get(RegistryKeys.Catalog) as Catalog;
+    this.catalog = this.registry.get(RegistryKeys.Catalog) as GameData;
     this.anchors = this.registry.get(RegistryKeys.Anchors) as AnchorsDef;
     this.cameras.main.setBackgroundColor(0xfff0f6);
     this.add.rectangle(960, 360, 640, 720, 0xc9a27a).setDepth(-5); // corkboard-ish, to judge the edge over a dark-ish ground
@@ -377,6 +379,27 @@ export class PorcelainLab extends Phaser.Scene {
   private api() {
     return {
       defaults: LAB_DEFAULTS,
+      /** F19.2: the REAL Keychain object, one per entry, in a row; the first swings. Resolves when all are built. */
+      real: async (list: { cat: number; stars: Stars; pose: string; px?: 256 | 512; dye?: string }[], y = 60): Promise<{ key: string; w: number; h: number }[]> => {
+        this.clearShown();
+        const data = keychainData(this.catalog, this.anchors);
+        const step = 1280 / list.length;
+        const made = list.map((o, i) => {
+          const worn = this.dressedCat(o.cat);
+          const sweater = worn[0];
+          const recipe: KeychainRecipe = {
+            catId: this.catDef(o.cat).id, catName: this.catDef(o.cat).name,
+            outfit: Object.fromEntries(worn.map((c) => [c.slot, c.id])), itemDye: o.dye && sweater.dyeable ? { [sweater.id]: o.dye } : {},
+            pose: o.pose, stars: o.stars, photo: { background: '', frame: '', stickers: [] }, createdAt: new Date().toISOString(),
+          };
+          const k = new Keychain(this, step * (i + 0.5), y, recipe, data, { px: o.px ?? 512 });
+          this.shown.push(k);
+          return k;
+        });
+        await Promise.all(made.map((k) => k.whenReady()));
+        made[0]?.swing();
+        return made.map((k) => ({ key: k.textureKey, w: k.layout.width, h: k.layout.height }));
+      },
       prepare: (count: number) => this.prepare(count, 512),
       renderer: () => {
         const gl = (this.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer).gl;

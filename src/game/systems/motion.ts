@@ -43,6 +43,8 @@ export interface MotionProfile {
   breathe: boolean;
   /** Decorative endless loops (bobbing hints, the logo's bounce, pulsing halos). */
   loops: boolean;
+  /** Swing of a hanging keychain (ADR 0021): degrees, one swing per period, and how fast it fades. Reduced: +-3 degrees that stop in 0.6 s. */
+  swing: { amp: number; periodMs: number; damping: number };
   /** The camera dive into the shop. */
   zoom: boolean;
   /** Turns an iris into a plain fade. */
@@ -71,6 +73,7 @@ export function motionProfile(reduced: boolean): MotionProfile {
     slow: reduced ? 2 : 1,
     breathe: !reduced,
     loops: !reduced,
+    swing: reduced ? { amp: 3, periodMs: 900, damping: 3 } : { amp: 14, periodMs: 900, damping: 2.1 },
     zoom: !reduced,
     transitionKind: (kind) => (reduced ? 'fade' : kind),
     ease: (name) => {

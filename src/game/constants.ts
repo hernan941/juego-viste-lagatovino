@@ -116,6 +116,12 @@ export const ObjectEvents = {
   CatPet: 'cat-pet',
   /** Cat: (item: ClothingDef, at: Point) the pointer entered a worn item */
   LayerHover: 'layer-hover',
+  /** Keychain: the flattened texture is ready and showing */
+  KeychainReady: 'keychain-ready',
+  /** Keychain: (strength: 0..1) the swing reached one end: the "tink" of the porcelain */
+  KeychainTink: 'keychain-tink',
+  /** Keychain: the swing came to rest */
+  KeychainSwingEnd: 'keychain-swing-end',
 } as const;
 
 /** Scene events of DressUp that its controllers listen to (ADR 0019). */
@@ -164,6 +170,17 @@ export const TextureKeys = {
   PriceTag: 'ui-price-tag',
   Stamp: 'ui-stamp',
   Notebook: 'ui-notebook',
+} as const;
+
+/** Textures of the keychain hardware and varnish (art/ui/keychain/, loaded by the Preloader from `UI_ART`, ADR 0021). */
+export const KeychainTextures = {
+  Eyelet: 'ui-keychain-ring-eyelet',
+  RingSilver: 'ui-keychain-ring-silver',
+  RingGold: 'ui-keychain-ring-gold',
+  Charm: 'ui-keychain-charm-star',
+  Chain: 'ui-keychain-chain',
+  Varnish: 'ui-keychain-varnish',
+  VarnishStreak: 'ui-keychain-varnish-streak',
 } as const;
 
 /** Global plugin keys (GameConfig.plugins.global). */
