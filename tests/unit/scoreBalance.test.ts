@@ -12,7 +12,8 @@ const catalog = clothes as ClothingDef[];
 const comboList = combos as ComboDef[];
 const rules = economy as unknown as EconomyRules;
 const starterDyes = (dyes as DyeDef[]).filter((d) => d.starter).map((d) => d.id);
-const MAX_MS = 2000;
+// bestPossible runs in ~0.5 s per cat; the budget has room for the v8 coverage instrumentation, which makes it ~4x slower.
+const MAX_MS = 5000;
 const eachCat = (cats as CatDef[]).map((c) => [c.id, c] as const);
 
 describe('score balance with the real data', () => {
