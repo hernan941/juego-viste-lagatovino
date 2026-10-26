@@ -120,6 +120,12 @@ export const ObjectEvents = {
   LayerHover: 'layer-hover',
   /** PriceTag: (tag) the player pressed and released the tag */
   PriceTagPress: 'price-tag-press',
+  /** PurchaseSheet: [Llevar] was pressed */
+  SheetConfirm: 'sheet-confirm',
+  /** PurchaseSheet: [Todavia no] or a tap outside; CatSheet: a tap outside */
+  SheetCancel: 'sheet-cancel',
+  /** NameSign: (sign) the player touched the sign (the cat sheet opens) */
+  SignPress: 'sign-press',
   /** Keychain: the flattened texture is ready and showing */
   KeychainReady: 'keychain-ready',
   /** Keychain: (strength: 0..1) the swing reached one end: the "tink" of the porcelain */
@@ -180,6 +186,8 @@ export const TextureKeys = {
   /** The jar of buttons of the wallet HUD. */
   Purse: 'ui-purse',
   PriceTag: 'ui-price-tag',
+  /** The open scissors that cut the thread of a price tag. */
+  Scissors: 'ui-scissors',
   Stamp: 'ui-stamp',
   StampSol: 'ui-stamp-sol',
   PencilMark: 'ui-pencil-mark',

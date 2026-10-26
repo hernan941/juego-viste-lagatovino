@@ -3,6 +3,7 @@
 import type { DressUpControllerFactory } from './DressUpController';
 import { HintController } from './HintController';
 import { PriceTagsController } from './PriceTagsController';
+import { PurchaseController } from './PurchaseController';
 import { SecretsController } from './SecretsController';
 import { TasteReactions } from './TasteReactions';
 import { WalletController } from './WalletController';
@@ -12,5 +13,6 @@ export const controllerFactories: readonly DressUpControllerFactory[] = [
   () => new HintController(),
   () => new WalletController(),
   () => new PriceTagsController(),
+  () => new PurchaseController(),
   () => new TasteReactions(),
 ];

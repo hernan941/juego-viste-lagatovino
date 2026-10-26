@@ -6,7 +6,14 @@ export const shopLines = {
   priceTag: (price: number): string => `${price} botones`,
   notEnough: (missing: number): string => `Te faltan ${missing} botones, ¡ya vas a juntarlos!`,
   bought: '¡Es tuyo! Buena elección',
-  tryFree: 'Pruébatelo nomás, no cuesta nada',
+  /** What the cat says right after the purchase. */
+  mine: '¡Es mío!',
+  /** Title and line of the purchase sheet. */
+  purchaseTitle: '¿Te lo llevas?',
+  purchaseLine: (name: string, price: number): string => `${name} · ${price} botones`,
+  take: 'Llevar',
+  notYet: 'Todavía no',
+  tryFree:'Pruébatelo nomás, no cuesta nada',
 };
 
 /** The seller talks in first person; her name comes from brand.json. */
