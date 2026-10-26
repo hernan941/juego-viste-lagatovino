@@ -12,3 +12,12 @@ Detalles vistos al integrar. Los revisa el game-designer en la revisión de cada
 - En el álbum, el anillado del cuaderno pasa justo por encima del texto centrado "Prendas · 16 de 50". Las páginas reales (F17.3 y F17.4) deben dejar libre el lomo.
 - El PNG que se guarda en PhotoMode todavía es la tarjeta del MVP, no la composición del scrapbook (F18.5).
 - Album y PhotoMode no muestran el botón de pantalla completa.
+
+## F19.2: Keychain (captura f192-big.png)
+- En el llavero del gato naranjo, la parte de abajo (sweater, patas y bufanda) **se sale del borde crema**: el troquel no envuelve toda la silueta. Revisar en F19.3.
+- La franja del barniz no se puede mover con un tween dentro del recorte. Opciones para F19.3: hornear entre 6 y 8 posiciones, o usar una máscara y `setCrop`.
+- `PORCELAIN_SATURATION` quedó como constante en el dominio, no en `photo.json` como dice el ADR 0021. Hay que alinear el ADR o el JSON.
+- El dije de 5★ se monta sobre el moño de la cabeza en el gato calico.
+
+## Coverage
+- `npm run coverage` falla: con la instrumentación, `scoreBalance.test.ts` supera el tope de tiempo de `bestPossible`. Hay que ajustar el test o el tope cuando corre bajo coverage.

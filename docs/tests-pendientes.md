@@ -144,3 +144,23 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
   - [Guardar] descarga la foto;
   - [Seguir vistiendo] vuelve a DressUp.
 - Agregar un ciclo de Album y PhotoMode a `perf.spec`, y revisar `flow.spec` y `mobile.spec` (menú de compartir en el celular).
+
+## F13.2 a F13.4: progreso, monedero y etiquetas
+### E2E pendientes
+- Con `setWallet(250)`, el HUD muestra 250 (`dressUp.shop.wallet.shown`).
+- El monedero no tapa las pestañas, el botón de sonido ni el de pantalla completa, a 1280 y en el celular.
+- `shop.spec`:
+  - arrastrar una prenda sin comprar la pone y muestra su etiqueta (`dressUp.tags.worn`);
+  - las etiquetas de las celdas sobreviven al cambio de pestaña y al scroll;
+  - tocar una celda con etiqueta emite `PriceTagPressed`;
+  - todo esto también con `@mobile`.
+- Vuelos: en movimiento reducido vuelan como máximo 3 botones. Al terminar un `WalletFlight`, `shown` es igual a `wallet` y `flying` vale 0.
+
+## F19.2: objeto Keychain
+### E2E pendientes
+- Después de aplanar, un píxel fuera del borde es transparente, también con `maxTextures: 1`.
+- La misma receta produce la misma textura.
+- Las 12 miniaturas se arman de a una por frame, sin pasarse del presupuesto.
+- `shutdown` libera las texturas.
+- Flujo completo: guardar, transformar, descargar, colgar y recargar (`keychains` y `keychainPhase`).
+- Medir en un celular real de gama baja (F21).
