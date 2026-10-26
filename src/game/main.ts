@@ -38,7 +38,16 @@ const config: Phaser.Types.Core.GameConfig = {
 };
 
 const StartGame = (parent: string) => {
+  // F12.9: the porcelain lab (`?lab=porcelain`) exists only in development: `import.meta.env.DEV` is false in a build, so the
+  // dynamic import (and the scene) never reach `dist/`. It reuses the test shortcut `?e2e=1&start=` of the Preloader.
+  if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('lab') === 'porcelain') {
+    const q = new URLSearchParams(window.location.search);
+    q.set('e2e', '1');
+    q.set('start', 'PorcelainLab');
+    window.history.replaceState(null, '', `${window.location.pathname}?${q.toString()}`);
+  }
   const game = new Game({ ...config, parent });
+  if (import.meta.env.DEV) void import('./scenes/dev/PorcelainLab').then((m) => game.scene.add(m.LAB_SCENE_KEY, m.PorcelainLab));
   installE2EHook(game, readPerf);
   installFpsCounter(game);
   return game;

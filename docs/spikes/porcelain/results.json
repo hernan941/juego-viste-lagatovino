@@ -1,0 +1,284 @@
+{
+  "cpu1x": {
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "build512": {
+      "coldTotalMs": 1329.4,
+      "warmTotalMs": 613.2,
+      "warmSubmitMs": 6.9,
+      "warmCatCaptureMs": 2.8,
+      "px": "550x652",
+      "mb": 1.4
+    },
+    "build256": {
+      "coldTotalMs": 182.1,
+      "warmTotalMs": 195.8,
+      "warmSubmitMs": 8.4,
+      "warmCatCaptureMs": 1.7,
+      "px": "278x329",
+      "mb": 0.3
+    },
+    "variants": {
+      "all": 643.9,
+      "noBorder": 204.1,
+      "noMatrix": 581.4,
+      "noVarnish": 583.2,
+      "varnishErase": 540.8,
+      "noHardware": 456.9,
+      "copies8": 260.2,
+      "copies12": 282.6,
+      "copies16": 395.3,
+      "copies24": 494.4,
+      "innerRing": 432,
+      "onlyLook": 60.3
+    },
+    "thumbs12_perFrame12": {
+      "totalMs": 1134.5,
+      "worstFrameMs": 1121.2,
+      "medianFrameMs": 1121.2
+    },
+    "thumbs12_perFrame1": {
+      "totalMs": 2825.7,
+      "worstFrameMs": 263.9,
+      "medianFrameMs": 232.4
+    },
+    "fps_12static": {
+      "frames": 39,
+      "avgMs": 92.30512820512824,
+      "p95Ms": 150,
+      "maxMs": 166.6999999999971,
+      "fps": 8.109870512683383
+    },
+    "fps_12swinging": {
+      "frames": 31,
+      "avgMs": 88.17096774193558,
+      "p95Ms": 100.09999999999854,
+      "maxMs": 100.09999999999854,
+      "fps": 10.663669966903727
+    },
+    "fps_baseline_nothing": {
+      "frames": 35,
+      "avgMs": 79.04285714285714,
+      "p95Ms": 100,
+      "maxMs": 100,
+      "fps": 12.01436076728751
+    },
+    "fps_flat512_static": {
+      "frames": 32,
+      "avgMs": 89.05937499999982,
+      "p95Ms": 100.10000000000582,
+      "maxMs": 116.59999999999127,
+      "fps": 11.438137586524563
+    },
+    "fps_flat512_swinging": {
+      "frames": 30,
+      "avgMs": 93.88333333333334,
+      "p95Ms": 116.70000000001164,
+      "maxMs": 116.70000000001164,
+      "fps": 11.37233929431505
+    },
+    "liveChildren": 30,
+    "fps_live512_swinging": {
+      "frames": 24,
+      "avgMs": 343.7374999999999,
+      "p95Ms": 383.3999999999942,
+      "maxMs": 416.6999999999971,
+      "fps": 3.949812905616772
+    },
+    "streak420ms": {
+      "frames": 1,
+      "avgMs": 133.39999999999418,
+      "p95Ms": 133.39999999999418,
+      "maxMs": 133.39999999999418,
+      "fps": 3.712359679212579
+    },
+    "errors": []
+  },
+  "cpu4x": {
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "build512": {
+      "coldTotalMs": 705,
+      "warmTotalMs": 361.8,
+      "warmSubmitMs": 28.7,
+      "warmCatCaptureMs": 5.9,
+      "px": "550x652",
+      "mb": 1.4
+    },
+    "build256": {
+      "coldTotalMs": 159.7,
+      "warmTotalMs": 130,
+      "warmSubmitMs": 24.2,
+      "warmCatCaptureMs": 3.5,
+      "px": "278x329",
+      "mb": 0.3
+    },
+    "variants": {
+      "all": 362.2,
+      "noBorder": 129.8,
+      "noMatrix": 292.3,
+      "noVarnish": 292.5,
+      "varnishErase": 405.8,
+      "noHardware": 499.6,
+      "copies8": 412.3,
+      "copies12": 275,
+      "copies16": 338.4,
+      "copies24": 461.1,
+      "innerRing": 492.2,
+      "onlyLook": 82.1
+    },
+    "thumbs12_perFrame12": {
+      "totalMs": 1498.5,
+      "worstFrameMs": 1485.8,
+      "medianFrameMs": 1485.8
+    },
+    "thumbs12_perFrame1": {
+      "totalMs": 2919.3,
+      "worstFrameMs": 265.3,
+      "medianFrameMs": 225.2
+    },
+    "fps_12static": {
+      "frames": 31,
+      "avgMs": 99.99354838709687,
+      "p95Ms": 133.3000000000029,
+      "maxMs": 216.59999999999854,
+      "fps": 7.696334177463868
+    },
+    "fps_12swinging": {
+      "frames": 23,
+      "avgMs": 123.90869565217366,
+      "p95Ms": 150,
+      "maxMs": 183.3000000000029,
+      "fps": 8.34064098111757
+    },
+    "fps_baseline_nothing": {
+      "frames": 24,
+      "avgMs": 111.80416666666679,
+      "p95Ms": 133.40000000000873,
+      "maxMs": 133.40000000000873,
+      "fps": 8.93590593543173
+    },
+    "fps_flat512_static": {
+      "frames": 22,
+      "avgMs": 124.2363636363635,
+      "p95Ms": 150.10000000000582,
+      "maxMs": 166.60000000000582,
+      "fps": 8.30108531651026
+    },
+    "fps_flat512_swinging": {
+      "frames": 23,
+      "avgMs": 121.73913043478261,
+      "p95Ms": 150,
+      "maxMs": 150,
+      "fps": 8.528859025927074
+    },
+    "liveChildren": 30,
+    "fps_live512_swinging": {
+      "frames": 21,
+      "avgMs": 322.2095238095242,
+      "p95Ms": 416.6000000000058,
+      "maxMs": 433.3000000000029,
+      "fps": 4.2645028497132875
+    },
+    "streak420ms": {
+      "frames": 1,
+      "avgMs": 100,
+      "p95Ms": 100,
+      "maxMs": 100,
+      "fps": 4.198377137284965
+    },
+    "errors": []
+  },
+  "cpu6x": {
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "build512": {
+      "coldTotalMs": 462.1,
+      "warmTotalMs": 194.9,
+      "warmSubmitMs": 18.3,
+      "warmCatCaptureMs": 4.2,
+      "px": "550x652",
+      "mb": 1.4
+    },
+    "build256": {
+      "coldTotalMs": 72.6,
+      "warmTotalMs": 63.2,
+      "warmSubmitMs": 15.6,
+      "warmCatCaptureMs": 4,
+      "px": "278x329",
+      "mb": 0.3
+    },
+    "variants": {
+      "all": 184.4,
+      "noBorder": 64.8,
+      "noMatrix": 181.7,
+      "noVarnish": 170.4,
+      "varnishErase": 194.9,
+      "noHardware": 183.8,
+      "copies8": 139.6,
+      "copies12": 174,
+      "copies16": 203.5,
+      "copies24": 335.6,
+      "innerRing": 289.1,
+      "onlyLook": 50.2
+    },
+    "thumbs12_perFrame12": {
+      "totalMs": 1024.9,
+      "worstFrameMs": 1012,
+      "medianFrameMs": 1012
+    },
+    "thumbs12_perFrame1": {
+      "totalMs": 2468.5,
+      "worstFrameMs": 248.4,
+      "medianFrameMs": 187.3
+    },
+    "fps_12static": {
+      "frames": 26,
+      "avgMs": 107.04999999999983,
+      "p95Ms": 149.90000000000146,
+      "maxMs": 183.3000000000029,
+      "fps": 6.7238972227943306
+    },
+    "fps_12swinging": {
+      "frames": 28,
+      "avgMs": 96.42500000000005,
+      "p95Ms": 133.40000000000146,
+      "maxMs": 133.40000000000146,
+      "fps": 9.008519140866358
+    },
+    "fps_baseline_nothing": {
+      "frames": 39,
+      "avgMs": 70.93589743589743,
+      "p95Ms": 83.40000000000146,
+      "maxMs": 83.40000000000146,
+      "fps": 12.003594012552995
+    },
+    "fps_flat512_static": {
+      "frames": 37,
+      "avgMs": 76.57297297297289,
+      "p95Ms": 83.40000000000146,
+      "maxMs": 83.40000000000146,
+      "fps": 12.930824668034345
+    },
+    "fps_flat512_swinging": {
+      "frames": 35,
+      "avgMs": 79.52285714285722,
+      "p95Ms": 83.40000000000146,
+      "maxMs": 83.40000000000146,
+      "fps": 12.970816656826988
+    },
+    "liveChildren": 30,
+    "fps_live512_swinging": {
+      "frames": 34,
+      "avgMs": 267.1470588235294,
+      "p95Ms": 300,
+      "maxMs": 300,
+      "fps": 4.798712098145773
+    },
+    "streak420ms": {
+      "frames": 3,
+      "avgMs": 94.39999999999903,
+      "p95Ms": 100,
+      "maxMs": 100,
+      "fps": 4.59903407360933
+    },
+    "errors": []
+  }
+}
