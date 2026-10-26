@@ -39,7 +39,15 @@ export class ControllerHost {
 
   e2eState(): Record<string, unknown> {
     const out: Record<string, unknown> = {};
-    for (const c of this.controllers) if (c.e2eState) out[c.key] = c.e2eState();
+    for (const c of this.controllers) {
+      if (c.e2eState) out[c.key] = c.e2eState();
+      if (c.e2eRoot) Object.assign(out, c.e2eRoot());
+    }
     return out;
+  }
+
+  /** True while no controller has an animation or a sequence in progress (part of the scene `settled` of the test hook). */
+  settled(): boolean {
+    return this.controllers.every((c) => c.isSettled?.() ?? true);
   }
 }

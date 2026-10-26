@@ -213,6 +213,11 @@ export class ItemGrid extends Phaser.GameObjects.Container {
     }).map(([id]) => id);
   }
 
+  /** True when every cell has finished popping in (full opacity, scale 1). */
+  cellsSettled(): boolean {
+    return [...this.cells.values()].every((c) => c.alpha > 0.99 && Math.abs(c.scale - 1) < 0.01);
+  }
+
   /** Viewport in game coordinates plus the scroll state. */
   getViewport(): Rect & { scroll: number; targetScroll: number; maxScroll: number } {
     const o = this.worldOrigin();

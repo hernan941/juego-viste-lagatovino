@@ -31,6 +31,13 @@ export class NameSign extends Phaser.GameObjects.Container {
     scene.add.existing(this);
   }
 
+  /** The sign drops in from above and then sways a little (reduced motion: it drops, and stays still). */
+  hang(y: number): void {
+    const p = profileOf(this.scene);
+    this.scene.tweens.add({ targets: this, y, duration: 500, delay: 250, ease: p.ease('Back.easeOut') });
+    if (p.loops) this.scene.tweens.add({ targets: this, angle: { from: -1.5, to: 1.5 }, duration: 1800, delay: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+  }
+
   /** What the sign says right now. */
   get text(): string {
     return this.current;

@@ -3,10 +3,11 @@
 // through the scene events (DressUpEvents), the progress in the registry and the cell/tab extension points.
 import type Phaser from 'phaser';
 import type { Catalog } from '../../data/schema';
-import type { AnchorsDef, Outfit } from '../../domain/types';
+import type { AnchorsDef, Category, ClothingDef, Outfit, Rect } from '../../domain/types';
 import type { Cat } from '../Cat';
 import type { ItemGrid } from '../ItemGrid';
 import type { LayersPanel } from '../LayersPanel';
+import type { NameSign } from '../NameSign';
 import type { Tabs } from '../Tabs';
 
 /** What a controller can use. The objects are the scene's own: a controller decorates them, it never replaces them. */
@@ -27,11 +28,28 @@ export interface DressUpContext {
   /** The scene's particle emitters (explode them, do not create new ones for a single burst). */
   hearts: Phaser.GameObjects.Particles.ParticleEmitter;
   sparkles: Phaser.GameObjects.Particles.ParticleEmitter;
+  /** The hanging sign with the name of the cat (it flips to announce looks and prizes). */
+  sign: NameSign;
+  /** Graphics drawn behind the cat, for the rainbow of the combo effects. */
+  rainbow: Phaser.GameObjects.Graphics;
   catId: string;
   catName: string;
   /** The outfit as of now. */
   getOutfit(): Outfit;
+  /** True while the player holds a garment. */
+  isDragging(): boolean;
+  /** True from the moment the player leaves (Ready or "Otro gato"). */
+  isLeaving(): boolean;
+  /** Bounding box of the visible pixels of an item texture (cached), in texture px. */
+  boundsOf(item: ClothingDef): Rect | null;
+  /** Selects the tab of the category (silently) and fills the grid with its items. */
+  showCategory(category: Category): void;
+  /** Data that `beforeLeave` adds to what the scene sends to the next one (`go(scene, action, data)`). */
+  leaveData: Record<string, unknown>;
 }
+
+/** Why the outfit changed (second argument of the outfit-changed event): a drop, a removal, the look that came along, or the test hook. */
+export type OutfitCause = 'drop' | 'remove' | 'restore' | 'test';
 
 /** Why the player is leaving DressUp: the Ready button, or "Otro gato". */
 export type LeaveAction = 'finish' | 'change';
@@ -45,6 +63,10 @@ export interface DressUpController {
   destroy(): void;
   /** Test mode: the state of the controller (plain data in game coordinates). */
   e2eState?(): unknown;
+  /** Test mode, legacy shape: keys merged at the top level of the `dressUp` state (the scene's own keys win). New controllers use `e2eState`. */
+  e2eRoot?(): Record<string, unknown>;
+  /** False while the controller runs an animation or a sequence (a gift, a reveal): feeds the `settled` flag of the test hook. */
+  isSettled?(): boolean;
   /**
    * Called when the player presses Ready or "Otro gato", before leaving. Return false (or a promise of false) to stay
    * (for example, to show a box first); true or nothing lets the player go. With a promise the scene waits for it.

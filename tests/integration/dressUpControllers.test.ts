@@ -102,6 +102,21 @@ describe('beforeLeave', () => {
   });
 });
 
+describe('settled', () => {
+  it('is true with no controllers and while every controller is at rest', () => {
+    expect(new ControllerHost([]).settled()).toBe(true);
+    const h = new ControllerHost([() => probe({ key: 'a', isSettled: () => true }).controller, () => probe({ key: 'b' }).controller]);
+    h.attach(ctxOf());
+    expect(h.settled()).toBe(true);
+  });
+
+  it('is false as soon as one controller is still animating', () => {
+    const h = new ControllerHost([() => probe({ key: 'a', isSettled: () => true }).controller, () => probe({ key: 'b', isSettled: () => false }).controller]);
+    h.attach(ctxOf());
+    expect(h.settled()).toBe(false);
+  });
+});
+
 describe('e2e state of controllers', () => {
   it('is merged under the key of each controller', () => {
     const h = new ControllerHost([
@@ -110,6 +125,14 @@ describe('e2e state of controllers', () => {
     ]);
     h.attach(ctxOf());
     expect(h.e2eState()).toEqual({ shop: { open: true } });
+  });
+
+  it('e2eRoot keys go to the top level (the legacy shape of the state), after the keyed ones', () => {
+    const h = new ControllerHost([
+      () => probe({ key: 'secrets', e2eState: () => ({ count: 1 }), e2eRoot: () => ({ gift: null, almost: [] }) }).controller,
+    ]);
+    h.attach(ctxOf());
+    expect(h.e2eState()).toEqual({ secrets: { count: 1 }, gift: null, almost: [] });
   });
 
   it('mergeControllerState never overrides what the scene reports', () => {
