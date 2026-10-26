@@ -23,4 +23,13 @@ describe('stableTilt (art-direction §6: stable rotation per id)', () => {
   it('handles an empty seed', () => {
     expect(Math.abs(stableTilt(''))).toBeGreaterThanOrEqual(1);
   });
+
+  it('can be limited to a smaller range (the CatSelect gallery leans at most 4 degrees)', () => {
+    for (let i = 0; i < 300; i++) {
+      const a = stableTilt(`seed-${i}`, 4);
+      expect(Math.abs(a)).toBeGreaterThanOrEqual(1);
+      expect(Math.abs(a)).toBeLessThanOrEqual(4);
+      expect(Math.sign(a)).toBe(Math.sign(stableTilt(`seed-${i}`)));
+    }
+  });
 });
