@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- Viste Lagato · sticker "zzz": "zzz" de la pose dormilón (art-direction v2, ADR 0016). -->
+<!-- Borde blanco de sticker (silueta engrosada 9 px), sombra suave abajo a la derecha y dibujo con contorno de tinta. -->
+  <g fill="#1F1B1A" fill-opacity="0.16" stroke="#1F1B1A" stroke-opacity="0.16" stroke-width="30" stroke-linejoin="round" stroke-linecap="round" transform="translate(3 4)"><path d="M23 79 H49 L23 105 H49 M42 46 H78 L42 82 H78 M61 15 H107 L61 61 H107" fill="none"/></g>
+  <g fill="#FFFFFF" stroke="#FFFFFF" stroke-width="30" stroke-linejoin="round" stroke-linecap="round"><path d="M23 79 H49 L23 105 H49 M42 46 H78 L42 82 H78 M61 15 H107 L61 61 H107" fill="none"/></g>
+  <path d="M23 79 H49 L23 105 H49 M42 46 H78 L42 82 H78 M61 15 H107 L61 61 H107" fill="none" stroke="#1F1B1A" stroke-width="15" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M23 79 H49 L23 105 H49 M42 46 H78 L42 82 H78 M61 15 H107 L61 61 H107" fill="none" stroke="#3A5FC4" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M108 95 Q109.8 102.2 117 104 Q109.8 105.8 108 113 Q106.2 105.8 99 104 Q106.2 102.2 108 95 Z" fill="#F3C04A" stroke="#1F1B1A" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>

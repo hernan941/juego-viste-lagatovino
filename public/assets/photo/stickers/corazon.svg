@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- Viste Lagato · sticker "corazon": corazón frambuesa (inicial) (art-direction v2, ADR 0016). -->
+<!-- Borde blanco de sticker (silueta engrosada 9 px), sombra suave abajo a la derecha y dibujo con contorno de tinta. -->
+  <g fill="#1F1B1A" fill-opacity="0.16" stroke="#1F1B1A" stroke-opacity="0.16" stroke-width="18" stroke-linejoin="round" stroke-linecap="round" transform="translate(3 4)"><path d="M64 107.8 C55.2 101.2 20 77 20 52.8 C20 33 33.2 22.88 45.52 22.88 C55.2 22.88 61.8 28.16 64 39.6 C66.2 28.16 72.8 22.88 82.48 22.88 C94.8 22.88 108 33 108 52.8 C108 77 72.8 101.2 64 107.8 Z"/></g>
+  <g fill="#FFFFFF" stroke="#FFFFFF" stroke-width="18" stroke-linejoin="round" stroke-linecap="round"><path d="M64 107.8 C55.2 101.2 20 77 20 52.8 C20 33 33.2 22.88 45.52 22.88 C55.2 22.88 61.8 28.16 64 39.6 C66.2 28.16 72.8 22.88 82.48 22.88 C94.8 22.88 108 33 108 52.8 C108 77 72.8 101.2 64 107.8 Z"/></g>
+  <path d="M64 107.8 C55.2 101.2 20 77 20 52.8 C20 33 33.2 22.88 45.52 22.88 C55.2 22.88 61.8 28.16 64 39.6 C66.2 28.16 72.8 22.88 82.48 22.88 C94.8 22.88 108 33 108 52.8 C108 77 72.8 101.2 64 107.8 Z" fill="#C2306B" stroke="#1F1B1A" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M36 50 Q38 40 48 38" fill="none" stroke="#FFFFFF" stroke-opacity="0.8" stroke-width="5" stroke-linecap="round"/>
+</svg>

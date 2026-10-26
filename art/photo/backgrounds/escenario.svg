@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 675" width="540" height="675">
+  <!-- Viste Lagato · fondo "escenario" del modo foto: telón rosa, tablas de madera y un foco (premio del set Todos los secretos... y de las fotos de 5 estrellas) (art-direction v2, ADR 0016). -->
+<!-- (el gato se pone en el centro de la foto; el borde y la ventana de los marcos lo respetan) -->
+  <rect width="540" height="675" fill="#D9CDF3"/>
+  <rect y="535" width="540" height="140" fill="#F1D1C0"/>
+  <path d="M0 535 H540" stroke="#C1A79A" stroke-width="3"/><path d="M0 559 H540" stroke="#C1A79A" stroke-width="3"/><path d="M0 583 H540" stroke="#C1A79A" stroke-width="3"/><path d="M0 607 H540" stroke="#C1A79A" stroke-width="3"/><path d="M0 631 H540" stroke="#C1A79A" stroke-width="3"/><path d="M0 655 H540" stroke="#C1A79A" stroke-width="3"/>
+  <path d="M130 0 H410 L520 535 H20 Z" fill="#FFFFFF" fill-opacity="0.2"/>
+  <ellipse cx="270" cy="605" rx="190" ry="46" fill="#FFFFFF" fill-opacity="0.45"/>
+  <path d="M0 0 H130 Q96 267.5 120 535 H0 Z" fill="#F6BFD0" stroke="#1F1B1A" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M540 0 H410 Q444 267.5 420 535 H540 Z" fill="#F6BFD0" stroke="#1F1B1A" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M20 40 V535" stroke="#C599A6" stroke-width="5" stroke-linecap="round" opacity="0.7"/><path d="M48 40 V535" stroke="#C599A6" stroke-width="5" stroke-linecap="round" opacity="0.7"/><path d="M76 40 V535" stroke="#C599A6" stroke-width="5" stroke-linecap="round" opacity="0.7"/><path d="M104 40 V535" stroke="#C599A6" stroke-width="5" stroke-linecap="round" opacity="0.7"/><path d="M520 40 V535" stroke="#C599A6" stroke-width="5" stroke-linecap="round" opacity="0.7"/><path d="M492 40 V535" stroke="#C599A6" stroke-width="5" stroke-linecap="round" opacity="0.7"/><path d="M464 40 V535" stroke="#C599A6" stroke-width="5" stroke-linecap="round" opacity="0.7"/><path d="M436 40 V535" stroke="#C599A6" stroke-width="5" stroke-linecap="round" opacity="0.7"/>
+  <path d="M0 0 H540 V52 Q270 74 0 52 Z" fill="#D8A8B7" stroke="#1F1B1A" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M60 24 Q62.4 33.6 72 36 Q62.4 38.4 60 48 Q57.6 38.4 48 36 Q57.6 33.6 60 24 Z" fill="#F3C04A" stroke="#1F1B1A" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M480 24 Q482.4 33.6 492 36 Q482.4 38.4 480 48 Q477.6 38.4 468 36 Q477.6 33.6 480 24 Z" fill="#F3C04A" stroke="#1F1B1A" stroke-width="3" stroke-linejoin="round"/>
+</svg>

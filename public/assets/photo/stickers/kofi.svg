@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- Viste Lagato · sticker "kofi": Kofi, el gato supervisor con anteojos (genérico hasta F12.12; premio del set Michi mood) (art-direction v2, ADR 0016). -->
+<!-- Borde blanco de sticker (silueta engrosada 9 px), sombra suave abajo a la derecha y dibujo con contorno de tinta. -->
+  <g fill="#1F1B1A" fill-opacity="0.16" stroke="#1F1B1A" stroke-opacity="0.16" stroke-width="18" stroke-linejoin="round" stroke-linecap="round" transform="translate(3 4)"><ellipse cx="64" cy="72" rx="42" ry="36"/><path d="M26 54 L26 20 Q26 14 32 18 L56 38 Z"/><path d="M102 54 L102 20 Q102 14 96 18 L72 38 Z"/></g>
+  <g fill="#FFFFFF" stroke="#FFFFFF" stroke-width="18" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="64" cy="72" rx="42" ry="36"/><path d="M26 54 L26 20 Q26 14 32 18 L56 38 Z"/><path d="M102 54 L102 20 Q102 14 96 18 L72 38 Z"/></g>
+  <g fill="#D9DEE8" stroke="#1F1B1A" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="64" cy="72" rx="42" ry="36"/><path d="M26 54 L26 20 Q26 14 32 18 L56 38 Z"/><path d="M102 54 L102 20 Q102 14 96 18 L72 38 Z"/></g>
+  <path d="M30 28 L48 41 L32 50 Z M98 28 L80 41 L96 50 Z" fill="#F1D1C0"/>
+  <path d="M56 46 V54 M64 44 V54 M72 46 V54" stroke="#7F7F8A" stroke-width="4" stroke-linecap="round" fill="none"/>
+  <circle cx="45" cy="72" r="14" fill="#FFFFFF" fill-opacity="0.7" stroke="#1F1B1A" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+  <circle cx="83" cy="72" r="14" fill="#FFFFFF" fill-opacity="0.7" stroke="#1F1B1A" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M59 71 Q64 67 69 71" fill="none" stroke="#1F1B1A" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+  <ellipse cx="45" cy="73" rx="4" ry="6" fill="#1F1B1A"/><ellipse cx="83" cy="73" rx="4" ry="6" fill="#1F1B1A"/>
+  <circle cx="46.5" cy="70.5" r="1.5" fill="#FFFFFF"/><circle cx="84.5" cy="70.5" r="1.5" fill="#FFFFFF"/>
+  <path d="M60 88 L68 88 L64 93 Z" fill="#D9A48C" stroke="#1F1B1A" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M64 93 V97 M64 97 Q58 102 54 98 M64 97 Q70 102 74 98" fill="none" stroke="#1F1B1A" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M20 84 Q8 86 6 92 M20 92 Q10 96 10 102 M108 84 Q120 86 122 92 M108 92 Q118 96 118 102" fill="none" stroke="#1F1B1A" stroke-width="2.6" stroke-linecap="round"/>
+</svg>

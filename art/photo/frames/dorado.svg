@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 675" width="540" height="675">
+  <!-- Viste Lagato · marco "dorado" del modo foto: marco dorado con ✦ en las esquinas (premio del set De gala) (art-direction v2, ADR 0016). -->
+<!-- Ventana transparente (44, 44) a (496, 631). -->
+  <path d="M36 20 H512 Q534 20 534 42 V650 Q534 672 512 672 H36 Q14 672 14 650 V42 Q14 20 36 20 Z M52 44 H488 Q496 44 496 52 V623 Q496 631 488 631 H52 Q44 631 44 623 V52 Q44 44 52 44 Z" fill="#F4EEE3" fill-rule="evenodd"/>
+  <path d="M30 8 H510 Q532 8 532 30 V642 Q532 664 510 664 H30 Q8 664 8 642 V30 Q8 8 30 8 Z M52 44 H488 Q496 44 496 52 V623 Q496 631 488 631 H52 Q44 631 44 623 V52 Q44 44 52 44 Z" fill="#F5D86A" fill-rule="evenodd"/>
+  <path d="M34 18 H506 Q522 18 522 34 V638 Q522 654 506 654 H34 Q18 654 18 638 V34 Q18 18 34 18 Z" fill="none" stroke="#BFA853" stroke-width="3.5" stroke-linejoin="round"/>
+  <path d="M46 36 H494 Q504 36 504 46 V629 Q504 639 494 639 H46 Q36 639 36 629 V46 Q36 36 46 36 Z" fill="none" stroke="#BFA853" stroke-width="3.5" stroke-linejoin="round"/>
+  <path d="M30 8 H510 Q532 8 532 30 V642 Q532 664 510 664 H30 Q8 664 8 642 V30 Q8 8 30 8 Z M52 44 H488 Q496 44 496 52 V623 Q496 631 488 631 H52 Q44 631 44 623 V52 Q44 44 52 44 Z" fill="none" stroke="#1F1B1A" stroke-width="5" stroke-linejoin="round" fill-rule="evenodd"/>
+  <path d="M28 13 Q31 25 43 28 Q31 31 28 43 Q25 31 13 28 Q25 25 28 13 Z" fill="#FFFCF5" stroke="#1F1B1A" stroke-width="3.5" stroke-linejoin="round"/>
+  <path d="M512 13 Q515 25 527 28 Q515 31 512 43 Q509 31 497 28 Q509 25 512 13 Z" fill="#FFFCF5" stroke="#1F1B1A" stroke-width="3.5" stroke-linejoin="round"/>
+  <path d="M28 633 Q31 645 43 648 Q31 651 28 663 Q25 651 13 648 Q25 645 28 633 Z" fill="#FFFCF5" stroke="#1F1B1A" stroke-width="3.5" stroke-linejoin="round"/>
+  <path d="M512 633 Q515 645 527 648 Q515 651 512 663 Q509 651 497 648 Q509 645 512 633 Z" fill="#FFFCF5" stroke="#1F1B1A" stroke-width="3.5" stroke-linejoin="round"/>
+  <path d="M60 14 H220" stroke="#FFFFFF" stroke-opacity="0.7" stroke-width="4" stroke-linecap="round"/>
+</svg>
