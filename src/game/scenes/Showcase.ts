@@ -1,56 +1,66 @@
 import Phaser from 'phaser';
-import { FONT_FAMILY, GAME_WIDTH, MEOW_KEYS, ObjectEvents, Palette, RegistryKeys, SceneKeys, SfxKeys, TextureKeys } from '../constants';
-import type { Catalog } from '../data/schema';
+import { Fonts, GAME_WIDTH, Ink, MEOW_KEYS, ObjectEvents, RegistryKeys, SceneKeys, TextureKeys } from '../constants';
+import type { GameData } from '../data/schema';
+import { catReaction, ceremonyPlan, type CeremonyStep } from '../domain/ceremony';
 import { showcaseTitle } from '../domain/copy';
 import { giftedFrom } from '../domain/flow';
-import { flourishFor, shouldPurr } from '../domain/pose';
-import { photoFileName } from '../domain/photo';
 import type { Expression } from '../domain/expressions';
 import { getLayers } from '../domain/outfit';
-import type { AnchorsDef } from '../domain/types';
+import { flourishFor } from '../domain/pose';
+import { emptyProgress } from '../domain/progress';
+import { photoArgs, rateLook, runwayLines, type RunwayLook } from '../domain/runway';
+import type { AnchorsDef, ProgressEvent, Progress, RatingResult } from '../domain/types';
 import type { E2EUi, UiState } from '../e2eHook';
 import { Button } from '../objects/Button';
 import { Cat } from '../objects/Cat';
-import { PHOTO_POSE, takePhoto } from '../objects/photo';
-import { MuteButton } from '../objects/MuteButton';
-import { MotionButton } from '../objects/MotionButton';
 import { FullscreenButton } from '../objects/FullscreenButton';
+import { MotionButton } from '../objects/MotionButton';
+import { MuteButton } from '../objects/MuteButton';
 import { SecretCounter } from '../objects/SecretCounter';
-import { getSave } from '../plugins/SavePlugin';
+import { WalletHud } from '../objects/WalletHud';
+import { appear } from '../objects/kit/appear';
 import { drawRoom } from '../objects/room';
+import { Ceremony } from '../objects/showcase/Ceremony';
 import { hex, touchEnv } from '../objects/ui';
 import { getAudio } from '../plugins/AudioPlugin';
-import { savePhoto } from '../systems/download';
+import { getSave } from '../plugins/SavePlugin';
 import { go } from '../systems/navigate';
 import { readSession } from '../systems/sessionStore';
 import { profileOf } from '../systems/motion';
 import { enterKind, transitionIn } from '../systems/transitions';
 
-const CAT_X = GAME_WIDTH / 2;
+/** The cat stands on the left of the mirror; the judge, his card and the notes take the rest of the runway. */
+const CAT_X = 370;
 const CAT_FEET_Y = 616;
-const CAT_SIZE = 540;
-/** Where the thumbnail of the photo lands, and how big it is, in game px (the photo is 1080 x 1350). */
-const REVEAL = { x: 1040, y: 330, scale: 0.26 };
-/** How long each pose (happy, in love) lasts. */
-const POSE_MS = 1500;
+const CAT_SIZE = 440;
+/** How often the cat does a little flourish once the verdict is in. */
+const FLOURISH_MS = 1700;
+/** The exits, in a row under the cat (the judge stands on the right). */
+const EXIT_Y = 650;
+const EXITS = { photo: 185, keep: 480, change: 775 } as const;
+/** Where the ceremony puts things in this scene (the card sits below the purse, the notes above the cat). */
+const LAYOUT = { judgeAt: { x: 1060, y: 745 }, cardAt: { x: 930, y: 252 }, notesAt: { x: 475, y: 108 }, notesWidth: 420, buttonsFrom: { x: 1060, y: 690 }, confettiAt: { x: 380, y: -10 } };
+/** The purse sits over the middle of the runway, clear of the judge's card. */
+const WALLET_AT = { x: 896, y: 28 };
 
 /**
- * Showcase: the cat poses in front of the mirror with sparkles, alternating happy and in love, under a
- * "¡Qué lindo look, {nombre}!" plaque. From here the player keeps dressing (the outfit is kept) or changes cat.
- * The middle of the bottom row has the "Descargar foto" button (F7).
+ * Showcase (S1): the runway. The look is rated and paid when the scene opens (the progress is written first, so seeing the ceremony
+ * or not changes nothing), and then the judge reads his card, stamps the stars and the cat shows what it feels while the buttons fly
+ * to the purse (a tap skips x3). At the end the way out opens: [Modo foto], [Seguir vistiendo] and [Otro gato]. Coming back from the
+ * album (`replay: false`) shows the same cat without rating again.
  */
 export class Showcase extends Phaser.Scene implements E2EUi {
   private enter: ReturnType<typeof enterKind> = null;
   private cat!: Cat;
-  private anchors!: AnchorsDef;
-  private catName = '';
-  private photo!: Button;
-  private photoBusy = false;
-  /** Photos downloaded in this visit and the name of the last file (for the e2e hook). */
-  private photos = 0;
-  private lastPhoto: string | null = null;
-  private keep!: Button;
-  private change!: Button;
+  private catalog!: GameData;
+  private look!: RunwayLook;
+  private rating: RatingResult | null = null;
+  private hud!: WalletHud;
+  private ceremony: Ceremony | null = null;
+  private photo: Button | null = null;
+  private keep: Button | null = null;
+  private change: Button | null = null;
+  private hint: Phaser.GameObjects.Text | null = null;
   private mute!: MuteButton;
   private motion!: MotionButton;
   private fullscreen: FullscreenButton | null = null;
@@ -58,18 +68,14 @@ export class Showcase extends Phaser.Scene implements E2EUi {
   private hearts!: Phaser.GameObjects.Particles.ParticleEmitter;
   private pose: Expression = 'feliz';
   private title = '';
+  private step: string | null = null;
   private ready = false;
   private leaving = false;
   /** Prizes that were delivered quietly when the player left the fitting room with a gift still unopened. */
   private gifted: string[] = [];
-  /** Poses so far, and in-love poses so far (for the flourish and the purr). */
   private poses = 0;
-  private lovePoses = 0;
-  /** The thumbnail of the photo that is on screen, if any, and how many have been shown (for the e2e hook). */
-  private revealImage: Phaser.GameObjects.Image | null = null;
-  private reveals = 0;
-  /** The thumbnail of the photo has landed (the "¡Foto lista!" bubble waits for it). */
-  private revealSettled = false;
+  /** False when the player comes back from the album: the same cat, without rating or paying again. */
+  private replay = true;
   private readonly toastLog: string[] = [];
 
   constructor() {
@@ -79,45 +85,58 @@ export class Showcase extends Phaser.Scene implements E2EUi {
   init(data?: unknown) {
     this.enter = enterKind(data);
     this.gifted = giftedFrom(data);
+    this.replay = (data as { replay?: unknown } | null | undefined)?.replay !== false;
+    this.rating = null;
+    this.ceremony = null;
+    this.photo = this.keep = this.change = null;
+    this.hint = null;
     this.poses = 0;
-    this.lovePoses = 0;
-    this.revealImage = null;
-    this.reveals = 0;
-    this.revealSettled = false;
-    this.toastLog.length = 0;
     this.pose = 'feliz';
+    this.step = null;
     this.ready = false;
     this.leaving = false;
-    this.photoBusy = false;
-    this.photos = 0;
-    this.lastPhoto = null;
+    this.toastLog.length = 0;
   }
 
   create() {
-    const catalog = this.registry.get(RegistryKeys.Catalog) as Catalog;
+    const catalog = this.registry.get(RegistryKeys.Catalog) as GameData;
     const anchors = this.registry.get(RegistryKeys.Anchors) as AnchorsDef;
     const session = readSession(this.registry);
     const def = catalog.cats.find((c) => c.id === session.catId) ?? catalog.cats[0];
-    this.anchors = anchors;
-    this.catName = session.catName || def.name;
+    this.catalog = catalog;
+    this.look = { catId: def.id, catName: session.catName || def.name, outfit: session.outfit, itemDye: session.itemDye };
     const layers = getLayers(session.outfit, catalog.clothes);
-    this.title = showcaseTitle(this.catName, layers.length);
+    this.title = showcaseTitle(this.look.catName, layers.length);
+
+    // Rate and pay first: from here on the progress is written, whatever the player watches (ADR 0017).
+    const before = (this.registry.get(RegistryKeys.Progress) as Progress | undefined) ?? emptyProgress(catalog.economy.startWallet);
+    let events: ProgressEvent[] = [];
+    let after = before;
+    if (this.replay) {
+      const rated = rateLook(before, this.look, catalog);
+      this.rating = rated.result;
+      events = rated.events;
+      after = rated.progress;
+      this.registry.set(RegistryKeys.Progress, after);
+      this.registry.set(RegistryKeys.LastRating, rated.result);
+    } else {
+      this.rating = (this.registry.get(RegistryKeys.LastRating) as RatingResult | undefined) ?? null;
+    }
 
     drawRoom(this, CAT_X, CAT_FEET_Y);
     // A warm glow behind the cat that breathes.
     const glow = this.add.graphics().setDepth(1);
-    glow.fillStyle(hex('mantequilla'), 0.5).fillEllipse(CAT_X, 380, 430, 520);
+    glow.fillStyle(hex('mantequilla'), 0.5).fillEllipse(CAT_X, 380, 400, 500);
     if (profileOf(this).loops) this.tweens.add({ targets: glow, alpha: { from: 0.45, to: 1 }, duration: 1100, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
 
     this.cat = new Cat(this, CAT_X, CAT_FEET_Y, def, anchors, CAT_SIZE).setDepth(5);
     this.cat.setOutfit(layers);
     this.cat.appear();
-    this.createPlaque();
 
     // Sparkles drift around the cat, and hearts pop up when it is in love.
     this.add
       .particles(CAT_X, 340, TextureKeys.Sparkle, {
-        x: { min: -230, max: 230 }, y: { min: -200, max: 250 }, lifespan: 1100, frequency: profileOf(this).every(110), quantity: 1,
+        x: { min: -210, max: 210 }, y: { min: -190, max: 240 }, lifespan: 1100, frequency: profileOf(this).every(110), quantity: 1,
         scale: { start: 1.3, end: 0 }, alpha: { start: 1, end: 0 }, speed: 18,
       })
       .setDepth(8);
@@ -128,12 +147,9 @@ export class Showcase extends Phaser.Scene implements E2EUi {
       })
       .setDepth(9);
 
-    this.keep = new Button(this, 230, 646, 'Seguir vistiendo', { width: 330, height: 84, fontSize: 34 }).setDepth(20);
-    this.keep.on(ObjectEvents.ButtonClick, () => this.leave('keepDressing'));
-    this.change = new Button(this, GAME_WIDTH - 230, 646, 'Cambiar de gato', { width: 330, height: 84, fontSize: 34, tone: 'lavanda' }).setDepth(20);
-    this.change.on(ObjectEvents.ButtonClick, () => this.leave('change'));
-    this.photo = new Button(this, GAME_WIDTH / 2, 646, 'Descargar foto', { width: 330, height: 84, fontSize: 34, tone: 'menta' }).setDepth(20);
-    this.photo.on(ObjectEvents.ButtonClick, () => void this.snap());
+    // The purse shows the number from before the rating: each button that lands adds to it.
+    this.hud = new WalletHud(this, WALLET_AT.x, WALLET_AT.y).setDepth(40);
+    this.hud.setValue(before.wallet);
     this.mute = new MuteButton(this, GAME_WIDTH - 56, 56).setDepth(50);
     this.motion = new MotionButton(this, GAME_WIDTH - 128, 56).setDepth(50);
     this.fullscreen = FullscreenButton.create(this, GAME_WIDTH - 200, 56);
@@ -144,177 +160,112 @@ export class Showcase extends Phaser.Scene implements E2EUi {
     this.counter.setCount(Math.max(0, won - this.gifted.length), catalog.combos.length);
 
     this.time.delayedCall(450, () => {
-      this.ready = true;
       getAudio(this).playRandom(MEOW_KEYS);
-      this.strike('feliz');
-      this.time.addEvent({ delay: POSE_MS, loop: true, callback: () => !this.photoBusy && this.strike(this.pose === 'feliz' ? 'amor' : 'feliz') });
       if (this.gifted.length > 0) {
         this.time.delayedCall(700, () => {
           this.toast('¡Te guardé tu regalito!', 'mantequilla');
           this.counter.setCount(won, catalog.combos.length, true);
         });
       }
+      if (this.replay && this.rating) this.runCeremony(this.rating, events, after.wallet);
+      else this.openExits(false);
     });
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.ceremony?.destroy();
       this.cat?.destroy();
-      this.keep?.destroy();
-      this.photo?.destroy();
-      this.change?.destroy();
-      this.mute?.destroy();
-      this.motion?.destroy();
-      this.fullscreen?.destroy();
-      this.counter?.destroy();
-      this.dropReveal();
+      for (const o of [this.photo, this.keep, this.change, this.hint, this.mute, this.motion, this.fullscreen, this.counter, this.hud]) o?.destroy();
       this.tweens.killAll();
     });
     transitionIn(this, this.enter);
   }
 
-  /** The plaque with the praise, which drops in over the top of the mirror. */
-  private createPlaque() {
-    const text = this.add
-      .text(0, -3, this.title, { fontFamily: FONT_FAMILY, fontSize: '48px', color: '#FFFFFF', fontStyle: '700', stroke: Palette.rosa600, strokeThickness: 8, padding: { x: 4, y: 8 } })
-      .setOrigin(0.5);
-    const width = text.width + 90;
-    const g = this.add.graphics();
-    g.fillStyle(hex('rosa600'), 0.2).fillRoundedRect(-width / 2 + 3, -40 + 10, width, 88, 44);
-    g.fillStyle(hex('rosa600'), 1).fillRoundedRect(-width / 2, -40 + 8, width, 80, 40);
-    g.fillStyle(hex('rosa400'), 1).fillRoundedRect(-width / 2, -40, width, 80, 40);
-    g.fillStyle(0xffffff, 0.55).fillRoundedRect(-width / 2 + 28, -31, width * 0.3, 9, 4);
-    const plaque = this.add.container(CAT_X, -90, [g, text]).setDepth(30);
-    this.tweens.add({ targets: plaque, y: 66, duration: 700, delay: 200, ease: profileOf(this).ease('Bounce.easeOut') });
-    if (profileOf(this).loops) this.tweens.add({ targets: plaque, angle: { from: -1, to: 1 }, duration: 1600, delay: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+  /** The judge's turn. The buttons that land add to the purse; at the end the purse settles on the real wallet. */
+  private runCeremony(rating: RatingResult, events: ProgressEvent[], wallet: number) {
+    const p = profileOf(this);
+    const plan = ceremonyPlan(rating, events, p.reduced ? 'reduced' : 'full');
+    const comboName = (id: string) => this.catalog.combos.find((c) => c.id === id)?.name ?? id;
+    this.hud.hold();
+    this.showHint();
+    const ceremony = new Ceremony(this, plan, {
+      cat: this.cat, catName: this.look.catName, judge: this.catalog.brand.judge, comboName,
+      layout: { ...LAYOUT, wallet: this.hud.getJarPoint() },
+      onCredit: (credit) => this.hud.adjust(credit),
+      onStep: (step: CeremonyStep) => {
+        this.step = step.kind;
+        if (step.kind === 'reaction') this.pose = step.reaction.expression;
+      },
+    });
+    this.ceremony = ceremony;
+    void ceremony.play().then(() => {
+      if (!this.scene.isActive() || ceremony.destroyed) return;
+      this.step = 'done';
+      this.hud.release(wallet);
+      this.openExits(true);
+    });
   }
 
-  /** Switches the pose: its face, and a flourish that rotates (squash, a wag, a glance aside) so it never looks mechanical. */
-  private strike(pose: Expression) {
-    if (!this.scene.isActive()) return;
-    this.pose = pose;
-    this.cat.hold(pose);
+  /** "Clic para seguir" / "Toca para seguir": breathes at the foot of the cat while the ceremony runs. */
+  private showHint() {
+    const hint = this.add
+      .text(CAT_X, 668, runwayLines.skip(touchEnv().touch), { fontFamily: Fonts.Voice, fontSize: '30px', color: Ink.mutedTexto, padding: { x: 4, y: 8 } })
+      .setOrigin(0.5)
+      .setDepth(20)
+      .setAlpha(0);
+    this.hint = hint;
+    this.tweens.add({ targets: hint, alpha: 1, duration: 300, delay: 600 });
+    if (profileOf(this).loops) this.tweens.add({ targets: hint, y: 662, duration: 900, delay: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+  }
+
+  /** The way out opens (nothing appears all at once) and the cat keeps posing for the mirror. */
+  private openExits(celebrated: boolean) {
+    const hint = this.hint;
+    this.hint = null;
+    if (hint) {
+      this.tweens.killTweensOf(hint);
+      this.tweens.add({ targets: hint, alpha: 0, duration: 200, onComplete: () => hint.destroy() });
+    }
+    const make = (x: number, label: string, pill: 'primary' | 'secondary', width: number, onClick: () => void) => {
+      const button = new Button(this, x, EXIT_Y, label, { pill, width, height: 76, fontSize: 30 }).setDepth(20);
+      button.on(ObjectEvents.ButtonClick, onClick);
+      appear(this, button, { pop: true });
+      return button;
+    };
+    this.photo = make(EXITS.photo, runwayLines.photo, 'primary', 250, () => this.leave('photo'));
+    this.keep = make(EXITS.keep, runwayLines.keepDressing, 'secondary', 300, () => this.leave('keepDressing'));
+    this.change = make(EXITS.change, runwayLines.change, 'secondary', 250, () => this.leave('change'));
+    const stars = this.rating?.stars ?? 3;
+    if (!celebrated) {
+      // Back from the album: the cat wears the face of its verdict at once.
+      this.pose = catReaction(stars).expression;
+      this.cat.hold(this.pose);
+    }
+    this.ready = true;
+    this.time.addEvent({ delay: FLOURISH_MS, loop: true, callback: () => this.flourish(stars) });
+  }
+
+  /** A flourish that rotates (squash, a wag, a glance aside) so the pose never looks mechanical. */
+  private flourish(stars: number) {
+    if (!this.scene.isActive() || this.leaving) return;
     switch (flourishFor(this.poses++)) {
       case 'squash': this.cat.squash(); break;
       case 'wiggle': this.cat.wiggle(); break;
       case 'glance': this.cat.glance(this.poses % 2 === 0 ? 1 : -1); break;
     }
-    if (pose === 'amor') {
-      this.hearts.explode(profileOf(this).count(8), CAT_X, 250);
-      // The purr tired the ear when it played on every in-love pose: now on the first two and now and then.
-      if (shouldPurr(this.lovePoses++, Math.random)) getAudio(this).play(SfxKeys.Purr, { volume: 0.7 });
-    }
+    if (stars >= 4 && this.poses % 2 === 0) this.hearts.explode(profileOf(this).count(6), CAT_X, 250);
   }
 
-  /** "Descargar foto": shutter, a soft flash, the cat poses (in love, at rest), the PNG is saved and its thumbnail is shown. */
-  private async snap() {
-    if (this.photoBusy || this.leaving) return;
-    this.photoBusy = true;
-    getAudio(this).play(SfxKeys.Shutter);
-    // The pose is the one the player sees: love eyes. The pose loop waits while the photo is taken.
-    this.pose = PHOTO_POSE;
-    this.cat.hold(PHOTO_POSE);
-    this.hearts.explode(profileOf(this).count(8), CAT_X, 250);
-    this.flash();
-    // Let the flash start before the (short) work of drawing the picture.
-    await new Promise<void>((resolve) => this.time.delayedCall(140, resolve));
-    if (!this.scene.isActive()) return;
-    const url = await takePhoto(this, this.cat, this.anchors, this.catName, PHOTO_POSE);
-    if (!this.scene.isActive()) return;
-    const file = photoFileName(this.catName);
-    // A computer downloads the PNG; a phone opens the share sheet (ADR 0014).
-    await savePhoto<HTMLAnchorElement>({ doc: { createElement: () => document.createElement('a'), body: document.body }, nav: navigator, touch: touchEnv().touch }, url, file);
-    if (!this.scene.isActive()) return;
-    this.photos++;
-    this.lastPhoto = file;
-    this.showReveal(url);
-    this.photoBusy = false;
-  }
-
-  /**
-   * The photo shows itself: its thumbnail falls tilted next to the mirror, stays for a moment and flies "into the pocket"
-   * (down to the photo button). Reduced motion: it only fades in and out. Everything is cleaned up on shutdown.
-   */
-  private showReveal(url: string) {
-    this.dropReveal();
-    const key = `photo-reveal-${this.photos}`;
-    this.textures.once(`addtexture-${key}`, () => {
-      if (!this.scene.isActive()) {
-        this.textures.remove(key);
-        return;
-      }
-      const p = profileOf(this);
-      const img = this.add.image(REVEAL.x, REVEAL.y, key).setScale(REVEAL.scale).setDepth(65);
-      this.revealImage = img;
-      this.reveals++;
-      this.revealSettled = false;
-      // The bubble comes out when the thumbnail has landed (or faded in), never before: the card does not fall over it.
-      const landed = () => {
-        this.revealSettled = true;
-        this.toast('¡Foto lista!');
-      };
-      const bye = () => {
-        if (this.revealImage === img) this.revealImage = null;
-        img.destroy();
-        if (this.textures.exists(key)) this.textures.remove(key);
-      };
-      if (p.reduced) {
-        img.setAlpha(0);
-        this.tweens.chain({
-          targets: img,
-          tweens: [{ alpha: 1, duration: 300, onComplete: landed }, { alpha: 1, duration: 1200 }, { alpha: 0, duration: 300, onComplete: bye }],
-        });
-        return;
-      }
-      const pocket = this.photo.getCenter();
-      img.setPosition(REVEAL.x, -260).setAngle(14);
-      this.tweens.chain({
-        targets: img,
-        tweens: [
-          { y: REVEAL.y, angle: 6, duration: 520, ease: 'Back.easeOut', onComplete: landed },
-          { y: REVEAL.y - 6, duration: 1200, ease: 'Sine.easeInOut' },
-          { x: pocket.x, y: pocket.y, scale: 0.04, angle: 0, alpha: 0, duration: 480, ease: 'Quad.easeIn', onComplete: bye },
-        ],
-      });
-    });
-    this.textures.addBase64(key, url);
-  }
-
-  private dropReveal() {
-    const img = this.revealImage;
-    this.revealImage = null;
-    if (!img) return;
-    const key = img.texture.key;
-    this.tweens.killTweensOf(img);
-    img.destroy();
-    if (this.textures.exists(key)) this.textures.remove(key);
-  }
-
-  /** A camera flash: white that fades in fast and out softly. With reduced motion, a soft cream fade (alpha at most 0.3). */
-  private flash() {
-    const f = profileOf(this).flash;
-    const slow = profileOf(this).reduced;
-    const veil = this.add.rectangle(GAME_WIDTH / 2, 360, GAME_WIDTH, 720, f.color, 0).setDepth(90);
-    this.tweens.chain({
-      targets: veil,
-      tweens: [
-        { alpha: f.alpha, duration: slow ? 160 : 70, ease: 'Sine.easeOut' },
-        { alpha: 0, duration: slow ? 500 : 420, ease: 'Sine.easeIn', onComplete: () => veil.destroy() },
-      ],
-    });
-  }
-
-  /** A small bubble that pops out of the photo button to the right and floats up and away (never over the belly). */
+  /** A small bubble that floats up from the foot of the runway and away (never over the belly). */
   private toast(text: string, tone: 'menta' | 'mantequilla' = 'menta') {
     this.toastLog.push(text);
     const label = this.add
-      .text(0, 0, text, { fontFamily: FONT_FAMILY, fontSize: '34px', color: Palette.texto, fontStyle: '600', padding: { x: 4, y: 8 } })
+      .text(0, 0, text, { fontFamily: Fonts.Title, fontSize: '30px', color: Ink.tinta, padding: { x: 4, y: 8 } })
       .setOrigin(0.5);
     const g = this.add.graphics();
     const w = label.width + 56;
-    g.fillStyle(hex('rosa600'), 0.18).fillRoundedRect(-w / 2 + 2, -26 + 8, w, 56, 28);
     g.fillStyle(hex(tone), 1).fillRoundedRect(-w / 2, -26, w, 56, 28);
-    g.lineStyle(4, hex('rosa200'), 1).strokeRoundedRect(-w / 2, -26, w, 56, 28);
-    const x = 1010;
-    const bubble = this.add.container(x, 560, [g, label]).setDepth(60).setScale(0).setAlpha(0);
+    g.lineStyle(3, hex('rosa200'), 1).strokeRoundedRect(-w / 2, -26, w, 56, 28);
+    const bubble = this.add.container(CAT_X + 330, 560, [g, label]).setDepth(60).setScale(0).setAlpha(0);
     this.tweens.chain({
       targets: bubble,
       tweens: [
@@ -325,18 +276,28 @@ export class Showcase extends Phaser.Scene implements E2EUi {
     });
   }
 
-  private leave(action: 'keepDressing' | 'change') {
+  private leave(action: 'photo' | 'keepDressing' | 'change') {
     if (this.leaving) return;
     this.leaving = true;
-    go(this, action);
+    if (action === 'photo') go(this, action, photoArgs(this.look, this.rating));
+    else go(this, action);
   }
 
   getE2EUi(): UiState {
+    const buttons: Record<string, { x: number; y: number }> = {};
+    for (const [key, b] of Object.entries({ keep: this.keep, photo: this.photo, change: this.change })) {
+      const p = b ? b.getCenter() : undefined;
+      if (p) buttons[key] = { x: p.x, y: p.y };
+    }
+    for (const [key, b] of Object.entries({ mute: this.mute, motion: this.motion, fullscreen: this.fullscreen })) if (b) buttons[key] = b.getCenter();
     return {
       ready: this.ready && !this.leaving,
-      buttons: { keep: this.keep.getCenter(), photo: this.photo.getCenter(), change: this.change.getCenter(), mute: this.mute.getCenter(), motion: this.motion.getCenter(), ...(this.fullscreen ? { fullscreen: this.fullscreen.getCenter() } : {}) },
-      points: {},
-      info: { title: this.title, pose: this.pose, layers: this.cat.wornIds, photos: this.photos, lastPhoto: this.lastPhoto, photoBusy: this.photoBusy, revealing: this.revealImage !== null, revealSettled: this.revealSettled, reveals: this.reveals, revealTextures: this.textures.getTextureKeys().filter((k) => k.startsWith('photo-reveal')).length, toasts: [...this.toastLog], secrets: this.counter.text },
+      buttons,
+      points: { wallet: this.hud.getJarPoint() },
+      info: {
+        title: this.title, pose: this.pose, layers: this.cat.wornIds, ceremonyStep: this.step, lastRating: this.rating,
+        wallet: this.hud.value, replay: this.replay, toasts: [...this.toastLog], secrets: this.counter.text,
+      },
     };
   }
 }
