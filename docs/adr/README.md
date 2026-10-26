@@ -25,7 +25,7 @@ Aquí se registran las decisiones de arquitectura del proyecto (formato Nygard).
 | [0018](0018-tenido-por-recoloreado-de-svg.md) | Teñido por recoloreado del SVG en tiempo de ejecución | Aceptado (amplía 0006) |
 | [0019](0019-flujo-de-escenas-v2.md) | Flujo de escenas v2 | Aceptado (amplía 0007) |
 | 0020 | Sin uso: las reglas de juego en JSON se fusionaron en 0017 | — |
-| [0021](0021-el-llavero-como-tratamiento-del-render.md) | El llavero como tratamiento del render del look | Propuesto (pendiente del espigón de S8) |
+| [0021](0021-el-llavero-como-tratamiento-del-render.md) | El llavero como tratamiento del render del look | Aceptado |
 
 ## Estados
 `Propuesto` → `Aceptado` → (`Obsoleto` | `Reemplazado por NNNN`)

@@ -191,8 +191,8 @@ Son 44 prendas visibles más 6 secretas. Cada prenda tiene un **icono** para el 
 
 ## 11. El llavero (ADR 0021)
 Los gatos jugables **no** se dibujan como llaveros: el llavero es un tratamiento del render del look al guardar en el modo foto.
-- **Porcelana**: borde crema de 12 a 16 px alrededor de la silueta, con una línea fina de `tinta` por fuera; colores un poco más suaves y cálidos (−10 % de saturación), como pintados a mano.
-- **Barniz**: 2 o 3 brillos blancos suaves fijos y una franja diagonal que cruza la pieza al terminar de "hornearla".
+- **Porcelana**: borde crema de 12 a 16 px alrededor de la silueta, con una línea fina de `tinta` por fuera; colores un poco más suaves y cálidos (−15 a −20 % de saturación; −10 % casi no se nota), como pintados a mano.
+- **Barniz**: 2 o 3 brillos blancos suaves fijos y una franja diagonal que cruza la pieza al terminar de "hornearla" (una textura aparte, recortada a la silueta y movida con un tween).
 - **Herrajes** (`art/ui/keychain/`): armellita, argolla plateada (1–3★), argolla dorada (4★), dije ✦ dorado (5★) y cadenita. Mismo trazo de tinta, colores planos y un brillo.
 - **Empaque**: tarjeta `kraft` con el agujero para colgar arriba, la línea de `brand.json` ("Lagatovino · hecho a mano" por defecto), el fondo, el marco y los stickers elegidos, el nombre del gato en Gaegu, sus estrellas y "Xoxo, mau!".
 - **Colgador**: corcho o papel con 12 ganchos; el gancho vacío muestra la silueta del gato en `linea-lapiz`.
