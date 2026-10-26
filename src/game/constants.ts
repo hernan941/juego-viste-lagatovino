@@ -118,6 +118,8 @@ export const ObjectEvents = {
   CatPet: 'cat-pet',
   /** Cat: (item: ClothingDef, at: Point) the pointer entered a worn item */
   LayerHover: 'layer-hover',
+  /** PriceTag: (tag) the player pressed and released the tag */
+  PriceTagPress: 'price-tag-press',
 } as const;
 
 /** Scene events of DressUp that its controllers listen to (ADR 0019). */
@@ -132,6 +134,12 @@ export const DressUpEvents = {
   OutfitChanged: 'outfit-changed',
   /** (catId: string) the cat changed */
   CatChanged: 'cat-changed',
+  /** (flight: WalletFlight) a feature asks the wallet to fly buttons: into the purse (`in`) or out of it (`out`) */
+  WalletFlight: 'wallet-flight',
+  /** (item: ClothingDef) the player touched the price tag of an item that is not bought (on the cat or in its cell) */
+  PriceTagPressed: 'price-tag-pressed',
+  /** the player cannot pay: the purse shakes (blinks with reduced motion) */
+  WalletShake: 'wallet-shake',
 } as const;
 
 export const RegistryKeys = {
@@ -163,6 +171,8 @@ export const TextureKeys = {
   InkSparkle: 'particle-ink-sparkle',
   /** Second stage UI (F11.10 gives each one a placeholder SVG). */
   Coin: 'ui-coin',
+  /** The jar of buttons of the wallet HUD. */
+  Purse: 'ui-purse',
   PriceTag: 'ui-price-tag',
   Stamp: 'ui-stamp',
   StampSol: 'ui-stamp-sol',
