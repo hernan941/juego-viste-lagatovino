@@ -154,7 +154,8 @@ export interface ScoringRules {
     favoriteItem: number;
     favoriteDye: number;
   };
-  caps: { style: number; love: number };
+  /** Point caps. `combo` and `color` are optional: they default to two combos and two dyed items. */
+  caps: { style: number; love: number; combo?: number; color?: number };
   /** Minimum points for 2, 3, 4 and 5 stars (strictly increasing). */
   starThresholds: [number, number, number, number];
   /** Technical tags that never count as style. */
