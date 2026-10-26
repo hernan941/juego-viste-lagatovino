@@ -119,3 +119,14 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
 - Un combo deja `combo` en el log y una prenda neutral deja `neutral`.
 - Con `?reduced`, la cara y el sonido siguen respondiendo.
 - Sin errores de consola.
+
+## F15.3: objetos de la ceremonia
+### E2E pendientes
+- La ceremonia completa (`?lab=ceremony` o el Showcase):
+  - los pasos van en orden y `ceremonyStep` los refleja;
+  - el monedero termina igual a `plan.coins`.
+- Un click, o un toque en el celular, salta la ceremonia.
+- En movimiento reducido no hay temblor y salen 3 botones.
+- Con 1 o 2★ el juez consuela, y con 5★ hay confeti.
+- Si se cambia de escena a mitad de la ceremonia, no quedan tweens ni listeners colgados.
+- Sin errores de consola.
