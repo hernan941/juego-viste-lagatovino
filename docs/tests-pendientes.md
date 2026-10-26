@@ -46,3 +46,22 @@ Estos tests unit se reapuntan a los datos reales una vez integrado F11.10:
   - guardar, transformación y descarga del empaque;
   - colgar con la pregunta de reemplazo;
   - el llavero sobrevive a una recarga.
+
+## F13.1, F14.1, F15.1 y F15.2: economía, gustos, puntaje y ceremonia
+Tests unit con datos reales, que se hacen cuando estén integrados F11.9 y F11.10:
+- `scoreBalance.test.ts`:
+  - `bestPossibleStars === 5` para los 12 gatos;
+  - con solo las prendas iniciales se llega a ≥ 3 estrellas;
+  - medir cuánto tarda `bestPossible`.
+- `balance.test.ts` (jugador modelo): el 50 % de lo comprable se alcanza entre las sesiones 3 y 5, y el 100 % en 12 sesiones o menos.
+
+### E2E pendientes
+- `tastes.spec.ts`: las reacciones a la prenda favorita, a una que el gato ama y a la que detesta.
+- La ceremonia en el Showcase:
+  - sellos, botones que vuelan al monedero y notas;
+  - un toque salta la ceremonia ×3;
+  - el monedero queda con la suma exacta.
+- Tienda y calificación:
+  - comprar, y el aviso de "no alcanza";
+  - la caja del ¡Listo! con prendas sin pagar;
+  - recargar no paga dos veces.
