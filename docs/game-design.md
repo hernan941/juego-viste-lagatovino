@@ -1,6 +1,8 @@
-# Game Design: Viste Lagato (MVP)
+# Game Design: Viste Lagato
 
 > **Diversión > funcionalidad.** Si hay que elegir, gana lo que hace sonreír.
+
+> **Estado (2026-10-25)**: el MVP está terminado. La **segunda etapa** está aprobada (ADR 0015) y su diseño completo está en `docs/design/segunda-etapa.md`. Este documento conserva el diseño del MVP y resume el alcance y los supuestos de la etapa 2 en la sección "Segunda etapa".
 
 ## Fantasía
 "Llevo a MI gato a una boutique tierna y lo dejo adorable con el sweater que le elegí."
@@ -52,7 +54,7 @@ Regla: las expresiones se cambian con un micro-tween (escala Y de la capa 0,9 �
 - Habrá **Phaser**, animaciones e interactividad al máximo.
 - Flujo con inicio y entrada a la tienda, con transiciones suaves.
 
-- Se juega en **PC**, en horizontal (1280 × 720) y con mouse (ADR 0008).
+- Se juega en **PC**, en horizontal (1280 × 720) y con mouse (ADR 0008). El **celular en horizontal** también está soportado (ADR 0014).
 - **Arrastrar solamente**: no hay doble clic ni clic para equipar.
 - **Sin música**. Hay **efectos de sonido ASMR satisfactorios** en cada acción y maullidos si se consiguen con licencia libre (ADR 0009).
 - El jugador **le pone nombre a su gato**.
@@ -61,7 +63,9 @@ Regla: las expresiones se cambian con un micro-tween (escala Y de la capa 0,9 �
 - Nombre del juego: **Viste Lagato**.
 - Idioma: español.
 
-## Economía: todo gratis + "Regalitos de la tienda"
+## Economía del MVP: todo gratis + "Regalitos de la tienda"
+> **Reemplazada en la segunda etapa** (ADR 0015): entran los botones y la compra. Los combos y las prendas secretas se mantienen e integran (un combo suma puntos, paga botones la primera vez y entrega su secreta).
+
 Decisión tomada con libertad otorgada por el usuario. El `game-designer` la valida en la feature F8 del roadmap y puede descartarla.
 
 - **No hay monedas en el MVP**: el 100 % del catálogo base es gratis desde el principio. Así se evita la fricción y el jugador se divierte desde el segundo uno.
@@ -152,5 +156,38 @@ Notas para F8:
 - Verificado contra los tags reales de `clothes.json` (2026-10-21): cada requisito tiene al menos una prenda visible que lo cumple, y ningún combo queda completo antes de tiempo con otro. Si se cambian los tags, hay que revisar esta tabla.
 - Si después se quiere un 7.º combo sin premio (solo reacción), el mejor candidato es el **¡Supergatito!**: un sweater `deportivo` + `face-lentes-sol` + `paws-botitas`.
 
-## Fuera del MVP (ideas guardadas)
-Monedas y compra, caminar por la ciudad, minijuegos para ganar monedas, cuentas, logros, compartir en redes.
+## Segunda etapa (ADR 0015)
+Diseño completo, con fichas, números y juice: `docs/design/segunda-etapa.md`. Decisiones técnicas: ADRs 0016 a 0019 y 0021.
+
+**Fantasía**: "Visto a mi gat@ con lo que **le gusta a él**, el juez de la tienda lo califica y, cuando el look me encanta, se vuelve un llavero de porcelana de Lagatovino para mi colgador."
+
+**Loop corto**: probar prendas (también las que no tienes) → el gato reacciona según sus gustos → ¡Listo! (la caja cobra lo que no es tuyo) → el juez califica con estrellas y paga **botones** → comprar prendas o tintes → modo foto opcional → guardar = llavero.
+
+**Entra**:
+- **S0** contrato de datos y guardado v2 (ADR 0017);
+- **S1** calificación del estilo (1 a 5 estrellas, nunca 0);
+- **S2** gustos de cada gato (2 que ama, 1 que detesta, prenda y color favoritos), que se descubren jugando;
+- **S3** botones y tienda **dentro del probador** (probar es gratis);
+- **S4** tintes, arrastrando un frasco sobre la prenda (ADR 0018);
+- **S5** álbum con prendas, gatos, looks especiales, tintes y colgador;
+- **S6** modo foto (fondos, poses, marcos y stickers que se ganan con el álbum);
+- **S7** estética Lagatovino (ADR 0016);
+- **S8** el llavero: el gato se transforma en llavero al guardar y se cuelga en el colgador (ADR 0021).
+
+**Descartado**: pedidos de clientes.
+
+**Fuera de esta etapa**: la integración web con lagatovino.com (la hace el usuario), caminar por un mapa, cuentas, backend y Supabase, y los gatos llavero dibujados aparte.
+
+**Supuestos por defecto** (se cambian con una línea de JSON o de `copy.ts`, sin tocar lógica):
+- La moneda se llama **botones**.
+- **El juez y la vendedora** son personajes parametrizados en `data/brand.json`. Por defecto son **Kofi** y **Catalina**, pendientes del permiso del usuario; si no lo hay, pasan a "el gato supervisor" y "la vendedora".
+- El letrero de la tienda dice "Lagatovino"; el empaque del llavero, "Lagatovino · hecho a mano"; el reverso, "Hecho a mano por Cata" (o solo "hecho a mano" sin permiso). La foto lleva "Viste Lagato" y "Xoxo, mau!", sin URL.
+- Un llavero por gato; al reemplazar se pregunta siempre y la opción por defecto es quedarse con el de más estrellas (con empate, el nuevo).
+- Los precios, pagos y gustos del diseño son iniciales y los vigila el test de balance (ADR 0017).
+- El save v1 se migra conservando lo puesto, los secretos y 100 botones.
+- La calificación nunca baja de 1★ y lo que el gato detesta se puede dejar puesto.
+- En esta etapa solo se tiñen los 16 sweaters; el **agua** quita el tinte y no cuenta como frasco.
+- Volver del álbum al Showcase no repite la ceremonia; después de colgar un llavero, el álbum vuelve a DressUp (ADR 0019).
+
+## Fuera del alcance (ideas guardadas)
+Caminar por la ciudad, minijuegos para ganar monedas, cuentas, logros, compartir en redes, backend. Las monedas, la compra y el inventario **ya no están fuera**: entran en la segunda etapa. Los pedidos de clientes quedan **descartados**.

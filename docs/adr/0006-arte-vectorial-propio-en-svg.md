@@ -1,6 +1,6 @@
 # 0006. Arte vectorial propio en SVG
 
-- **Estado**: Aceptado
+- **Estado**: Aceptado. Enmendado por ADR 0016 (tokens de trazo, color y tipografía de la estética Lagatovino) y ampliado por ADRs 0018 (teñido) y 0021 (llavero)
 - **Fecha**: 2026-10-20
 
 ## Contexto

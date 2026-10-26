@@ -1,6 +1,6 @@
 # 0007. Flujo de escenas y transiciones
 
-- **Estado**: Aceptado
+- **Estado**: Aceptado. Ampliado por ADR 0019 (Album, PhotoMode y Showcase como pasarela)
 - **Fecha**: 2026-10-20
 
 ## Contexto

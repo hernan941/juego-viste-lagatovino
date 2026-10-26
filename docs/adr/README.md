@@ -10,8 +10,8 @@ Aquí se registran las decisiones de arquitectura del proyecto (formato Nygard).
 | [0003](0003-sistema-de-capas-para-vestir.md) | Sistema de capas para vestir | Aceptado |
 | [0004](0004-persistencia.md) | Persistencia: localStorage → Supabase | Propuesto |
 | [0005](0005-despliegue-estatico.md) | Despliegue estático | Aceptado |
-| [0006](0006-arte-vectorial-propio-en-svg.md) | Arte vectorial propio en SVG | Aceptado |
-| [0007](0007-flujo-de-escenas-y-transiciones.md) | Flujo de escenas y transiciones | Aceptado |
+| [0006](0006-arte-vectorial-propio-en-svg.md) | Arte vectorial propio en SVG | Aceptado (enmendado por 0016) |
+| [0007](0007-flujo-de-escenas-y-transiciones.md) | Flujo de escenas y transiciones | Aceptado (ampliado por 0019) |
 | [0008](0008-plataforma-pc-y-solo-arrastrar.md) | Plataforma PC e interacción solo arrastrando | Aceptado (enmendado por 0014) |
 | [0009](0009-audio-solo-sfx-asmr.md) | Audio: solo efectos de sonido ASMR, sin música | Aceptado |
 | [0010](0010-arquitectura-estructura-oficial-de-phaser.md) | Arquitectura: estructura oficial de Phaser | Aceptado |
@@ -19,6 +19,13 @@ Aquí se registran las decisiones de arquitectura del proyecto (formato Nygard).
 | [0012](0012-desarrollo-guiado-por-tests-tdd.md) | Desarrollo guiado por tests (TDD) | Aceptado |
 | [0013](0013-movimiento-reducido.md) | Movimiento reducido | Aceptado |
 | [0014](0014-soporte-para-celular-tactil.md) | Soporte para celular (táctil) | Aceptado |
+| [0015](0015-alcance-de-la-segunda-etapa.md) | Alcance de la segunda etapa | Aceptado |
+| [0016](0016-direccion-de-arte-lagatovino.md) | Dirección de arte Lagatovino | Aceptado (reemplaza la estética v1 y enmienda 0006) |
+| [0017](0017-guardado-v2-y-reglas-de-juego-en-json.md) | Guardado v2 y reglas de juego en JSON | Aceptado (amplía 0004) |
+| [0018](0018-tenido-por-recoloreado-de-svg.md) | Teñido por recoloreado del SVG en tiempo de ejecución | Aceptado (amplía 0006) |
+| [0019](0019-flujo-de-escenas-v2.md) | Flujo de escenas v2 | Aceptado (amplía 0007) |
+| 0020 | Sin uso: las reglas de juego en JSON se fusionaron en 0017 | — |
+| [0021](0021-el-llavero-como-tratamiento-del-render.md) | El llavero como tratamiento del render del look | Propuesto (pendiente del espigón de S8) |
 
 ## Estados
 `Propuesto` → `Aceptado` → (`Obsoleto` | `Reemplazado por NNNN`)

@@ -1,6 +1,6 @@
 # Viste Lagato
 
-Juego 2D para navegador de vestir gatos, con estética kawaii/chibi.
+Juego 2D para navegador de vestir gatos, chibi, con la estética de la marca Lagatovino (ADR 0016).
 
 ## Regla de oro del usuario
 **No construir nada sin que el usuario lo pida explícitamente.** Ni scaffolding, ni código, ni dependencias, ni `git init`. Si una tarea implica crear o modificar código, primero se propone y se espera un "sí".
@@ -21,11 +21,13 @@ El objetivo es **divertirse**. Ante cualquier duda gana lo que hace el juego má
 
 ## Visión
 - **MVP**: jugable y con transiciones suaves. Iniciar → elegir tu gato → entrar a la tienda → vestirlo arrastrando muchas prendas (los sweaters son el protagonista) → admirar el look.
-- **Futuro**: comprar ropa con monedas, inventario, caminar por un mapa y guardar el progreso en una base de datos.
+- **Segunda etapa** (ADR 0015, diseño en `docs/design/segunda-etapa.md`): darle un "para qué" al vestir. El juez califica el look según los gustos del gato y paga **botones**, con los que se compran prendas y tintes en el mismo probador; el álbum muestra lo que falta; el modo foto permite presumir, y al guardar el gato se transforma en un **llavero** de porcelana para el colgador.
+- **Futuro**: caminar por un mapa y guardar el progreso en una base de datos.
 
-Referencias visuales (en la raíz del repo):
-- `gatos.jpeg`: **solo el estilo** de dibujo (chibi, cabezones, cara `:3`, contorno grueso, colores planos). **No** se usan gatos temáticos: solo gatos comunes.
-- `ejemplo de juego.jpeg`: layout de vestir. Pestañas de categorías arriba, grid de prendas, personaje grande, drag & drop, panel de capas con ✕ y paleta rosa pastel.
+Referencias visuales:
+- **Marca Lagatovino** (lagatovino.com): estilo "cuaderno de Catalina", con papel, tinta, washi tape, polaroids y llaveros de porcelana (ADR 0016).
+- `gatos.jpeg` (raíz del repo): **solo las proporciones** chibi y cabezonas. La cara `:3` y las mejillas ya no se usan. **No** se usan gatos temáticos: solo gatos comunes.
+- `ejemplo de juego.jpeg` (raíz del repo): layout de vestir. Pestañas de categorías arriba, grid de prendas, personaje grande, drag & drop y panel de capas con ✕. Su paleta rosa pastel ya no aplica.
 
 **La estética está definida en `docs/art-direction.md` y es obligatoria** para todo asset y toda UI. El arte lo creamos nosotros en SVG (ADR 0006).
 
@@ -38,14 +40,29 @@ Flujo de escenas: ADR 0007.
 5. **Showcase**: el gato posa con su look y se puede descargar la foto.
 6. Persistencia local del gato elegido y del outfit (ADR 0004).
 
-**Fuera del MVP**: monedas, compra real, caminar por un mapa, cuentas de usuario, backend.
+## Alcance de la segunda etapa (ADR 0015)
+Aprobada por el usuario. Detalle en `docs/design/segunda-etapa.md`.
+1. **Datos y guardado v2**: reglas de juego en JSON validadas y migración del save v1 (ADR 0017).
+2. **Calificación del estilo**: el juez califica en la pasarela (Showcase) con 1 a 5 estrellas y paga botones.
+3. **Gustos de cada gato**: lo que ama, lo que detesta, su prenda y su color favoritos, que se descubren jugando.
+4. **Botones y tienda en el probador**: probar es gratis; se compra tocando la etiqueta o en la caja al pulsar ¡Listo!.
+5. **Tintes**: arrastrar un frasco sobre la prenda (ADR 0018).
+6. **Álbum** y **modo foto**: escenas nuevas (ADR 0019).
+7. **Estética Lagatovino**: ADR 0016 y `docs/art-direction.md` v2.
+8. **El llavero**: al guardar en el modo foto, el gato se transforma en llavero y se cuelga en el colgador (ADR 0021).
+
+La plataforma no cambia: PC primero y celular horizontal jugable. El juez y la vendedora son personajes parametrizados en datos (`data/brand.json`).
+
+**Descartado**: pedidos de clientes.
+**Fuera de alcance**: integración web con lagatovino.com (la hace el usuario), caminar por un mapa, cuentas de usuario, backend.
 
 Las preguntas abiertas y los supuestos por defecto están en `docs/game-design.md`.
 
 ## Stack (ver `docs/adr/`)
 - **Phaser 4 + TypeScript (strict) + Vite** (ADRs 0002 y 0011), partiendo de la plantilla oficial (ADR 0010). Guías oficiales en `node_modules/phaser/skills/`
 - **TDD** con Vitest (unit e integración, cobertura v8) y Playwright (e2e) (ADR 0012)
-- **localStorage** en el MVP y Supabase en el futuro (ADR 0004)
+- **localStorage** en el MVP y Supabase en el futuro (ADR 0004), con el guardado v2 de la segunda etapa (ADR 0017)
+- **Segunda etapa**: alcance (ADR 0015), estética Lagatovino (0016), teñido de SVG (0018), flujo de escenas v2 (0019) y llavero (0021)
 - **Hosting estático** en Vercel o Netlify (ADR 0005), **después del MVP**. El MVP se entrega en localhost.
 
 ## Estructura (ADR 0010)
@@ -63,12 +80,12 @@ src/
     main.ts                # GameConfig, lista de escenas y plugins globales
     constants.ts           # SceneKeys, TextureKeys, AudioKeys, Events, RegistryKeys, tokens de paleta
     EventBus.ts            # EventEmitter compartido (solo eventos de juego entre escenas)
-    scenes/                # Boot, Preloader, Title, CatSelect, ShopEntrance, DressUp, Showcase
+    scenes/                # Boot, Preloader, Title, CatSelect, ShopEntrance, DressUp, Showcase, Album, PhotoMode (ADR 0019)
     objects/               # Containers propios: Cat, ClothingItem, Button, Tabs, ItemGrid, LayersPanel
-    plugins/               # Global Plugins: AudioPlugin, SavePlugin
+    plugins/               # Global Plugins: AudioPlugin, SavePlugin, MotionPlugin, DyePlugin (ADR 0018)
     systems/               # transitions.ts (fundido, iris)
     domain/                # TS puro sin Phaser: types, outfit, combos → Vitest
-    data/                  # cats.json, clothes.json, combos.json + schema.ts
+    data/                  # cats.json, clothes.json, combos.json, economy.json, dyes.json, sets.json, photo.json, brand.json + schema.ts (ADR 0017)
 tests/
   unit/                    # domain, schema, lógica pura de plugins y systems (TDD)
   integration/             # escenas y objetos con Phaser HEADLESS o mocks
