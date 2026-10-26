@@ -47,7 +47,7 @@ En cada parte de `silhouette.svg`:
 1. **Relleno plano**: el `<use … data-fill="PARTE">` recibe el color base del pelaje.
 2. **Pelaje**: el marcador `<!--coat:PARTE-->` se reemplaza por las formas del pelaje, recortadas (`clipPath`) a esa parte. Por eso las rayas o las manchas pueden dibujarse "de más", y el recorte las deja dentro del contorno.
 3. **Sombra única**: formas `class="shade"` en negro al 15 % de opacidad. Equivale a cada color multiplicado por 0,85, es decir, el mismo color un 15 % más oscuro, también sobre manchas y rayas. Va abajo de cada parte y bajo la cabeza (la forma de la cabeza desplazada 18 px hacia abajo).
-4. **Contorno**: 8 px de `#4A3036`, con `stroke-linejoin` y `stroke-linecap` en round.
+4. **Contorno**: 7 px de tinta `#1F1B1A` (más una copia desplazada (1,5, 2) px que genera build-art), con `stroke-linejoin` y `stroke-linecap` en round.
 
 La cabeza, además, lleva el interior rosa de las orejas y el **brillo**. El interior de las orejas es fijo para todos los gatos y el brillo es blanco al 55 %; en los pelajes claros (luminancia > 0,85) `composeCat` lo cambia a `#FFF0A8` al 50 %, para que se vea sobre el pelo blanco.
 
@@ -74,7 +74,7 @@ El juego carga `tail/<id>.svg` detrás de `noface/<id>.svg` y la rota desde su b
 
 ## Cómo dibujar una prenda nueva
 1. Se abre `cats/base/silhouette.svg` como referencia y se dibuja sobre el mismo `viewBox` de 512, sin mover nada. Conviene guiarse con las cajas y anclas de `anchors.json`.
-2. Se usan los mismos tokens: contorno de 8 px en `#4A3036` (detalles internos de 4–5 px), rellenos planos, **una** sombra (negro al 15 %) y **un** brillo (blanco al 50–55 %). La prenda tiene que verse gordita y suave (lana), con puños y elásticos redondeados.
+2. Se usan los mismos tokens: contorno de 8 px en `#1F1B1A` (detalles internos de 4–5 px), rellenos planos, **una** sombra (negro al 15 %) y **un** brillo (blanco al 50–55 %). La prenda tiene que verse gordita y suave (lana), con puños y elásticos redondeados.
 3. **Encaje con el cuerpo**: como el gato es una sola textura debajo, la prenda tiene que "pasar por detrás" de la cabeza y de las patitas. Para eso se usa una `mask` con la **misma** geometría de la plantilla:
    - la cabeza (`#sw-head`, el mismo `d` que `head-shape`) en negro, con `stroke-width="8"`, para que la prenda termine justo en el borde exterior del contorno de la cabeza;
    - las patitas, como elipses en negro con `class="paw-cut"`.

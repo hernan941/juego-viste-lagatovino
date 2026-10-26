@@ -154,7 +154,7 @@ const ICON_FIX = {
         /(<rect x="192" y="430"[^>]*\/>\s*<rect x="258" y="430"[^>]*\/>\s*<path[^>]*d="M210 437[^"]*"[^>]*\/>)/,
         `<g transform="translate(0 ${SW_CUFF_DROP})">$1</g>`,
       ) +
-    '\n<use href="#sw-head" fill="none" stroke="#4A3036" stroke-width="8" clip-path="url(#sw-clip)"/>',
+    '\n<use href="#sw-head" fill="none" stroke="#1F1B1A" stroke-width="8" clip-path="url(#sw-clip)"/>',
   // neck: el collar o la bufanda se ven enteros (sin el hueco de la cabeza ni del cuerpo)
   neck: (inner) => inner.replaceAll('mask="url(#sw-cut)"', ''),
 };
@@ -172,7 +172,7 @@ function buildIcons() {
       const inner = (ICON_FIX[slot] ?? ((x) => x))(innerSvg(read(`clothes/${slot}/${f}`)));
       const icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
   <!-- Viste Lagato · icono de "${slot}/${id}". GENERADO por art/tools/build-art.mjs: no editar a mano. -->
-  <rect x="4" y="4" width="248" height="248" rx="32" fill="#FFF7EC" stroke="#FFD1E3" stroke-width="4"/>
+  <rect x="4" y="4" width="248" height="248" rx="32" fill="#FFFCF5" stroke="#E8E0D2" stroke-width="3"/>
   <svg x="20" y="20" width="216" height="216" viewBox="${crop.join(' ')}" preserveAspectRatio="xMidYMid meet" overflow="visible">
 ${inner}
   </svg>

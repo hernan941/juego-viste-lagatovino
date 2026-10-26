@@ -81,7 +81,7 @@ describe('F4 wardrobe', () => {
       const svg = art[`/art/clothes/${c.slot}/${name}.svg`];
       expect(svg, c.id).toBeDefined();
       expect(svg, c.id).toContain('viewBox="0 0 512 512"');
-      expect(svg, c.id).toContain('#4A3036');
+      expect(svg, c.id).toContain('#1F1B1A');
     }
   });
 });

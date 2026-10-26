@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
   <!-- Viste Lagato · icono de "head/gorrito-fresa". GENERADO por art/tools/build-art.mjs: no editar a mano. -->
-  <rect x="4" y="4" width="248" height="248" rx="32" fill="#FFF7EC" stroke="#FFD1E3" stroke-width="4"/>
+  <rect x="4" y="4" width="248" height="248" rx="32" fill="#FFFCF5" stroke="#E8E0D2" stroke-width="3"/>
   <svg x="20" y="20" width="216" height="216" viewBox="128 -38 256 256" preserveAspectRatio="xMidYMid meet" overflow="visible">
 <defs>
     <path id="fr-dome" d="M158 122 C146 70 196 40 256 40 C316 40 366 70 354 122 C320 134 192 134 158 122 Z"/>
@@ -16,9 +16,9 @@
       </g>
       <path fill="#000" fill-opacity="0.15" d="M312 40 C366 70 366 112 350 128 L296 128 C318 100 322 66 312 40 Z"/>
     </g>
-    <use href="#fr-dome" fill="none" stroke="#4A3036" stroke-width="8"/>
+    <use href="#fr-dome" fill="none" stroke="#1F1B1A" stroke-width="8"/>
     
-    <g fill="#6CC59A" stroke="#4A3036" stroke-width="7">
+    <g fill="#6CC59A" stroke="#1F1B1A" stroke-width="7">
       <path d="M256 52 C226 56 204 40 196 22 C224 18 246 28 256 44 Z"/>
       <path d="M256 52 C286 56 308 40 316 22 C288 18 266 28 256 44 Z"/>
       <path d="M256 52 C240 40 240 20 256 8 C272 20 272 40 256 52 Z"/>
