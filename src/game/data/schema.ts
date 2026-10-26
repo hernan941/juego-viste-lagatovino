@@ -1,9 +1,12 @@
 // Hand-written validation of the JSON catalog (no zod: three small shapes, zero dependencies,
 // and Spanish messages that name the exact path). Runs on load in the Preloader (ADR 0010).
 import { COMBO_REACTIONS, comboOutfit } from '../domain/combos';
+import { PHOTO_SECTIONS, WATER_ID } from './assets';
 import { SLOT_ORDER } from '../domain/slots';
 import { ANCHOR_NAMES, BOX_NAMES, CATEGORIES } from '../domain/types';
-import type { AnchorsDef, CatDef, ClothingDef, ComboDef, DyeDef, EconomyRules, ItemTier } from '../domain/types';
+import type {
+  AnchorsDef, BrandDef, CatDef, ClothingDef, ComboDef, DyeDef, EconomyRules, ItemTier, PhotoCatalog, SetDef,
+} from '../domain/types';
 
 export type Result<T> = { ok: true; value: T } | { ok: false; errors: string[] };
 
@@ -242,9 +245,6 @@ export function validateEconomy(data: unknown): Result<EconomyRules> {
   return finish(data, errors);
 }
 
-/** Id of the water tool: it clears a dye and is not a bottle, so dyes.json cannot use it (ADR 0017). */
-export const WATER_ID = 'agua';
-
 /** Checks dyes.json: unique ids, #RRGGBB colors and at least one starter bottle. */
 export function validateDyes(data: unknown): Result<DyeDef[]> {
   const errors: string[] = [];
@@ -278,4 +278,241 @@ export function validateShopRules(clothes: readonly ClothingDef[], combos: reado
     errors.push('combos: las prendas iniciales deben completar al menos un combo');
   }
   return finish([...clothes], errors);
+}
+
+// ---- Second stage: tastes, sets, photo and brand (ADR 0017) ----
+
+const HEX = /^#[0-9A-Fa-f]{6}$/;
+const intIn = (v: unknown, min: number, max: number): v is number => isInt(v) && v >= min && v <= max;
+const isTextList = (v: unknown): v is string[] => Array.isArray(v) && v.every((x) => typeof x === 'string' && x.length > 0);
+
+/** Tastes of every cat (cats.json -> prefs): tags that exist in a visible item, a visible favorite and a color from dyes.json. */
+export function validateCatPrefs(cats: readonly CatDef[], clothes: readonly ClothingDef[], dyes: readonly DyeDef[]): Result<CatDef[]> {
+  const errors: string[] = [];
+  const tags = new Set(clothes.filter((c) => c.secret !== true).flatMap((c) => c.tags));
+  const byId = new Map(clothes.map((c) => [c.id, c]));
+  const dyeIds = new Set(dyes.map((d) => d.id));
+  cats.forEach((cat, i) => {
+    const p = `cats[${i}].prefs`;
+    const prefs = cat.prefs as unknown;
+    if (!isObj(prefs)) {
+      errors.push(`${p}: debe ser un objeto`);
+      return;
+    }
+    const tagList = (key: 'loves' | 'dislikes', count: number): string[] => {
+      const list = prefs[key];
+      if (!(isTextList(list) && list.length === count)) {
+        errors.push(`${p}.${key}: deben ser ${count} tags`);
+        return [];
+      }
+      list.forEach((t, j) => {
+        if (!tags.has(t)) errors.push(`${p}.${key}[${j}]: ninguna prenda visible tiene el tag "${t}"`);
+      });
+      return list;
+    };
+    const loves = tagList('loves', 2);
+    tagList('dislikes', 1).forEach((t, j) => {
+      if (loves.includes(t)) errors.push(`${p}.dislikes[${j}]: "${t}" no puede gustar y disgustar a la vez`);
+    });
+    const fav = byId.get(prefs.favoriteItem as string);
+    if (!fav) errors.push(`${p}.favoriteItem: la prenda "${String(prefs.favoriteItem)}" no existe`);
+    else if (fav.secret === true) errors.push(`${p}.favoriteItem: "${fav.id}" es secreta`);
+    if (!dyeIds.has(prefs.favoriteDye as string)) errors.push(`${p}.favoriteDye: el frasco "${String(prefs.favoriteDye)}" no existe en dyes.json`);
+    if (!isText(prefs.hint)) errors.push(`${p}.hint: debe ser texto`);
+  });
+  return finish([...cats], errors);
+}
+
+export interface SetRefs {
+  clothes: readonly ClothingDef[];
+  dyes: readonly DyeDef[];
+  combos: readonly ComboDef[];
+  cats: readonly CatDef[];
+}
+
+/** Checks sets.json: every required id exists (and no item is secret) and every set asks for something. */
+export function validateSets(data: unknown, refs: SetRefs): Result<SetDef[]> {
+  const errors: string[] = [];
+  const items = new Map(refs.clothes.map((c) => [c.id, c]));
+  const dyeIds = new Set(refs.dyes.map((d) => d.id));
+  const comboIds = new Set(refs.combos.map((c) => c.id));
+  checkList('sets', data, ['id', 'name'], errors, (set, path) => {
+    if (!isTextList(set.reward)) errors.push(`${path}.reward: debe ser una lista de textos`);
+    const req = set.requires;
+    if (!isObj(req)) {
+      errors.push(`${path}.requires: debe ser un objeto`);
+      return;
+    }
+    const ids = (key: 'items' | 'dyes' | 'combos', problemOf: (id: string) => string | null) => {
+      const list = req[key];
+      if (list === undefined) return;
+      if (!isTextList(list)) errors.push(`${path}.requires.${key}: debe ser una lista de textos`);
+      else {
+        list.forEach((id, j) => {
+          const problem = problemOf(id);
+          if (problem) errors.push(`${path}.requires.${key}[${j}]: ${problem}`);
+        });
+      }
+    };
+    ids('items', (id) => {
+      const c = items.get(id);
+      return !c ? `la prenda "${id}" no existe` : c.secret === true ? `"${id}" es secreta` : null;
+    });
+    ids('dyes', (id) => (dyeIds.has(id) ? null : `el frasco "${id}" no existe`));
+    ids('combos', (id) => (comboIds.has(id) ? null : `el combo "${id}" no existe`));
+    if (req.keychains !== undefined) {
+      const kc = isObj(req.keychains) ? req.keychains : {};
+      if (!intIn(kc.count, 1, refs.cats.length)) {
+        errors.push(`${path}.requires.keychains.count: debe ser un entero entre 1 y ${refs.cats.length} (los gatos)`);
+      }
+      if (!intIn(kc.minStars, 1, 5)) errors.push(`${path}.requires.keychains.minStars: debe ser un entero entre 1 y 5`);
+    }
+    if (['items', 'dyes', 'combos', 'keychains'].every((key) => req[key] === undefined)) errors.push(`${path}.requires: debe pedir algo`);
+  });
+  return finish(data, errors);
+}
+
+/** Minimum starter pieces per section of the photo mode (design S6 and section 4). */
+export const MIN_PHOTO_STARTERS = { backgrounds: 2, frames: 1, stickers: 4, poses: 2 } as const;
+
+function checkKeychain(k: unknown, errors: string[]): void {
+  if (!isObj(k)) {
+    errors.push('photo.keychain: debe ser un objeto');
+    return;
+  }
+  const p = 'photo.keychain';
+  const gold = intIn(k.goldFrom, 1, 5);
+  const charm = intIn(k.charmFrom, 1, 5);
+  if (!gold) errors.push(`${p}.goldFrom: debe ser un entero entre 1 y 5`);
+  if (!charm) errors.push(`${p}.charmFrom: debe ser un entero entre 1 y 5`);
+  if (gold && charm && (k.charmFrom as number) < (k.goldFrom as number)) errors.push(`${p}: charmFrom no puede ser menor que goldFrom`);
+  if (!intIn(k.borderCopies, 12, 16)) errors.push(`${p}.borderCopies: debe ser un entero entre 12 y 16`);
+  if (!(isNum(k.borderRadius) && k.borderRadius > 0)) errors.push(`${p}.borderRadius: debe ser un número mayor que 0`);
+  if (!(typeof k.borderColor === 'string' && HEX.test(k.borderColor))) errors.push(`${p}.borderColor: "${String(k.borderColor)}" debe ser un color #RRGGBB`);
+  if (!(isNum(k.varnishAlpha) && k.varnishAlpha >= 0 && k.varnishAlpha <= 1)) errors.push(`${p}.varnishAlpha: debe estar entre 0 y 1`);
+}
+
+/** Checks photo.json against sets.json: unlocks, unique ids, textures per section, starters, rewards and keychain rules. */
+export function validatePhoto(data: unknown, sets: readonly SetDef[]): Result<PhotoCatalog> {
+  if (!isObj(data)) return { ok: false, errors: ['photo: debe ser un objeto'] };
+  const errors: string[] = [];
+  const setIds = new Set(sets.map((s) => s.id));
+  const listOf = new Map<string, string>();
+  const pieces = new Map<string, { path: string; unlock: unknown }>();
+  for (const key of ['backgrounds', 'frames', 'stickers', 'poses'] as const) {
+    const prefix = key === 'poses' ? null : PHOTO_SECTIONS[key].prefix;
+    let starters = 0;
+    checkList(`photo.${key}`, data[key], prefix ? ['id', 'name', 'texture'] : ['id', 'name'], errors, (piece, path) => {
+      if (isText(piece.id)) {
+        // checkList only sees repeats inside one list; set rewards point to ids of any list.
+        const owner = listOf.get(piece.id);
+        if (owner !== undefined && owner !== key) errors.push(`${path}.id: "${piece.id}" está repetido`);
+        if (owner === undefined) {
+          listOf.set(piece.id, key);
+          pieces.set(piece.id, { path, unlock: piece.unlock });
+        }
+      }
+      if (prefix && isText(piece.texture) && !piece.texture.startsWith(prefix)) errors.push(`${path}.texture: debe empezar con "${prefix}"`);
+      const u = piece.unlock;
+      if (u === 'starter') starters++;
+      else if (isObj(u) && 'set' in u) {
+        if (!(isText(u.set) && setIds.has(u.set))) errors.push(`${path}.unlock.set: el set "${String(u.set)}" no existe en sets.json`);
+      } else if (isObj(u) && 'albumPct' in u) {
+        if (!intIn(u.albumPct, 1, 100)) errors.push(`${path}.unlock.albumPct: debe ser un entero entre 1 y 100`);
+      } else if (!(isObj(u) && u.firstFiveStar === true)) {
+        errors.push(`${path}.unlock: debe ser "starter", { set }, { albumPct } o { firstFiveStar }`);
+      }
+      // The piece must be listed in the reward of the set that unlocks it.
+      if (isObj(u) && isText(u.set)) {
+        const owner = sets.find((s) => s.id === u.set);
+        if (owner && !owner.reward.includes(piece.id as string)) errors.push(`${path}.unlock.set: el set "${owner.id}" no lo da en su reward`);
+      }
+    });
+    if (Array.isArray(data[key]) && starters < MIN_PHOTO_STARTERS[key]) {
+      errors.push(`photo.${key}: debe haber al menos ${MIN_PHOTO_STARTERS[key]} piezas iniciales`);
+    }
+  }
+  checkKeychain(data.keychain, errors);
+  sets.forEach((set, i) => {
+    set.reward.forEach((id, j) => {
+      const u = pieces.get(id)?.unlock;
+      if (!pieces.has(id)) errors.push(`sets[${i}].reward[${j}]: la pieza "${id}" no existe en photo.json`);
+      else if (!(isObj(u) && u.set === set.id)) errors.push(`sets[${i}].reward[${j}]: "${id}" no tiene unlock { set: "${set.id}" }`);
+    });
+  });
+  return finish(data, errors);
+}
+
+/** Checks brand.json: the texts, the two characters and, if they have a texture, that it is in the manifest. */
+export function validateBrand(data: unknown, textures?: ReadonlySet<string>): Result<BrandDef> {
+  if (!isObj(data)) return { ok: false, errors: ['brand: debe ser un objeto'] };
+  const errors: string[] = [];
+  for (const k of ['shopSign', 'packagingLine', 'reverseLine', 'signature']) {
+    if (!isText(data[k])) errors.push(`brand.${k}: debe ser texto`);
+  }
+  for (const who of ['judge', 'seller']) {
+    const c = data[who];
+    if (!isObj(c)) {
+      errors.push(`brand.${who}: debe ser un objeto`);
+      continue;
+    }
+    if (!isText(c.name)) errors.push(`brand.${who}.name: debe ser texto`);
+    if (c.texture !== undefined && !(isText(c.texture) && (!textures || textures.has(c.texture)))) {
+      errors.push(`brand.${who}.texture: "${String(c.texture)}" no está en el manifiesto`);
+    }
+  }
+  return finish(data, errors);
+}
+
+/** Everything in src/game/data/, validated and cross checked. It is a Catalog plus the rule files (ADR 0017). */
+export interface GameData extends Catalog {
+  economy: EconomyRules;
+  dyes: DyeDef[];
+  sets: SetDef[];
+  photo: PhotoCatalog;
+  brand: BrandDef;
+}
+
+export interface RawGameData {
+  cats: unknown;
+  clothes: unknown;
+  combos: unknown;
+  economy: unknown;
+  dyes: unknown;
+  sets: unknown;
+  photo: unknown;
+  brand: unknown;
+  /** Texture keys of the manifest, to check the characters of brand.json. Without it that check is skipped (the manifest comes from this data). */
+  textures?: ReadonlySet<string>;
+}
+
+export function validateGameData(raw: RawGameData): Result<GameData> {
+  const base = validateCatalog(raw);
+  const economy = validateEconomy(raw.economy);
+  const dyes = validateDyes(raw.dyes);
+  const errors = [...(base.ok ? [] : base.errors), ...(economy.ok ? [] : economy.errors), ...(dyes.ok ? [] : dyes.errors)];
+  const brand = validateBrand(raw.brand, raw.textures);
+  if (!brand.ok) errors.push(...brand.errors);
+  if (base.ok && dyes.ok) {
+    const { cats, clothes, combos } = base.value;
+    const shop = validateShopRules(clothes, combos);
+    if (!shop.ok) errors.push(...shop.errors);
+    const prefs = validateCatPrefs(cats, clothes, dyes.value);
+    if (!prefs.ok) errors.push(...prefs.errors);
+    const sets = validateSets(raw.sets, { clothes, dyes: dyes.value, combos, cats });
+    if (!sets.ok) errors.push(...sets.errors);
+    else {
+      const photo = validatePhoto(raw.photo, sets.value);
+      if (!photo.ok) errors.push(...photo.errors);
+    }
+  }
+  const data: Partial<RawGameData> = { ...raw };
+  delete data.textures;
+  return finish(data, errors);
+}
+
+export function assertGameData(raw: RawGameData): GameData {
+  const r = validateGameData(raw);
+  if (!r.ok) throw new CatalogError(r.errors);
+  return r.value;
 }

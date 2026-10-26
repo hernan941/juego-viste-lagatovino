@@ -1,0 +1,9 @@
+[
+  { "id": "abriguito", "name": "Abriguito", "requires": { "items": ["head-beanie-pompon", "neck-bufanda-larga", "paws-mitones", "sweater-oversize", "paws-botitas"] }, "reward": ["bg-vichy"] },
+  { "id": "de-gala", "name": "De gala", "requires": { "items": ["head-sombrero-copa", "neck-mono", "neck-collar-perlas", "face-lentes-estrella", "sweater-chaleco"] }, "reward": ["frame-dorado"] },
+  { "id": "fresas-y-flores", "name": "Fresas y flores", "requires": { "items": ["sweater-fresa", "head-gorrito-fresa", "accessory-flor-oreja"], "combos": ["fresas"] }, "reward": ["sticker-fresa", "sticker-flor"] },
+  { "id": "michi-mood", "name": "Michi mood", "requires": { "items": ["sweater-hoodie-orejitas", "sweater-huellitas", "neck-collar-cascabel", "accessory-taza-leche", "accessory-ovillo"] }, "reward": ["sticker-kofi"] },
+  { "id": "la-paleta", "name": "La paleta", "requires": { "dyes": ["cielo", "rosa", "sol", "lila", "durazno", "naranjo", "lapiz", "frambuesa", "tomate", "hoja"] }, "reward": ["frame-acuarela"] },
+  { "id": "todos-los-secretos", "name": "Todos los secretos", "requires": { "combos": ["galactico", "navidad", "fresas", "realeza", "enamorado", "arcoiris"] }, "reward": ["bg-estrellas"] },
+  { "id": "colgador-dorado", "name": "Colgador dorado", "requires": { "keychains": { "count": 12, "minStars": 4 } }, "reward": [] }
+]

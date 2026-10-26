@@ -21,7 +21,7 @@ const svgsDeep = (dir, rel = '') =>
 
 const svgs = (dir) => (existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.svg')) : []);
 
-for (const sub of ['cats', 'clothes', 'ui', 'photo']) rmSync(join(OUT, sub), { recursive: true, force: true });
+for (const sub of ['cats', 'clothes', 'ui', 'photo', 'characters']) rmSync(join(OUT, sub), { recursive: true, force: true });
 
 let count = 0;
 const copy = (from, to) => {
@@ -39,7 +39,7 @@ for (const slot of existsSync(join(ART, 'clothes')) ? readdirSync(join(ART, 'clo
   for (const f of svgs(join(ART, 'clothes', slot))) copy(join(ART, 'clothes', slot, f), join(OUT, 'clothes', slot, f));
 }
 // UI and photo art live in subfolders (ui/keychain, ui/shop, ui/dyes, ui/album, ui/runway, photo/stickers…).
-for (const sub of ['ui', 'photo']) {
+for (const sub of ['ui', 'photo', 'characters']) {
   for (const f of svgsDeep(join(ART, sub))) copy(join(ART, sub, f), join(OUT, sub, f));
 }
 

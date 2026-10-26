@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!-- Viste Lagato · PROVISIONAL (F11.10): gato supervisor genérico con libreta. Lo reemplaza el arte de F15.3, sin tocar código ni JSON. -->
+  <g stroke="#1F1B1A" stroke-width="7" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M58 92 L52 38 L104 70 Z" fill="#A9A9B8"/>
+    <path d="M198 92 L204 38 L152 70 Z" fill="#A9A9B8"/>
+    <ellipse cx="128" cy="124" rx="86" ry="70" fill="#A9A9B8"/>
+    <rect x="86" y="178" width="84" height="62" rx="8" fill="#FFFCF5"/>
+  </g>
+  <g fill="#1F1B1A">
+    <circle cx="98" cy="118" r="8"/>
+    <circle cx="158" cy="118" r="8"/>
+  </g>
+  <path d="M112 142 Q120 152 128 142 Q136 152 144 142" fill="none" stroke="#1F1B1A" stroke-width="6" stroke-linecap="round"/>
+  <path d="M100 200 H156 M100 216 H140" stroke="#8FA8E3" stroke-width="5" stroke-linecap="round"/>
+</svg>

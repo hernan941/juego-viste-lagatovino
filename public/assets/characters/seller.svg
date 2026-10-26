@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!-- Viste Lagato · PROVISIONAL (F11.10): la vendedora es solo una mano que ofrece una etiqueta. Lo reemplaza el arte de F15.3, sin tocar código ni JSON. -->
+  <g stroke="#1F1B1A" stroke-width="7" stroke-linejoin="round" stroke-linecap="round">
+    <rect x="124" y="40" width="84" height="110" rx="10" fill="#F1D1C0" transform="rotate(10 166 95)"/>
+    <path d="M40 210 Q36 150 70 136 L120 124 Q146 120 150 140 Q154 160 128 168 L98 174 L110 210 Z" fill="#F1D1C0"/>
+  </g>
+  <circle cx="176" cy="62" r="7" fill="#FFFCF5" stroke="#1F1B1A" stroke-width="5"/>
+</svg>

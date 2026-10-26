@@ -221,11 +221,14 @@ export interface KeychainRules {
   varnishAlpha: number;
 }
 
+/** A pose is a transformation of the cat (no art of its own), so it has no texture. */
+export type PhotoPose = Omit<PhotoPiece, 'texture'>;
+
 export interface PhotoCatalog {
   backgrounds: PhotoPiece[];
   frames: PhotoPiece[];
   stickers: PhotoPiece[];
-  poses: PhotoPiece[];
+  poses: PhotoPose[];
   keychain: KeychainRules;
 }
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CatalogError, assertCatalog, validateCats, validateCatalog, validateClothes, validateCombos,
   validateDyes, validateEconomy, validateShopRules,
+  assertGameData, validateBrand, validateCatPrefs, validateGameData, validatePhoto, validateSets,
 } from '../../src/game/data/schema';
 
 const cat = { id: 'naranja', name: 'Naranjito', coat: 'Atigrado naranja', texture: 'cat-naranja' };
@@ -315,5 +316,223 @@ describe('validateShopRules (F11.9)', () => {
     expect(errorsOf(validateShopRules([starterA, lockedB, gift] as never, [duo] as never))).toContain(
       'combos: las prendas iniciales deben completar al menos un combo',
     );
+  });
+});
+
+// ---- F11.10: tastes, sets, photo and brand (ADR 0017) ----
+const prefs = (over: Record<string, unknown> = {}) => ({
+  loves: ['lana', 'gala'], dislikes: ['tierno'], favoriteItem: 'sweater-rayas', favoriteDye: 'rosa', hint: 'Serio. Muy serio.', ...over,
+});
+const tasteCat = (over: Record<string, unknown> = {}) => ({ ...cat, prefs: prefs(), ...over });
+const tasteClothes = [
+  cloth({ tags: ['lana', 'tierno'] }),
+  cloth({ id: 'face-gafas', slot: 'face', category: 'face', tags: ['gala'] }),
+  cloth({ id: 'gift-hat', slot: 'head', category: 'head', secret: true, tags: ['magia'] }),
+] as never;
+const tasteDyes = [dye(), dye({ id: 'cielo', name: 'Cielo', hex: '#CFE0F3', starter: undefined })] as never;
+
+describe('validateCatPrefs (F11.10)', () => {
+  it('accepts valid tastes', () => {
+    expect(validateCatPrefs([tasteCat()] as never, tasteClothes, tasteDyes).ok).toBe(true);
+  });
+
+  it('wants prefs on every cat', () => {
+    expect(errorsOf(validateCatPrefs([cat] as never, tasteClothes, tasteDyes))).toContain('cats[0].prefs: debe ser un objeto');
+  });
+
+  it('wants 2 loved tags and 1 hated tag, as text', () => {
+    const msg = errorsOf(validateCatPrefs([tasteCat({ prefs: prefs({ loves: ['lana'], dislikes: [] }) })] as never, tasteClothes, tasteDyes));
+    expect(msg).toContain('cats[0].prefs.loves: deben ser 2 tags');
+    expect(msg).toContain('cats[0].prefs.dislikes: deben ser 1 tags');
+    expect(errorsOf(validateCatPrefs([tasteCat({ prefs: prefs({ loves: ['lana', 4] }) })] as never, tasteClothes, tasteDyes))).toContain('cats[0].prefs.loves: deben ser 2 tags');
+  });
+
+  it('wants the tags to exist in a visible item (not only in a secret one)', () => {
+    const msg = errorsOf(validateCatPrefs([tasteCat({ prefs: prefs({ loves: ['lana', 'magia'], dislikes: ['nada'] }) })] as never, tasteClothes, tasteDyes));
+    expect(msg).toContain('cats[0].prefs.loves[1]: ninguna prenda visible tiene el tag "magia"');
+    expect(msg).toContain('cats[0].prefs.dislikes[0]: ninguna prenda visible tiene el tag "nada"');
+  });
+
+  it('does not let a cat love and hate the same tag', () => {
+    const msg = errorsOf(validateCatPrefs([tasteCat({ prefs: prefs({ loves: ['lana', 'gala'], dislikes: ['gala'] }) })] as never, tasteClothes, tasteDyes));
+    expect(msg).toContain('cats[0].prefs.dislikes[0]: "gala" no puede gustar y disgustar a la vez');
+  });
+
+  it('wants a favorite that exists and is not secret, and a color from dyes.json', () => {
+    const missing = errorsOf(validateCatPrefs([tasteCat({ prefs: prefs({ favoriteItem: 'nada', favoriteDye: 'verde' }) })] as never, tasteClothes, tasteDyes));
+    expect(missing).toContain('cats[0].prefs.favoriteItem: la prenda "nada" no existe');
+    expect(missing).toContain('cats[0].prefs.favoriteDye: el frasco "verde" no existe en dyes.json');
+    const secretFav = errorsOf(validateCatPrefs([tasteCat({ prefs: prefs({ favoriteItem: 'gift-hat' }) })] as never, tasteClothes, tasteDyes));
+    expect(secretFav).toContain('cats[0].prefs.favoriteItem: "gift-hat" es secreta');
+  });
+
+  it('wants a hint', () => {
+    expect(errorsOf(validateCatPrefs([tasteCat({ prefs: prefs({ hint: '' }) })] as never, tasteClothes, tasteDyes))).toContain('cats[0].prefs.hint: debe ser texto');
+  });
+});
+
+const refs = {
+  clothes: tasteClothes,
+  dyes: tasteDyes,
+  combos: [combo()] as never,
+  cats: [cat] as never,
+};
+const set = (over: Record<string, unknown> = {}) => ({ id: 'abrigo', name: 'Abriguito', requires: { items: ['sweater-rayas'] }, reward: ['bg-vichy'], ...over });
+
+describe('validateSets (F11.10)', () => {
+  it('accepts every kind of requirement', () => {
+    const full = set({ requires: { items: ['sweater-rayas'], dyes: ['rosa'], combos: ['navidad'], keychains: { count: 1, minStars: 4 } } });
+    expect(validateSets([full], refs).ok).toBe(true);
+  });
+
+  it('rejects ids that do not exist', () => {
+    const msg = errorsOf(validateSets([set({ requires: { items: ['nada'], dyes: ['verde'], combos: ['nope'] } })], refs));
+    expect(msg).toContain('sets[0].requires.items[0]: la prenda "nada" no existe');
+    expect(msg).toContain('sets[0].requires.dyes[0]: el frasco "verde" no existe');
+    expect(msg).toContain('sets[0].requires.combos[0]: el combo "nope" no existe');
+  });
+
+  it('does not let a set ask for a secret item', () => {
+    expect(errorsOf(validateSets([set({ requires: { items: ['gift-hat'] } })], refs))).toContain('sets[0].requires.items[0]: "gift-hat" es secreta');
+  });
+
+  it('wants at least one requirement and a valid keychain requirement', () => {
+    expect(errorsOf(validateSets([set({ requires: {} })], refs))).toContain('sets[0].requires: debe pedir algo');
+    const msg = errorsOf(validateSets([set({ requires: { keychains: { count: 99, minStars: 7 } } })], refs));
+    expect(msg).toContain('sets[0].requires.keychains.count: debe ser un entero entre 1 y 1 (los gatos)');
+    expect(msg).toContain('sets[0].requires.keychains.minStars: debe ser un entero entre 1 y 5');
+  });
+
+  it('wants reward to be a list of text, and requires to be an object', () => {
+    expect(errorsOf(validateSets([set({ reward: 'x' })], refs))).toContain('sets[0].reward: debe ser una lista de textos');
+    expect(errorsOf(validateSets([set({ requires: [] })], refs))).toContain('sets[0].requires: debe ser un objeto');
+  });
+
+  it('rejects repeated ids', () => {
+    expect(errorsOf(validateSets([set(), set()], refs))).toContain('sets[1].id: "abrigo" está repetido');
+  });
+});
+
+const piece = (id: string, section: string, over: Record<string, unknown> = {}) => ({
+  id, name: id, texture: `photo-${section}-${id.slice(id.indexOf('-') + 1)}`, unlock: 'starter', ...over,
+});
+const photo = (over: Record<string, unknown> = {}) => ({
+  backgrounds: [piece('bg-a', 'bg'), piece('bg-b', 'bg'), piece('bg-vichy', 'bg', { unlock: { set: 'abrigo' } })],
+  frames: [piece('frame-a', 'frame')],
+  stickers: ['a', 'b', 'c', 'd'].map((n) => piece(`sticker-${n}`, 'sticker')),
+  poses: [{ id: 'pose-a', name: 'a', unlock: 'starter' }, { id: 'pose-b', name: 'b', unlock: 'starter' }, { id: 'pose-d', name: 'd', unlock: { firstFiveStar: true } }, { id: 'pose-c', name: 'c', unlock: { albumPct: 75 } }],
+  keychain: { goldFrom: 4, charmFrom: 5, borderCopies: 14, borderRadius: 14, borderColor: '#FFFCF5', varnishAlpha: 0.5 },
+  ...over,
+});
+const goodSets = [set()] as never;
+
+describe('validatePhoto (F11.10)', () => {
+  it('accepts a valid catalog', () => {
+    const r = validatePhoto(photo(), goodSets);
+    expect(r.ok ? [] : r.errors).toEqual([]);
+  });
+
+  it('wants lists of pieces with text fields', () => {
+    expect(errorsOf(validatePhoto(photo({ frames: {} }), goodSets))).toContain('photo.frames: debe ser un arreglo');
+    expect(errorsOf(validatePhoto(photo({ frames: [piece('frame-a', 'frame', { texture: '' })] }), goodSets))).toContain('photo.frames[0].texture: debe ser texto');
+  });
+
+  it('wants ids that are unique across the whole catalog (set rewards point to them)', () => {
+    const msg = errorsOf(validatePhoto(photo({ frames: [piece('bg-a', 'frame')] }), goodSets));
+    expect(msg).toContain('photo.frames[0].id: "bg-a" está repetido');
+  });
+
+  it('wants the texture to follow the key of its section', () => {
+    const msg = errorsOf(validatePhoto(photo({ backgrounds: [piece('bg-a', 'bg', { texture: 'otra' }), piece('bg-b', 'bg')] }), goodSets));
+    expect(msg).toContain('photo.backgrounds[0].texture: debe empezar con "photo-bg-"');
+  });
+
+  it('checks the unlock', () => {
+    const bad = (unlock: unknown) => errorsOf(validatePhoto(photo({ frames: [piece('frame-a', 'frame', { unlock })] }), goodSets));
+    expect(bad('gratis')).toContain('photo.frames[0].unlock: debe ser "starter", { set }, { albumPct } o { firstFiveStar }');
+    expect(bad({ albumPct: 0 })).toContain('photo.frames[0].unlock.albumPct: debe ser un entero entre 1 y 100');
+    expect(bad({ set: 'nope' })).toContain('photo.frames[0].unlock.set: el set "nope" no existe en sets.json');
+  });
+
+  it('wants the starters the design asks for', () => {
+    const msg = errorsOf(validatePhoto(photo({ stickers: [piece('sticker-a', 'sticker')], frames: [piece('frame-a', 'frame', { unlock: { albumPct: 50 } })] }), goodSets));
+    expect(msg).toContain('photo.stickers: debe haber al menos 4 piezas iniciales');
+    expect(msg).toContain('photo.frames: debe haber al menos 1 piezas iniciales');
+  });
+
+  it('keeps sets and pieces in agreement', () => {
+    expect(errorsOf(validatePhoto(photo(), [set({ reward: ['nope'] })] as never))).toContain('sets[0].reward[0]: la pieza "nope" no existe en photo.json');
+    expect(errorsOf(validatePhoto(photo(), [set({ reward: ['bg-a'] })] as never))).toContain('sets[0].reward[0]: "bg-a" no tiene unlock { set: "abrigo" }');
+    expect(errorsOf(validatePhoto(photo(), [set({ reward: [] })] as never))).toContain('photo.backgrounds[2].unlock.set: el set "abrigo" no lo da en su reward');
+  });
+
+  it('checks the keychain rules', () => {
+    const k = (over: Record<string, unknown>) => errorsOf(validatePhoto(photo({ keychain: { ...photo().keychain, ...over } }), goodSets));
+    expect(k({ goldFrom: 0 })).toContain('photo.keychain.goldFrom: debe ser un entero entre 1 y 5');
+    expect(k({ goldFrom: 5, charmFrom: 4 })).toContain('photo.keychain: charmFrom no puede ser menor que goldFrom');
+    expect(k({ borderCopies: 4 })).toContain('photo.keychain.borderCopies: debe ser un entero entre 12 y 16');
+    expect(k({ borderRadius: 0 })).toContain('photo.keychain.borderRadius: debe ser un número mayor que 0');
+    expect(k({ borderColor: 'crema' })).toContain('photo.keychain.borderColor: "crema" debe ser un color #RRGGBB');
+    expect(k({ varnishAlpha: 2 })).toContain('photo.keychain.varnishAlpha: debe estar entre 0 y 1');
+    expect(errorsOf(validatePhoto(photo({ keychain: null }), goodSets))).toContain('photo.keychain: debe ser un objeto');
+  });
+
+  it('rejects non objects', () => {
+    expect(errorsOf(validatePhoto([], goodSets))).toContain('photo: debe ser un objeto');
+  });
+});
+
+const brand = (over: Record<string, unknown> = {}) => ({
+  judge: { name: 'Gato supervisor', texture: 'char-judge' },
+  seller: { name: 'La vendedora' },
+  shopSign: 'Lagatovino', packagingLine: 'Hecho a mano', reverseLine: 'Hecho a mano · {date}', signature: 'Xoxo, mau!',
+  ...over,
+});
+
+describe('validateBrand (F11.10)', () => {
+  it('accepts a valid brand, with or without textures', () => {
+    expect(validateBrand(brand(), new Set(['char-judge'])).ok).toBe(true);
+  });
+
+  it('wants the texts and the two characters', () => {
+    const msg = errorsOf(validateBrand(brand({ shopSign: '', judge: null, seller: { name: '' } }), new Set()));
+    expect(msg).toContain('brand.shopSign: debe ser texto');
+    expect(msg).toContain('brand.judge: debe ser un objeto');
+    expect(msg).toContain('brand.seller.name: debe ser texto');
+  });
+
+  it('wants the texture, when there is one, to be in the manifest', () => {
+    expect(errorsOf(validateBrand(brand(), new Set()))).toContain('brand.judge.texture: "char-judge" no está en el manifiesto');
+  });
+
+  it('rejects non objects', () => {
+    expect(errorsOf(validateBrand(7, new Set()))).toContain('brand: debe ser un objeto');
+  });
+});
+
+describe('validateGameData (F11.10)', () => {
+  const raw = () => ({
+    cats: [tasteCat()], clothes: [cloth({ starter: true, tags: ['lana', 'tierno'] }), cloth({ id: 'face-gafas', slot: 'face', category: 'face', starter: true, tags: ['gala'] }), secret],
+    combos: [combo({ requires: [{ itemId: 'sweater-rayas' }, { itemId: 'face-gafas' }] })],
+    economy: economy(), dyes: [dye(), dye({ id: 'cielo', name: 'Cielo', hex: '#CFE0F3', starter: undefined })],
+    sets: [set()], photo: photo(), brand: brand(), textures: new Set(['char-judge']),
+  });
+
+  it('accepts a coherent data set and returns every file', () => {
+    const r = validateGameData(raw() as never);
+    expect(r.ok ? [] : r.errors).toEqual([]);
+    if (r.ok) expect(Object.keys(r.value).sort()).toEqual(['brand', 'cats', 'clothes', 'combos', 'dyes', 'economy', 'photo', 'sets']);
+  });
+
+  it('gathers the errors of every file', () => {
+    const bad = { ...raw(), economy: economy({ startWallet: -1 }), brand: brand({ signature: '' }) };
+    const r = validateGameData(bad as never);
+    expect(errorsOf(r)).toContain('economy.startWallet');
+    expect(errorsOf(r)).toContain('brand.signature');
+  });
+
+  it('assertGameData throws a CatalogError and returns the data otherwise', () => {
+    expect(() => assertGameData({ ...raw(), economy: null } as never)).toThrow(CatalogError);
+    expect(assertGameData(raw() as never).economy.startWallet).toBe(100);
   });
 });

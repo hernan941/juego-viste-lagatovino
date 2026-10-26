@@ -1,0 +1,38 @@
+{
+  "backgrounds": [
+    { "id": "bg-cuadriculado", "name": "Cuadriculado", "texture": "photo-bg-cuadriculado", "unlock": "starter" },
+    { "id": "bg-cielo", "name": "Cielo con nubes", "texture": "photo-bg-cielo", "unlock": "starter" },
+    { "id": "bg-vichy", "name": "Vichy celeste", "texture": "photo-bg-vichy", "unlock": { "set": "abriguito" } },
+    { "id": "bg-rayado", "name": "Rayado", "texture": "photo-bg-rayado", "unlock": { "albumPct": 50 } },
+    { "id": "bg-estrellas", "name": "Estrellas", "texture": "photo-bg-estrellas", "unlock": { "set": "todos-los-secretos" } },
+    { "id": "bg-escenario", "name": "Escenario", "texture": "photo-bg-escenario", "unlock": { "firstFiveStar": true } }
+  ],
+  "frames": [
+    { "id": "frame-polaroid", "name": "Polaroid", "texture": "photo-frame-polaroid", "unlock": "starter" },
+    { "id": "frame-cuaderno", "name": "Cuaderno", "texture": "photo-frame-cuaderno", "unlock": { "albumPct": 25 } },
+    { "id": "frame-dorado", "name": "Dorado", "texture": "photo-frame-dorado", "unlock": { "set": "de-gala" } },
+    { "id": "frame-acuarela", "name": "Acuarela", "texture": "photo-frame-acuarela", "unlock": { "set": "la-paleta" } },
+    { "id": "frame-kofi", "name": "Kofi aprueba", "texture": "photo-frame-kofi", "unlock": { "albumPct": 100 } }
+  ],
+  "stickers": [
+    { "id": "sticker-estrella", "name": "Estrella", "texture": "photo-sticker-estrella", "unlock": "starter" },
+    { "id": "sticker-corazon", "name": "Corazón", "texture": "photo-sticker-corazon", "unlock": "starter" },
+    { "id": "sticker-huellita", "name": "Huellita", "texture": "photo-sticker-huellita", "unlock": "starter" },
+    { "id": "sticker-xoxo", "name": "Xoxo, mau!", "texture": "photo-sticker-xoxo", "unlock": "starter" },
+    { "id": "sticker-fresa", "name": "Fresa", "texture": "photo-sticker-fresa", "unlock": { "set": "fresas-y-flores" } },
+    { "id": "sticker-flor", "name": "Flor", "texture": "photo-sticker-flor", "unlock": { "set": "fresas-y-flores" } },
+    { "id": "sticker-kofi", "name": "Kofi", "texture": "photo-sticker-kofi", "unlock": { "set": "michi-mood" } },
+    { "id": "sticker-zzz", "name": "Zzz", "texture": "photo-sticker-zzz", "unlock": { "albumPct": 75 } },
+    { "id": "sticker-nube", "name": "Nube", "texture": "photo-sticker-nube", "unlock": { "albumPct": 25 } },
+    { "id": "sticker-ovillo", "name": "Ovillo", "texture": "photo-sticker-ovillo", "unlock": { "albumPct": 25 } },
+    { "id": "sticker-pescadito", "name": "Pescadito", "texture": "photo-sticker-pescadito", "unlock": { "albumPct": 25 } },
+    { "id": "sticker-luna", "name": "Luna", "texture": "photo-sticker-luna", "unlock": { "albumPct": 25 } }
+  ],
+  "poses": [
+    { "id": "pose-sentadito", "name": "Sentadito", "unlock": "starter" },
+    { "id": "pose-coqueto", "name": "Coqueto", "unlock": "starter" },
+    { "id": "pose-saltito", "name": "Saltito", "unlock": { "firstFiveStar": true } },
+    { "id": "pose-dormilon", "name": "Dormilón", "unlock": { "albumPct": 75 } }
+  ],
+  "keychain": { "goldFrom": 4, "charmFrom": 5, "borderCopies": 14, "borderRadius": 14, "borderColor": "#FFFCF5", "varnishAlpha": 0.5 }
+}

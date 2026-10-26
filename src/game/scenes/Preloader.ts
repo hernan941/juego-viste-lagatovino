@@ -5,7 +5,12 @@ import { buildAudioManifest, buildManifest } from '../data/assets';
 import catsJson from '../data/cats.json';
 import clothesJson from '../data/clothes.json';
 import combosJson from '../data/combos.json';
-import { assertCatalog, validateAnchors, type Catalog } from '../data/schema';
+import brandJson from '../data/brand.json';
+import dyesJson from '../data/dyes.json';
+import economyJson from '../data/economy.json';
+import photoJson from '../data/photo.json';
+import setsJson from '../data/sets.json';
+import { CatalogError, assertGameData, validateAnchors, validateBrand, type Catalog } from '../data/schema';
 import { createParticleTextures } from '../objects/particleTextures';
 import { createTabIconTextures } from '../objects/tabIcons';
 import { chooseCat, emptySession } from '../domain/session';
@@ -113,15 +118,20 @@ export class Preloader extends Scene {
 
   preload() {
     // Fail early on bad data (ADR 0010), then load exactly what the catalog lists.
-    const catalog = assertCatalog({ cats: catsJson, clothes: clothesJson, combos: combosJson });
+    const raw = { cats: catsJson, clothes: clothesJson, combos: combosJson, economy: economyJson, dyes: dyesJson, sets: setsJson, photo: photoJson, brand: brandJson };
+    const catalog = assertGameData(raw);
+    // The manifest is derived from the same JSON; the characters of brand.json must be in it.
+    const manifest = buildManifest(catalog.cats, catalog.clothes, catalog);
+    const brand = validateBrand(catalog.brand, new Set(manifest.map((a) => a.key)));
+    if (!brand.ok) throw new CatalogError(brand.errors);
     const anchors = validateAnchors(anchorsJson);
     if (!anchors.ok) throw new Error(`Anclas inválidas:\n- ${anchors.errors.join('\n- ')}`);
     this.registry.set(RegistryKeys.Catalog, catalog);
     this.registry.set(RegistryKeys.Anchors, anchors.value);
     // The cat, name and outfit of the last visit (ADR 0004): CatSelect preselects them and DressUp wears them.
     getSave(this).restoreInto(catalog);
-    for (const a of buildManifest(catalog.cats, catalog.clothes)) {
-      this.load.svg(a.key, a.path, { width: a.size, height: a.size });
+    for (const a of manifest) {
+      this.load.svg(a.key, a.path, { width: a.size, height: a.height ?? a.size });
     }
     for (const a of buildAudioManifest()) this.load.audio(a.key, a.urls);
   }
