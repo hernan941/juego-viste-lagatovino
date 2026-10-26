@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Viste Lagato · textura de barniz: 3 brillos blancos suaves sobre el lienzo de 512 del gato (art-direction v2, ADR 0016). -->
+<!-- Se recorta a la silueta del llavero con un filtro de máscara (ADR 0021). Solo manchas blancas translúcidas. -->
+  <ellipse cx="186" cy="132" rx="52" ry="15" fill="#FFFFFF" fill-opacity="0.62" transform="rotate(-18 186 132)"/>
+  <circle cx="246" cy="108" r="8" fill="#FFFFFF" fill-opacity="0.62"/>
+  <ellipse cx="338" cy="150" rx="22" ry="7" fill="#FFFFFF" fill-opacity="0.45" transform="rotate(-18 338 150)"/>
+  <ellipse cx="170" cy="392" rx="30" ry="9" fill="#FFFFFF" fill-opacity="0.5" transform="rotate(-24 170 392)"/>
+  <circle cx="208" cy="372" r="5" fill="#FFFFFF" fill-opacity="0.5"/>
+</svg>

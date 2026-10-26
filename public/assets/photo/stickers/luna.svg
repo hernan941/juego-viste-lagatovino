@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- Viste Lagato · sticker "luna": luna creciente con ✦ (art-direction v2, ADR 0016). -->
+<!-- Borde blanco de sticker (silueta engrosada 9 px), sombra suave abajo a la derecha y dibujo con contorno de tinta. -->
+  <g fill="#1F1B1A" fill-opacity="0.16" stroke="#1F1B1A" stroke-opacity="0.16" stroke-width="18" stroke-linejoin="round" stroke-linecap="round" transform="translate(3 4)"><path d="M61.69 26.17 A40 40 0 1 0 92.07 86.95 A34 34 0 0 1 61.69 26.17 Z"/><path d="M98 24 Q100.8 35.2 112 38 Q100.8 40.8 98 52 Q95.2 40.8 84 38 Q95.2 35.2 98 24 Z"/></g>
+  <g fill="#FFFFFF" stroke="#FFFFFF" stroke-width="18" stroke-linejoin="round" stroke-linecap="round"><path d="M61.69 26.17 A40 40 0 1 0 92.07 86.95 A34 34 0 0 1 61.69 26.17 Z"/><path d="M98 24 Q100.8 35.2 112 38 Q100.8 40.8 98 52 Q95.2 40.8 84 38 Q95.2 35.2 98 24 Z"/></g>
+  <path d="M61.69 26.17 A40 40 0 1 0 92.07 86.95 A34 34 0 0 1 61.69 26.17 Z" fill="#F3C04A" stroke="#1F1B1A" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M30 60 Q34 42 48 34" fill="none" stroke="#FFFFFF" stroke-opacity="0.75" stroke-width="5" stroke-linecap="round"/>
+  <path d="M98 24 Q100.8 35.2 112 38 Q100.8 40.8 98 52 Q95.2 40.8 84 38 Q95.2 35.2 98 24 Z" fill="#FFFCF5" stroke="#1F1B1A" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+  <circle cx="106" cy="92" r="3.4" fill="#FFFCF5" stroke="#1F1B1A" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>

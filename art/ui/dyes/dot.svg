@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <!-- Viste Lagato · puntito: marca de color en la esquina de una prenda teñida (se tiñe) (art-direction v2, ADR 0016). -->
+<circle cx="12" cy="12" r="9" fill="#FFFFFF" stroke="#1F1B1A" stroke-width="3"/>
+  <circle cx="8.5" cy="8.5" r="2" fill="#FFFFFF" fill-opacity="0.9"/>
+</svg>

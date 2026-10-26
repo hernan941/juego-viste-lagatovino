@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 675" width="540" height="675">
+  <!-- Viste Lagato · fondo "rayado" del modo foto: rayas rosa y crema (hito del 50 % del álbum) (art-direction v2, ADR 0016). -->
+<!-- (el gato se pone en el centro de la foto; el borde y la ventana de los marcos lo respetan) -->
+  <rect width="540" height="675" fill="#FFFCF5"/>
+  <g fill="#F6BFD0"><rect x="0" y="0" width="30" height="675"/><rect x="60" y="0" width="30" height="675"/><rect x="120" y="0" width="30" height="675"/><rect x="180" y="0" width="30" height="675"/><rect x="240" y="0" width="30" height="675"/><rect x="300" y="0" width="30" height="675"/><rect x="360" y="0" width="30" height="675"/><rect x="420" y="0" width="30" height="675"/><rect x="480" y="0" width="30" height="675"/></g>
+</svg>

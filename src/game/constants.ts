@@ -195,6 +195,34 @@ export const SfxKeys = {
   Key: 'sfx-key',
   /** Gift reveal: paper and ribbon (F8). */
   Gift: 'sfx-gift',
+  /** Rating star stamped: soft "tump" (F12.11). */
+  Stamp: 'sfx-stamp',
+  /** Buttons flying into the purse: button against button (F12.11). */
+  Clink: 'sfx-clink',
+  /** Buying: scissors cutting the price tag thread (F12.11). */
+  Snip: 'sfx-snip',
+  /** Buying: very soft cash register (F12.11). */
+  Register: 'sfx-register',
+  /** Dyeing: picking up a dye bottle, the cork pops (F12.11). */
+  Uncork: 'sfx-uncork',
+  /** Dyeing: liquid "blup" when the color hits the garment (F12.11). */
+  Blup: 'sfx-blup',
+  /** Turning an album page (F12.11). */
+  Paper: 'sfx-paper',
+  /** Sticking washi tape (F12.11). */
+  Tape: 'sfx-tape',
+  /** Peeling a sticker off the sheet (F12.11). */
+  Peel: 'sfx-peel',
+  /** Keychain: the kiln "fuuu" (F12.11). */
+  Oven: 'sfx-oven',
+  /** Keychain: glassy "ching" of the varnish (F12.11). */
+  Varnish: 'sfx-varnish',
+  /** Keychain: metallic "tic" of the eyelet screwing in (F12.11). */
+  Latch: 'sfx-latch',
+  /** Keychain: little chain jingle (F12.11). */
+  Chain: 'sfx-chain',
+  /** Keychain: porcelain "tink" at each swing end (F12.11). */
+  Porcelain: 'sfx-porcelain',
   Meow1: 'sfx-meow-1',
   Meow2: 'sfx-meow-2',
   Meow3: 'sfx-meow-3',

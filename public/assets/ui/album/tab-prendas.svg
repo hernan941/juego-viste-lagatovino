@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 96" width="220" height="96">
+  <!-- Viste Lagato · pestaña índice "prendas" del cuaderno (art-direction v2, ADR 0016). -->
+<!-- Color de la marca. La activa sobresale 10 px más (lo hace el código). El texto lo pone Phaser en el centro (110, 46). Sin contorno abajo: se funde con la hoja. -->
+  <path d="M6 96 V28 Q6 8 26 8 H194 Q214 8 214 28 V96 Z" fill="#CFE0F3"/>
+  <path d="M6 96 V76 H214 V96 Z" fill="#B0BECF" fill-opacity="0.35"/>
+  <path d="M6 96 V28 Q6 8 26 8 H194 Q214 8 214 28 V96" fill="none" stroke="#1F1B1A" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M24 22 H110" stroke="#FFFFFF" stroke-opacity="0.65" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="196" cy="24" r="3.4" fill="#FFFFFF" fill-opacity="0.7"/>
+</svg>

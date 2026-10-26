@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 144 128" width="144" height="128">
+  <!-- Viste Lagato · sticker "xoxo": "Xoxo, mau!" escrito a mano (inicial) (art-direction v2, ADR 0016). -->
+<!-- Borde blanco de sticker (silueta engrosada 9 px), sombra suave abajo a la derecha y dibujo con contorno de tinta. -->
+  <g fill="#1F1B1A" fill-opacity="0.16" stroke="#1F1B1A" stroke-opacity="0.16" stroke-width="18" stroke-linejoin="round" stroke-linecap="round" transform="translate(3 4)"><path d="M38 14 H106 Q132 14 132 40 V88 Q132 114 106 114 H38 Q12 114 12 88 V40 Q12 14 38 14 Z"/></g>
+  <g fill="#FFFFFF" stroke="#FFFFFF" stroke-width="18" stroke-linejoin="round" stroke-linecap="round"><path d="M38 14 H106 Q132 14 132 40 V88 Q132 114 106 114 H38 Q12 114 12 88 V40 Q12 14 38 14 Z"/></g>
+  <path d="M38 14 H106 Q132 14 132 40 V88 Q132 114 106 114 H38 Q12 114 12 88 V40 Q12 14 38 14 Z" fill="#F6BFD0" stroke="#1F1B1A" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M22 31 L46 61 M46 31 L22 61 M49 47 a9 11 0 1 0 18 0 a9 11 0 1 0 -18 0 M71 37 L89 57 M89 37 L71 57 M93 47 a9 11 0 1 0 18 0 a9 11 0 1 0 -18 0 M120 56 q3 4 -3 13 M24 99 V79 M24 85 Q31 74 38 85 V99 M38 85 Q45 74 52 85 V99 M60 90 a9 9 0 1 0 18 0 a9 9 0 1 0 -18 0 M78 80 V99 M89 79 V90 Q89 100 98 99 Q107 99 107 89 V79 M107 89 V99 M120 73 V91" fill="none" stroke="#1F1B1A" stroke-width="4.2" stroke-linejoin="round" stroke-linecap="round"/>
+  <circle cx="120" cy="100" r="2.6" fill="#1F1B1A"/>
+  <path d="M28 26 H60" stroke="#FFFFFF" stroke-opacity="0.7" stroke-width="4" stroke-linecap="round"/>
+  <path d="M124 20 Q125.6 26.4 132 28 Q125.6 29.6 124 36 Q122.4 29.6 116 28 Q122.4 26.4 124 20 Z" fill="#F3C04A" stroke="#1F1B1A" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>

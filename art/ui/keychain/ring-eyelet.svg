@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 80" width="64" height="80">
+  <!-- Viste Lagato · armellita del llavero: ojal de tornillo que se atornilla en la cabeza (art-direction v2, ADR 0016). -->
+<!-- Sombra única en el lado de abajo; brillo blanco arriba a la izquierda. Se ancla por el centro de la rosca (32, 74). -->
+  <g stroke="#1F1B1A" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round">
+  <rect x="26" y="42" width="12" height="32" rx="4" fill="#D9DEE8"/>
+  <path d="M26 52 L38 48 M26 59 L38 55 M26 66 L38 62" fill="none" stroke-width="3"/>
+  <path d="M12 26 a20 20 0 1 0 40 0 a20 20 0 1 0 -40 0 Z M23 26 a9 9 0 1 0 18 0 a9 9 0 1 0 -18 0 Z" fill="#D9DEE8" fill-rule="evenodd"/></g>
+  <path d="M46 34 A15 15 0 0 1 22 40" fill="none" stroke="#B8BDC5" stroke-width="5" stroke-linecap="round"/>
+  <path d="M17 22 A15 15 0 0 1 28 12" fill="none" stroke="#FFFFFF" stroke-opacity="0.75" stroke-width="3.5" stroke-linecap="round"/>
+</svg>

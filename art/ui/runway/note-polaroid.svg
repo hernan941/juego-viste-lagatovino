@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 300" width="260" height="300">
+  <!-- Viste Lagato · nota polaroid de eventos de progreso con washi (art-direction v2, ADR 0016). -->
+<!-- Ventana (24, 28) a (236, 216) para el icono del evento; la leyenda (Gaegu) va en el margen de abajo, centrada en (130, 254). -->
+  <path d="M24 14 H240 Q254 14 254 28 V280 Q254 294 240 294 H24 Q10 294 10 280 V28 Q10 14 24 14 Z" fill="#F4EEE3"/>
+  <path d="M20 10 H236 Q250 10 250 24 V276 Q250 290 236 290 H20 Q6 290 6 276 V24 Q6 10 20 10 Z" fill="#FFFFFF" stroke="#1F1B1A" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M32 28 H228 Q236 28 236 36 V208 Q236 216 228 216 H32 Q24 216 24 208 V36 Q24 28 32 28 Z" fill="#FFFCF5" stroke="#E8E0D2" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M30 60 H230 M30 96 H230 M30 132 H230 M30 168 H230 M30 204 H230" stroke="#C9DBF1" stroke-width="2" fill="none" opacity="0.8"/>
+  <path d="M212 42 Q214 50 222 52 Q214 54 212 62 Q210 54 202 52 Q210 50 212 42 Z" fill="#F3C04A" stroke="#1F1B1A" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M60 254 H200" stroke="#1F1B1A" stroke-opacity="0.15" stroke-width="3" stroke-linecap="round"/>
+  <g transform="translate(130 20) rotate(-3)"><path d="M-55 -16 L-51 -8 L-55 0 L-51 8 L-55 16 L55 16 L51 8 L55 0 L51 -8 L55 -16 Z" fill="#F3C04A" fill-opacity="0.7"/><path d="M-45 -8 H45" stroke="#FFFFFF" stroke-opacity="0.5" stroke-width="3" stroke-linecap="round"/></g>
+</svg>

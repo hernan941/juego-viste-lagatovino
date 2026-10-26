@@ -20,6 +20,10 @@ describe('SfxKeys', () => {
     for (const k of ['Grab', 'Drag', 'Drop', 'Purr', 'Return', 'Remove', 'Hover', 'Click', 'Doorbell', 'Shutter', 'Key', 'Gift'] as const) {
       expect(SfxKeys).toHaveProperty(k);
     }
+    // second stage (F12.11): docs/art-direction.md section 9, "Sonidos nuevos"
+    for (const k of ['Stamp', 'Clink', 'Snip', 'Register', 'Uncork', 'Blup', 'Paper', 'Tape', 'Peel', 'Oven', 'Varnish', 'Latch', 'Chain', 'Porcelain'] as const) {
+      expect(SfxKeys).toHaveProperty(k);
+    }
     expect(MEOW_KEYS.length).toBeGreaterThanOrEqual(2);
     for (const m of MEOW_KEYS) expect(keys).toContain(m);
   });
