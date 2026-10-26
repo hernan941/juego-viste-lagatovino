@@ -135,6 +135,14 @@ export const ObjectEvents = {
   JarDragEnd: 'jar-drag-end',
   /** DyeJar: (jar) pressed and released without dragging */
   JarClick: 'jar-click',
+  /** PhotoTray: (kind, id) an unlocked piece was chosen */
+  TrayPick: 'tray-pick',
+  /** PhotoTray: (kind, id) a locked piece was pressed (it is only a sketch) */
+  TrayLocked: 'tray-locked',
+  /** PhotoTray: (stickerId, pointer) a sticker was pulled off the sheet */
+  TrayStickerGrab: 'tray-sticker-grab',
+  /** Sticker: (sticker, pointer) a sticker on the photo was picked up again */
+  StickerGrab: 'sticker-grab',
 } as const;
 
 /** Scene events of DressUp that its controllers listen to (ADR 0019). */

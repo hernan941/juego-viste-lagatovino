@@ -25,6 +25,7 @@ class FakeContainer {
   add(c: unknown) { this.list.push(...(Array.isArray(c) ? c : [c])); return this; }
   setSize(w: number, h: number) { this.width = w; this.height = h; return this; }
   setInteractive(cfg: FakeContainer['interactive']) { this.interactive = cfg; return this; }
+  disableInteractive() { this.interactive = null; return this; }
   setScale(s: number) { this.scale = s; return this; }
   setAngle(a: number) { this.angle = a; return this; }
   setAlpha(a: number) { this.alpha = a; return this; }
