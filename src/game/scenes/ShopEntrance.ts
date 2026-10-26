@@ -1,15 +1,18 @@
 import Phaser from 'phaser';
-import { GAME_HEIGHT, GAME_WIDTH, Palette, RegistryKeys, SceneKeys, SfxKeys } from '../constants';
-import type { Catalog } from '../data/schema';
+import { GAME_HEIGHT, GAME_WIDTH, RegistryKeys, SceneKeys, SfxKeys } from '../constants';
+import type { GameData } from '../data/schema';
+import { splitShopSign } from '../domain/copy';
 import type { AnchorsDef } from '../domain/types';
 import type { E2EUi, UiState } from '../e2eHook';
 import { Cat } from '../objects/Cat';
 import { MuteButton } from '../objects/MuteButton';
 import { MotionButton } from '../objects/MotionButton';
 import { FullscreenButton } from '../objects/FullscreenButton';
-import { addClouds, addSky, addSun } from '../objects/scenery';
+import { makeHintPill } from '../objects/kit/HintPill';
+import { SpeechBubble } from '../objects/kit/SpeechBubble';
+import { addInkClouds, addInkSky, addInkStreet, addInkSun } from '../objects/streetInk';
 import { createShopFront, type ShopFront } from '../objects/shopFront';
-import { hex, makePill, touchEnv } from '../objects/ui';
+import { touchEnv } from '../objects/ui';
 import { getAudio } from '../plugins/AudioPlugin';
 import { go } from '../systems/navigate';
 import { readSession } from '../systems/sessionStore';
@@ -17,7 +20,6 @@ import { profileOf } from '../systems/motion';
 import { enterKind, transitionIn } from '../systems/transitions';
 
 const SHOP = { x: 570, y: 14, scale: 1.25 };
-const SIDEWALK_Y = 604;
 const CAT_SIZE = 190;
 const WALK_FEET_Y = 664;
 const ZOOM = 9;
@@ -40,6 +42,7 @@ export class ShopEntrance extends Phaser.Scene implements E2EUi {
   private phase: Phase = 'fading-in';
   private skipped = false;
   private bob?: Phaser.Tweens.Tween;
+  private bubble?: SpeechBubble;
 
   constructor() {
     super(SceneKeys.ShopEntrance);
@@ -50,29 +53,30 @@ export class ShopEntrance extends Phaser.Scene implements E2EUi {
     this.phase = 'fading-in';
     this.skipped = false;
     this.bob = undefined;
+    this.bubble = undefined;
   }
 
   create() {
-    const catalog = this.registry.get(RegistryKeys.Catalog) as Catalog;
+    const catalog = this.registry.get(RegistryKeys.Catalog) as GameData;
     const anchors = this.registry.get(RegistryKeys.Anchors) as AnchorsDef;
     const session = readSession(this.registry);
     const def = catalog.cats.find((c) => c.id === session.catId) ?? catalog.cats[0];
     const sweater = catalog.clothes.find((c) => c.slot === 'sweater' && !c.secret) ?? catalog.clothes[0];
 
     this.world = this.add.container(0, 0);
-    const sky = addSky(this);
-    const sun = addSun(this, 170, 110);
-    const clouds = addClouds(this, [
+    const sky = addInkSky(this);
+    const sun = addInkSun(this, 170, 110);
+    const clouds = addInkClouds(this, [
       { x: 300, y: 130, scale: 0.8, speed: 12 }, { x: 760, y: 60, scale: 0.6, speed: 8 }, { x: 1100, y: 170, scale: 0.9, speed: 15 },
     ]);
-    const street = this.drawStreet();
-    this.shop = createShopFront(this, SHOP.x, SHOP.y, sweater.texture, SHOP.scale);
+    const street = addInkStreet(this);
+    this.shop = createShopFront(this, SHOP.x, SHOP.y, sweater.texture, splitShopSign(catalog.brand.shopSign), SHOP.scale);
     this.cat = new Cat(this, -140, WALK_FEET_Y, def, anchors, CAT_SIZE);
     this.cat.hold('feliz');
     this.world.add([sky, sun, ...clouds, street, this.shop.container, this.cat]);
 
     // "Clic para saltar": the game is for the PC (ADR 0008), in a pill that reads over the sidewalk; it fades in after a second.
-    const hint = makePill(this, GAME_WIDTH - 150, GAME_HEIGHT - 44, touchEnv().touch ? 'Toca para saltar' : 'Clic para saltar', 24, { skipIcon: true }).setDepth(40).setAlpha(0);
+    const hint = makeHintPill(this, GAME_WIDTH - 150, GAME_HEIGHT - 44, touchEnv().touch ? 'Toca para saltar' : 'Clic para saltar', { skipIcon: true }).setDepth(40).setAlpha(0);
     this.tweens.add({ targets: hint, alpha: 1, delay: 1000, duration: 400 });
     this.mute = new MuteButton(this, GAME_WIDTH - 56, 56).setDepth(50);
     this.motion = new MotionButton(this, GAME_WIDTH - 128, 56).setDepth(50);
@@ -83,6 +87,7 @@ export class ShopEntrance extends Phaser.Scene implements E2EUi {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.input.off('pointerdown', this.skip, this);
       this.bob?.remove();
+      this.bubble?.destroy();
       this.cat?.destroy();
       this.mute?.destroy();
       this.motion?.destroy();
@@ -90,32 +95,6 @@ export class ShopEntrance extends Phaser.Scene implements E2EUi {
       this.tweens.killAll();
     });
     transitionIn(this, this.enter, () => this.walk());
-  }
-
-  /** Buildings far away and the sidewalk, drawn once into a texture. */
-  private drawStreet(): Phaser.GameObjects.Image {
-    const key = 'street-bg';
-    if (!this.textures.exists(key)) {
-      const g = this.make.graphics({}, false);
-      const blocks: [number, number, number, keyof typeof Palette][] = [
-        [-10, 150, 190, 'lavanda'], [190, 90, 150, 'menta'], [350, 180, 240, 'mantequilla'],
-        [1130, 120, 190, 'menta'], [1250, 140, 200, 'lavanda'],
-      ];
-      for (const [x, w, h, color] of blocks) {
-        g.fillStyle(hex(color), 0.85).fillRoundedRect(x, SIDEWALK_Y - h, w, h + 10, 14);
-        g.fillStyle(0xffffff, 0.7);
-        for (let wy = SIDEWALK_Y - h + 26; wy < SIDEWALK_Y - 50; wy += 56) for (let wx = x + 20; wx < x + w - 36; wx += 46) g.fillRoundedRect(wx, wy, 26, 32, 8);
-      }
-      g.fillStyle(hex('rosa50'), 1).fillRect(0, SIDEWALK_Y, GAME_WIDTH, GAME_HEIGHT - SIDEWALK_Y);
-      g.fillStyle(hex('lavanda'), 1).fillRect(0, SIDEWALK_Y, GAME_WIDTH, 14);
-      g.lineStyle(4, hex('contorno'), 1).beginPath().moveTo(0, SIDEWALK_Y + 14).lineTo(GAME_WIDTH, SIDEWALK_Y + 14).strokePath();
-      g.lineStyle(3, hex('rosa200'), 1);
-      for (let x = -40; x < GAME_WIDTH + 100; x += 110) g.beginPath().moveTo(x + 60, SIDEWALK_Y + 14).lineTo(x - 40, GAME_HEIGHT).strokePath();
-      g.beginPath().moveTo(0, 670).lineTo(GAME_WIDTH, 670).strokePath();
-      g.generateTexture(key, GAME_WIDTH, GAME_HEIGHT);
-      g.destroy();
-    }
-    return this.add.image(0, 0, key).setOrigin(0);
   }
 
   private walk() {
@@ -156,6 +135,9 @@ export class ShopEntrance extends Phaser.Scene implements E2EUi {
       ],
     });
     this.cat.react('combo');
+    // The shop answers: "¡Pasa nomás!" pops over the cat's head.
+    this.bubble = new SpeechBubble(this, this.cat.x + 36, WALK_FEET_Y - CAT_SIZE - 6, '¡Pasa nomás!', { maxWidth: 360 }).setDepth(30);
+    this.world.add(this.bubble);
     this.time.delayedCall(550, () => this.openDoor());
   }
 
@@ -173,6 +155,7 @@ export class ShopEntrance extends Phaser.Scene implements E2EUi {
     if (this.skipped) return;
     this.phase = 'enter';
     const door = this.shop.doorStep;
+    if (this.bubble) this.tweens.add({ targets: this.bubble, alpha: 0, duration: 250 });
     this.tweens.add({
       targets: this.cat, y: door.y - 10, scale: this.cat.scaleX * 0.55, alpha: 0, duration: 800, ease: 'Sine.easeIn',
       onComplete: () => this.zoom(),
