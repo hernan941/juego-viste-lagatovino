@@ -83,7 +83,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
   private deltaTotal = 0;
   /** Feature controllers (ADR 0019) and the layer they draw their HUD on. */
   private controllers = new ControllerHost(controllerFactories);
-  private readonly leaveData: Record<string, unknown> = {};
+  private leaveData: Record<string, unknown> = {};
   private hud!: Phaser.GameObjects.Container;
   private categories: Category[] = [];
 
@@ -100,6 +100,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.drag = null;
     this.leaving = false;
     this.pets = 0;
+    this.leaveData = {};
     this.controllers = new ControllerHost(controllerFactories);
     const wanted = session.catId ?? data?.catId;
     const cat = this.catalog.cats.find((c) => c.id === wanted) ?? this.catalog.cats[0];
