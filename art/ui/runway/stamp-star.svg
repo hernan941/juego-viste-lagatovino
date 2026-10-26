@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- Viste Lagato · sello de estrella de la calificación (normal, en tinta) (art-direction v2, ADR 0016). -->
+<!-- Se estampa con escala 1,6 a 1 (180 ms) y un "tump". Mismo lienzo y forma que stamp-star-sol. -->
+  <path d="M64 24 L78.69 47.77 L105.85 54.4 L87.78 75.73 L89.86 103.6 L64 93 L38.14 103.6 L40.22 75.73 L22.15 54.4 L49.31 47.77 Z" fill="#1F1B1A" stroke="#1F1B1A" stroke-width="22" stroke-linejoin="round"/>
+  <path d="M64 37 L74.58 53.44 L93.48 58.42 L81.12 73.56 L82.22 93.08 L64 86 L45.78 93.08 L46.88 73.56 L34.52 58.42 L53.42 53.44 Z" fill="none" stroke="#FFFCF5" stroke-opacity="0.85" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M44 42 L52 37" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="4" stroke-linecap="round" fill="none"/>
+</svg>

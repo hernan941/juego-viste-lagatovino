@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 392" width="420" height="392">
+  <!-- Viste Lagato · tarjeta de papel rayado del desglose de la calificación (art-direction v2, ADR 0016). -->
+<!-- Título (Gaegu) en y = 56. Las 5 líneas del desglose y el total caen sobre los renglones: y = 100 + 46 * n. Margen rosa a la izquierda, 3 agujeros de cuaderno. -->
+  <path d="M32 14 H392 Q414 14 414 36 V364 Q414 386 392 386 H32 Q10 386 10 364 V36 Q10 14 32 14 Z" fill="#F4EEE3"/>
+  <path d="M28 6 H388 Q410 6 410 28 V356 Q410 378 388 378 H28 Q6 378 6 356 V28 Q6 6 28 6 Z M17 70 a7 7 0 1 0 14 0 a7 7 0 1 0 -14 0 Z M17 190 a7 7 0 1 0 14 0 a7 7 0 1 0 -14 0 Z M17 310 a7 7 0 1 0 14 0 a7 7 0 1 0 -14 0 Z" fill="#FFFCF5" fill-rule="evenodd" stroke="#1F1B1A" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M30 104H396M30 150H396M30 196H396M30 242H396M30 288H396M30 334H396" stroke="#C9DBF1" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M52 22 V366" stroke="#F6BFD0" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M62 54 H220" stroke="#1F1B1A" stroke-opacity="0.12" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <g transform="translate(330 20) rotate(5)"><path d="M-48 -15 L-44 -7.5 L-48 0 L-44 7.5 L-48 15 L48 15 L44 7.5 L48 0 L44 -7.5 L48 -15 Z" fill="#F3C04A" fill-opacity="0.7"/><path d="M-38 -7 H38" stroke="#FFFFFF" stroke-opacity="0.5" stroke-width="3" stroke-linecap="round"/></g>
+  <ellipse cx="150" cy="16" rx="52" ry="4" fill="#FFFFFF" fill-opacity="0.7"/>
+</svg>

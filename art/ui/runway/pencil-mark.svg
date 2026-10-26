@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 44" width="120" height="44">
+  <!-- Viste Lagato · tachoncito de lápiz grafito para las líneas negativas del desglose (art-direction v2, ADR 0016). -->
+<!-- Grafito suave (tinta al 55 %), nada de rojo: es una nota, no un castigo. Se dibuja sobre la línea. -->
+  <path d="M8 30 L30 10 L40 32 L62 8 L72 34 L94 12 L112 30" fill="none" stroke="#1F1B1A" stroke-opacity="0.55" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M12 38 Q60 30 110 38" fill="none" stroke="#1F1B1A" stroke-opacity="0.35" stroke-width="3" stroke-linecap="round"/>
+</svg>
