@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 128" width="96" height="128">
+  <!-- Viste Lagato · dije de estrella ✦ dorado del llavero de 5 estrellas (art-direction v2, ADR 0016). -->
+<!-- Cuelga de la argolla por el aro de arriba (48, 17). -->
+  <defs><clipPath id="charm"><path d="M48 36 Q57.68 70.32 92 80 Q57.68 89.68 48 124 Q38.32 89.68 4 80 Q38.32 70.32 48 36 Z"/></clipPath></defs>
+  <path d="M48 36 Q57.68 70.32 92 80 Q57.68 89.68 48 124 Q38.32 89.68 4 80 Q38.32 70.32 48 36 Z" fill="#F5D86A"/>
+  <ellipse cx="62" cy="104" rx="38" ry="26" fill="#D0B85A" clip-path="url(#charm)"/>
+  <path d="M35 17 a13 13 0 1 0 26 0 a13 13 0 1 0 -26 0 Z M42.5 17 a5.5 5.5 0 1 0 11 0 a5.5 5.5 0 1 0 -11 0 Z" fill="#F5D86A" fill-rule="evenodd" stroke="#1F1B1A" stroke-width="4.5" stroke-linejoin="round"/>
+  <path d="M48 36 Q57.68 70.32 92 80 Q57.68 89.68 48 124 Q38.32 89.68 4 80 Q38.32 70.32 48 36 Z" fill="none" stroke="#1F1B1A" stroke-width="5" stroke-linejoin="round"/>
+  <ellipse cx="36" cy="68" rx="7" ry="3.5" fill="#FFFFFF" fill-opacity="0.75" transform="rotate(-35 36 68)"/>
+  <circle cx="43" cy="61" r="2.2" fill="#FFFFFF" fill-opacity="0.75"/>
+</svg>

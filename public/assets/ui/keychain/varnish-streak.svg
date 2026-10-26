@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 512" width="220" height="512">
+  <!-- Viste Lagato · franja diagonal de brillo que cruza el llavero al barnizarlo (art-direction v2, ADR 0016). -->
+<!-- Dos bandas blancas paralelas, una ancha y suave y otra fina. Se inclina y se desliza por la pieza (420 ms). -->
+  <path d="M70 0 L130 0 L60 512 L0 512 Z" fill="#FFFFFF" fill-opacity="0.38"/>
+  <path d="M150 0 L170 0 L100 512 L80 512 Z" fill="#FFFFFF" fill-opacity="0.62"/>
+</svg>

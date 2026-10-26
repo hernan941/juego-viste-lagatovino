@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 675" width="540" height="675">
+  <!-- Viste Lagato · tarjeta kraft del empaque del llavero con el agujero para colgar (art-direction v2, ADR 0016). -->
+<!-- Zona de contenido: el rectángulo punteado (34, 92) a (506, 640). El agujero está en (270, 54). -->
+  <path d="M44 18 H500 Q530 18 530 48 V639 Q530 669 500 669 H44 Q14 669 14 639 V48 Q14 18 44 18 Z" fill="#F4EEE3"/>
+  <path d="M40 10 H496 Q526 10 526 40 V631 Q526 661 496 661 H40 Q10 661 10 631 V40 Q10 10 40 10 Z M255 56 a15 15 0 1 0 30 0 a15 15 0 1 0 -30 0 Z" fill="#F1D1C0" fill-rule="evenodd" stroke="#1F1B1A" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M241 56 a29 29 0 1 0 58 0 a29 29 0 1 0 -58 0 Z M255 56 a15 15 0 1 0 30 0 a15 15 0 1 0 -30 0 Z" fill="#D9BCAD" fill-rule="evenodd" stroke="#1F1B1A" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M52 98 H484 Q502 98 502 116 V620 Q502 638 484 638 H52 Q34 638 34 620 V116 Q34 98 52 98 Z" fill="none" stroke="#1F1B1A" stroke-opacity="0.35" stroke-width="2.5" stroke-dasharray="9 9" stroke-linecap="round"/>
+  <path d="M60 635 Q62.2 643.8 71 646 Q62.2 648.2 60 657 Q57.8 648.2 49 646 Q57.8 643.8 60 635 Z" fill="#F3C04A" stroke="#1F1B1A" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M476 635 Q478.2 643.8 487 646 Q478.2 648.2 476 657 Q473.8 648.2 465 646 Q473.8 643.8 476 635 Z" fill="#F3C04A" stroke="#1F1B1A" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M100 82 H440" stroke="#1F1B1A" stroke-opacity="0.18" stroke-width="3" stroke-linecap="round"/>
+  <ellipse cx="120" cy="30" rx="44" ry="6" fill="#FFFFFF" fill-opacity="0.5"/>
+</svg>

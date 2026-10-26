@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- Viste Lagato · argolla dorada del llavero (4 y 5 estrellas) (art-direction v2, ADR 0016). -->
+<!-- Argolla partida: lleva un corte en la parte de abajo a la derecha. Se cuelga de la armellita por arriba. -->
+  <path d="M6 64 a58 58 0 1 0 116 0 a58 58 0 1 0 -116 0 Z M26 64 a38 38 0 1 0 76 0 a38 38 0 1 0 -76 0 Z" fill="#F5D86A" fill-rule="evenodd" stroke="#1F1B1A" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M104 88 A42 42 0 0 1 56 104" fill="none" stroke="#D0B85A" stroke-width="9" stroke-linecap="round"/>
+  <path d="M28 52 A40 40 0 0 1 56 26" fill="none" stroke="#FFFFFF" stroke-opacity="0.8" stroke-width="6" stroke-linecap="round"/>
+  <path d="M95 100 L110 90" fill="none" stroke="#1F1B1A" stroke-width="3.5" stroke-linecap="round"/>
+</svg>
