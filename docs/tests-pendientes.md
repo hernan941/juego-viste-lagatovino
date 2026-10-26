@@ -130,3 +130,17 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
 - Con 1 o 2★ el juez consuela, y con 5★ hay confeti.
 - Si se cambia de escena a mitad de la ceremonia, no quedan tweens ni listeners colgados.
 - Sin errores de consola.
+
+## F17.2 y F18.2: esqueletos de Album y PhotoMode
+### E2E pendientes
+- `album.spec`:
+  - `jump('Album')` y volver;
+  - pasar de página con las pestañas y con las flechas;
+  - el colgador aparece bloqueado;
+  - al volver, DressUp conserva la pestaña y el scroll (F17.6);
+  - al volver al Showcase, no se repite la ceremonia.
+- `photomode.spec`:
+  - `jump('PhotoMode')` con un look;
+  - [Guardar] descarga la foto;
+  - [Seguir vistiendo] vuelve a DressUp.
+- Agregar un ciclo de Album y PhotoMode a `perf.spec`, y revisar `flow.spec` y `mobile.spec` (menú de compartir en el celular).

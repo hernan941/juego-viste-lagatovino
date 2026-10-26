@@ -7,3 +7,8 @@ Detalles vistos al integrar. Los revisa el game-designer en la revisión de cada
   - "Le encanta lo invierno" y "No le tinca lo gala": falta concordancia. Conviene un nombre legible por tag en los datos (por ejemplo "lo invernal", "lo elegante").
   - "Todo muy clasico": falta la tilde de "clásico".
 - El juez sigue siendo el placeholder (gato gris). Falta la respuesta del usuario sobre Kofi.
+
+## F17.2 y F18.2: esqueletos de Album y PhotoMode
+- En el álbum, el anillado del cuaderno pasa justo por encima del texto centrado "Prendas · 16 de 50". Las páginas reales (F17.3 y F17.4) deben dejar libre el lomo.
+- El PNG que se guarda en PhotoMode todavía es la tarjeta del MVP, no la composición del scrapbook (F18.5).
+- Album y PhotoMode no muestran el botón de pantalla completa.
