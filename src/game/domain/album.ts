@@ -1,7 +1,7 @@
 // Pure TS, no Phaser (ADR 0010, 0017). The album: what is got, which sets are complete and what the photo mode unlocks.
 // Everything is derived from the progress; nothing here is stored (except `albumSeen`, the entries the player already saw).
 import { WATER_DYE } from './dye';
-import type { CatDef, ClothingDef, ComboDef, DyeDef, PhotoCatalog, PhotoPiece, Progress, SetDef } from './types';
+import type { CatDef, ClothingDef, ComboDef, DyeDef, PhotoCatalog, PhotoPose, Progress, SetDef } from './types';
 
 /** Percentages of the album that give a reward (25 % sticker pack, 50 % striped background, 75 % pose, 100 % Catalina's note). */
 export const ALBUM_MILESTONES: readonly number[] = [25, 50, 75, 100];
@@ -131,14 +131,14 @@ export function photoUnlocks(progress: Progress, catalogs: AlbumCatalogs): Photo
   const sets = new Set(completedSets(progress, catalogs));
   const pct = completion(progress, catalogs).pct;
   const fiveStar = Object.values(progress.bestStars).some((s) => s === 5);
-  const open = (p: PhotoPiece): boolean => {
+  const open = (p: PhotoPose): boolean => {
     const u = p.unlock;
     if (u === 'starter') return true;
     if ('set' in u) return sets.has(u.set);
     if ('albumPct' in u) return pct >= u.albumPct;
     return fiveStar;
   };
-  const ids = (list: readonly PhotoPiece[]) => new Set(list.filter(open).map((p) => p.id));
+  const ids = (list: readonly PhotoPose[]) => new Set(list.filter(open).map((p) => p.id));
   const { backgrounds, frames, stickers, poses } = catalogs.photo;
   return { backgrounds: ids(backgrounds), frames: ids(frames), stickers: ids(stickers), poses: ids(poses) };
 }
