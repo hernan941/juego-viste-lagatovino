@@ -85,12 +85,43 @@ describe('Cat idle extras (F9): a glance aside, a spontaneous tail wag and the p
     const { scene, timers } = fakeScene();
     const cat = new Cat(scene as never, 0, 0, def, anchors as never, 512);
     const delays = timers.map((t) => t.delay);
-    expect(timers).toHaveLength(3);
+    expect(timers).toHaveLength(4);
     expect(delays.some((d) => d >= 3000 && d < 5000)).toBe(true);
     expect(delays.some((d) => d >= 8000 && d < 12_000)).toBe(true);
     expect(delays.some((d) => d >= 6000 && d < 10_000)).toBe(true);
     cat.destroy();
     for (const t of timers) expect(t.remove).toHaveBeenCalled();
+  });
+
+  it('every 8 to 12 s the idle shows the happy face for about 600 ms (slow blink of affection), then schedules the next', () => {
+    const { scene, timers } = fakeScene();
+    const cat = new Cat(scene as never, 0, 0, def, anchors as never, 512);
+    const face = (cat as unknown as { face: { textures?: string[] } }).face;
+    const seen: string[] = [];
+    (cat as unknown as { face: { setTexture(k: string): unknown } }).face = new Proxy(face, {
+      get: (t, p, r) => (p === 'setTexture' ? (k: string) => { seen.push(k); return r; } : Reflect.get(t, p, r)),
+    }) as never;
+    // Created in order: blink, glance, wag, affection.
+    const affection = timers[3];
+    expect(affection.delay).toBeGreaterThanOrEqual(8000);
+    expect(affection.delay).toBeLessThan(12_000);
+    const before = timers.length;
+    affection.fn();
+    expect(seen).toEqual(['face-feliz']);
+    const back = timers[before];
+    expect(back.delay).toBe(600);
+    back.fn();
+    expect(seen).toEqual(['face-feliz', 'face-normal']);
+    expect(timers.length).toBe(before + 2);
+  });
+
+  it('the affection blink waits while the cat holds another expression', () => {
+    const { scene, timers } = fakeScene();
+    const cat = new Cat(scene as never, 0, 0, def, anchors as never, 512);
+    cat.hold('sorpresa');
+    const before = timers.length;
+    timers[3].fn();
+    expect(timers.length).toBe(before + 1); // only the next schedule, no 600 ms revert
   });
 
   it('the spontaneous wag is a soft 6 degree flick that ends where the sway starts, and it schedules the next one', () => {
