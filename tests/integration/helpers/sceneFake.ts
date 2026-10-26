@@ -62,7 +62,7 @@ export class FakeScene {
     this.plugins = { get: () => audio };
     const made = this.made;
     const make = (kind: string) => (...a: unknown[]) => { const o = loose({ kind, args: a, destroyed: false }); made.push(o); return o; };
-    this.add = { image: make('image'), text: make('text'), graphics: make('graphics'), container: make('container'), existing: (o) => o };
+    this.add = { image: make('image'), text: make('text'), graphics: make('graphics'), rectangle: make('rectangle'), container: make('container'), existing: (o) => o };
   }
   get activeTweens() { return this.tweens.records.filter((r) => !r.removed); }
 }

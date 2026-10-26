@@ -8,8 +8,13 @@ import {
   framePlacement,
   photoFileName,
   photoLayout,
+  initialPieces,
+  resolveLook,
   stickerLimit,
 } from '../../src/game/domain/photo';
+import { emptySession } from '../../src/game/domain/session';
+import type { PhotoUnlocks } from '../../src/game/domain/album';
+import type { PhotoCatalog, RatingResult } from '../../src/game/domain/types';
 
 describe('photoFileName', () => {
   it('uses the prefix, the lowercase name and .png', () => {
@@ -144,5 +149,46 @@ describe('clampSticker', () => {
     const p = { x: 0, y: 0 };
     clampSticker(p, frame);
     expect(p).toEqual({ x: 0, y: 0 });
+  });
+});
+
+describe('resolveLook (F18.2, ADR 0019)', () => {
+  const session = { ...emptySession(), catId: 'gato-02', catName: 'Luna', outfit: { sweater: 'sw-1' } };
+  const rating: RatingResult = { points: 80, stars: 4, breakdown: [] };
+
+  it('takes the look and the rating the Showcase hands over', () => {
+    const look = resolveLook({ look: { catId: 'gato-05', catName: 'Kiwi', outfit: { head: 'h-1' } }, rating }, session, undefined);
+    expect(look).toEqual({ catId: 'gato-05', catName: 'Kiwi', outfit: { head: 'h-1' }, rating });
+  });
+
+  it('without data (a ?start= link) uses the session and the last rating', () => {
+    const last: RatingResult = { points: 10, stars: 2, breakdown: [] };
+    expect(resolveLook(undefined, session, last)).toEqual({ catId: 'gato-02', catName: 'Luna', outfit: { sweater: 'sw-1' }, rating: last });
+  });
+
+  it('ignores data that is not valid and a rating that is not a rating', () => {
+    const look = resolveLook({ look: 'x', rating: { stars: 'many' } }, session, { nope: true });
+    expect(look).toEqual({ catId: 'gato-02', catName: 'Luna', outfit: { sweater: 'sw-1' }, rating: null });
+  });
+
+  it('fills the pieces of a partial look from the session', () => {
+    expect(resolveLook({ look: { catName: 'Kiwi' } }, session, undefined)).toMatchObject({ catId: 'gato-02', catName: 'Kiwi', outfit: { sweater: 'sw-1' } });
+  });
+});
+
+describe('initialPieces', () => {
+  const piece = (id: string) => ({ id, name: id, texture: `t-${id}`, unlock: 'starter' as const });
+  const photo = {
+    backgrounds: [piece('b1'), piece('b2')], frames: [piece('f1'), piece('f2')], stickers: [], poses: [piece('p1'), piece('p2')], keychain: {},
+  } as unknown as PhotoCatalog;
+  const unlocks = (b: string[], f: string[], p: string[]): PhotoUnlocks => ({ backgrounds: new Set(b), frames: new Set(f), stickers: new Set(), poses: new Set(p) });
+
+  it('starts with the first unlocked background, frame and pose', () => {
+    expect(initialPieces(photo, unlocks(['b2', 'b1'], ['f1'], ['p1']))).toEqual({ background: 'b1', frame: 'f1', pose: 'p1' });
+    expect(initialPieces(photo, unlocks(['b2'], ['f2'], ['p2']))).toEqual({ background: 'b2', frame: 'f2', pose: 'p2' });
+  });
+
+  it('is null for a section with nothing unlocked', () => {
+    expect(initialPieces(photo, unlocks([], [], []))).toEqual({ background: null, frame: null, pose: null });
   });
 });

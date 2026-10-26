@@ -1,5 +1,8 @@
 // Pure TS, no Phaser (ADR 0010). The souvenir photo: its file name and where each piece goes on the picture.
-import type { Point, Rect } from './types';
+import type { PhotoUnlocks } from './album';
+import type { Session } from './session';
+import { SLOT_ORDER } from './slots';
+import type { Outfit, PhotoCatalog, Point, RatingResult, Rect } from './types';
 
 export const PHOTO_PREFIX = 'viste-lagato-';
 const NAME_FALLBACK = 'gatito';
@@ -109,4 +112,51 @@ export function clampSticker(pos: Point, frame: Rect, margin = 0): Point {
     return lo > hi ? start + size / 2 : Math.min(hi, Math.max(lo, v));
   };
   return { x: axis(pos.x, frame.x, frame.width), y: axis(pos.y, frame.y, frame.height) };
+}
+
+/** The look the photo mode shows: which cat, with what on, and the rating it got (null when there is none to show). */
+export interface PhotoLook {
+  catId: string | null;
+  catName: string;
+  outfit: Outfit;
+  rating: RatingResult | null;
+}
+
+const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+
+function asRating(v: unknown): RatingResult | null {
+  if (!isRecord(v)) return null;
+  return typeof v.points === 'number' && typeof v.stars === 'number' && Array.isArray(v.breakdown) ? (v as unknown as RatingResult) : null;
+}
+
+function asOutfit(v: unknown): Outfit | null {
+  if (!isRecord(v)) return null;
+  const out: Partial<Record<(typeof SLOT_ORDER)[number], string>> = {};
+  for (const slot of SLOT_ORDER) if (typeof v[slot] === 'string') out[slot] = v[slot] as string;
+  return out;
+}
+
+/**
+ * What the photo mode shows (ADR 0019): the `{ look, rating }` that came in `scene.start`, and for what is missing or invalid (a
+ * `?start=` link) the session and the last rating.
+ */
+export function resolveLook(data: unknown, session: Session, lastRating: unknown): PhotoLook {
+  const d = isRecord(data) ? data : {};
+  const look = isRecord(d.look) ? d.look : {};
+  return {
+    catId: typeof look.catId === 'string' ? look.catId : session.catId,
+    catName: typeof look.catName === 'string' ? look.catName : session.catName,
+    outfit: asOutfit(look.outfit) ?? session.outfit,
+    rating: asRating(d.rating) ?? asRating(lastRating),
+  };
+}
+
+/** The first unlocked piece of each kind, in the order of photo.json: what the photo starts with (null if none is unlocked). */
+export function initialPieces(photo: PhotoCatalog, unlocks: PhotoUnlocks): { background: string | null; frame: string | null; pose: string | null } {
+  const first = (list: readonly { id: string }[], open: ReadonlySet<string>) => list.find((p) => open.has(p.id))?.id ?? null;
+  return {
+    background: first(photo.backgrounds, unlocks.backgrounds),
+    frame: first(photo.frames, unlocks.frames),
+    pose: first(photo.poses, unlocks.poses),
+  };
 }

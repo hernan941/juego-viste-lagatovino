@@ -7,6 +7,7 @@ import { ShopEntrance } from './scenes/ShopEntrance';
 import { DressUp } from './scenes/DressUp';
 import { Showcase } from './scenes/Showcase';
 import { Album } from './scenes/Album';
+import { PhotoMode } from './scenes/PhotoMode';
 import { AudioPlugin } from './plugins/AudioPlugin';
 import { SavePlugin } from './plugins/SavePlugin';
 import { MotionPlugin } from './plugins/MotionPlugin';
@@ -37,7 +38,7 @@ const config: Phaser.Types.Core.GameConfig = {
       { key: PluginKeys.Dye, plugin: DyePlugin, start: true },
     ],
   },
-  scene: [Boot, Preloader, Title, CatSelect, ShopEntrance, DressUp, Showcase, Album],
+  scene: [Boot, Preloader, Title, CatSelect, ShopEntrance, DressUp, Showcase, Album, PhotoMode],
 };
 
 const StartGame = (parent: string) => {
