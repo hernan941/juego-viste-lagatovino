@@ -138,3 +138,28 @@ describe('TasteReactions (F14.2)', () => {
     expect(t.events.count()).toBe(0);
   });
 });
+
+describe('TasteReactions: dyeing an item (F16.3)', () => {
+  const otherDye = ['rosa', 'lila', 'sol', 'hoja'].find((d) => d !== prefs.favoriteDye)!;
+
+  it('dyeing with the favorite color makes the cat glance at the garment and say "¡mi color!"', () => {
+    const t = setup();
+    t.events.emit(DressUpEvents.ItemDyed, neutral, prefs.favoriteDye);
+    expect(t.calls).toContain('glance');
+    expect(said).toContain('¡mi color!');
+    expect(t.fx.e2eState().last).toBe('color');
+  });
+
+  it('another color says nothing (the cat only has an opinion about its own)', () => {
+    const t = setup();
+    t.events.emit(DressUpEvents.ItemDyed, neutral, otherDye);
+    expect(t.calls).toEqual([]);
+    expect(t.fx.e2eState().log).toEqual([]);
+  });
+
+  it('the water is not a color to like', () => {
+    const t = setup();
+    t.events.emit(DressUpEvents.ItemDyed, neutral, 'agua');
+    expect(t.fx.e2eState().log).toEqual([]);
+  });
+});

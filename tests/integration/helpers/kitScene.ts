@@ -30,7 +30,8 @@ class FakeContainer {
   setAlpha(a: number) { this.alpha = a; return this; }
   setDepth(d: number) { this.depth = d; return this; }
   setPosition(x: number, y: number) { this.x = x; this.y = y; return this; }
-  on(ev: string, fn: Handler) { this.handlers.set(ev, [...(this.handlers.get(ev) ?? []), fn]); return this; }
+  on(ev: string, fn: Handler, context?: unknown) { this.handlers.set(ev, [...(this.handlers.get(ev) ?? []), context ? fn.bind(context) : fn]); return this; }
+  disableInteractive() { this.interactive = null; return this; }
   emit(ev: string, ...a: unknown[]) { (this.handlers.get(ev) ?? []).forEach((h) => h(...a)); return true; }
   removeAllListeners() { this.handlers.clear(); return this; }
   getWorldTransformMatrix() { return { tx: this.x, ty: this.y }; }
@@ -41,7 +42,7 @@ export const phaserMock = {
   default: {
     GameObjects: { Container: FakeContainer },
     Plugins: { BasePlugin: class {} },
-    Scenes: { Events: { SHUTDOWN: 'shutdown' } },
+    Scenes: { Events: { SHUTDOWN: 'shutdown', UPDATE: 'update' } },
     Math: { Vector2: class { constructor(public x: number, public y: number) {} } },
     Geom: {
       Rectangle: Object.assign(
@@ -56,7 +57,7 @@ export const phaserMock = {
 export interface TweenRecord { targets: unknown; config: Record<string, unknown>; removed: boolean; remove(): void }
 
 export interface FakeScene {
-  tweens: { records: TweenRecord[]; add(cfg: Record<string, unknown>): TweenRecord; killTweensOf(t: unknown): void };
+  tweens: { records: TweenRecord[]; add(cfg: Record<string, unknown>): TweenRecord; chain(cfg: Record<string, unknown>): TweenRecord; killTweensOf(t: unknown): void };
   registry: { get(key: string): unknown };
   plugins: { get(key: string): { played: string[]; play(key: string): void } };
   textures: { exists(): boolean };
@@ -73,13 +74,15 @@ export function makeFakeScene(reduced = false): FakeScene {
   const made = { texts: [] as Record<string, unknown>[], graphics: [] as unknown[], images: [] as unknown[] };
   const scene = { played, reduced, made } as unknown as FakeScene;
   const records: TweenRecord[] = [];
+  const addTween = (config: Record<string, unknown>) => {
+    const rec: TweenRecord = { targets: config.targets, config, removed: false, remove() { rec.removed = true; } };
+    records.push(rec);
+    return rec;
+  };
   scene.tweens = {
     records,
-    add(config) {
-      const rec: TweenRecord = { targets: config.targets, config, removed: false, remove() { rec.removed = true; } };
-      records.push(rec);
-      return rec;
-    },
+    add: addTween,
+    chain: addTween,
     killTweensOf(t) { for (const r of records) if (r.targets === t || (Array.isArray(r.targets) && r.targets.includes(t))) r.removed = true; },
   };
   scene.activeTweens = () => records.filter((r) => !r.removed);

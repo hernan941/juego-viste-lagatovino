@@ -74,6 +74,8 @@ export class Cat extends Phaser.GameObjects.Container {
   private hoverHold: Point | null = null;
   /** The halo copies of every layer that is hovered. */
   private readonly halos = new Map<Phaser.GameObjects.Image, Phaser.GameObjects.Image[]>();
+  /** The layer whose halo marks the target of a dye bottle (highlightItem). */
+  private targetHalo: Phaser.GameObjects.Image | null = null;
   private readonly petCooldown = new Cooldown(PET_COOLDOWN_MS);
   /** Layers whose pop-in has not finished yet (stable positions are for tests, and for the scene's `settled`). */
   private readonly popping = new Set<Phaser.GameObjects.Image>();
@@ -810,6 +812,40 @@ export class Cat extends Phaser.GameObjects.Container {
       layer.image.setTexture(key);
       this.shown.set(layer.image, key);
     }
+  }
+
+  /**
+   * The worn item whose visible pixels are under a point in game coordinates, the one drawn in front when several overlap, or
+   * null (a dye bottle looks for its target with this). Reads the pixels of the texture shown, so a dyed copy is found as well.
+   */
+  itemAt(point: Point): ClothingDef | null {
+    const { width, height } = this.anchors.canvas;
+    const x = (point.x - this.x) / this.scaleX + width / 2;
+    const y = (point.y - this.y) / this.scaleY + FEET_Y;
+    if (x < 0 || y < 0 || x >= width || y >= height) return null;
+    const front = [...this.layers.values()].sort((a, b) => slotZIndex(b.item.slot) - slotZIndex(a.item.slot));
+    for (const layer of front) {
+      const alpha = alphaMapOf(this.scene, this.textureOf(layer));
+      const k = alpha.width / width;
+      if (hitsAlpha(alpha, x * k, y * k, undefined, HIT_REACH)) return layer.item;
+    }
+    return null;
+  }
+
+  /**
+   * Lights the soft halo of a worn item (the target of the dye bottle in the hand) and puts out the one of the item before;
+   * null puts it out. The same halo as the hover: a finger covers the item, so the halo says where the drop will land.
+   */
+  highlightItem(itemId: string | null): void {
+    const layer = itemId === null ? undefined : [...this.layers.values()].find((l) => l.item.id === itemId);
+    if (this.targetHalo && this.targetHalo !== layer?.image) {
+      this.clearHover(this.targetHalo);
+      this.targetHalo = null;
+    }
+    if (!layer) return;
+    this.targetHalo = layer.image;
+    // A hover may have put the halo out (or lit it) meanwhile: it is lit again only if it is not there.
+    if (!this.halos.has(layer.image)) this.halos.set(layer.image, this.createHalo(layer.image, layer.item));
   }
 
   /** Dims the layer of an item while it is being dragged off. */
