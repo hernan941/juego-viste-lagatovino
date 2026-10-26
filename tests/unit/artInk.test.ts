@@ -60,3 +60,27 @@ describe('caras con ojos cerrados legibles en pelajes oscuros (F12.R A1)', () =>
     expect(normal).not.toContain('class="halo"');
   });
 });
+
+// F12.R B4: every lens frame has an ink outline wider than its colored frame and a colored frame that is not a hairline.
+describe('marcos de lentes con contorno de tinta (F12.R B4)', () => {
+  const lenses = Object.entries(
+    import.meta.glob('/public/assets/clothes/face/lentes-*.svg', { query: '?raw', import: 'default', eager: true }) as Record<string, string>,
+  ).filter(([p]) => !p.endsWith('.icon.svg'));
+
+  it('hay cinco lentes', () => {
+    expect(lenses).toHaveLength(5);
+  });
+
+  it.each(lenses)('%s: lente con trazo de tinta exterior y marco de color de al menos 8 px', (_p, svg) => {
+    for (const g of svg.matchAll(/<g transform="translate\([\d.]+ [\d.]+\) scale\(([\d.]+)\)">([\s\S]*?)<\/g>/g)) {
+      const k = Number(g[1]);
+      const strokes = [...g[2]!.matchAll(/stroke="(#[0-9A-Fa-f]{6})" stroke-width="([\d.]+)"/g)]
+        .filter((m) => m[1] !== '#FFFFFF' && m[1] !== '#FFF0A8')
+        .map((m) => ({ color: m[1]!.toUpperCase(), width: Number(m[2]) * k }));
+      const ink = Math.max(...strokes.filter((s) => s.color === '#1F1B1A').map((s) => s.width));
+      const frame = Math.max(...strokes.filter((s) => s.color !== '#1F1B1A').map((s) => s.width));
+      expect(frame).toBeGreaterThanOrEqual(8);
+      expect(ink).toBeGreaterThan(frame);
+    }
+  });
+});
