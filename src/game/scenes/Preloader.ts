@@ -1,5 +1,5 @@
 import Phaser, { Scene } from 'phaser';
-import { Fonts, GAME_HEIGHT, GAME_WIDTH, Ink, RegistryKeys, SceneKeys, colorToNumber } from '../constants';
+import { Fonts, GAME_HEIGHT, GAME_WIDTH, Ink, RegistryKeys, SceneKeys, TextureKeys, colorToNumber } from '../constants';
 import anchorsJson from '../data/anchors.json';
 import { buildAudioManifest, buildDyeSourceEntries, buildManifest } from '../data/assets';
 import catsJson from '../data/cats.json';
@@ -154,8 +154,16 @@ export class Preloader extends Scene {
     this.drawYarn(this.shown);
     if (this.loaded && this.shown === 1 && !this.leaving) {
       this.leaving = true;
+      this.finishSparkle();
       this.leave();
     }
+  }
+
+  /** A `sol` sparkle pops over the ball when the thread is all out (F12.R B2): the loading finished. */
+  private finishSparkle() {
+    const p = profileOf(this);
+    const spark = this.add.image(this.ball.x, this.ball.y - YARN.radius - 40, TextureKeys.InkSparkle).setAlpha(0).setScale(p.reduced ? 1 : 0.4);
+    this.tweens.add({ targets: spark, alpha: 1, scale: 1.2, duration: 220, ease: p.ease('Back.easeOut') });
   }
 
   private leave() {
