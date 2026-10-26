@@ -47,6 +47,10 @@ describe('scene flow (ADR 0007)', () => {
         if (step) reachable.add(step.scene);
       }
     }
-    expect([...reachable].sort()).toEqual(Object.values(SceneKeys).sort());
+    // Album and PhotoMode have a key since F11.8 but no flow step yet (ADR 0019): the task that
+    // adds their steps to domain/flow.ts must delete this list so they are checked again.
+    const notWiredYet: string[] = [SceneKeys.Album, SceneKeys.PhotoMode];
+    const expected = Object.values(SceneKeys).filter((k) => !notWiredYet.includes(k));
+    expect([...reachable].sort()).toEqual(expected.sort());
   });
 });

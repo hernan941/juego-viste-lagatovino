@@ -12,6 +12,8 @@ export const SceneKeys = {
   ShopEntrance: 'ShopEntrance',
   DressUp: 'DressUp',
   Showcase: 'Showcase',
+  Album: 'Album',
+  PhotoMode: 'PhotoMode',
 } as const;
 export type SceneKey = (typeof SceneKeys)[keyof typeof SceneKeys];
 
@@ -68,6 +70,20 @@ export const ObjectEvents = {
   LayerHover: 'layer-hover',
 } as const;
 
+/** Scene events of DressUp that its controllers listen to (ADR 0019). */
+export const DressUpEvents = {
+  /** (item: ClothingDef) a worn item was dropped on the cat */
+  ItemDropped: 'item-dropped',
+  /** (item: ClothingDef) a worn item was removed */
+  ItemRemoved: 'item-removed',
+  /** the player pressed Ready */
+  ReadyPressed: 'ready-pressed',
+  /** (outfit: Outfit) the outfit changed */
+  OutfitChanged: 'outfit-changed',
+  /** (catId: string) the cat changed */
+  CatChanged: 'cat-changed',
+} as const;
+
 export const RegistryKeys = {
   CatId: 'catId',
   CatName: 'catName',
@@ -78,6 +94,12 @@ export const RegistryKeys = {
   Anchors: 'anchors',
   /** Effective reduced motion (boolean), written by the MotionPlugin (ADR 0013). Scenes only read it. */
   ReducedMotion: 'reducedMotion',
+  /** Dye by worn item (ItemDye), part of the session (ADR 0017). */
+  ItemDye: 'itemDye',
+  /** Immutable Progress; SavePlugin writes it on every change (ADR 0017). */
+  Progress: 'progress',
+  /** Last RatingResult, so Showcase and PhotoMode can recover it (ADR 0019). */
+  LastRating: 'lastRating',
 } as const;
 
 /** Textures generated in code (particles). */
@@ -87,6 +109,11 @@ export const TextureKeys = {
   Snow: 'particle-snow',
   Petal: 'particle-petal',
   Confetti: 'particle-confetti',
+  /** Second stage UI (F11.10 gives each one a placeholder SVG). */
+  Coin: 'ui-coin',
+  PriceTag: 'ui-price-tag',
+  Stamp: 'ui-stamp',
+  Notebook: 'ui-notebook',
 } as const;
 
 /** Global plugin keys (GameConfig.plugins.global). */
