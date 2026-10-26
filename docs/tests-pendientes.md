@@ -81,3 +81,12 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
 - Los SVG teñidos cargan sin errores de consola en Chromium y Firefox.
 - Con más de 24 tintes distintos, la caché no crece y no se expulsa lo que el gato tiene puesto.
 - Al recargar con una prenda teñida, la textura se precalienta y se ve el color.
+
+## F11.11 a F11.15: guardado v2, hook, controladores y API de Cat
+### E2E pendientes
+1. **Correr la suite e2e completa sin tocar specs**, para confirmar que el refactor de DressUp no rompió nada. Los specs más sensibles son `secrets`, `juice`, `dressup`, `dragdrop`, `wardrobe`, `catalog`, `pixelHit`, `perf` y `mobile`.
+2. Migración: un save v1 con outfit, secretos y `muted` pasa a v2 completo, con `wallet`.
+3. La decoración de celdas sobrevive al cambio de pestaña y al scroll.
+4. Si `beforeLeave` devuelve `false`, el jugador no sale de DressUp (con S3).
+5. Specs que usen `sayNo`, las poses, `setItemTexture` y `setOutfit({instant})`.
+6. Revisar `boot.spec` y `save.spec` en `firefox` y `chromium-1920`.
