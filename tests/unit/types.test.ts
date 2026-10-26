@@ -75,8 +75,8 @@ describe('second stage types (F11.8, ADR 0017)', () => {
     >();
   });
 
-  it('keeps the v1 save format until F11.11', () => {
-    expect(SAVE_VERSION).toBe(1);
+  it('uses the v2 save format (F11.11)', () => {
+    expect(SAVE_VERSION).toBe(2);
   });
 });
 

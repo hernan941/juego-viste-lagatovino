@@ -42,7 +42,7 @@ test.describe('saving (ADR 0004)', () => {
     await clickButton(page, 'motion');
     await page.waitForFunction(() => window.__VISTE__?.motionPref === 'reduce' && window.__VISTE__.reducedMotion === true);
     const before = await page.evaluate(() => JSON.parse(JSON.stringify(window.__VISTE__?.saved)));
-    expect(before).toMatchObject({ catId: CAT.id, catName: NAME, muted: true, motion: 'reduce', secrets: [combo.id] });
+    expect(before).toMatchObject({ catId: CAT.id, catName: NAME, muted: true, motion: 'reduce', progress: { secrets: [combo.id] } });
 
     // A new visit (a full page load of "/", not the test shortcut): everything comes back through the real flow.
     await startGame(page);

@@ -93,22 +93,26 @@ export interface ComboDef {
 /** Equipped item ids by slot. At most one item per slot (ADR 0003). */
 export type Outfit = Readonly<Partial<Record<Slot, string>>>;
 
-// Stays 1 until F11.11 brings the v2 save (ADR 0017).
-export const SAVE_VERSION = 1;
+/** Version of the data inside the save (ADR 0017). The storage key does not depend on it. */
+export const SAVE_VERSION = 2;
 
 /** Motion preference (ADR 0013): 'auto' follows the browser, the other two are the player's choice and win over it. */
 export type MotionPref = 'auto' | 'reduce' | 'full';
 
 export interface SaveData {
-  version: number;
+  version: typeof SAVE_VERSION;
+  // Session (debounced writes)
   catId: string | null;
   catName: string;
   outfit: Outfit;
-  /** Ids of the combos whose secret reward is already unlocked. */
-  secrets: string[];
+  /** Dye by worn item: itemId -> dyeId (ADR 0018). */
+  itemDye: ItemDye;
+  // Preferences
   muted: boolean;
   /** ADR 0013. Missing or invalid in old saves: read as 'auto', so no migration. */
   motion: MotionPref;
+  // Progress (written at once)
+  progress: StoredProgress;
 }
 
 // ---- Second stage (ADRs 0015, 0017, 0019, 0021) ----

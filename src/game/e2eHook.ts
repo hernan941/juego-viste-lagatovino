@@ -237,6 +237,7 @@ export function installE2EHook(game: Game, readPerf: PerfReader): void {
       const save = game.plugins.get(PluginKeys.Save) as SavePlugin;
       save.flush();
       window.localStorage.removeItem(SAVE_KEY);
+      save.resetProgress(0);
       sounds.length = 0;
     },
     jump(scene: string, catId?: string, name?: string): void {

@@ -12,19 +12,19 @@ class FakeRegistry implements RegistryLike {
 
 describe('session state', () => {
   it('starts without a cat, a name or an outfit', () => {
-    expect(emptySession()).toEqual({ catId: null, catName: '', outfit: {} });
+    expect(emptySession()).toEqual({ catId: null, catName: '', outfit: {}, itemDye: {} });
     expect(isComplete(emptySession())).toBe(false);
   });
 
   it('choosing a cat sets the id and the trimmed name', () => {
     const s = chooseCat(emptySession(), 'luna', '  Luna ');
-    expect(s).toEqual({ catId: 'luna', catName: 'Luna', outfit: {} });
+    expect(s).toEqual({ catId: 'luna', catName: 'Luna', outfit: {}, itemDye: {} });
     expect(isComplete(s)).toBe(true);
   });
 
   it('choosing another cat keeps the outfit (every garment fits every cat, ADR 0003): how does this look on Luna?', () => {
     const dressed = withOutfit(chooseCat(emptySession(), 'a', 'A'), { sweater: 's1' });
-    expect(chooseCat(dressed, 'b', 'B')).toEqual({ catId: 'b', catName: 'B', outfit: { sweater: 's1' } });
+    expect(chooseCat(dressed, 'b', 'B')).toEqual({ catId: 'b', catName: 'B', outfit: { sweater: 's1' }, itemDye: {} });
     expect(chooseCat(dressed, 'a', 'Nuevo').outfit).toEqual({ sweater: 's1' });
   });
 
@@ -44,10 +44,15 @@ describe('session state', () => {
     expect(d.outfit).toEqual({ head: 'h' });
   });
 
-  it('merges into the save without losing the mute or the secrets', () => {
-    const base = { ...defaultSave(), muted: true, secrets: ['x'] };
-    const s = withOutfit(chooseCat(emptySession(), 'a', 'A'), { head: 'h' });
-    expect(toSaveData(s, base)).toEqual({ ...base, catId: 'a', catName: 'A', outfit: { head: 'h' } });
+  it('merges into the save without losing the mute or the progress', () => {
+    const base = { ...defaultSave(), muted: true, progress: { ...defaultSave().progress, secrets: ['x'] } };
+    const s = { ...withOutfit(chooseCat(emptySession(), 'a', 'A'), { head: 'h' }), itemDye: { h: 'rosa' } };
+    expect(toSaveData(s, base)).toEqual({ ...base, catId: 'a', catName: 'A', outfit: { head: 'h' }, itemDye: { h: 'rosa' } });
+  });
+
+  it('choosing another cat keeps the dyes of the worn items', () => {
+    const dyed = { ...withOutfit(chooseCat(emptySession(), 'a', 'A'), { sweater: 's1' }), itemDye: { s1: 'rosa' } };
+    expect(chooseCat(dyed, 'b', 'B').itemDye).toEqual({ s1: 'rosa' });
   });
 });
 
@@ -57,7 +62,14 @@ describe('session store (registry)', () => {
     writeSession(reg, withOutfit(chooseCat(emptySession(), 'a', 'A'), { head: 'h' }));
     expect(reg.get(RegistryKeys.CatId)).toBe('a');
     expect(reg.get(RegistryKeys.CatName)).toBe('A');
-    expect(readSession(reg)).toEqual({ catId: 'a', catName: 'A', outfit: { head: 'h' } });
+    expect(readSession(reg)).toEqual({ catId: 'a', catName: 'A', outfit: { head: 'h' }, itemDye: {} });
+  });
+
+  it('writes and reads the dye by item (ADR 0017)', () => {
+    const reg = new FakeRegistry();
+    writeSession(reg, { ...emptySession(), itemDye: { s1: 'rosa' } });
+    expect(reg.get(RegistryKeys.ItemDye)).toEqual({ s1: 'rosa' });
+    expect(readSession(reg).itemDye).toEqual({ s1: 'rosa' });
   });
 
   it('reads an empty registry as an empty session', () => {
@@ -69,6 +81,7 @@ describe('session store (registry)', () => {
     reg.set(RegistryKeys.CatId, 42);
     reg.set(RegistryKeys.CatName, null);
     reg.set(RegistryKeys.Outfit, 'x');
+    reg.set(RegistryKeys.ItemDye, { a: 3 });
     expect(readSession(reg)).toEqual(emptySession());
   });
 });
@@ -83,7 +96,7 @@ describe('sessionFromSave (restoring a save against the catalog)', () => {
 
   it('restores the cat, the name and the outfit', () => {
     const s = sessionFromSave(save({ catId: 'luna', catName: 'Mimi', outfit: { sweater: 'sweater-a', head: 'head-b' } }), cats, clothes);
-    expect(s).toEqual({ catId: 'luna', catName: 'Mimi', outfit: { sweater: 'sweater-a', head: 'head-b' } });
+    expect(s).toEqual({ catId: 'luna', catName: 'Mimi', outfit: { sweater: 'sweater-a', head: 'head-b' }, itemDye: {} });
   });
 
   it('starts clean when there is no cat or the cat no longer exists', () => {
@@ -99,5 +112,27 @@ describe('sessionFromSave (restoring a save against the catalog)', () => {
   it('drops items that are not in the catalog or sit in the wrong slot', () => {
     const s = sessionFromSave(save({ catId: 'luna', catName: 'L', outfit: { sweater: 'borrado', head: 'sweater-a' } }), cats, clothes);
     expect(s.outfit).toEqual({});
+  });
+
+  describe('item dyes', () => {
+    const dyeable = [
+      { id: 'sweater-a', slot: 'sweater' as const, dyeable: true },
+      { id: 'head-b', slot: 'head' as const },
+    ];
+    const dyes = [{ id: 'rosa' }, { id: 'azul' }];
+    const withDye = (itemDye: Record<string, string>) => save({ catId: 'luna', catName: 'L', itemDye });
+
+    it('keeps a dye whose item is dyeable and whose bottle exists', () => {
+      expect(sessionFromSave(withDye({ 'sweater-a': 'azul' }), cats, dyeable, dyes).itemDye).toEqual({ 'sweater-a': 'azul' });
+    });
+
+    it('drops a dye of an unknown item, of an item that is not dyeable, or with an unknown bottle', () => {
+      const s = sessionFromSave(withDye({ borrado: 'rosa', 'head-b': 'rosa', 'sweater-a': 'fantasma' }), cats, dyeable, dyes);
+      expect(s.itemDye).toEqual({});
+    });
+
+    it('without a dye list it only checks the item', () => {
+      expect(sessionFromSave(withDye({ 'sweater-a': 'azul', 'head-b': 'x' }), cats, dyeable).itemDye).toEqual({ 'sweater-a': 'azul' });
+    });
   });
 });

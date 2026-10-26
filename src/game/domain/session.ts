@@ -1,5 +1,5 @@
 // Pure TS, no Phaser (ADR 0010). What travels between scenes: the chosen cat, its name and its outfit.
-import type { Outfit, SaveData } from './types';
+import type { ItemDye, Outfit, SaveData } from './types';
 import { validateCatName } from './catName';
 import { SLOT_ORDER, type Slot } from './slots';
 
@@ -7,10 +7,12 @@ export interface Session {
   catId: string | null;
   catName: string;
   outfit: Outfit;
+  /** Dye by worn item (ADR 0018). */
+  itemDye: ItemDye;
 }
 
 export function emptySession(): Session {
-  return { catId: null, catName: '', outfit: {} };
+  return { catId: null, catName: '', outfit: {}, itemDye: {} };
 }
 
 export function isComplete(s: Session): boolean {
@@ -21,16 +23,16 @@ export function isComplete(s: Session): boolean {
 export function chooseCat(s: Session, catId: string, rawName: string): Session {
   const check = validateCatName(rawName);
   if (!check.ok) return s;
-  return { catId, catName: check.name, outfit: s.outfit };
+  return { catId, catName: check.name, outfit: s.outfit, itemDye: s.itemDye };
 }
 
 export function withOutfit(s: Session, outfit: Outfit): Session {
   return { ...s, outfit };
 }
 
-/** The session over a save (F7 persists it): the mute and the secrets stay as they were. */
+/** The session over a save (F7 persists it): the preferences and the progress stay as they were. */
 export function toSaveData(s: Session, base: SaveData): SaveData {
-  return { ...base, catId: s.catId, catName: s.catName, outfit: s.outfit };
+  return { ...base, catId: s.catId, catName: s.catName, outfit: s.outfit, itemDye: s.itemDye };
 }
 
 /**
@@ -40,7 +42,8 @@ export function toSaveData(s: Session, base: SaveData): SaveData {
 export function sessionFromSave(
   save: SaveData,
   cats: readonly { id: string; name: string }[],
-  clothes: readonly { id: string; slot: Slot }[],
+  clothes: readonly { id: string; slot: Slot; dyeable?: boolean }[],
+  dyes?: readonly { id: string }[],
 ): Session {
   const cat = cats.find((c) => c.id === save.catId);
   if (!cat) return emptySession();
@@ -50,5 +53,10 @@ export function sessionFromSave(
     const id = save.outfit[slot];
     if (id !== undefined && clothes.some((c) => c.id === id && c.slot === slot)) outfit[slot] = id;
   }
-  return { catId: cat.id, catName: check.ok ? check.name : cat.name, outfit };
+  // A dye stays on a dyeable item that exists, with a bottle that exists (without a dye list, only the item is checked).
+  const itemDye: Record<string, string> = {};
+  for (const [itemId, dyeId] of Object.entries(save.itemDye)) {
+    if (clothes.some((c) => c.id === itemId && c.dyeable) && (!dyes || dyes.some((d) => d.id === dyeId))) itemDye[itemId] = dyeId;
+  }
+  return { catId: cat.id, catName: check.ok ? check.name : cat.name, outfit, itemDye };
 }

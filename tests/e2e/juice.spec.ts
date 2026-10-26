@@ -89,6 +89,6 @@ test.describe('the Showcase reads the look', () => {
     expect((await ui(page)).info.secrets).toBe(`Secretos 0/${combos.length}`);
     await page.waitForFunction(() => ((window.__VISTE__?.ui?.info as { toasts?: string[] } | undefined)?.toasts ?? []).includes('¡Te guardé tu regalito!'), undefined, { timeout: 15_000 });
     await page.waitForFunction((n) => (window.__VISTE__?.ui?.info as { secrets?: string } | undefined)?.secrets === `Secretos 1/${n}`, combos.length);
-    expect(await page.evaluate(() => window.__VISTE__?.saved.secrets)).toEqual([combo.id]);
+    expect(await page.evaluate(() => window.__VISTE__?.saved.progress.secrets)).toEqual([combo.id]);
   });
 });

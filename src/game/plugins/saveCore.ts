@@ -1,9 +1,11 @@
 // Pure core of SavePlugin (ADR 0004): serialize, versioned migration and storage access.
+import { emptyStoredProgress, sanitizeStoredProgress } from '../domain/progress';
 import { SLOT_ORDER, type Slot } from '../domain/slots';
 import { isMotionPref } from '../systems/motion';
 import { SAVE_VERSION, type Outfit, type SaveData } from '../domain/types';
 
-export const SAVE_KEY = `viste-lagato:save:v${SAVE_VERSION}`;
+/** Fixed: "v1" is the historic name. The version of the data lives inside the JSON, so no save is orphaned (ADR 0017). */
+export const SAVE_KEY = 'viste-lagato:save:v1';
 
 /** The slice of the Web Storage API we need, so tests and Supabase can swap it. */
 export interface StorageLike {
@@ -15,12 +17,20 @@ export interface StorageLike {
 type Obj = Record<string, unknown>;
 
 export function defaultSave(): SaveData {
-  return { version: SAVE_VERSION, catId: null, catName: '', outfit: {}, secrets: [], muted: false, motion: 'auto' };
+  return { version: SAVE_VERSION, catId: null, catName: '', outfit: {}, itemDye: {}, muted: false, motion: 'auto', progress: emptyStoredProgress() };
 }
 
 /** migrations[n] upgrades a save from version n to n + 1. */
 const migrations: Record<number, (old: Obj) => Obj> = {
   0: ({ cat, name, mute, ...rest }) => ({ ...rest, catId: cat, catName: name, muted: mute, version: 1 }),
+  // ADR 0017: the secrets move into the progress and what was worn is kept as owned. No wallet: the domain gives the start one.
+  1: ({ catId, catName, outfit, secrets, muted, motion }) => {
+    const worn = sanitizeOutfit(outfit);
+    return {
+      version: 2, catId, catName, outfit, itemDye: {}, muted, motion,
+      progress: { owned: SLOT_ORDER.flatMap((slot) => worn[slot] ?? []), secrets },
+    };
+  },
 };
 
 function migrate(raw: Obj): Obj | null {
@@ -44,6 +54,11 @@ function sanitizeOutfit(value: unknown): Outfit {
   return out;
 }
 
+function sanitizeItemDye(value: unknown): Record<string, string> {
+  if (typeof value !== 'object' || value === null) return {};
+  return Object.fromEntries(Object.entries(value).filter((e): e is [string, string] => typeof e[1] === 'string'));
+}
+
 export function serialize(data: SaveData): string {
   return JSON.stringify(data);
 }
@@ -64,9 +79,10 @@ export function deserialize(raw: string | null): SaveData {
     catId: typeof data.catId === 'string' ? data.catId : null,
     catName: typeof data.catName === 'string' ? data.catName : '',
     outfit: sanitizeOutfit(data.outfit),
-    secrets: Array.isArray(data.secrets) ? data.secrets.filter((s): s is string => typeof s === 'string') : [],
+    itemDye: sanitizeItemDye(data.itemDye),
     muted: data.muted === true,
     motion: isMotionPref(data.motion) ? data.motion : 'auto',
+    progress: sanitizeStoredProgress(data.progress),
   };
 }
 
