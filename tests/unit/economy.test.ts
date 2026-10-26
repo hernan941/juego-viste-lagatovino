@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  cartFromOutfit, checkout, dyePrice, lookSignature, milestoneBonus, novelty, payout, priceOf,
+  cartFromOutfit, checkout, dyePrice, lookSignature, milestoneBonus, novelty, payout, priceOf, unpaidPrice,
 } from '../../src/game/domain/economy';
 import type { ClothingDef, DyeDef, EconomyRules } from '../../src/game/domain/types';
 
@@ -210,5 +210,18 @@ describe('milestoneBonus', () => {
       { stars: 3, amount: 15 }, { stars: 4, amount: 25 }, { stars: 5, amount: 50 },
     ]);
     expect(milestoneBonus(2, 4, rules)).toEqual([{ stars: 3, amount: 15 }, { stars: 4, amount: 25 }]);
+  });
+});
+
+describe('unpaidPrice (what a tag shows)', () => {
+  it('is the price of an item that is not owned yet', () => {
+    expect(unpaidPrice(catalog[1]!, [], rules)).toBe(40);
+    expect(unpaidPrice(catalog[3]!, ['cheap'], rules)).toBe(110);
+  });
+
+  it('is 0 for what is bought, free or a secret prize', () => {
+    expect(unpaidPrice(catalog[1]!, ['cheap'], rules)).toBe(0);
+    expect(unpaidPrice(catalog[0]!, [], rules)).toBe(0);
+    expect(unpaidPrice(catalog[4]!, [], rules)).toBe(0);
   });
 });

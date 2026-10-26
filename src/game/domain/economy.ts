@@ -32,6 +32,11 @@ export function priceOf(item: ClothingDef, rules: EconomyRules): number {
   return item.tier ? rules.prices[item.tier] : 0;
 }
 
+/** What the tag of an item says: its price while it is not bought, 0 when it is free, a prize or already owned. */
+export function unpaidPrice(item: ClothingDef, owned: readonly string[], rules: EconomyRules): number {
+  return owned.includes(item.id) ? 0 : priceOf(item, rules);
+}
+
 /** Price of a bottle; starter bottles are free. */
 export function dyePrice(dye: DyeDef, rules: EconomyRules): number {
   return dye.starter ? 0 : rules.prices.dye;

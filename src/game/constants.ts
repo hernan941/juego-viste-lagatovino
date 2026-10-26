@@ -116,6 +116,8 @@ export const ObjectEvents = {
   CatPet: 'cat-pet',
   /** Cat: (item: ClothingDef, at: Point) the pointer entered a worn item */
   LayerHover: 'layer-hover',
+  /** PriceTag: (tag) the player pressed and released the tag */
+  PriceTagPress: 'price-tag-press',
 } as const;
 
 /** Scene events of DressUp that its controllers listen to (ADR 0019). */
@@ -132,6 +134,8 @@ export const DressUpEvents = {
   CatChanged: 'cat-changed',
   /** (flight: WalletFlight) a feature asks the wallet to fly buttons: into the purse (`in`) or out of it (`out`) */
   WalletFlight: 'wallet-flight',
+  /** (item: ClothingDef) the player touched the price tag of an item that is not bought (on the cat or in its cell) */
+  PriceTagPressed: 'price-tag-pressed',
   /** the player cannot pay: the purse shakes (blinks with reduced motion) */
   WalletShake: 'wallet-shake',
 } as const;
