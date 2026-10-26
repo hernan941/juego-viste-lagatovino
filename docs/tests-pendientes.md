@@ -14,3 +14,17 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
 6. `particleTextures.test.ts`: que una textura que ya existe no se regenera.
 7. `kit.test.ts`: `tabLayout` con `count = 0` y `hoverTarget` en los dos modos.
 8. Confirmar los umbrales de coverage.
+
+## F16.1, F17.1, F18.1 y F19.1: dominio de tintes, álbum, foto y llavero
+Estos tests unit se reapuntan a los datos reales una vez integrado F11.10:
+- `albumData.test.ts`:
+  - el total es 138;
+  - los ids de `sets.json` existen;
+  - los `unlock.set` de `photo.json` apuntan a sets reales;
+  - los ids de foto coinciden con el arte;
+  - cada hito del álbum tiene premio.
+- `dyeData.test.ts`:
+  - cada prenda `dyeable` tiene `data-dye="a"`;
+  - `recolorSvg` no toca la tinta `#1F1B1A` ni la sombra;
+  - los hex de `dyes.json` son válidos.
+- `keychainData.test.ts`: `goldFrom` y `charmFrom` de `photo.json` y la regla `charmFrom >= goldFrom`.
