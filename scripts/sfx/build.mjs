@@ -1,5 +1,6 @@
 // Builds public/assets/audio/*.{ogg,mp3} (docs/art-direction.md §9, ADR 0009).
-//   node scripts/sfx/build.mjs --src <dir with the CC0 downloads> --work <scratch dir> [--ffmpeg <path>]
+//   node scripts/sfx/build.mjs --src <dir with the CC0 downloads> --work <scratch dir> [--ffmpeg <path>] [--only key,key]
+// --only rebuilds just those keys (the synthesized ones need no --src).
 // CC0 sources are cut, filtered, normalized and given short fades; the rest comes from synth.mjs.
 // ffmpeg must have libvorbis and libmp3lame (e.g. the `ffmpeg-static` npm package, not a project dependency).
 import { execFileSync, spawnSync } from 'node:child_process';
@@ -12,6 +13,7 @@ const arg = (name, fallback) => {
   return i >= 0 ? process.argv[i + 1] : fallback;
 };
 const SRC = resolve(arg('src', ''));
+const ONLY = arg('only', '') ? arg('only', '').split(',') : null;
 const WORK = resolve(arg('work', ''));
 const FFMPEG = arg('ffmpeg', 'ffmpeg');
 const OUT = resolve(import.meta.dirname, '../../public/assets/audio');
@@ -31,6 +33,21 @@ const SOUNDS = {
   'sfx-shutter': ['synth:shutter', '', 0],
   'sfx-key': ['synth:key', '', -3],
   'sfx-gift': ['synth:gift', '', 0],
+  // Second stage (F12.11): all synthesized (no CC0 download needed).
+  'sfx-stamp': ['synth:stamp', '', 0],
+  'sfx-clink': ['synth:clink', '', -3],
+  'sfx-snip': ['synth:snip', '', -3],
+  'sfx-register': ['synth:register', '', -4],
+  'sfx-uncork': ['synth:uncork', '', -1],
+  'sfx-blup': ['synth:blup', '', -2],
+  'sfx-paper': ['synth:paper', '', -3],
+  'sfx-tape': ['synth:tape', '', -4],
+  'sfx-peel': ['synth:peel', '', -4],
+  'sfx-oven': ['synth:oven', '', -3],
+  'sfx-varnish': ['synth:varnish', '', -4],
+  'sfx-latch': ['synth:latch', '', -5],
+  'sfx-chain': ['synth:chain', '', -5],
+  'sfx-porcelain': ['synth:porcelain', '', -4],
   'sfx-meow-1': ['oga-kitten-mew/kitten_mew-1.wav', 'lowpass=f=7000', 0],
   'sfx-meow-2': ['oga-cat-purr-meow/cat_softmew.wav', 'silenceremove=start_periods=1:start_threshold=-45dB,atrim=0:1.6,lowpass=f=7000', 0],
   'sfx-meow-3': ['oga-meow/Meow.ogg', 'lowpass=f=7000', 0],
@@ -51,6 +68,7 @@ mkdirSync(OUT, { recursive: true });
 synthAll(join(WORK, 'synth'));
 
 for (const [key, [input, filter, offset]] of Object.entries(SOUNDS)) {
+  if (ONLY && !ONLY.includes(key)) continue;
   const inFile = input.startsWith('synth:') ? join(WORK, 'synth', `${input.slice(6)}.wav`) : join(SRC, input);
   const mid = join(WORK, `${key}.wav`);
   ff('-i', inFile, '-ac', '1', '-ar', '44100', ...(filter ? ['-af', filter] : []), mid);

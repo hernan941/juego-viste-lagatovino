@@ -132,6 +132,137 @@ const sounds = {
     });
     return biquad(out, 'lp', 5200);
   },
+  // ---- Second stage (F12.11). Appended so the seeds of the sounds above do not change. ----
+  // Rating star: a soft rubber-stamp "tump".
+  stamp(rng) {
+    const out = buf(0.3);
+    add(out, sine(0.3, (t) => 150 - 70 * Math.min(1, t / 0.12), (t) => env(t, 0.002, 0.06)), 0, 1);
+    add(out, biquad(shape(noise(0.05, rng), (t) => env(t, 0.001, 0.01)), 'lp', 1400), 0, 0.5);
+    return biquad(out, 'lp', 1100);
+  },
+  // Button against button: two hollow little knocks.
+  clink() {
+    const out = buf(0.3);
+    [[0, 1900, 1], [0.075, 2500, 0.7]].forEach(([at, f, g]) => {
+      add(out, sine(0.2, () => f, (t) => env(t, 0.001, 0.018)), at, g);
+      add(out, sine(0.2, () => f * 1.52, (t) => env(t, 0.001, 0.01)), at, g * 0.35);
+    });
+    return biquad(out, 'lp', 5200);
+  },
+  // Scissors: two quick metallic closes.
+  snip(rng) {
+    const out = buf(0.3);
+    [[0.01, 1], [0.1, 0.8]].forEach(([at, g]) => {
+      add(out, biquad(shape(noise(0.06, rng), (t) => env(t, 0.001, 0.012)), 'bp', 5200, 1.2), at, g);
+      add(out, sine(0.1, () => 3300, (t) => env(t, 0.001, 0.012)), at, g * 0.25);
+    });
+    return biquad(out, 'lp', 7000);
+  },
+  // Very soft cash register: a muffled drawer thunk, then a tiny bell.
+  register(rng) {
+    const out = buf(1.0);
+    add(out, sine(0.2, (t) => 190 - 80 * Math.min(1, t / 0.08), (t) => env(t, 0.002, 0.04)), 0, 0.7);
+    add(out, biquad(shape(noise(0.04, rng), (t) => env(t, 0.001, 0.008)), 'bp', 1800, 0.8), 0.01, 0.35);
+    [[1, 1, 0.3], [2.4, 0.3, 0.14], [3.9, 0.12, 0.08]].forEach(([r, g, dec]) => {
+      add(out, sine(0.9, () => 2093 * r, (t) => env(t, 0.003, dec)), 0.14, g * 0.5);
+    });
+    return biquad(out, 'lp', 5200);
+  },
+  // Cork pop: a short falling "pop".
+  uncork(rng) {
+    const out = buf(0.2);
+    add(out, sine(0.2, (t) => 620 * Math.exp(-t / 0.035) + 180, (t) => env(t, 0.001, 0.035)), 0, 1);
+    add(out, biquad(shape(noise(0.03, rng), (t) => env(t, 0.001, 0.006)), 'bp', 1500, 0.7), 0, 0.3);
+    return biquad(out, 'lp', 3000);
+  },
+  // Liquid "blup": two bubble chirps rising in pitch.
+  blup() {
+    const out = buf(0.45);
+    [[0, 260, 0.1, 1], [0.13, 380, 0.07, 0.6]].forEach(([at, f0, d, g]) => {
+      add(out, sine(0.3, (t) => f0 * (1 + 1.6 * Math.min(1, t / d)), (t) => env(t, 0.004, d * 1.1)), at, g);
+    });
+    return biquad(out, 'lp', 2200);
+  },
+  // Page turn: a soft noise swish with a little crinkle at the start.
+  paper(rng) {
+    const d = 0.45;
+    const out = buf(d);
+    add(out, shape(biquad(biquad(noise(d, rng), 'bp', (t) => 900 + 2600 * Math.sin(Math.PI * t / d), 0.5), 'lp', 4200), (t) => hann(d)(t) ** 0.8), 0, 0.8);
+    for (let i = 0; i < 7; i++) {
+      add(out, biquad(shape(noise(0.015, rng), (t) => env(t, 0.001, 0.004)), 'hp', 2200), 0.02 + i * 0.018 + rng() * 0.01, 0.15 + rng() * 0.2);
+    }
+    return out;
+  },
+  // Washi tape being pulled and stuck: a rasp that slows down, then a soft press.
+  tape(rng) {
+    const d = 0.4;
+    const out = buf(d);
+    let phase = 0;
+    const rasp = noise(0.32, rng).map((v, i) => {
+      const t = i / SR;
+      phase += (TAU * (95 - 55 * (t / 0.32))) / SR;
+      return v * Math.max(0, Math.sin(phase)) ** 2 * (1 - t / 0.32);
+    });
+    add(out, biquad(biquad(rasp, 'bp', 3000, 0.6), 'lp', 4800), 0, 1);
+    add(out, sine(0.08, () => 210, (t) => env(t, 0.002, 0.02)), 0.33, 0.45);
+    return out;
+  },
+  // Sticker peel: a short, higher rasp ending in a little pop.
+  peel(rng) {
+    const d = 0.28;
+    const out = buf(d);
+    let phase = 0;
+    const rasp = noise(0.2, rng).map((v, i) => {
+      const t = i / SR;
+      phase += (TAU * (130 + 160 * (t / 0.2))) / SR;
+      return v * Math.max(0, Math.sin(phase)) ** 2 * Math.sin(Math.PI * (t / 0.2)) ** 0.7;
+    });
+    add(out, biquad(biquad(rasp, 'bp', 3800, 0.6), 'lp', 5200), 0, 0.9);
+    add(out, sine(0.06, (t) => 520 - 200 * (t / 0.06), (t) => env(t, 0.001, 0.012)), 0.21, 0.5);
+    return out;
+  },
+  // Kiln "fuuu": breathy noise swelling then fading, with a faint low rumble.
+  oven(rng) {
+    const d = 1.0;
+    const air = biquad(biquad(noise(d, rng), 'bp', (t) => 450 + 1300 * Math.sin(Math.PI * Math.min(1, t / d)), 0.5), 'lp', 2400);
+    const out = shape(air, (t) => Math.sin(Math.PI * (t / d)) ** 1.5);
+    add(out, sine(d, () => 85, (t) => hann(d)(t)), 0, 0.12);
+    return out;
+  },
+  // Varnish "ching": a bright glassy bell with inharmonic partials.
+  varnish() {
+    const out = buf(1.0);
+    [[1, 1, 0.55], [2.76, 0.45, 0.3], [5.4, 0.2, 0.16], [8.9, 0.08, 0.08]].forEach(([r, g, dec]) => {
+      add(out, sine(1.0, () => 2637 * r, (t) => env(t, 0.002, dec)), 0, g);
+    });
+    return biquad(out, 'lp', 8500);
+  },
+  // Eyelet screwing in: a tiny metallic "tic" with a short ring.
+  latch(rng) {
+    const out = buf(0.14);
+    add(out, biquad(shape(noise(0.01, rng), (t) => env(t, 0.0005, 0.002)), 'hp', 3000), 0, 0.6);
+    add(out, sine(0.14, () => 4300, (t) => env(t, 0.001, 0.02)), 0, 1);
+    add(out, sine(0.14, () => 6700, (t) => env(t, 0.001, 0.012)), 0, 0.3);
+    return biquad(out, 'lp', 8000);
+  },
+  // Little chain unrolling: a cascade of tiny pings that thin out.
+  chain(rng) {
+    const out = buf(0.9);
+    for (let i = 0; i < 11; i++) {
+      const at = i * 0.045 + rng() * 0.03;
+      const f = 2800 + rng() * 2400;
+      add(out, sine(0.12, () => f, (t) => env(t, 0.0008, 0.016)), at, (0.5 + rng() * 0.5) * (1 - i / 14));
+    }
+    return biquad(out, 'lp', 7500);
+  },
+  // Porcelain "tink": a clear, short, slightly inharmonic ping.
+  porcelain() {
+    const out = buf(0.6);
+    [[1, 1, 0.16], [2.32, 0.4, 0.09], [4.1, 0.14, 0.05]].forEach(([r, g, dec]) => {
+      add(out, sine(0.6, () => 1900 * r, (t) => env(t, 0.001, dec)), 0, g);
+    });
+    return biquad(out, 'lp', 7000);
+  },
 };
 
 export function writeWav(path, samples) {
