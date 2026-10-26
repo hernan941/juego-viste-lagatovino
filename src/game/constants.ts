@@ -163,6 +163,10 @@ export const TextureKeys = {
   Coin: 'ui-coin',
   PriceTag: 'ui-price-tag',
   Stamp: 'ui-stamp',
+  StampSol: 'ui-stamp-sol',
+  PencilMark: 'ui-pencil-mark',
+  PaperCard: 'ui-paper-card',
+  NotePolaroid: 'ui-note-polaroid',
   Notebook: 'ui-notebook',
 } as const;
 
