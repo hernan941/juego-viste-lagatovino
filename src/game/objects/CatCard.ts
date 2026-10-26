@@ -1,39 +1,51 @@
 import Phaser from 'phaser';
-import { FONT_FAMILY, MEOW_KEYS, ObjectEvents, Palette, TextureKeys } from '../constants';
+import { Fonts, Ink, MEOW_KEYS, ObjectEvents, TextureKeys, colorToNumber } from '../constants';
+import type { CatTally } from '../domain/catProgress';
 import type { AnchorsDef, CatDef, Point } from '../domain/types';
 import { getAudio } from '../plugins/AudioPlugin';
 import { Cat } from './Cat';
+import { Polaroid } from './kit/Polaroid';
 import { profileOf } from '../systems/motion';
-import { addHover, hex } from './ui';
+import { createTallyLabel } from './tallyLabel';
+import { addHover } from './ui';
 import { hoverSfx } from './hoverSfx';
 
-export const CARD_W = 172;
-export const CARD_H = 196;
-const CAT_SIZE = 176;
+export const CARD_W = 190;
+export const CARD_H = 206;
+const CAT_SIZE = 150;
+const CAPTION_H = 66;
+/** Falls in with this many extra degrees and settles (art-direction section 8). */
+const FALL_DEGREES = 6;
 
-/** A cat of the gallery on its card: idles, hops with a happy face and a meow when picked, and shows it is the chosen one. */
+/**
+ * A cat of the gallery on its polaroid with washi (art-direction sections 6 and 7): idles, hops with a happy face and a meow
+ * when picked, shows it is the chosen one with an ink ring, and has its best star and "♥ 2/5" under the name.
+ */
 export class CatCard extends Phaser.GameObjects.Container {
   readonly cat: Cat;
-  private readonly bg: Phaser.GameObjects.Graphics;
-  private readonly glow: Phaser.GameObjects.Graphics;
+  private readonly polaroid: Polaroid;
+  private readonly ring: Phaser.GameObjects.Graphics;
   private readonly sparkles: Phaser.GameObjects.Particles.ParticleEmitter;
+  private tallyLabel: Phaser.GameObjects.Container;
   private selected = false;
   private pressed = false;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, readonly def: CatDef, anchors: AnchorsDef) {
+  constructor(scene: Phaser.Scene, x: number, y: number, readonly def: CatDef, anchors: AnchorsDef, tally?: CatTally) {
     super(scene, x, y);
-    this.bg = scene.add.graphics();
-    this.glow = scene.add.graphics().setAlpha(0);
-    this.glow.lineStyle(10, hex('rosa400'), 0.35).strokeRoundedRect(-CARD_W / 2 - 6, -CARD_H / 2 - 6, CARD_W + 12, CARD_H + 12, 40);
-    this.cat = new Cat(scene, 0, CARD_H / 2 - 54, def, anchors, CAT_SIZE);
+    this.ring = scene.add.graphics().setAlpha(0);
+    this.ring.lineStyle(8, colorToNumber(Ink.frambuesa), 0.5).strokeRoundedRect(-CARD_W / 2 - 8, -CARD_H / 2 - 8, CARD_W + 16, CARD_H + 16, 22);
+    // The polaroid keeps its own lean (seeded by the cat) and the cat rides inside it. The texts stay level, outside of it: Phaser 4 renders rotated Text objects with bands cut out of the glyphs.
+    this.polaroid = new Polaroid(scene, 0, 0, { id: def.id, width: CARD_W, height: CARD_H, captionHeight: CAPTION_H, animate: false });
+    this.cat = new Cat(scene, 0, CARD_H / 2 - CAPTION_H - 24, def, anchors, CAT_SIZE);
     const label = scene.add
-      .text(0, CARD_H / 2 - 24, def.name, { fontFamily: FONT_FAMILY, fontSize: '24px', color: Palette.texto, fontStyle: '600' })
+      .text(0, CARD_H / 2 - 46, def.name, { fontFamily: Fonts.Voice, fontSize: '30px', color: Ink.tinta })
       .setOrigin(0.5);
-    this.sparkles = scene.add.particles(0, 0, TextureKeys.Sparkle, {
+    this.tallyLabel = createTallyLabel(scene, 0, CARD_H / 2 - 20, tally ?? { stars: null, tastes: null });
+    this.sparkles = scene.add.particles(0, 0, TextureKeys.InkSparkle, {
       emitting: false, speed: { min: 80, max: 220 }, angle: { min: 0, max: 360 }, lifespan: { min: 400, max: 800 }, scale: { start: 1.2, end: 0 }, alpha: { start: 1, end: 0 },
     });
-    this.add([this.glow, this.bg, this.cat, label, this.sparkles]);
-    this.drawBg();
+    this.polaroid.add(this.cat);
+    this.add([this.ring, this.polaroid, label, this.tallyLabel, this.sparkles]);
     scene.add.existing(this);
     this.setSize(CARD_W, CARD_H);
 
@@ -47,40 +59,48 @@ export class CatCard extends Phaser.GameObjects.Container {
     });
   }
 
-  private drawBg(): void {
-    this.bg.clear();
-    this.bg.fillStyle(hex('rosa600'), 0.15).fillRoundedRect(-CARD_W / 2 + 2, -CARD_H / 2 + 8, CARD_W, CARD_H, 34);
-    this.bg.fillStyle(this.selected ? hex('rosa200') : hex('crema'), 1).fillRoundedRect(-CARD_W / 2, -CARD_H / 2, CARD_W, CARD_H, 34);
-    this.bg.lineStyle(this.selected ? 7 : 4, this.selected ? hex('rosa400') : hex('rosa200'), 1).strokeRoundedRect(-CARD_W / 2, -CARD_H / 2, CARD_W, CARD_H, 34);
-    this.bg.fillStyle(0xffffff, 0.7).fillRoundedRect(-CARD_W / 2 + 24, -CARD_H / 2 + 8, 56, 6, 3);
+  /** Shows the best star and the hearts of this cat (from the progress); replaces what was there. */
+  setTally(tally: CatTally): void {
+    const old = this.tallyLabel;
+    this.tallyLabel = createTallyLabel(this.scene, 0, CARD_H / 2 - 20, tally);
+    this.polaroid.add(this.tallyLabel);
+    old.destroy();
   }
 
-  /** Pops in after `delay` ms and starts answering to the pointer. */
+  /** Falls in after `delay` ms, with its washi sticking down, and starts answering to the pointer. */
   appear(delay: number): void {
-    this.setScale(1 - 0.2 * profileOf(this.scene).squash).setAlpha(0);
+    const p = profileOf(this.scene);
+    const restY = this.y;
+    this.setAlpha(0);
+    if (p.reduced) {
+      this.scene.tweens.add({ targets: this, alpha: 1, delay, duration: 200, onComplete: () => this.becomeInteractive() });
+      return;
+    }
+    this.setScale(0.8).setAngle(FALL_DEGREES).setY(restY - 30);
     this.scene.tweens.add({
-      targets: this, scale: 1, alpha: 1, delay, duration: 250, ease: profileOf(this.scene).ease('Back.easeOut'),
-      onComplete: () => {
-        this.setInteractive({ useHandCursor: true });
-        addHover(this, 1.05);
-      },
+      targets: this, scale: 1, alpha: 1, angle: 0, y: restY, delay, duration: 280, ease: p.ease('Back.easeOut'),
+      onComplete: () => this.becomeInteractive(),
     });
+  }
+
+  private becomeInteractive(): void {
+    this.setInteractive({ useHandCursor: true });
+    addHover(this, 1.05);
   }
 
   setSelected(selected: boolean): void {
     if (selected === this.selected) return;
     this.selected = selected;
-    this.drawBg();
-    this.scene.tweens.killTweensOf(this.glow);
+    this.scene.tweens.killTweensOf(this.ring);
     if (selected) {
       if (profileOf(this.scene).loops) {
-        this.glow.setAlpha(0.3);
-        this.scene.tweens.add({ targets: this.glow, alpha: 1, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+        this.ring.setAlpha(0.4);
+        this.scene.tweens.add({ targets: this.ring, alpha: 1, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
       } else {
-        this.scene.tweens.add({ targets: this.glow, alpha: 0.8, duration: 200 });
+        this.scene.tweens.add({ targets: this.ring, alpha: 0.9, duration: 200 });
       }
     } else {
-      this.scene.tweens.add({ targets: this.glow, alpha: 0, duration: 150 });
+      this.scene.tweens.add({ targets: this.ring, alpha: 0, duration: 150 });
     }
   }
 
