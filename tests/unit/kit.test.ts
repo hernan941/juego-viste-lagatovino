@@ -1,5 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { KIT_MIN_HIT, TAB_RISE, gridLines, hoverTarget, kitHitSize, pressTarget, tabLayout } from '../../src/game/systems/kit';
+import { KIT_MIN_HIT, STAMP_TILT, TAB_RISE, gridLines, hoverTarget, kitHitSize, pressTarget, stampColors, stampHover, tabLayout } from '../../src/game/systems/kit';
+
+describe('stamp buttons (round v2, F12.R A3)', () => {
+  it('rest: white disc with ink icon; hover inverts them', () => {
+    expect(stampColors(false)).toEqual({ fill: 'tarjeta', icon: 'tinta' });
+    expect(stampColors(true)).toEqual({ fill: 'tinta', icon: 'cremaPapel' });
+  });
+
+  it('hover adds 1 degree to the resting tilt, none with reduced motion', () => {
+    expect(stampHover(-2, false)).toEqual({ scale: 1.04, angle: -1 });
+    expect(stampHover(-2, true)).toEqual({ scale: 1.04, angle: -2 });
+  });
+
+  it('each stamp rests with its own small tilt', () => {
+    expect(STAMP_TILT).toEqual({ mute: -2, motion: 1, fullscreen: -1 });
+  });
+});
 
 describe('kit feedback (art-direction §8)', () => {
   it('press scales to 0.95 and drops 2 px', () => {
