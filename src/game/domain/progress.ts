@@ -1,7 +1,11 @@
 // Pure TS, no Phaser (ADR 0010, ADR 0017). The progress of the player: its empty value, its structural cleaning when a
 // save is read, and its validation against the catalog (`progressFromSave`, like `sessionFromSave`).
+import { milestoneBonus, novelty, payout } from './economy';
+import { discoverTaste } from './tastes';
 import { SLOT_ORDER, type Slot } from './slots';
-import type { ItemDye, KeychainRecipe, Outfit, Progress, SaveData, Stars, StoredProgress } from './types';
+import type {
+  EconomyRules, ItemDye, KeychainRecipe, Outfit, Progress, ProgressEvent, RatingResult, SaveData, Stars, StoredProgress, TasteKey,
+} from './types';
 
 /** Signatures kept per cat to detect repeated looks. */
 export const RATED_LOOKS_KEPT = 3;
@@ -140,4 +144,62 @@ export function progressFromSave(save: SaveData, catalog: ProgressCatalog, rules
     keychains,
     albumSeen: unique(stored.albumSeen),
   };
+}
+
+/** The new progress and what the scene replays, in order (ADR 0017). */
+export interface Applied {
+  progress: Progress;
+  events: ProgressEvent[];
+}
+
+/** The look that was rated: the cat and its signature (`lookSignature`). */
+export interface RatedLook {
+  catId: string;
+  signature: string;
+}
+
+const withWallet = (p: Progress, amount: number): Progress => ({ ...p, wallet: p.wallet + amount });
+
+/**
+ * A rating becomes coins and records. Events, in this order: `coins` (the payout, by novelty), then one `milestone` per
+ * first 3, 4 and 5 stars of the cat. The input is never changed.
+ */
+export function applyRating(progress: Progress, result: RatingResult, rules: EconomyRules, look: RatedLook): Applied {
+  const { catId, signature } = look;
+  const history = progress.ratedLooks[catId] ?? [];
+  const best = progress.bestStars[catId];
+  const events: ProgressEvent[] = [{ type: 'coins', amount: payout(result.stars, novelty(signature, history, rules), rules) }];
+  for (const m of milestoneBonus(best, result.stars, rules)) events.push({ type: 'milestone', stars: m.stars, amount: m.amount });
+  const earned = events.reduce((sum, e) => sum + ('amount' in e ? e.amount : 0), 0);
+  return {
+    progress: {
+      ...withWallet(progress, earned),
+      bestStars: { ...progress.bestStars, [catId]: best === undefined || result.stars > best ? result.stars : best },
+      ratedLooks: { ...progress.ratedLooks, [catId]: [...history, signature].slice(-RATED_LOOKS_KEPT) },
+    },
+    events,
+  };
+}
+
+/**
+ * The first time a taste (per cat) or a combo (per player) is found it pays; afterwards nothing changes (the same
+ * progress object comes back). For a taste, `key` is the TasteKey and `catId` is needed.
+ */
+export function applyDiscovery(
+  progress: Progress,
+  kind: 'taste' | 'combo',
+  key: TasteKey | string,
+  rules: EconomyRules,
+  catId?: string,
+): Applied {
+  if (kind === 'combo') {
+    if (progress.secrets.includes(key)) return { progress, events: [] };
+    const amount = rules.comboBonus;
+    return { progress: { ...withWallet(progress, amount), secrets: [...progress.secrets, key] }, events: [{ type: 'comboFirst', comboId: key, amount }] };
+  }
+  if (catId === undefined) return { progress, events: [] };
+  const { found, isNew } = discoverTaste(progress.tastesFound, catId, key);
+  if (!isNew) return { progress, events: [] };
+  const amount = rules.discoveryBonus;
+  return { progress: { ...withWallet(progress, amount), tastesFound: found }, events: [{ type: 'tasteFound', taste: key, amount }] };
 }
