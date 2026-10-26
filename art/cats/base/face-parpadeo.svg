@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- Viste Lagato · cara "parpadeo" (capa intercambiable, art-direction v2 §2). Ojos cerrados en curva (el parpadeo del idle). Ojos centrados en (192, 224) y (320, 224): los lentes calzan. Sin mejillas ni :3. -->
+  <!-- Viste Lagato · cara "parpadeo" (capa intercambiable, art-direction v2 §2). Ojos cerrados en curva (el parpadeo del idle). Ojos centrados en (192, 224) y (320, 224): los lentes calzan. Sin mejillas ni :3. Los trazos de ojos y boca llevan debajo un halo blanco al 50% (4 px más ancho) para leerse en pelajes oscuros (F12.R A1). -->
 <g stroke-linejoin="round" stroke-linecap="round">
   <!-- bigotes: finos y algo curvos, tres por lado -->
   <g fill="none" stroke="#1F1B1A" stroke-width="3.5">
@@ -7,14 +7,17 @@
     <path d="M384 238 Q398 230 410 231 M384 249 Q399 247 412 251 M384 260 Q397 262 408 268"/>
   </g>
   <g data-eye="l" data-c="192 224">
+    <path class="halo" fill="none" stroke="#FFFFFF" stroke-opacity="0.5" stroke-width="10.5" d="M172 222 C180 238 204 238 212 222"/>
     <path class="arc" fill="none" stroke="#1F1B1A" stroke-width="6.5" d="M172 222 C180 238 204 238 212 222"/>
   </g>
   <g data-eye="r" data-c="320 224">
+    <path class="halo" fill="none" stroke="#FFFFFF" stroke-opacity="0.5" stroke-width="10.5" d="M300 222 C308 238 332 238 340 222"/>
     <path class="arc" fill="none" stroke="#1F1B1A" stroke-width="6.5" d="M300 222 C308 238 332 238 340 222"/>
   </g>
   <!-- nariz triangular chica -->
   <path class="nose" fill="#D9A48C" stroke="#1F1B1A" stroke-width="3" d="M245 238 C251 234 261 234 267 238 C265 246 259 251 256 253 C253 251 247 246 245 238 Z"/>
   <!-- boca: línea en "y" -->
-  <path class="mouth-y" fill="none" stroke="#1F1B1A" stroke-width="4.5" d="M256 253 L256 260 M237 264 C246 271 256 267 256 260 C256 267 266 271 275 264"/>
+  <path class="halo" fill="none" stroke="#FFFFFF" stroke-opacity="0.5" stroke-width="8.5" d="M256 253 L256 260 M237 264 C246 271 256 267 256 260 C256 267 266 271 275 264"/>
+    <path class="mouth-y" fill="none" stroke="#1F1B1A" stroke-width="4.5" d="M256 253 L256 260 M237 264 C246 271 256 267 256 260 C256 267 266 271 275 264"/>
 </g>
 </svg>

@@ -36,3 +36,27 @@ describe('gatos con trazo de tinta (F12.5)', () => {
     expect(svg).toMatch(/<use href="#tail-shape"[^>]*transform="translate\(1\.5 2\)"/);
   });
 });
+
+// F12.R A1: the closed-eye faces carry a light halo under every ink stroke, so they read on dark coats.
+describe('caras con ojos cerrados legibles en pelajes oscuros (F12.R A1)', () => {
+  const faces = Object.entries(all).filter(([p]) => /face-(puaj|feliz|parpadeo)\.svg$/.test(p));
+
+  it('hay tres caras de ojos cerrados', () => {
+    expect(faces).toHaveLength(3);
+  });
+
+  it.each(faces)('%s: cada trazo de ojo y boca lleva debajo un halo claro', (_p, svg) => {
+    const halos = [...svg.matchAll(/<path class="halo"[^>]*>/g)];
+    // two eyes and a mouth
+    expect(halos.length).toBeGreaterThanOrEqual(3);
+    for (const m of halos) {
+      expect(m[0]).toMatch(/stroke="#FFFFFF"/);
+      expect(m[0]).toMatch(/stroke-opacity="0\.5"/);
+    }
+  });
+
+  it('the open-eye face stays without halo', () => {
+    const normal = Object.entries(all).find(([p]) => p.endsWith('face-normal.svg'))?.[1] ?? '';
+    expect(normal).not.toContain('class="halo"');
+  });
+});

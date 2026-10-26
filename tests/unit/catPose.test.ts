@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CAT_POSE_IDS, HEAD_NO_ANGLE, catPose, headNoSteps } from '../../src/game/domain/catPose';
+import { CAT_POSE_IDS, HEAD_NO_ANGLE, catPose, headNoSteps, puajShiver } from '../../src/game/domain/catPose';
 import { EXPRESSIONS } from '../../src/game/domain/expressions';
 
 describe('catPose (S6: transformations and faces, no new body art)', () => {
@@ -47,5 +47,15 @@ describe('headNoSteps (sayNo)', () => {
   it('scales the angle (a gentler no) and never moves with 0', () => {
     expect(headNoSteps(0.5)).toEqual([-2, 2, -2, 2, 0]);
     expect(headNoSteps(0).every((a) => a === 0)).toBe(true);
+  });
+});
+
+describe('puajShiver (F12.R A1: the chill of "puaj")', () => {
+  it('shivers 3 px side to side 3 times in 180 ms and rests at 0', () => {
+    expect(puajShiver(false)).toEqual({ steps: [3, -3, 3, -3, 3, -3, 0], stepMs: 30 });
+  });
+
+  it('with reduced motion there is no shiver, only the cloud', () => {
+    expect(puajShiver(true).steps).toEqual([]);
   });
 });

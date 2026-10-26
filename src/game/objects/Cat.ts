@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
-import { ObjectEvents } from '../constants';
+import { ObjectEvents, TextureKeys } from '../constants';
 import { catTailKey, faceKey } from '../data/assets';
-import { catPose, headNoSteps, type CatPoseId } from '../domain/catPose';
+import { catPose, headNoSteps, puajShiver, type CatPoseId } from '../domain/catPose';
 import { reactionFor, type Expression, type ReactionEvent } from '../domain/expressions';
 import { Cooldown } from '../domain/cooldown';
 import { blinkCount, idleLookOffset, lookOffset, nextBlinkDelay, nextFlickDelay, nextIdleLookDelay } from '../domain/idle';
@@ -272,7 +272,33 @@ export class Cat extends Phaser.GameObjects.Container {
         tweens: headNoSteps(p.shake).map((angle) => ({ angle, duration: 90, ease: 'Sine.easeInOut' })),
       });
     }
+    this.scribbleCloud(p.reduced);
     this.revertTimer = this.scene.time.delayedCall(900, () => this.setExpression('normal'));
+  }
+
+  /** The "puaj" cloud: a doodle of ink pops over the head (same on every coat), floats up and fades; the head also shivers. */
+  private scribbleCloud(reduced: boolean): void {
+    const head = this.anchors.anchors.head;
+    const { width } = this.anchors.canvas;
+    const x = head.x + 96 - width / 2;
+    const y = head.y - 40 - FEET_Y;
+    const cloud = this.scene.add.image(x, y, TextureKeys.Scribble).setDisplaySize(120, 120).setDepth(FACE_DEPTH + 1);
+    this.breath.add(cloud);
+    cloud.setAlpha(0).setScale(cloud.scaleX * 0.7);
+    this.scene.tweens.add({
+      targets: cloud, alpha: 1, scaleX: cloud.scaleX / 0.7, scaleY: cloud.scaleY / 0.7, duration: 150, ease: 'Back.easeOut',
+      onComplete: () => this.scene.tweens.add({ targets: cloud, alpha: 0, y: y - 30, duration: 600, delay: 300, onComplete: () => cloud.destroy() }),
+    });
+    const { steps, stepMs } = puajShiver(reduced);
+    if (steps.length === 0) return;
+    const targets = [this.face, ...[...this.layers.values()].filter((l) => l.item.slot === 'head' || l.item.slot === 'face').map((l) => l.image)];
+    this.scene.tweens.chain({
+      targets,
+      tweens: steps.map((to, i) => {
+        const delta = to - (steps[i - 1] ?? 0);
+        return { x: `${delta >= 0 ? '+=' : '-='}${Math.abs(delta)}`, duration: stepMs, ease: 'Sine.easeInOut' };
+      }),
+    });
   }
 
   // ---- Photo pose (S6) -----------------------------------------------------

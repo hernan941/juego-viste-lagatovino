@@ -162,6 +162,8 @@ export const TextureKeys = {
   Confetti: 'particle-confetti',
   /** The four-point ink-outlined sparkle of the Lagatovino look (art-direction section 6.3). */
   InkSparkle: 'particle-ink-sparkle',
+  /** The doodle cloud of ink that pops over a cat saying "puaj" (F12.R A1). */
+  Scribble: 'particle-scribble',
   /** Second stage UI (F11.10 gives each one a placeholder SVG). */
   Coin: 'ui-coin',
   PriceTag: 'ui-price-tag',
