@@ -65,3 +65,11 @@ Tests unit con datos reales, que se hacen cuando estén integrados F11.9 y F11.1
   - comprar, y el aviso de "no alcanza";
   - la caja del ¡Listo! con prendas sin pagar;
   - recargar no paga dos veces.
+
+## F12.4: voz y personajes
+### E2E pendientes
+- Si se cambian los nombres en `brand.json`, las burbujas del juez y de la vendedora muestran los nombres nuevos.
+- La firma "Xoxo, mau!" aparece en la foto.
+- El reverso del llavero dice "Hecho a mano · <fecha>".
+- Ningún texto visible contiene `nombre@` ni `@nombre`.
+- Mostrar las burbujas no produce errores de consola.
