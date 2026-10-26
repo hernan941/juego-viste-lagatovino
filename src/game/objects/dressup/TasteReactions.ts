@@ -1,19 +1,29 @@
 // Taste reactions (S2, F14.2): when a garment is dropped, the cat tells what it thinks of it. Love, dislike, favorite and
 // color each have their own face, sound and motion (domain/tasteFx.ts). The garment always stays: the player decides, the
 // cat only has an opinion. Combos have their own reaction (SecretsController) and neutral drops keep the scene's happy face.
+// F14.3: the first time a taste shows (per cat) it is a discovery: a chip flies to the name sign and pays the bonus.
 import type Phaser from 'phaser';
-import { DressUpEvents, Ink, SfxKeys, TextureKeys, MEOW_KEYS, colorToNumber } from '../../constants';
+import { DressUpEvents, Ink, RegistryKeys, SfxKeys, TextureKeys, MEOW_KEYS, colorToNumber } from '../../constants';
+import { tasteChip, type NameLookup } from '../../domain/catSheet';
 import { newlyCompleted } from '../../domain/combos';
 import { tasteLines } from '../../domain/copy';
 import { anchorForSlot } from '../../domain/slots';
 import { tasteFxPlan, type TasteSound } from '../../domain/tasteFx';
-import { tasteReaction, type TasteKind } from '../../domain/tastes';
-import type { ClothingDef, Outfit } from '../../domain/types';
+import { tasteKeyOf, tasteReaction, type TasteKind } from '../../domain/tastes';
+import type { CatDef, ClothingDef, DyeDef, EconomyRules, Outfit, Point, Progress, TasteKey } from '../../domain/types';
 import { getAudio } from '../../plugins/AudioPlugin';
 import { getSave } from '../../plugins/SavePlugin';
 import { profileOf } from '../../systems/motion';
 import { SpeechBubble } from '../kit/SpeechBubble';
+import { TasteChip } from '../TasteChip';
 import type { DressUpContext, DressUpController } from './DressUpController';
+import { payDiscovery } from './awards';
+
+/** What the catalog of the registry carries besides the clothes (GameData, ADR 0017). */
+interface WithRules {
+  economy: EconomyRules;
+  dyes?: DyeDef[];
+}
 
 const BUBBLE_MS = 1300;
 const SOL = colorToNumber(Ink.sol);
@@ -26,6 +36,10 @@ export class TasteReactions implements DressUpController {
   private log: TasteKind[] = [];
   private bubble: SpeechBubble | null = null;
   private timers: Phaser.Time.TimerEvent[] = [];
+  /** Discoveries whose chip is still in the air: the taste is paid when it lands (or when the scene closes first). */
+  private pending = new Map<TasteKey, TasteChip>();
+  /** Tastes discovered in this visit, newest last (for the e2e hook). */
+  private discovered: TasteKey[] = [];
 
   attach(ctx: DressUpContext): void {
     this.ctx = ctx;
@@ -37,14 +51,25 @@ export class TasteReactions implements DressUpController {
   destroy(): void {
     this.ctx.scene.events.off(DressUpEvents.OutfitChanged, this.onOutfit, this);
     this.ctx.scene.events.off(DressUpEvents.ItemDropped, this.onDropped, this);
+    // A discovery in the air is not lost: it is written now, without the flight.
+    for (const [key, chip] of [...this.pending]) {
+      chip.destroy();
+      this.pay(key, null);
+    }
+    this.pending.clear();
     for (const t of this.timers) t.remove();
     this.timers = [];
     this.bubble?.destroy();
     this.bubble = null;
   }
 
-  e2eState(): { last: TasteKind | null; log: TasteKind[] } {
-    return { last: this.log[this.log.length - 1] ?? null, log: [...this.log] };
+  e2eState(): { last: TasteKind | null; log: TasteKind[]; discovered: TasteKey[]; pending: TasteKey[] } {
+    return { last: this.log[this.log.length - 1] ?? null, log: [...this.log], discovered: [...this.discovered], pending: [...this.pending.keys()] };
+  }
+
+  /** False while a discovery chip is flying. */
+  isSettled(): boolean {
+    return this.pending.size === 0;
   }
 
   private onOutfit(outfit: Outfit): void {
@@ -61,6 +86,52 @@ export class TasteReactions implements DressUpController {
     const reaction = tasteReaction(item, dye, cat, combos);
     this.log.push(reaction.kind);
     this.play(reaction.kind, item);
+    const key = tasteKeyOf(reaction);
+    if (key) this.discover(key, cat);
+  }
+
+  // ---- Discovering ---------------------------------------------------------
+
+  private progress(): Progress {
+    return this.ctx.scene.registry.get(RegistryKeys.Progress) as Progress;
+  }
+
+  private names(): NameLookup {
+    const { catalog } = this.ctx;
+    const dyes = (catalog as unknown as WithRules).dyes ?? [];
+    return {
+      item: (id) => catalog.clothes.find((c) => c.id === id)?.name ?? id,
+      dye: (id) => dyes.find((d) => d.id === id)?.name ?? id,
+    };
+  }
+
+  /** The first time (per cat) a taste shows: a chip comes out of the cat and flies to the name sign, where it pays. */
+  private discover(key: TasteKey, cat: CatDef): void {
+    const { scene, catId, cat: kitty, sign } = this.ctx;
+    if (this.pending.has(key) || (this.progress().tastesFound[catId] ?? []).includes(key)) return;
+    const head = kitty.getAnchorWorld('head');
+    // It comes out to the left of the face (the bubble is on the right) and waits a moment so it is seen.
+    const chip = new TasteChip(scene, head.x - 190, head.y + 10, tasteChip(key, this.names(), cat), { width: 150, maxWidth: 340, height: 64 }).setDepth(4150);
+    this.pending.set(key, chip);
+    const target = { x: sign.x, y: sign.y + 11 };
+    chip.flyTo(target, () => {
+      this.pending.delete(key);
+      this.pay(key, target);
+      this.pulseSign();
+    });
+  }
+
+  /** Pays the discovery (only the first time) and, with a `from`, flies the buttons from there to the purse. */
+  private pay(key: TasteKey, from: Point | null): void {
+    const rules = (this.ctx.catalog as unknown as WithRules).economy;
+    if (payDiscovery(this.ctx.scene, 'taste', key, rules, this.ctx.catId, from) > 0) this.discovered.push(key);
+  }
+
+  /** The sign takes the chip in with a little jump (reduced motion: none). */
+  private pulseSign(): void {
+    const { scene, sign } = this.ctx;
+    if (profileOf(scene).reduced) return;
+    scene.tweens.add({ targets: sign, scale: 1.1, duration: 110, yoyo: true, ease: 'Sine.easeOut', onComplete: () => sign.setScale(1) });
   }
 
   private play(kind: TasteKind, item: ClothingDef): void {

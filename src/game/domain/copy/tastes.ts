@@ -4,5 +4,9 @@ export const tasteLines = {
   love: (catName: string): string => `¡${catName} lo ama! Se le nota en la carita`,
   /** What the cat says in its bubble when a taste is touched. */
   bubble: (kind: 'dislike' | 'favorite' | 'color'): string => (kind === 'dislike' ? 'mmm… no' : kind === 'favorite' ? '¡MI FAVORITO!' : '¡mi color!'),
+  /** The cat sheet when the five tastes are found. */
+  knowsYou: (): string => '¡Me conoces!',
+  /** Title of the cat sheet. */
+  sheetTitle: (catName: string): string => `Ficha de ${catName}`,
   hate: (catName: string): string => `Puaj... a ${catName} no le tinca nada eso`,
 };
