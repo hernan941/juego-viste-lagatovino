@@ -16,7 +16,7 @@ art/
     tail/<id>.svg           # GENERADO: solo la cola con el pelaje del gato, en el lienzo de 512 (capa animada)
   clothes/<slot>/<id>.svg   # prenda en el lienzo de 512, ya en su lugar
   clothes/<slot>/<id>.icon.svg  # GENERADO: icono del grid (la prenda centrada sobre una celda crema)
-  ui/panel.svg, ui/button.svg
+  ui/<escena>/…             # UI v2 (monedero, etiquetas, álbum, llavero…)
 ```
 
 Regenerar después de tocar `base/`, `coats/` o una prenda:

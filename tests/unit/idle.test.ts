@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { blinkCount, lookOffset, nextBlinkDelay } from '../../src/game/domain/idle';
+import { AFFECTION_MS, blinkCount, lookOffset, nextAffectionDelay, nextBlinkDelay } from '../../src/game/domain/idle';
 import { EXPRESSIONS, reactionFor } from '../../src/game/domain/expressions';
 
 describe('nextBlinkDelay', () => {
@@ -55,5 +55,13 @@ describe('reactionFor', () => {
     for (const e of ['grab', 'drop', 'combo', 'remove'] as const) {
       expect(EXPRESSIONS).toContain(reactionFor(e, 0.5).expression);
     }
+  });
+});
+
+describe('the slow blink of affection (F12.R B1)', () => {
+  it('comes every 8 to 12 seconds and lasts about 600 ms', () => {
+    expect(nextAffectionDelay(0)).toBe(8000);
+    expect(nextAffectionDelay(0.999)).toBeLessThan(12_000);
+    expect(AFFECTION_MS).toBe(600);
   });
 });

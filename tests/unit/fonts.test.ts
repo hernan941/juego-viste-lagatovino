@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { FontFaces } from '../../src/game/constants';
-import { fontSpecs, loadFonts } from '../../src/game/systems/fonts';
+import { FontFaces, Fonts } from '../../src/game/constants';
+import { ACCENT_SAMPLE, fontSpecs, loadFonts } from '../../src/game/systems/fonts';
 
 const setOf = (load: (spec: string) => Promise<unknown>) => ({ load }) as unknown as FontFaceSet;
 
@@ -12,11 +12,28 @@ describe('fontSpecs', () => {
   });
 });
 
+describe('accent alias (F12.R M2)', () => {
+  it('Voice falls back to the accents-only alias before Londrina Solid', () => {
+    expect(Fonts.Voice).toBe("Gaegu, 'Londrina Acentos', 'Londrina Solid', sans-serif");
+  });
+
+  it('the alias is declared for both Gaegu weights, from the Londrina 400 file', () => {
+    const alias = FontFaces.filter((f) => f.family === 'Londrina Acentos');
+    expect(alias.map((f) => f.weight)).toEqual([400, 700]);
+    expect(alias.every((f) => f.file === 'LondrinaSolid-400.woff2')).toBe(true);
+  });
+
+  it('is loaded with a sample of the accented glyphs (a unicode-range face ignores the default space)', () => {
+    expect(ACCENT_SAMPLE).toMatch(/[áéíóúñ¡¿]/);
+  });
+});
+
 describe('loadFonts', () => {
   it('asks the browser to load every face and resolves when all are ready', async () => {
     const load = vi.fn().mockResolvedValue([]);
     await loadFonts(setOf(load), 1000);
     expect(load.mock.calls.map((c) => c[0])).toEqual(fontSpecs());
+    expect(load.mock.calls.every((c) => c[1] === ACCENT_SAMPLE)).toBe(true);
   });
 
   it('resolves after the timeout when a font never arrives (offline)', async () => {

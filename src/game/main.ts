@@ -12,7 +12,7 @@ import { AudioPlugin } from './plugins/AudioPlugin';
 import { SavePlugin } from './plugins/SavePlugin';
 import { MotionPlugin } from './plugins/MotionPlugin';
 import { DyePlugin } from './plugins/DyePlugin';
-import { GAME_HEIGHT, GAME_WIDTH, Palette, PluginKeys } from './constants';
+import { GAME_HEIGHT, GAME_WIDTH, Ink, PluginKeys } from './constants';
 import { installE2EHook } from './e2eHook';
 import { readPerf } from './e2ePerf';
 import { installFpsCounter } from './fpsCounter';
@@ -22,7 +22,7 @@ const config: Phaser.Types.Core.GameConfig = {
   width: GAME_WIDTH,
   height: GAME_HEIGHT,
   parent: 'game-container',
-  backgroundColor: Palette.rosa50,
+  backgroundColor: Ink.cremaPapel,
   // ADR 0014: a long press must not open the browser menu over the game.
   disableContextMenu: true,
   scale: { mode: Scale.FIT, autoCenter: Scale.CENTER_BOTH },

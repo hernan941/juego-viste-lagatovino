@@ -71,10 +71,10 @@ describe('buildManifest with the second-stage data (F11.10)', () => {
     }
   });
 
-  it('loads every UI and photo file that the game uses (only button and panel stay out)', () => {
+  it('loads every UI and photo file that the game uses (no v1 button or panel is left over)', () => {
     const loaded = new Set(manifest.map((m) => `/public/${m.path}`));
     const orphans = Object.keys(files).filter((f) => /^\/public\/assets\/(ui|photo)\//.test(f) && !loaded.has(f));
-    expect(orphans.sort()).toEqual(['/public/assets/ui/button.svg', '/public/assets/ui/panel.svg']);
+    expect(orphans).toEqual([]);
     expect(UI_ART.length).toBeGreaterThan(20);
   });
 });

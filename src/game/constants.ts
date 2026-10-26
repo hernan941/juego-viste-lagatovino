@@ -65,11 +65,12 @@ export type InkToken = keyof typeof Ink;
 
 /**
  * Font stacks (ADR 0016). Gaegu has no accented Latin glyphs (á, é, ñ, ¡, ¿), so Voice falls back to
- * Londrina Solid, which has them, instead of the browser's default serif.
+ * "Londrina Acentos": an alias of Londrina Solid that only covers those glyphs and is shrunk (`size-adjust`) to match
+ * Gaegu, so one accented letter in the middle of a word does not look like a typo (F12.R M2).
  */
 export const Fonts = {
   Title: "'Londrina Solid', sans-serif",
-  Voice: "Gaegu, 'Londrina Solid', sans-serif",
+  Voice: "Gaegu, 'Londrina Acentos', 'Londrina Solid', sans-serif",
   Body: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
 } as const;
 
@@ -79,6 +80,8 @@ export const FontFaces = [
   { family: 'Londrina Solid', weight: 900, file: 'LondrinaSolid-900.woff2' },
   { family: 'Gaegu', weight: 400, file: 'Gaegu-400.woff2' },
   { family: 'Gaegu', weight: 700, file: 'Gaegu-700.woff2' },
+  { family: 'Londrina Acentos', weight: 400, file: 'LondrinaSolid-400.woff2' },
+  { family: 'Londrina Acentos', weight: 700, file: 'LondrinaSolid-400.woff2' },
 ] as const;
 
 /** Hex string "#RRGGBB" to the number Phaser expects for fills. */
@@ -175,6 +178,8 @@ export const TextureKeys = {
   Confetti: 'particle-confetti',
   /** The four-point ink-outlined sparkle of the Lagatovino look (art-direction section 6.3). */
   InkSparkle: 'particle-ink-sparkle',
+  /** The doodle cloud of ink that pops over a cat saying "puaj" (F12.R A1). */
+  Scribble: 'particle-scribble',
   /** Second stage UI (F11.10 gives each one a placeholder SVG). */
   Coin: 'ui-coin',
   /** The jar of buttons of the wallet HUD. */

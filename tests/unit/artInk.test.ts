@@ -36,3 +36,68 @@ describe('gatos con trazo de tinta (F12.5)', () => {
     expect(svg).toMatch(/<use href="#tail-shape"[^>]*transform="translate\(1\.5 2\)"/);
   });
 });
+
+// F12.R A1: the closed-eye faces carry a light halo under every ink stroke, so they read on dark coats.
+describe('caras con ojos cerrados legibles en pelajes oscuros (F12.R A1)', () => {
+  const faces = Object.entries(all).filter(([p]) => /face-(puaj|feliz|parpadeo)\.svg$/.test(p));
+
+  it('hay tres caras de ojos cerrados', () => {
+    expect(faces).toHaveLength(3);
+  });
+
+  it.each(faces)('%s: cada trazo de ojo y boca lleva debajo un halo claro', (_p, svg) => {
+    const halos = [...svg.matchAll(/<path class="halo"[^>]*>/g)];
+    // two eyes and a mouth
+    expect(halos.length).toBeGreaterThanOrEqual(3);
+    for (const m of halos) {
+      expect(m[0]).toMatch(/stroke="#FFFFFF"/);
+      expect(m[0]).toMatch(/stroke-opacity="0\.7"/);
+    }
+  });
+
+  it('the open-eye face stays without halo', () => {
+    const normal = Object.entries(all).find(([p]) => p.endsWith('face-normal.svg'))?.[1] ?? '';
+    expect(normal).not.toContain('class="halo"');
+  });
+});
+
+// F12.R B4: every lens frame has an ink outline wider than its colored frame and a colored frame that is not a hairline.
+describe('marcos de lentes con contorno de tinta (F12.R B4)', () => {
+  const lenses = Object.entries(
+    import.meta.glob('/public/assets/clothes/face/lentes-*.svg', { query: '?raw', import: 'default', eager: true }) as Record<string, string>,
+  ).filter(([p]) => !p.endsWith('.icon.svg'));
+
+  it('hay cinco lentes', () => {
+    expect(lenses).toHaveLength(5);
+  });
+
+  it.each(lenses)('%s: lente con trazo de tinta exterior y marco de color de al menos 8 px', (_p, svg) => {
+    for (const g of svg.matchAll(/<g transform="translate\([\d.]+ [\d.]+\) scale\(([\d.]+)\)">([\s\S]*?)<\/g>/g)) {
+      const k = Number(g[1]);
+      const strokes = [...g[2]!.matchAll(/stroke="(#[0-9A-Fa-f]{6})" stroke-width="([\d.]+)"/g)]
+        .filter((m) => m[1] !== '#FFFFFF' && m[1] !== '#FFF0A8')
+        .map((m) => ({ color: m[1]!.toUpperCase(), width: Number(m[2]) * k }));
+      const ink = Math.max(...strokes.filter((s) => s.color === '#1F1B1A').map((s) => s.width));
+      const frame = Math.max(...strokes.filter((s) => s.color !== '#1F1B1A').map((s) => s.width));
+      expect(frame).toBeGreaterThanOrEqual(8);
+      expect(ink).toBeGreaterThan(frame);
+    }
+  });
+});
+
+// F12.R M4: the knit stitches of cuffs, hem and collar are a neutral shade, so a dyed sweater does not keep pink or lilac cuffs.
+describe('costuras de puños, dobladillo y cuello neutras al teñir (F12.R M4)', () => {
+  const sweaters = Object.entries(
+    import.meta.glob('/public/assets/clothes/sweater/*.svg', { query: '?raw', import: 'default', eager: true }) as Record<string, string>,
+  ).filter(([p]) => !p.endsWith('.icon.svg'));
+  const STITCH = /<path fill="none" stroke="(#[0-9A-Fa-f]{6})"[^>]*? d="M(?:150 452 L150 474|196 32\d L196 33\d|210 437 L210 449)/g;
+
+  it.each(sweaters)('%s: ninguna costura de color fijo', (_p, svg) => {
+    expect([...svg.matchAll(STITCH)].map((m) => m[1]).filter((c) => c !== '#000000')).toEqual([]);
+  });
+
+  it('el rayas usa costuras de sombra (negro translucido)', () => {
+    const rayas = sweaters.find(([p]) => p.endsWith('/rayas.svg'))![1];
+    expect(rayas).toMatch(/stroke="#000000" stroke-opacity="0\.18"[^>]* d="M210 437 L210 449/);
+  });
+});

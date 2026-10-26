@@ -27,6 +27,25 @@
     font-display: swap;
     src: url('fonts/Gaegu-700.woff2') format('woff2');
 }
+/* Gaegu has no accents: this alias lends Londrina Solid's, only for those glyphs and shrunk to Gaegu's size (F12.R M2). */
+@font-face {
+    font-family: 'Londrina Acentos';
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+    src: url('fonts/LondrinaSolid-400.woff2') format('woff2');
+    unicode-range: U+00A1, U+00BF, U+00C0-00FF;
+    size-adjust: 88%;
+}
+@font-face {
+    font-family: 'Londrina Acentos';
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+    src: url('fonts/LondrinaSolid-400.woff2') format('woff2');
+    unicode-range: U+00A1, U+00BF, U+00C0-00FF;
+    size-adjust: 88%;
+}
 
 html, body {
     margin: 0;
@@ -35,7 +54,7 @@ html, body {
     overflow: hidden;
     overscroll-behavior: none;
     color: #5A3A48;
-    background-color: #FFF0F6;
+    background-color: #FFFCF5;
     font-family: 'Fredoka', sans-serif;
     /* ADR 0014: a finger must never scroll, zoom, select or open a menu over the game. */
     touch-action: none;
@@ -73,7 +92,7 @@ html, body {
     align-items: center;
     justify-content: center;
     text-align: center;
-    background: #FFF0F6;
+    background: #FFFCF5;
 }
 
 html.rotate-hint #rotate-hint {

@@ -51,4 +51,12 @@ export function createParticleTextures(scene: Phaser.Scene): void {
     g.generateTexture(TextureKeys.InkSparkle, 40, 40);
     g.destroy();
   }
+  if (!scene.textures.exists(TextureKeys.Scribble)) {
+    const g = scene.make.graphics({}, false);
+    // A tangled loop of ink: three overlapping rings that drift upward, like a scribbled-out thought.
+    g.lineStyle(4, colorToNumber(Ink.tinta), 1);
+    for (const [cx, cy, rx, ry] of [[28, 38, 20, 12], [40, 30, 18, 14], [32, 34, 26, 8]] as const) g.strokeEllipse(cx, cy, rx * 2, ry * 2);
+    g.generateTexture(TextureKeys.Scribble, 68, 68);
+    g.destroy();
+  }
 }

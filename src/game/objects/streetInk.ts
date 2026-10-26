@@ -1,6 +1,7 @@
 // The street of ShopEntrance in the Lagatovino style (art-direction sections 3 and 7): flat `cielo`, clouds and houses in ink.
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH, Ink, colorToNumber } from '../constants';
+import { STREET_SKETCH } from '../systems/boutiquePalette';
 import { profileOf } from '../systems/motion';
 
 const c = (token: keyof typeof Ink) => colorToNumber(Ink[token]);
@@ -76,17 +77,14 @@ export function addInkStreet(scene: Phaser.Scene): Phaser.GameObjects.Image {
   const key = 'street-ink-bg';
   if (!scene.textures.exists(key)) {
     const g = scene.make.graphics({}, false);
-    const blocks: [number, number, number, keyof typeof Ink][] = [
-      [-10, 150, 190, 'lila'], [190, 90, 150, 'rosa'], [350, 180, 240, 'sol'],
-      [1130, 120, 190, 'rosa'], [1250, 140, 200, 'lila'],
-    ];
-    for (const [x, w, h, color] of blocks) {
-      g.fillStyle(c(color), 1).fillRoundedRect(x, SIDEWALK_Y - h, w, h + 10, 14);
-      g.lineStyle(5, c('tinta'), 1).strokeRoundedRect(x, SIDEWALK_Y - h, w, h + 10, 14);
+    // Far houses are a pencil sketch (paper at 60%, no color): the boutique, in ink, is the protagonist.
+    const blocks: [number, number, number][] = [[-10, 150, 190], [190, 90, 150], [350, 180, 240], [1130, 120, 190], [1250, 140, 200]];
+    for (const [x, w, h] of blocks) {
+      g.fillStyle(c(STREET_SKETCH.fill), STREET_SKETCH.fillAlpha).fillRoundedRect(x, SIDEWALK_Y - h, w, h + 10, 14);
+      g.lineStyle(STREET_SKETCH.width, c(STREET_SKETCH.line), 1).strokeRoundedRect(x, SIDEWALK_Y - h, w, h + 10, 14);
       for (let wy = SIDEWALK_Y - h + 26; wy < SIDEWALK_Y - 50; wy += 56) {
         for (let wx = x + 20; wx < x + w - 36; wx += 46) {
-          g.fillStyle(c('tarjeta'), 1).fillRoundedRect(wx, wy, 26, 32, 8);
-          g.lineStyle(3, c('tinta'), 1).strokeRoundedRect(wx, wy, 26, 32, 8);
+          g.lineStyle(STREET_SKETCH.width, c(STREET_SKETCH.line), 1).strokeRoundedRect(wx, wy, 26, 32, 8);
         }
       }
     }

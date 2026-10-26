@@ -35,3 +35,11 @@ export function nextFlickDelay(rand: number): number {
 export function idleLookOffset(rand: number, px: number): Point {
   return { x: rand < 0.5 ? -px : px, y: 0 };
 }
+
+/** How long the face of affection stays: a slow blink, like the "I love you" of real cats (F12.R B1). */
+export const AFFECTION_MS = 600;
+
+/** The cat shows the happy face every 8 to 12 s while idle. `rand` in [0, 1). */
+export function nextAffectionDelay(rand: number): number {
+  return 8000 + rand * 4000;
+}

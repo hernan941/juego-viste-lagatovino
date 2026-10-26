@@ -12,9 +12,9 @@ function hash(seed: string): number {
   return h >>> 0;
 }
 
-/** Angle in degrees, between +-1 and +-8 (never straight), the same for the same seed. */
-export function stableTilt(seed: string): number {
+/** Angle in degrees, between +-1 and +-`maxDeg` (8 by default; never straight), the same for the same seed. */
+export function stableTilt(seed: string, maxDeg = MAX_DEG): number {
   const h = hash(seed);
-  const magnitude = MIN_DEG + ((h >>> 1) % 1000) / 1000 * (MAX_DEG - MIN_DEG);
+  const magnitude = MIN_DEG + ((h >>> 1) % 1000) / 1000 * (maxDeg - MIN_DEG);
   return h & 1 ? magnitude : -magnitude;
 }

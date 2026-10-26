@@ -31,3 +31,16 @@ export function gridLines(width: number, height: number, step: number): { vertic
 export function tabLayout(count: number, active: number, size: number, gap: number): { x: number; rise: number }[] {
   return Array.from({ length: count }, (_, i) => ({ x: i * (size + gap), rise: i === active ? TAB_RISE : 0 }));
 }
+
+/** Round stamp buttons (sound, motion, fullscreen): resting tilt of each, like stickers stuck on the notebook. */
+export const STAMP_TILT = { mute: -2, motion: 1, fullscreen: -1 } as const;
+
+/** Colors (Ink tokens) of a stamp: white disc with ink icon, inverted on hover. */
+export function stampColors(hover: boolean): { fill: 'tarjeta' | 'tinta'; icon: 'tinta' | 'cremaPapel' } {
+  return hover ? { fill: 'tinta', icon: 'cremaPapel' } : { fill: 'tarjeta', icon: 'tinta' };
+}
+
+/** Hover of a stamp: scale 1.04 and one more degree over its resting tilt (none with reduced motion). */
+export function stampHover(restAngle: number, reduced: boolean): { scale: number; angle: number } {
+  return { scale: 1.04, angle: restAngle + (reduced ? 0 : 1) };
+}

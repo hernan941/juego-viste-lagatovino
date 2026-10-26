@@ -118,6 +118,31 @@ describe('Cat.sayNo (F11.15)', () => {
     expect(chain!.tweens!.map((t) => t.angle)).toEqual([-4, 4, -4, 4, 0]);
   });
 
+  it('a doodle cloud of ink pops over the head and fades away', () => {
+    const { f, cat } = make();
+    cat.sayNo();
+    const cloud = f.images.find((i) => i.key === 'particle-scribble');
+    expect(cloud).toBeDefined();
+    const tween = f.added.find((t) => t.targets === cloud);
+    expect(tween).toBeDefined();
+  });
+
+  it('shivers in x (3 px, three times) besides the head shake', () => {
+    const { f, cat } = make();
+    cat.sayNo();
+    const chain = f.chains.find((c) => c.tweens?.some((t) => t.x !== undefined));
+    expect(chain!.tweens!.map((t) => t.x)).toEqual(['+=3', '-=6', '+=6', '-=6', '+=6', '-=6', '+=3']);
+    expect(chain!.tweens!.every((t) => t.duration === 30 && t.ease === 'Sine.easeInOut')).toBe(true);
+  });
+
+  it('with reduced motion only the cloud shows: no shiver', () => {
+    const { f, cat } = make({ reduced: true });
+    f.chains.length = 0;
+    cat.sayNo();
+    expect(f.images.some((i) => i.key === 'particle-scribble')).toBe(true);
+    expect(f.chains.some((c) => c.tweens?.some((t) => t.x !== undefined))).toBe(false);
+  });
+
   it('goes back to the normal face after a moment', () => {
     const { f, cat, face } = make();
     cat.sayNo();

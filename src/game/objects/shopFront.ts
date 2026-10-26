@@ -3,6 +3,7 @@
 import Phaser from 'phaser';
 import { Fonts, Ink, colorToNumber } from '../constants';
 import type { Point } from '../domain/types';
+import { BOUTIQUE } from '../systems/boutiquePalette';
 import { opaqueBounds } from './alphaMap';
 
 const W = 520;
@@ -27,15 +28,15 @@ function paintFront(scene: Phaser.Scene, key: string): void {
   if (scene.textures.exists(key)) return;
   const g = scene.make.graphics({}, false);
   const outline = (w = 5) => g.lineStyle(w, INK, 1);
-  // Wall with a lavender plinth.
-  g.fillStyle(ink('rosa'), 1).fillRoundedRect(20, 70, 480, 440, 22);
-  g.fillStyle(0xffffff, 0.35);
+  // Paper wall with a hint of brick, and a peach plinth.
+  g.fillStyle(ink(BOUTIQUE.wall), 1).fillRoundedRect(20, 70, 480, 440, 22);
+  g.fillStyle(ink(BOUTIQUE.brick), 1);
   for (let r = 0; r < 7; r++) for (let c = 0; c < 8; c++) g.fillRoundedRect(36 + c * 58 + (r % 2) * 29, 150 + r * 46, 46, 8, 4);
   outline().strokeRoundedRect(20, 70, 480, 440, 22);
-  g.fillStyle(ink('lila'), 1).fillRoundedRect(20, 472, 480, 38, { tl: 0, tr: 0, bl: 22, br: 22 });
+  g.fillStyle(ink(BOUTIQUE.plinth), 1).fillRoundedRect(20, 472, 480, 38, { tl: 0, tr: 0, bl: 22, br: 22 });
   outline().strokeRoundedRect(20, 472, 480, 38, { tl: 0, tr: 0, bl: 22, br: 22 });
   // Cornice and the sign plaque on it.
-  g.fillStyle(ink('lila'), 1).fillRoundedRect(0, 44, W, 52, 20);
+  g.fillStyle(ink(BOUTIQUE.cornice), 1).fillRoundedRect(0, 44, W, 52, 20);
   outline().strokeRoundedRect(0, 44, W, 52, 20);
   g.fillStyle(ink('tarjeta'), 1).fillRoundedRect(86, 6, 348, 78, 30);
   outline(6).strokeRoundedRect(86, 6, 348, 78, 30);
@@ -44,7 +45,7 @@ function paintFront(scene: Phaser.Scene, key: string): void {
   const sw = 460 / STRIPES;
   for (let i = 0; i < STRIPES; i++) {
     const x0 = 30 + i * sw;
-    g.fillStyle(i % 2 === 0 ? ink('rosa') : ink('tarjeta'), 1);
+    g.fillStyle(i % 2 === 0 ? ink(BOUTIQUE.awningStripe) : ink(BOUTIQUE.awningPaper), 1);
     g.fillPoints([new Phaser.Math.Vector2(x0 + 6, 138), new Phaser.Math.Vector2(x0 + sw - 6, 138), new Phaser.Math.Vector2(x0 + sw + 3, 206), new Phaser.Math.Vector2(x0 - 3, 206)], true);
     g.fillCircle(x0 + sw / 2, 206, sw / 2 - 1);
   }
@@ -67,14 +68,14 @@ function paintFront(scene: Phaser.Scene, key: string): void {
   outline(4).strokeRoundedRect(40, 444, 224, 26, 12);
   g.fillStyle(ink('hoja'), 1).fillCircle(70, 440, 11).fillCircle(96, 436, 9).fillCircle(228, 438, 11).fillCircle(200, 436, 8);
   // Doorway with its frame and a warm, lit inside.
-  g.fillStyle(ink('lila'), 1).fillRoundedRect(DOOR.x - 14, DOOR.y - 14, DOOR.width + 28, DOOR.height + 28, 22);
+  g.fillStyle(ink(BOUTIQUE.doorFrame), 1).fillRoundedRect(DOOR.x - 14, DOOR.y - 14, DOOR.width + 28, DOOR.height + 28, 22);
   outline().strokeRoundedRect(DOOR.x - 14, DOOR.y - 14, DOOR.width + 28, DOOR.height + 28, 22);
   g.fillStyle(ink('cremaPapel'), 1).fillRect(DOOR.x, DOOR.y, DOOR.width, DOOR.height);
-  g.fillStyle(ink('rosa'), 0.8).fillRect(DOOR.x, DOOR.y + 120, DOOR.width, DOOR.height - 120);
+  g.fillStyle(ink(BOUTIQUE.doorInside), 0.8).fillRect(DOOR.x, DOOR.y + 120, DOOR.width, DOOR.height - 120);
   g.fillStyle(ink('sol'), 1).fillCircle(DOOR.x + DOOR.width / 2, DOOR.y + 36, 22);
   g.fillStyle(0xffffff, 0.8).fillCircle(DOOR.x + DOOR.width / 2 - 6, DOOR.y + 30, 8);
-  g.fillStyle(ink('rosa'), 1).fillRoundedRect(DOOR.x + 18, DOOR.y + 108, 90, 14, 7);
-  g.fillStyle(ink('lila'), 1).fillRoundedRect(DOOR.x + 28, DOOR.y + 70, 24, 38, 8).fillRoundedRect(DOOR.x + 72, DOOR.y + 70, 24, 38, 8);
+  g.fillStyle(ink('sol'), 1).fillRoundedRect(DOOR.x + 18, DOOR.y + 108, 90, 14, 7);
+  g.fillStyle(ink('cielo'), 1).fillRoundedRect(DOOR.x + 28, DOOR.y + 70, 24, 38, 8).fillRoundedRect(DOOR.x + 72, DOOR.y + 70, 24, 38, 8);
   g.fillStyle(0x000000, 0.1).fillRect(DOOR.x, DOOR.y, DOOR.width, 10);
   // Doorstep.
   g.fillStyle(ink('kraft'), 1).fillRoundedRect(DOOR.x - 26, DOOR.y + DOOR.height - 2, DOOR.width + 52, 26, 10);
@@ -86,7 +87,7 @@ function paintFront(scene: Phaser.Scene, key: string): void {
 /** The door leaf: hinge on the left edge of its container, so scaleX swings it open. */
 function createDoorLeaf(scene: Phaser.Scene): Phaser.GameObjects.Container {
   const g = scene.add.graphics();
-  g.fillStyle(ink('rosa'), 1).fillRect(0, 0, DOOR.width, DOOR.height);
+  g.fillStyle(ink(BOUTIQUE.doorLeaf), 1).fillRect(0, 0, DOOR.width, DOOR.height);
   g.fillStyle(INK, 0.18).fillRoundedRect(14, 112, DOOR.width - 28, DOOR.height - 130, 14);
   g.fillStyle(ink('cielo'), 0.9).fillRoundedRect(14, 16, DOOR.width - 28, 84, 26);
   g.fillStyle(0xffffff, 0.6).fillRoundedRect(24, 24, 14, 50, 7);

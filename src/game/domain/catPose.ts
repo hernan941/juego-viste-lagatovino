@@ -40,3 +40,14 @@ export function headNoSteps(k: number): number[] {
   const a = HEAD_NO_ANGLE * k;
   return [-a, a, -a, a, 0].map((v) => v || 0);
 }
+
+/**
+ * The chill of "puaj" (F12.R A1): the head moves in x by `px` side to side `cycles` times (`stepMs` per half swing, 180 ms in all)
+ * and rests at 0. With reduced motion there are no steps: only the doodle cloud shows.
+ */
+export function puajShiver(reduced: boolean): { steps: number[]; stepMs: number } {
+  const px = 3;
+  const cycles = 3;
+  const swings = Array.from({ length: cycles * 2 }, (_, i) => (i % 2 === 0 ? px : -px));
+  return { steps: reduced ? [] : [...swings, 0], stepMs: 30 };
+}
