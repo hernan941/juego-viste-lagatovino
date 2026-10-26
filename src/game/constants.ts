@@ -31,6 +31,54 @@ export const Palette = {
 } as const;
 export type PaletteToken = keyof typeof Palette;
 
+// Tokens v2 (ADR 0016, art-direction §4). Own namespace until F20.7 removes `Palette`:
+// `cielo` differs between both (Palette.cielo #C4E6FF, Ink.cielo #CFE0F3).
+export const Ink = {
+  // Paper, ink and cards
+  cremaPapel: '#FFFCF5',
+  lineaCuadricula: '#C9DBF1',
+  tarjeta: '#FFFFFF',
+  borde: '#E8E0D2',
+  sombraTarjeta: '#F4EEE3',
+  tinta: '#1F1B1A',
+  mutedTexto: '#6A5F57',
+  lineaLapiz: '#8FA8E3',
+  kraft: '#F1D1C0',
+  // Brand colors
+  cielo: '#CFE0F3',
+  rosa: '#F6BFD0',
+  sol: '#F3C04A',
+  lila: '#D9CDF3',
+  durazno: '#F1D1C0',
+  naranjo: '#E98A2B',
+  lapiz: '#3A5FC4',
+  frambuesa: '#C2306B',
+  tomate: '#C8372F',
+  hoja: '#3F7D3B',
+  // Face
+  brilloOjo: '#FFFFFF',
+  nariz: '#D9A48C',
+} as const;
+export type InkToken = keyof typeof Ink;
+
+/**
+ * Font stacks (ADR 0016). Gaegu has no accented Latin glyphs (á, é, ñ, ¡, ¿), so Voice falls back to
+ * Londrina Solid, which has them, instead of the browser's default serif.
+ */
+export const Fonts = {
+  Title: "'Londrina Solid', sans-serif",
+  Voice: "Gaegu, 'Londrina Solid', sans-serif",
+  Body: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+} as const;
+
+/** Self-hosted faces (`public/fonts/`, declared with @font-face in `public/style.css`). */
+export const FontFaces = [
+  { family: 'Londrina Solid', weight: 400, file: 'LondrinaSolid-400.woff2' },
+  { family: 'Londrina Solid', weight: 900, file: 'LondrinaSolid-900.woff2' },
+  { family: 'Gaegu', weight: 400, file: 'Gaegu-400.woff2' },
+  { family: 'Gaegu', weight: 700, file: 'Gaegu-700.woff2' },
+] as const;
+
 /** Hex string "#RRGGBB" to the number Phaser expects for fills. */
 export function colorToNumber(hex: string): number {
   return parseInt(hex.replace('#', ''), 16);
