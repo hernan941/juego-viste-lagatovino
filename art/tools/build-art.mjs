@@ -51,6 +51,21 @@ function luminance(hex) {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
+// Trazo de tinta de los gatos (ADR 0016, art-direction v2 §3): contorno #1F1B1A de 7 px más una copia
+// desplazada (1,5, 2) px debajo que engrosa el lado de la sombra como un pincel. La plantilla sigue siendo
+// la de la v1; este paso la re-estiliza para los 12 gatos a la vez sin mover la geometría (anclas intactas).
+const INK = '#1F1B1A';
+const BRUSH_OFFSET = '1.5 2';
+function inkify(svg) {
+  return svg
+    .replace(
+      /<use href="(#[\w-]+)" fill="none" stroke="#4A3036" stroke-width="8"\/>/g,
+      `<use href="$1" fill="none" stroke="${INK}" stroke-width="7" transform="translate(${BRUSH_OFFSET})"/>\n      <use href="$1" fill="none" stroke="${INK}" stroke-width="7"/>`,
+    )
+    .replaceAll('#FF9EB5', '#F1D1C0') // interior de las orejas: durazno
+    .replaceAll('#4A3036', INK); // detalles (almohadillas de las patitas)
+}
+
 // Grupo de la cola en la plantilla: <g id="tail"> … contorno <use href="#tail-shape"> … </g>.
 const TAIL_GROUP = /\s*<g id="tail">[\s\S]*?<use href="#tail-shape" fill="none"[^>]*\/>\s*<\/g>/;
 
@@ -63,6 +78,7 @@ function composeCat(id, { withFace, part = 'all' }) {
     svg = svg.replace(new RegExp(`data-fill="${part}" fill="[^"]*"`, 'g'), `fill="${coat[part].fill}"`);
     svg = svg.replaceAll(`<!--coat:${part}-->`, coat[part].content);
   }
+  svg = inkify(svg);
   // Pelajes claros (blanco, calicó, crema…): el brillo blanco de la cabeza no se ve sobre el
   // blanco, así que pasa a `mantequilla` (#FFF0A8) al 50 % (art-direction §3-§4).
   if (luminance(coat.head.fill) > 0.85) {
@@ -138,7 +154,7 @@ const ICON_FIX = {
         /(<rect x="192" y="430"[^>]*\/>\s*<rect x="258" y="430"[^>]*\/>\s*<path[^>]*d="M210 437[^"]*"[^>]*\/>)/,
         `<g transform="translate(0 ${SW_CUFF_DROP})">$1</g>`,
       ) +
-    '\n<use href="#sw-head" fill="none" stroke="#4A3036" stroke-width="8" clip-path="url(#sw-clip)"/>',
+    '\n<use href="#sw-head" fill="none" stroke="#1F1B1A" stroke-width="8" clip-path="url(#sw-clip)"/>',
   // neck: el collar o la bufanda se ven enteros (sin el hueco de la cabeza ni del cuerpo)
   neck: (inner) => inner.replaceAll('mask="url(#sw-cut)"', ''),
 };
@@ -156,7 +172,7 @@ function buildIcons() {
       const inner = (ICON_FIX[slot] ?? ((x) => x))(innerSvg(read(`clothes/${slot}/${f}`)));
       const icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
   <!-- Viste Lagato · icono de "${slot}/${id}". GENERADO por art/tools/build-art.mjs: no editar a mano. -->
-  <rect x="4" y="4" width="248" height="248" rx="32" fill="#FFF7EC" stroke="#FFD1E3" stroke-width="4"/>
+  <rect x="4" y="4" width="248" height="248" rx="32" fill="#FFFCF5" stroke="#E8E0D2" stroke-width="3"/>
   <svg x="20" y="20" width="216" height="216" viewBox="${crop.join(' ')}" preserveAspectRatio="xMidYMid meet" overflow="visible">
 ${inner}
   </svg>

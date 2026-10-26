@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" data-coat="siames">
   <!-- Pelaje "siames" (Siamés, crema con puntas café). Formato en art/README.md.
        Puntas #8A5A3C en orejas, antifaz, patitas y cola; antifaz en dos tonos (#B98060 por fuera) y almohadillas de bigote del mismo #B98060
-       para que la boca :3 se lea sobre el café. -->
+       para que la boca se lea sobre el café. -->
   <g id="tail" data-fill="#8A5A3C">
     <path fill="#FBE3C0" d="M330 420 C360 440 380 446 400 444 L392 510 L330 510 Z"/>
   </g><!--/tail-->

@@ -1,17 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- Viste Lagato · cara "normal" (capa intercambiable, art-direction §2). Ojos: óvalos verticales oscuros con un brillo arriba a la izquierda. -->
+  <!-- Viste Lagato · cara "normal" (capa intercambiable, art-direction v2 §2). Ojos almendra de tinta con brillito, nariz triangular y boca en "y". Ojos centrados en (192, 224) y (320, 224): los lentes calzan. Sin mejillas ni :3. -->
 <g stroke-linejoin="round" stroke-linecap="round">
-  <!-- mejillas -->
-  <ellipse fill="#FF9EB5" fill-opacity="0.6" cx="158" cy="258" rx="24" ry="14"/>
-  <ellipse fill="#FF9EB5" fill-opacity="0.6" cx="354" cy="258" rx="24" ry="14"/>
-  <!-- bigotes -->
-  <path fill="none" stroke="#4A3036" stroke-width="4" d="M126 238 L104 232 M126 252 L106 258 M386 238 L408 232 M386 252 L406 258"/>
-  <!-- ojos -->
-  <ellipse fill="#33242A" cx="192" cy="224" rx="14" ry="19"/>
-  <ellipse fill="#33242A" cx="320" cy="224" rx="14" ry="19"/>
-  <circle fill="#FFFFFF" cx="187" cy="216" r="7.5"/>
-  <circle fill="#FFFFFF" cx="315" cy="216" r="7.5"/>
-  <!-- boca :3 -->
-  <path fill="none" stroke="#4A3036" stroke-width="6" d="M236 240 C236 254 254 256 256 242 C258 256 276 254 276 240"/>
+  <!-- bigotes: finos y algo curvos, tres por lado -->
+  <g fill="none" stroke="#1F1B1A" stroke-width="3.5">
+    <path d="M128 238 Q114 230 102 231 M128 249 Q113 247 100 251 M128 260 Q115 262 104 268"/>
+    <path d="M384 238 Q398 230 410 231 M384 249 Q399 247 412 251 M384 260 Q397 262 408 268"/>
+  </g>
+  <g data-eye="l" data-c="192 224">
+    <path class="almond" fill="#1F1B1A" stroke="#1F1B1A" stroke-width="2" d="M172 226 C180 207 204 207 212 226 C204 243 180 243 172 226 Z"/>
+    <circle fill="#FFFFFF" cx="186" cy="219" r="6.5"/>
+  </g>
+  <g data-eye="r" data-c="320 224">
+    <path class="almond" fill="#1F1B1A" stroke="#1F1B1A" stroke-width="2" d="M300 226 C308 207 332 207 340 226 C332 243 308 243 300 226 Z"/>
+    <circle fill="#FFFFFF" cx="314" cy="219" r="6.5"/>
+  </g>
+  <!-- nariz triangular chica -->
+  <path class="nose" fill="#D9A48C" stroke="#1F1B1A" stroke-width="3" d="M245 238 C251 234 261 234 267 238 C265 246 259 251 256 253 C253 251 247 246 245 238 Z"/>
+  <!-- boca: línea en "y" -->
+  <path class="mouth-y" fill="none" stroke="#1F1B1A" stroke-width="4.5" d="M256 253 L256 260 M237 264 C246 271 256 267 256 260 C256 267 266 271 275 264"/>
 </g>
 </svg>

@@ -43,3 +43,42 @@ describe('buildManifest', () => {
     for (const m of manifest) expect(files.has(`/public/${m.path}`), m.path).toBe(true);
   });
 });
+
+// F12.7 (ADR 0016 y 0018): prendas con contorno de tinta y marcas data-dye en los sweaters.
+const clothesSvg = import.meta.glob('/public/assets/clothes/**/*.svg', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+const svgOf = (texture: string, icon = false): string => {
+  const c = (clothes as ClothingDef[]).find((x) => x.texture === texture);
+  if (!c) return '';
+  return clothesSvg[`/public/assets/clothes/${c.slot}/${clothingAssetName(c)}${icon ? '.icon' : ''}.svg`] ?? '';
+};
+// `dyeable` lo suma F11.9 a clothes.json; mientras tanto, los sweaters visibles (no secretos) son los teñibles.
+const dyeable = (clothes as (ClothingDef & { dyeable?: boolean; secret?: boolean })[]).filter(
+  (c) => c.dyeable === true || (c.slot === 'sweater' && !c.secret),
+);
+
+describe('prendas con tinta y marcas data-dye (F12.7)', () => {
+  it('los 16 sweaters visibles son teñibles', () => {
+    expect(dyeable.filter((c) => c.slot === 'sweater')).toHaveLength(16);
+  });
+
+  it.each(dyeable.map((c) => [c.id, c.texture] as const))('%s: tiene al menos un data-dye="a" con fill explícito', (_id, texture) => {
+    const svg = svgOf(texture);
+    expect(svg).toMatch(/<[^>]*fill="#[0-9A-Fa-f]{6}"[^>]*data-dye="a"|<[^>]*data-dye="a"[^>]*fill="#[0-9A-Fa-f]{6}"/);
+  });
+
+  it.each(dyeable.map((c) => [c.id, c.texture] as const))('%s: marca también el secundario b y su sombra es negro al 15 %%', (_id, texture) => {
+    const svg = svgOf(texture);
+    expect(svg).toContain('data-dye="b"');
+    expect(svg).toContain('fill="#000" fill-opacity="0.15"');
+  });
+
+  it.each((clothes as ClothingDef[]).map((c) => [c.id, c.texture] as const))('%s: la prenda y su icono usan tinta, no el café de la v1', (_id, texture) => {
+    for (const icon of [false, true]) {
+      const svg = svgOf(texture, icon);
+      expect(svg.length).toBeGreaterThan(0);
+      expect(svg).toContain('#1F1B1A');
+      expect(svg).not.toContain('#4A3036');
+      expect(svg).not.toContain('#33242A');
+    }
+  });
+});
