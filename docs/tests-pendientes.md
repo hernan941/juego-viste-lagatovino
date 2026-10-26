@@ -164,3 +164,21 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
 - `shutdown` libera las texturas.
 - Flujo completo: guardar, transformar, descargar, colgar y recargar (`keychains` y `keychainPhase`).
 - Medir en un celular real de gama baja (F21).
+
+## F12.R: ajustes de estética
+### E2E pendientes
+- Botones de sonido, movimiento y pantalla completa:
+  - hover, press y el ✦ cuando están activos;
+  - `MotionButton` muestra "Movimiento suave" o "Movimiento normal".
+- CatSelect:
+  - al elegir, la tarjeta se endereza y sube;
+  - el rótulo de `setTally` se ve derecho al volver de DressUp.
+- `puaj`:
+  - la nube aparece y desaparece;
+  - en movimiento reducido no hay escalofrío;
+  - la cara vuelve a la normal a los 900 ms.
+- **Riesgo de inestabilidad**: el parpadeo de cariño del idle (cara `feliz` durante 600 ms) puede afectar a los e2e que leen la cara en reposo.
+- La fachada de la boutique y el fondo en lápiz se ven sin errores de consola.
+- Los acentos ("Grisú", "Siamés") cargan sin errores.
+- El fondo `crema-papel` en el celular emulado.
+- Capturas a 1920 y en el celular (lo pide F12.R).

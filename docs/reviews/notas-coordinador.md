@@ -21,3 +21,7 @@ Detalles vistos al integrar. Los revisa el game-designer en la revisión de cada
 
 ## Coverage
 - `npm run coverage` falla: con la instrumentación, `scoreBalance.test.ts` supera el tope de tiempo de `bestPossible`. Hay que ajustar el test o el tope cuando corre bajo coverage.
+
+## F12.R: ajustes aplicados
+- Pendiente **M6**: rehacer la prueba de porcelana con los gatos B. Ya lo cubre la captura de F19.2.
+- Falta mirar en DressUp la nube de `puaj` sobre un gato oscuro. Su posición es estimada.
