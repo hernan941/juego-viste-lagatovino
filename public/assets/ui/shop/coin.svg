@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Viste Lagato · botón-moneda: la moneda del juego (un botón de costura) (art-direction v2, ADR 0016). -->
+<!-- Se usa en los botones que vuelan al monedero y como icono junto a los precios. -->
+  <circle cx="32" cy="32" r="28" fill="#F3C04A"/>
+  <path d="M10 40 A25 25 0 0 0 54 40 A28 28 0 0 1 10 40 Z" fill="#CFA33F"/>
+  <circle cx="32" cy="32" r="28" fill="none" stroke="#1F1B1A" stroke-width="4.5"/>
+  <circle cx="32" cy="32" r="19" fill="none" stroke="#B69038" stroke-width="3"/>
+  <circle cx="24.5" cy="24.5" r="3.6" fill="#1F1B1A"/><circle cx="39.5" cy="24.5" r="3.6" fill="#1F1B1A"/>
+  <circle cx="24.5" cy="39.5" r="3.6" fill="#1F1B1A"/><circle cx="39.5" cy="39.5" r="3.6" fill="#1F1B1A"/>
+  <path d="M24.5 24.5 L39.5 39.5 M39.5 24.5 L24.5 39.5" stroke="#3A5FC4" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+  <path d="M14 22 A21 21 0 0 1 24 12" fill="none" stroke="#FFFFFF" stroke-opacity="0.8" stroke-width="4" stroke-linecap="round"/>
+</svg>

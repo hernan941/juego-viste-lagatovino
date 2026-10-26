@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 184" width="120" height="184">
+  <!-- Viste Lagato · etiqueta de precio de cartón kraft con hilo lapiz (art-direction v2, ADR 0016). -->
+<!-- Gira desde la punta del hilo (60, 6). El hueco para el precio está centrado en (60, 134), 64 x 52. -->
+  <path d="M60 84 C60 58 28 52 28 30 C28 10 54 4 60 22 C66 8 94 12 92 32 C90 52 60 58 60 84" fill="none" stroke="#1F1B1A" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M60 84 C60 58 28 52 28 30 C28 10 54 4 60 22 C66 8 94 12 92 32 C90 52 60 58 60 84" fill="none" stroke="#3A5FC4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M41 64 H79 L102 88 V164 Q102 178 88 178 H32 Q18 178 18 164 V88 Z" fill="#F1D1C0" stroke="#1F1B1A" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M18 150 V164 Q18 178 32 178 H88 Q102 178 102 164 V150 Q60 160 18 150 Z" fill="#D4B8A9"/>
+  <path d="M41 64 H79 L102 88 V164 Q102 178 88 178 H32 Q18 178 18 164 V88 Z" fill="none" stroke="#1F1B1A" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M38 108 H82 Q92 108 92 118 V150 Q92 160 82 160 H38 Q28 160 28 150 V118 Q28 108 38 108 Z" fill="#FFFFFF" fill-opacity="0.6" stroke="#1F1B1A" stroke-opacity="0.5" stroke-width="2.5" stroke-dasharray="6 5" stroke-linejoin="round"/>
+  <path d="M49 86 a11 11 0 1 0 22 0 a11 11 0 1 0 -22 0 Z M54.5 86 a5.5 5.5 0 1 0 11 0 a5.5 5.5 0 1 0 -11 0 Z" fill="#D4B8A9" fill-rule="evenodd" stroke="#1F1B1A" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M32 74 H44" stroke="#FFFFFF" stroke-opacity="0.7" stroke-width="3.5" stroke-linecap="round"/>
+</svg>

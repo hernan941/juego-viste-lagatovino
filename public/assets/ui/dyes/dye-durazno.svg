@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 176" width="128" height="176">
+  <!-- Viste Lagato · frasco de tinte "durazno" (art-direction v2, ADR 0016). -->
+<!-- Líquido con el hex de dyes.json (data-dye-hex). Cabe en la celda del grid como una prenda. Al arrastrarlo gotea desde (64, 168). -->
+  <g data-dye-hex="#F1D1C0">
+    <defs><clipPath id="glass"><path d="M30 78 Q30 54 54 52 H74 Q98 54 98 78 V148 Q98 168 80 168 H48 Q30 168 30 148 Z"/></clipPath></defs>
+    <path d="M30 78 Q30 54 54 52 H74 Q98 54 98 78 V148 Q98 168 80 168 H48 Q30 168 30 148 Z" fill="#FFFFFF" fill-opacity="0.75"/>
+    <g clip-path="url(#glass)">
+      <path id="liquid" fill="#F1D1C0" d="M26 92 Q45 82 64 92 T102 92 V172 H26 Z"/>
+      <ellipse cx="86" cy="164" rx="40" ry="26" fill="#1F1B1A" fill-opacity="0.15"/>
+      
+    </g>
+    <g stroke="#1F1B1A" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"><path d="M30 78 Q30 54 54 52 H74 Q98 54 98 78 V148 Q98 168 80 168 H48 Q30 168 30 148 Z" fill="none" stroke-width="5"/>
+    <rect x="50" y="34" width="28" height="22" rx="6" fill="#FFFFFF" fill-opacity="0.75"/>
+    <rect x="43" y="8" width="42" height="30" rx="9" fill="#D4B8A9"/></g>
+    <path d="M52 17 V30 M64 17 V30 M76 17 V30" stroke="#1F1B1A" stroke-opacity="0.3" stroke-width="3" stroke-linecap="round"/>
+    <path d="M48 104 H80 Q88 104 88 112 V138 Q88 146 80 146 H48 Q40 146 40 138 V112 Q40 104 48 104 Z" fill="#FFFFFF" stroke="#1F1B1A" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M64 109.8 C64 109.8 52.53 124.65 52.53 131.4 A11.48 11.48 0 0 0 75.47 131.4 C75.47 124.65 64 109.8 64 109.8 Z" fill="#F1D1C0" stroke="#1F1B1A" stroke-width="2.6" stroke-linejoin="round"/>
+    <path d="M38 78 V112" stroke="#FFFFFF" stroke-opacity="0.9" stroke-width="5.5" stroke-linecap="round"/>
+    <path d="M38 122 V130" stroke="#FFFFFF" stroke-opacity="0.9" stroke-width="5.5" stroke-linecap="round"/>
+  </g>
+</svg>
