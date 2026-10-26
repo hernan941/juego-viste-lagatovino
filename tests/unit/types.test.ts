@@ -93,13 +93,15 @@ describe('second stage keys (F11.8)', () => {
   });
 
   it('adds the DressUp scene events of ADR 0019', () => {
-    expect(DressUpEvents).toEqual({
+    // Features add their own events later (the wallet's), so the ADR set is checked as a subset.
+    expect(DressUpEvents).toMatchObject({
       ItemDropped: 'item-dropped',
       ItemRemoved: 'item-removed',
       ReadyPressed: 'ready-pressed',
       OutfitChanged: 'outfit-changed',
       CatChanged: 'cat-changed',
     });
+    expect(new Set(Object.values(DressUpEvents)).size).toBe(Object.values(DressUpEvents).length);
   });
 
   it('adds unique texture keys for the new UI', () => {

@@ -130,6 +130,10 @@ export const DressUpEvents = {
   OutfitChanged: 'outfit-changed',
   /** (catId: string) the cat changed */
   CatChanged: 'cat-changed',
+  /** (flight: WalletFlight) a feature asks the wallet to fly buttons: into the purse (`in`) or out of it (`out`) */
+  WalletFlight: 'wallet-flight',
+  /** the player cannot pay: the purse shakes (blinks with reduced motion) */
+  WalletShake: 'wallet-shake',
 } as const;
 
 export const RegistryKeys = {
@@ -161,6 +165,8 @@ export const TextureKeys = {
   InkSparkle: 'particle-ink-sparkle',
   /** Second stage UI (F11.10 gives each one a placeholder SVG). */
   Coin: 'ui-coin',
+  /** The jar of buttons of the wallet HUD. */
+  Purse: 'ui-purse',
   PriceTag: 'ui-price-tag',
   Stamp: 'ui-stamp',
   Notebook: 'ui-notebook',

@@ -18,7 +18,7 @@ type FakeTab = { emit(ev: string, ...a: unknown[]): void; interactive: { hitArea
 function make(reduced = false) {
   const scene = makeFakeScene(reduced);
   const tabs = new Tabs(scene as never, 0, 0, defs, { style: 'index' });
-  const items = (tabs as unknown as { list: unknown[] }).list.slice(0, 3) as FakeTab[];
+  const items = (tabs as unknown as { list: unknown[] }).list.slice(1, 4) as FakeTab[];
   return { scene, tabs, items };
 }
 
