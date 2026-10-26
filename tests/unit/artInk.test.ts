@@ -51,7 +51,7 @@ describe('caras con ojos cerrados legibles en pelajes oscuros (F12.R A1)', () =>
     expect(halos.length).toBeGreaterThanOrEqual(3);
     for (const m of halos) {
       expect(m[0]).toMatch(/stroke="#FFFFFF"/);
-      expect(m[0]).toMatch(/stroke-opacity="0\.5"/);
+      expect(m[0]).toMatch(/stroke-opacity="0\.7"/);
     }
   });
 
