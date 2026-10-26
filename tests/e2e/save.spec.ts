@@ -64,6 +64,22 @@ test.describe('saving (ADR 0004)', () => {
     expect((await showItem(page, reward)).cells[reward.id]).toBeDefined();
   });
 
+  test('a v1 save in localStorage is migrated to v2 on load (ADR 0017)', async ({ page }) => {
+    const sweater = bySlot('sweater')[0];
+    const v1 = { version: 1, catId: CAT.id, catName: NAME, outfit: { sweater: sweater.id }, secrets: [combos[0].id], muted: true, motion: 'reduce' };
+    await page.addInitScript(([key, raw]) => { if (!localStorage.getItem(key)) localStorage.setItem(key, raw); }, [SAVE_KEY, JSON.stringify(v1)]);
+    await page.goto('/');
+    await page.waitForFunction(() => window.__VISTE__?.scene === 'Title', undefined, { timeout: 30_000 });
+    // The session, the preferences and the secrets survive; what was worn is owned; the wallet is not stored yet.
+    const session = await page.evaluate(() => JSON.parse(JSON.stringify(window.__VISTE__?.session)));
+    expect(session).toMatchObject({ catId: CAT.id, catName: NAME, outfit: { sweater: sweater.id }, itemDye: {} });
+    expect(await page.evaluate(() => window.__VISTE__?.muted)).toBe(true);
+    expect(await page.evaluate(() => window.__VISTE__?.owned)).toEqual(sweater.starter ? [] : [sweater.id]);
+    expect(await page.evaluate(() => typeof window.__VISTE__?.wallet)).toBe('number');
+    const saved = await page.evaluate(() => JSON.parse(JSON.stringify(window.__VISTE__?.saved)));
+    expect(saved).toMatchObject({ version: 2, catId: CAT.id, itemDye: {}, motion: 'reduce', progress: { secrets: [combos[0].id] } });
+  });
+
   // No reload here, so it runs on the page that the worker shares.
   sharedTest('removing a piece and changing cat are saved too', async ({ page }) => {
     await openScene(page, 'DressUp', { cat: CAT.id, name: NAME });

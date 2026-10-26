@@ -220,3 +220,15 @@ export async function typeName(page: Page, name: string): Promise<void> {
   for (let i = 0; i < 14; i++) await page.keyboard.press('Backspace');
   await page.keyboard.type(name);
 }
+
+/** A first visit's progress (empty bought lists, no secrets, no keychains), through the hook. */
+export const freshProgress = (page: Page) => page.evaluate(() => window.__VISTE__?.reset());
+
+/** A player with a full wallet who owns every visible item, so a spec can wear anything without buying it. */
+export async function richPlayer(page: Page, coins = 9999): Promise<void> {
+  const ids = clothes.map((c) => c.id);
+  await page.evaluate(([list, n]) => {
+    window.__VISTE__?.setWallet(n as number);
+    window.__VISTE__?.grant(list as string[]);
+  }, [ids, coins] as const);
+}
