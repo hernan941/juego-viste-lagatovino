@@ -51,6 +51,21 @@ function luminance(hex) {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
+// Trazo de tinta de los gatos (ADR 0016, art-direction v2 §3): contorno #1F1B1A de 7 px más una copia
+// desplazada (1,5, 2) px debajo que engrosa el lado de la sombra como un pincel. La plantilla sigue siendo
+// la de la v1; este paso la re-estiliza para los 12 gatos a la vez sin mover la geometría (anclas intactas).
+const INK = '#1F1B1A';
+const BRUSH_OFFSET = '1.5 2';
+function inkify(svg) {
+  return svg
+    .replace(
+      /<use href="(#[\w-]+)" fill="none" stroke="#4A3036" stroke-width="8"\/>/g,
+      `<use href="$1" fill="none" stroke="${INK}" stroke-width="7" transform="translate(${BRUSH_OFFSET})"/>\n      <use href="$1" fill="none" stroke="${INK}" stroke-width="7"/>`,
+    )
+    .replaceAll('#FF9EB5', '#F1D1C0') // interior de las orejas: durazno
+    .replaceAll('#4A3036', INK); // detalles (almohadillas de las patitas)
+}
+
 // Grupo de la cola en la plantilla: <g id="tail"> … contorno <use href="#tail-shape"> … </g>.
 const TAIL_GROUP = /\s*<g id="tail">[\s\S]*?<use href="#tail-shape" fill="none"[^>]*\/>\s*<\/g>/;
 
@@ -63,6 +78,7 @@ function composeCat(id, { withFace, part = 'all' }) {
     svg = svg.replace(new RegExp(`data-fill="${part}" fill="[^"]*"`, 'g'), `fill="${coat[part].fill}"`);
     svg = svg.replaceAll(`<!--coat:${part}-->`, coat[part].content);
   }
+  svg = inkify(svg);
   // Pelajes claros (blanco, calicó, crema…): el brillo blanco de la cabeza no se ve sobre el
   // blanco, así que pasa a `mantequilla` (#FFF0A8) al 50 % (art-direction §3-§4).
   if (luminance(coat.head.fill) > 0.85) {

@@ -22,7 +22,8 @@
     <path d="M408 360 L456 350"/></g>
         <path class="shade" fill="#000" fill-opacity="0.15" d="M340 448 C392 462 440 444 452 400 L470 400 L470 500 L330 500 Z"/>
       </g>
-      <use href="#tail-shape" fill="none" stroke="#4A3036" stroke-width="8"/>
+      <use href="#tail-shape" fill="none" stroke="#1F1B1A" stroke-width="7" transform="translate(1.5 2)"/>
+      <use href="#tail-shape" fill="none" stroke="#1F1B1A" stroke-width="7"/>
     </g>
   </g>
 </svg>
