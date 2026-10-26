@@ -109,7 +109,8 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
   - un click o un toque salta la escena;
   - en movimiento reducido hay fundido sin zoom;
   - en táctil dice "Toca para saltar".
-- **Revisar el glitch del texto rotado** (Phaser 4 corta franjas de los glifos en un `Text` dentro de un contenedor rotado): polaroids, `SpeechBubble` y `Card`.
+- **Texto rotado**: el corte de franjas no se reprodujo (Chromium y Firefox, modo normal y modo test). En la fase e2e, capturar polaroids con caption, `SpeechBubble` y `Card` inclinados y confirmar que se leen enteros. Si el corte aparece, anotar escena, modo y navegador, y recién ahí hacer `inkLabel()`.
+- La burbuja "¡Pasa nomás!" se ve en Gaegu 700, sin cortes.
 
 ## F14.2: reacciones de gusto
 ### E2E pendientes (F14.6)
