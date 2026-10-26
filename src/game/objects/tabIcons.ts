@@ -95,9 +95,39 @@ const ICONS: Record<string, Draw> = {
   },
 };
 
-/** Generates one `tab-icon-<category>` texture per category (once per game). */
+/** Icons of the photo-mode tabs (S6): a landscape, a frame, a cat face and a star sticker. */
+const PHOTO_ICONS: Record<string, Draw> = {
+  backgrounds: (g) => {
+    rr(g, hex('cielo'), 6, 8, 52, 48, 8);
+    g.fillStyle(0xffffff, 1).fillCircle(24, 26, 8).fillCircle(34, 24, 10).fillCircle(44, 28, 7).fillRect(24, 26, 20, 9);
+    g.fillStyle(hex('menta'), 1).fillRect(8, 46, 48, 8);
+  },
+  frames: (g) => {
+    rr(g, hex('mantequilla'), 6, 6, 52, 52, 8);
+    rr(g, hex('crema'), 17, 17, 30, 30, 4);
+    g.fillStyle(hex('rosa400'), 1).fillCircle(32, 32, 7);
+  },
+  poses: (g) => {
+    g.fillStyle(hex('lavanda'), 1).fillTriangle(15, 24, 21, 6, 29, 20).fillTriangle(49, 24, 43, 6, 35, 20);
+    g.lineStyle(4, LINE, 1).strokeTriangle(15, 24, 21, 6, 29, 20).strokeTriangle(49, 24, 43, 6, 35, 20);
+    ellipse(g, hex('lavanda'), 32, 36, 46, 38);
+    g.fillStyle(LINE, 1).fillCircle(24, 34, 3).fillCircle(40, 34, 3);
+    g.lineStyle(3, LINE, 1).beginPath().moveTo(28, 42).lineTo(32, 45).lineTo(36, 42).strokePath();
+  },
+  stickers: (g) => {
+    const pts = Array.from({ length: 10 }, (_, i) => {
+      const r = i % 2 === 0 ? 26 : 11;
+      const a = -Math.PI / 2 + (i * Math.PI) / 5;
+      return new Phaser.Math.Vector2(32 + Math.cos(a) * r, 33 + Math.sin(a) * r);
+    });
+    g.fillStyle(hex('mantequilla'), 1).fillPoints(pts, true);
+    g.lineStyle(4, LINE, 1).strokePoints(pts, true);
+  },
+};
+
+/** Generates one `tab-icon-<category>` texture per category and one per photo-mode tab (once per game). */
 export function createTabIconTextures(scene: Phaser.Scene): void {
-  for (const [category, draw] of Object.entries(ICONS)) {
+  for (const [category, draw] of Object.entries({ ...ICONS, ...Object.fromEntries(Object.entries(PHOTO_ICONS).map(([k, d]) => [`photo-${k}`, d])) })) {
     const key = tabIconKey(category);
     if (scene.textures.exists(key)) continue;
     const g = scene.make.graphics({}, false);

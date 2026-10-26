@@ -126,6 +126,14 @@ export const ObjectEvents = {
   KeychainTink: 'keychain-tink',
   /** Keychain: the swing came to rest */
   KeychainSwingEnd: 'keychain-swing-end',
+  /** PhotoTray: (kind, id) an unlocked piece was chosen */
+  TrayPick: 'tray-pick',
+  /** PhotoTray: (kind, id) a locked piece was pressed (it is only a sketch) */
+  TrayLocked: 'tray-locked',
+  /** PhotoTray: (stickerId, pointer) a sticker was pulled off the sheet */
+  TrayStickerGrab: 'tray-sticker-grab',
+  /** Sticker: (sticker, pointer) a sticker on the photo was picked up again */
+  StickerGrab: 'sticker-grab',
 } as const;
 
 /** Scene events of DressUp that its controllers listen to (ADR 0019). */
