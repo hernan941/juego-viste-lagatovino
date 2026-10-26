@@ -16,7 +16,7 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
 8. Confirmar los umbrales de coverage.
 
 ## F16.1, F17.1, F18.1 y F19.1: dominio de tintes, álbum, foto y llavero
-Estos tests unit se reapuntan a los datos reales una vez integrado F11.10:
+✅ **Hechos**: `albumData`, `dyeData` y `keychainData` (el total del álbum es 138). Lo que sigue queda como referencia:
 - `albumData.test.ts`:
   - el total es 138;
   - los ids de `sets.json` existen;
@@ -48,8 +48,8 @@ Estos tests unit se reapuntan a los datos reales una vez integrado F11.10:
   - el llavero sobrevive a una recarga.
 
 ## F13.1, F14.1, F15.1 y F15.2: economía, gustos, puntaje y ceremonia
-Tests unit con datos reales, que se hacen cuando estén integrados F11.9 y F11.10:
-- `scoreBalance.test.ts`:
+- ✅ **Hecho**: `scoreBalance.test.ts` (los 12 gatos llegan a 5★ y `bestPossible` tarda menos de 0,5 s por gato). Pendiente:
+- ~~`scoreBalance.test.ts`~~:
   - `bestPossibleStars === 5` para los 12 gatos;
   - con solo las prendas iniciales se llega a ≥ 3 estrellas;
   - medir cuánto tarda `bestPossible`.
