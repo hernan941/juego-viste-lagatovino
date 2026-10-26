@@ -157,6 +157,8 @@ export const TextureKeys = {
   Snow: 'particle-snow',
   Petal: 'particle-petal',
   Confetti: 'particle-confetti',
+  /** The four-point ink-outlined sparkle of the Lagatovino look (art-direction section 6.3). */
+  InkSparkle: 'particle-ink-sparkle',
   /** Second stage UI (F11.10 gives each one a placeholder SVG). */
   Coin: 'ui-coin',
   PriceTag: 'ui-price-tag',

@@ -20,6 +20,13 @@ export function kitHitSize(width: number, height: number): { width: number; heig
   return { width: Math.max(width, KIT_MIN_HIT), height: Math.max(height, KIT_MIN_HIT) };
 }
 
+/** Positions of the grid lines of the paper background: one every `step` px from 0 up to the edge. */
+export function gridLines(width: number, height: number, step: number): { vertical: number[]; horizontal: number[] } {
+  if (step <= 0) return { vertical: [], horizontal: [] };
+  const line = (extent: number) => Array.from({ length: Math.floor(extent / step) + 1 }, (_, i) => i * step);
+  return { vertical: line(width), horizontal: line(height) };
+}
+
 /** x of each index tab and how far it rises (only the active one, `active` = -1 for none). */
 export function tabLayout(count: number, active: number, size: number, gap: number): { x: number; rise: number }[] {
   return Array.from({ length: count }, (_, i) => ({ x: i * (size + gap), rise: i === active ? TAB_RISE : 0 }));

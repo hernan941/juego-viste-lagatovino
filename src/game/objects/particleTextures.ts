@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { TextureKeys } from '../constants';
+import { Ink, TextureKeys, colorToNumber } from '../constants';
 
 /** Draws the two particle textures (a heart and a sparkle) once, so no extra files are needed. */
 export function createParticleTextures(scene: Phaser.Scene): void {
@@ -40,6 +40,15 @@ export function createParticleTextures(scene: Phaser.Scene): void {
     const g = scene.make.graphics({}, false);
     g.fillStyle(0xffffff, 1).fillRoundedRect(0, 0, 14, 8, 2);
     g.generateTexture(TextureKeys.Confetti, 14, 8);
+    g.destroy();
+  }
+  if (!scene.textures.exists(TextureKeys.InkSparkle)) {
+    const g = scene.make.graphics({}, false);
+    // A concave four-point star: sol fill with a 2 px ink outline.
+    const points = [[20, 2], [23, 17], [38, 20], [23, 23], [20, 38], [17, 23], [2, 20], [17, 17]].map(([x, y]) => new Phaser.Math.Vector2(x, y));
+    g.fillStyle(colorToNumber(Ink.sol), 1).lineStyle(2, colorToNumber(Ink.tinta), 1);
+    g.fillPoints(points, true).strokePoints(points, true);
+    g.generateTexture(TextureKeys.InkSparkle, 40, 40);
     g.destroy();
   }
 }

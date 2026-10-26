@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { KIT_MIN_HIT, TAB_RISE, hoverTarget, kitHitSize, pressTarget, tabLayout } from '../../src/game/systems/kit';
+import { KIT_MIN_HIT, TAB_RISE, gridLines, hoverTarget, kitHitSize, pressTarget, tabLayout } from '../../src/game/systems/kit';
 
 describe('kit feedback (art-direction §8)', () => {
   it('press scales to 0.95 and drops 2 px', () => {
@@ -37,5 +37,19 @@ describe('tabLayout', () => {
   });
   it('no active tab (-1) raises none', () => {
     expect(tabLayout(2, -1, 60, 8).every((t) => t.rise === 0)).toBe(true);
+  });
+});
+
+describe('gridLines (paper background)', () => {
+  it('has a line every step from 0 up to the edge', () => {
+    const g = gridLines(1280, 720, 24);
+    expect(g.vertical[0]).toBe(0);
+    expect(g.vertical).toHaveLength(54);
+    expect(g.vertical[53]).toBe(1272);
+    expect(g.horizontal).toHaveLength(31);
+    expect(g.horizontal[30]).toBe(720);
+  });
+  it('is empty for a degenerate step', () => {
+    expect(gridLines(100, 100, 0)).toEqual({ vertical: [], horizontal: [] });
   });
 });

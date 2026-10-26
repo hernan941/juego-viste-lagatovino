@@ -41,6 +41,7 @@ export const phaserMock = {
   default: {
     GameObjects: { Container: FakeContainer },
     Plugins: { BasePlugin: class {} },
+    Math: { Vector2: class { constructor(public x: number, public y: number) {} } },
     Geom: {
       Rectangle: Object.assign(
         class { constructor(public x: number, public y: number, public width: number, public height: number) {} },
