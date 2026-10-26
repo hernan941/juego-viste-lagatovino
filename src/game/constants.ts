@@ -100,6 +100,8 @@ export const ObjectEvents = {
   ItemDragEnd: 'item-drag-end',
   /** Tabs: (category) */
   TabSelect: 'tab-select',
+  /** AlbumTabs: (id) a disabled tab was pressed */
+  TabLocked: 'tab-locked',
   /** LayersPanel: (item: ClothingDef) */
   LayerRemove: 'layer-remove',
   /** GiftBox: (box, itemImage) the bow was pulled and the prize came out */

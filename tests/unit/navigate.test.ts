@@ -26,4 +26,16 @@ describe('go', () => {
     expect(() => go(sceneOf('Title'), 'finish')).toThrow(/Title/);
     expect(transitionTo).not.toHaveBeenCalled();
   });
+
+  it('goes back to the origin of the album with its state, through a fade', () => {
+    const scene = sceneOf('Album');
+    go(scene, 'back', { from: 'DressUp', fromData: { tab: 'hats', scroll: 90 } });
+    expect(transitionTo).toHaveBeenCalledWith(scene, 'DressUp', { tab: 'hats', scroll: 90 }, 'fade');
+  });
+
+  it('goes back to Title when the album has no valid origin', () => {
+    const scene = sceneOf('Album');
+    go(scene, 'back', { from: 'Nope' });
+    expect(transitionTo).toHaveBeenCalledWith(scene, 'Title', {}, 'fade');
+  });
 });
