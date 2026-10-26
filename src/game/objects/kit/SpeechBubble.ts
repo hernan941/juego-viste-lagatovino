@@ -27,7 +27,7 @@ export class SpeechBubble extends Phaser.GameObjects.Container {
     super(scene, x, y);
     this.bg = scene.add.graphics();
     this.label = scene.add
-      .text(0, 0, text, { fontFamily: Fonts.Voice, fontSize: `${FONT_SIZE}px`, color: Ink.tinta, align: 'center', wordWrap: { width: maxWidth - PAD_X * 2 } })
+      .text(0, 0, text, { fontFamily: Fonts.Voice, fontStyle: 'bold', fontSize: `${FONT_SIZE}px`, color: Ink.tinta, align: 'center', wordWrap: { width: maxWidth - PAD_X * 2 } })
       .setOrigin(0.5);
     this.add([this.bg, this.label]);
     this.layout();

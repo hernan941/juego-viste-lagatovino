@@ -107,6 +107,12 @@ describe('Polaroid', () => {
 });
 
 describe('SpeechBubble', () => {
+  it('uses Gaegu bold (700) so the accented fallback glyphs do not jump in weight', () => {
+    const scene = makeFakeScene();
+    new SpeechBubble(scene as never, 0, 0, '¡Pasa nomás!', { animate: false });
+    expect((scene.made.texts[0]!.style as { fontStyle?: string }).fontStyle).toBe('bold');
+  });
+
   it('speaks in Gaegu between 26 and 30 px, tilted 2 degrees', () => {
     const scene = makeFakeScene();
     const b = new SpeechBubble(scene as never, 0, 0, 'Hola', { animate: false }) as unknown as Obj;
