@@ -38,7 +38,7 @@ export class CatCard extends Phaser.GameObjects.Container {
     this.polaroid = new Polaroid(scene, 0, 0, { id: def.id, width: CARD_W, height: CARD_H, captionHeight: CAPTION_H, animate: false });
     this.cat = new Cat(scene, 0, CARD_H / 2 - CAPTION_H - 24, def, anchors, CAT_SIZE);
     const label = scene.add
-      .text(0, CARD_H / 2 - 46, def.name, { fontFamily: Fonts.Voice, fontSize: '30px', color: Ink.tinta })
+      .text(0, CARD_H / 2 - 46, def.name, { fontFamily: Fonts.Voice, fontSize: '30px', fontStyle: '700', color: Ink.tinta })
       .setOrigin(0.5);
     this.tallyLabel = createTallyLabel(scene, 0, CARD_H / 2 - 20, tally ?? { stars: null, tastes: null });
     this.sparkles = scene.add.particles(0, 0, TextureKeys.InkSparkle, {

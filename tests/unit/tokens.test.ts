@@ -60,12 +60,14 @@ describe('Fonts (ADR 0016)', () => {
     expect(Fonts.Voice).toMatch(/^Gaegu,.*Londrina Solid/);
   });
 
-  it('lists Londrina Solid 400/900 and Gaegu 400/700', () => {
+  it('lists Londrina Solid 400/900, Gaegu 400/700 and the accents alias 400/700', () => {
     expect(FontFaces.map((f) => `${f.family} ${f.weight}`)).toEqual([
       'Londrina Solid 400',
       'Londrina Solid 900',
       'Gaegu 400',
       'Gaegu 700',
+      'Londrina Acentos 400',
+      'Londrina Acentos 700',
     ]);
   });
 
