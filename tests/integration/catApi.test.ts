@@ -287,6 +287,73 @@ describe('Cat.setOutfit instant (F11.15, to capture a dressed cat)', () => {
   });
 });
 
+describe('Cat.itemAt (F16.3)', () => {
+  // The middle of the canvas, in game coordinates: the cat is at 0, 0 with scale 1 (feet at canvas y 490).
+  const middle = { x: 0, y: 256 - 490 };
+
+  it('finds the worn item whose visible pixels are under the point', () => {
+    const { cat } = make();
+    cat.setOutfit([sweater] as never);
+    cat.setItemTexture('sweater-rayas', 'sweater-dyed');
+    expect(cat.itemAt(middle)?.id).toBe('sweater-rayas');
+  });
+
+  it('ignores the transparent parts of an item', () => {
+    const { cat } = make();
+    cat.setOutfit([sweater] as never);
+    expect(cat.itemAt(middle)).toBeNull();
+  });
+
+  it('the item drawn in front wins when two overlap', () => {
+    const { cat } = make();
+    cat.setOutfit([sweater, hat] as never);
+    cat.setItemTexture('sweater-rayas', 'sweater-dyed');
+    cat.setItemTexture('head-gorro', 'sweater-dyed');
+    expect(cat.itemAt(middle)?.id).toBe('head-gorro');
+  });
+
+  it('is null outside the canvas', () => {
+    const { cat } = make();
+    cat.setOutfit([sweater] as never);
+    cat.setItemTexture('sweater-rayas', 'sweater-dyed');
+    expect(cat.itemAt({ x: 5000, y: 0 })).toBeNull();
+  });
+});
+
+describe('Cat.highlightItem (F16.3)', () => {
+  it('lights a halo of copies behind the worn item, and puts it out with null', () => {
+    const { f, cat } = make();
+    cat.setOutfit([sweater] as never);
+    const before = f.images.length;
+    cat.highlightItem('sweater-rayas');
+    const copies = f.images.slice(before);
+    expect(copies).toHaveLength(8);
+    cat.highlightItem(null);
+    const fade = f.added.at(-1) as { targets: unknown[]; alpha: number };
+    expect(fade.alpha).toBe(0);
+    expect(fade.targets.length).toBe(8);
+    expect(fade.targets.every((t, i) => t === copies[i])).toBe(true);
+  });
+
+  it('moves from one item to another without stacking halos', () => {
+    const { f, cat } = make();
+    cat.setOutfit([sweater, hat] as never);
+    cat.highlightItem('sweater-rayas');
+    const mark = f.images.length;
+    cat.highlightItem('sweater-rayas');
+    expect(f.images.length).toBe(mark);
+    cat.highlightItem('head-gorro');
+    expect(f.images.length).toBe(mark + 8);
+  });
+
+  it('does nothing for an item that is not worn', () => {
+    const { f, cat } = make();
+    const before = f.images.length;
+    cat.highlightItem('sweater-rayas');
+    expect(f.images.length).toBe(before);
+  });
+});
+
 describe('cleanup (F11.15)', () => {
   it('destroy removes the timers of the new methods and stops the tweens of the pose', () => {
     const { f, cat } = make();

@@ -85,6 +85,17 @@ const ICONS: Record<string, Draw> = {
     g.fillStyle(hex('rosa400'), 1).fillCircle(29, 26, 4).fillCircle(37, 26, 4).fillTriangle(25, 28, 41, 28, 33, 38);
     g.fillStyle(0xffffff, 0.8).fillCircle(28, 24, 1.5);
   },
+  // Dye: a corked bottle with the color inside and a drop beside it.
+  tintes: (g) => {
+    rr(g, hex('mantequilla'), 21, 4, 18, 12, 4);
+    g.fillStyle(0xffffff, 0.85).fillRoundedRect(25, 14, 10, 10, 2);
+    g.lineStyle(4, LINE, 1).strokeRoundedRect(25, 14, 10, 10, 2);
+    rr(g, 0xffffff, 12, 22, 36, 38, { tl: 14, tr: 14, bl: 10, br: 10 });
+    g.fillStyle(hex('rosa400'), 1).fillRoundedRect(15, 38, 30, 19, { tl: 6, tr: 6, bl: 8, br: 8 });
+    g.fillStyle(0xffffff, 0.9).fillRoundedRect(17, 26, 3, 8, 1);
+    g.fillStyle(hex('rosa400'), 1).fillTriangle(54, 22, 49, 31, 59, 31).fillCircle(54, 33, 5);
+    g.lineStyle(3, LINE, 1).strokeCircle(54, 33, 5);
+  },
   // Balloon with its string.
   accessory: (g) => {
     g.lineStyle(3, LINE, 1).beginPath().moveTo(32, 46).lineTo(28, 54).lineTo(34, 60).strokePath();

@@ -32,11 +32,13 @@ export class TasteReactions implements DressUpController {
     this.current = this.before = ctx.getOutfit();
     ctx.scene.events.on(DressUpEvents.OutfitChanged, this.onOutfit, this);
     ctx.scene.events.on(DressUpEvents.ItemDropped, this.onDropped, this);
+    ctx.scene.events.on(DressUpEvents.ItemDyed, this.onDyed, this);
   }
 
   destroy(): void {
     this.ctx.scene.events.off(DressUpEvents.OutfitChanged, this.onOutfit, this);
     this.ctx.scene.events.off(DressUpEvents.ItemDropped, this.onDropped, this);
+    this.ctx.scene.events.off(DressUpEvents.ItemDyed, this.onDyed, this);
     for (const t of this.timers) t.remove();
     this.timers = [];
     this.bubble?.destroy();
@@ -61,6 +63,14 @@ export class TasteReactions implements DressUpController {
     const reaction = tasteReaction(item, dye, cat, combos);
     this.log.push(reaction.kind);
     this.play(reaction.kind, item);
+  }
+
+  /** A bottle was put on a worn item (F16.3): the cat only reacts to its own favorite color. The dye comes with the event, the save may not have it yet. */
+  private onDyed(item: ClothingDef, dyeId: string): void {
+    const cat = this.ctx.catalog.cats.find((c) => c.id === this.ctx.catId);
+    if (!cat?.prefs || dyeId !== cat.prefs.favoriteDye) return;
+    this.log.push('color');
+    this.play('color', item);
   }
 
   private play(kind: TasteKind, item: ClothingDef): void {

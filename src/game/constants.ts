@@ -126,6 +126,12 @@ export const ObjectEvents = {
   KeychainTink: 'keychain-tink',
   /** Keychain: the swing came to rest */
   KeychainSwingEnd: 'keychain-swing-end',
+  /** DyeJar: (jar, pointer) a dye bottle is being dragged */
+  JarDragStart: 'jar-drag-start',
+  JarDrag: 'jar-drag',
+  JarDragEnd: 'jar-drag-end',
+  /** DyeJar: (jar) pressed and released without dragging */
+  JarClick: 'jar-click',
 } as const;
 
 /** Scene events of DressUp that its controllers listen to (ADR 0019). */
@@ -146,6 +152,8 @@ export const DressUpEvents = {
   PriceTagPressed: 'price-tag-pressed',
   /** the player cannot pay: the purse shakes (blinks with reduced motion) */
   WalletShake: 'wallet-shake',
+  /** (item: ClothingDef, dyeId: string) a dye bottle was dropped on a worn item and the color is on it (water included) */
+  ItemDyed: 'item-dyed',
 } as const;
 
 export const RegistryKeys = {
@@ -186,6 +194,10 @@ export const TextureKeys = {
   PaperCard: 'ui-paper-card',
   NotePolaroid: 'ui-note-polaroid',
   Notebook: 'ui-notebook',
+  /** Dye art (white, tinted with the hex of the dye): a drop, the splash and the dot of color of a dyed item. */
+  Drop: 'ui-drop',
+  Splash: 'ui-splash',
+  Dot: 'ui-dot',
 } as const;
 
 /** Textures of the keychain hardware and varnish (art/ui/keychain/, loaded by the Preloader from `UI_ART`, ADR 0021). */
