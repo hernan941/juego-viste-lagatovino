@@ -1,6 +1,6 @@
 # Tests pendientes de la segunda etapa
 
-El 2026-10-26 el usuario pidió dejar los tests nuevos para el final. Desde entonces, las tareas se implementan sin TDD y cada agente informa aquí los tests que faltan. Se escriben en una fase de tests antes del cierre (F21).
+El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada tarea y dejar **los tests e2e (Playwright) para el final de todo**. Aquí se juntan los e2e pendientes y algunos tests unit que quedaron sin hacer. Se escriben y se corren en la fase final, antes de la DoD (F21).
 
 ## F12.2 y F12.3: kit de UI
 1. `tests/e2e/kit.spec.ts` (o la escena de laboratorio): una escena con `Button` píldora y pestañas índice. Verifica con el mouse que el click emite la acción y que la pestaña activa sube, sin errores de consola.
