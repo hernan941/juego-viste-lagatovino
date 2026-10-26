@@ -1,9 +1,10 @@
 import Phaser from 'phaser';
-import { FONT_FAMILY, GAME_WIDTH, ObjectEvents, Palette, RegistryKeys, SceneKeys, SfxKeys } from '../constants';
+import { Fonts, GAME_WIDTH, Ink, ObjectEvents, RegistryKeys, SceneKeys, SfxKeys, colorToNumber } from '../constants';
 import type { Catalog } from '../data/schema';
 import { NAME_MAX, applyNameKey, nameOnSelect, sanitizeName, validateCatName } from '../domain/catName';
+import { catTally } from '../domain/catProgress';
 import { chooseCat } from '../domain/session';
-import type { AnchorsDef, CatDef } from '../domain/types';
+import type { AnchorsDef, CatDef, Progress } from '../domain/types';
 import type { E2EUi, UiState } from '../e2eHook';
 import { Button } from '../objects/Button';
 import { CARD_H, CARD_W, CatCard } from '../objects/CatCard';
@@ -11,7 +12,9 @@ import { DomNameInput, canvasOf } from '../objects/DomNameInput';
 import { MuteButton } from '../objects/MuteButton';
 import { MotionButton } from '../objects/MotionButton';
 import { FullscreenButton } from '../objects/FullscreenButton';
-import { drawPanel, hex, touchEnv } from '../objects/ui';
+import { Card } from '../objects/kit/Card';
+import { PaperBackground } from '../objects/kit/PaperBackground';
+import { touchEnv } from '../objects/ui';
 import { getAudio } from '../plugins/AudioPlugin';
 import { go } from '../systems/navigate';
 import { readSession, writeSession } from '../systems/sessionStore';
@@ -21,7 +24,8 @@ import { enterKind, transitionIn } from '../systems/transitions';
 const COLUMNS = 6;
 const GAP_X = 14;
 const GAP_Y = 16;
-const GRID_TOP = 128;
+const GRID_TOP = 118;
+const ink = (token: keyof typeof Ink) => colorToNumber(Ink[token]);
 const BAR = { x: 150, y: 556, width: 980, height: 136 };
 const INPUT = { x: 580, y: 624, width: 440, height: 76 };
 
@@ -74,19 +78,25 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
 
   create() {
     const anchors = this.registry.get(RegistryKeys.Anchors) as AnchorsDef;
-    this.cameras.main.setBackgroundColor(Palette.rosa50);
-    this.drawBackdrop();
-    this.add
-      .text(GAME_WIDTH / 2, 56, 'Elige a tu gatito', { fontFamily: FONT_FAMILY, fontSize: '60px', color: Palette.rosa600, fontStyle: '700', stroke: '#FFFFFF', strokeThickness: 12, padding: { x: 4, y: 10 } })
+    this.cameras.main.setBackgroundColor(Ink.cremaPapel);
+    new PaperBackground(this).setDepth(-10);
+    const title = this.add
+      .text(GAME_WIDTH / 2, 54, 'Elige a tu gatito', { fontFamily: Fonts.Title, fontSize: '64px', color: Ink.tinta, padding: { x: 4, y: 10 } })
       .setOrigin(0.5);
+    // A hand-drawn underline in `sol`, like a highlighter under the title.
+    const underline = this.add.graphics();
+    underline.lineStyle(10, ink('sol'), 0.8).lineBetween(title.x - title.width / 2 + 10, 92, title.x + title.width / 2 - 10, 94);
+    this.drawTitleIn(title, underline);
 
+    // The progress is written by SavePlugin (ADR 0017); without it yet the polaroids simply show no stars or hearts.
+    const progress = this.registry.get(RegistryKeys.Progress) as Progress | undefined;
     const gridW = COLUMNS * CARD_W + (COLUMNS - 1) * GAP_X;
     this.catalog.cats.forEach((def, i) => {
       const col = i % COLUMNS;
       const row = Math.floor(i / COLUMNS);
       const x = GAME_WIDTH / 2 - gridW / 2 + CARD_W / 2 + col * (CARD_W + GAP_X);
       const y = GRID_TOP + CARD_H / 2 + row * (CARD_H + GAP_Y);
-      const card = new CatCard(this, x, y, def, anchors);
+      const card = new CatCard(this, x, y, def, anchors, catTally(def, progress));
       card.appear(80 + i * 55);
       card.on(ObjectEvents.ButtonClick, () => this.pick(def));
       this.cards.push(card);
@@ -124,37 +134,33 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
     transitionIn(this, this.enter);
   }
 
-  private drawBackdrop() {
-    const g = this.add.graphics().setDepth(-10);
-    g.fillStyle(hex('lavanda'), 0.45);
-    for (let row = 0; row < 9; row++) {
-      for (let col = 0; col < 17; col++) {
-        const x = col * 80 + (row % 2 === 0 ? 20 : 60);
-        const y = row * 84 + 30;
-        g.fillEllipse(x, y + 4, 11, 9).fillCircle(x - 7, y - 4, 3).fillCircle(x - 2.5, y - 8, 3).fillCircle(x + 2.5, y - 8, 3).fillCircle(x + 7, y - 4, 3);
-      }
-    }
+  /** The title drops in softly and its underline is drawn after it (nothing appears all at once). */
+  private drawTitleIn(title: Phaser.GameObjects.Text, underline: Phaser.GameObjects.Graphics) {
+    const p = profileOf(this);
+    title.setAlpha(0);
+    underline.setAlpha(0);
+    if (!p.reduced) title.setY(title.y - 16);
+    this.tweens.add({ targets: title, alpha: 1, y: title.y + (p.reduced ? 0 : 16), duration: 320, ease: p.ease('Back.easeOut') });
+    this.tweens.add({ targets: underline, alpha: 1, delay: 200, duration: 300 });
   }
 
   /** Bottom bar: a hint first, then the name field and the button once a cat is picked. */
   private createBar() {
-    const panel = this.add.graphics();
-    drawPanel(panel, BAR.width, BAR.height, 44);
-    panel.setPosition(BAR.x, BAR.y);
+    new Card(this, BAR.x + BAR.width / 2, BAR.y + BAR.height / 2, { width: BAR.width, height: BAR.height });
     this.hint = this.add
-      .text(GAME_WIDTH / 2, BAR.y + BAR.height / 2, 'Elige al gatito que más te guste', { fontFamily: FONT_FAMILY, fontSize: '36px', color: Palette.texto, fontStyle: '600' })
+      .text(GAME_WIDTH / 2, BAR.y + BAR.height / 2, 'Elige al gatito que más te guste', { fontFamily: Fonts.Voice, fontSize: '40px', color: Ink.tinta, padding: { x: 2, y: 6 } })
       .setOrigin(0.5);
     if (profileOf(this).loops) this.tweens.add({ targets: this.hint, y: this.hint.y - 6, duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
 
-    const label = this.add.text(BAR.x + 40, INPUT.y, 'Su nombre:', { fontFamily: FONT_FAMILY, fontSize: '26px', color: Palette.rosa600, fontStyle: '600' }).setOrigin(0, 0.5);
+    const label = this.add.text(BAR.x + 40, INPUT.y, 'Su nombre:', { fontFamily: Fonts.Voice, fontSize: '30px', color: Ink.mutedTexto, fontStyle: '700', padding: { x: 2, y: 6 } }).setOrigin(0, 0.5);
     this.box = this.add.graphics();
     this.drawBox(false);
-    this.nameText = this.add.text(INPUT.x - INPUT.width / 2 + 24, INPUT.y, '', { fontFamily: FONT_FAMILY, fontSize: '40px', color: Palette.texto, fontStyle: '600' }).setOrigin(0, 0.5);
-    this.caret = this.add.rectangle(INPUT.x - INPUT.width / 2 + 26, INPUT.y, 4, 44, hex('rosa400')).setOrigin(0, 0.5);
+    this.nameText = this.add.text(INPUT.x - INPUT.width / 2 + 24, INPUT.y, '', { fontFamily: Fonts.Voice, fontSize: '44px', color: Ink.tinta, fontStyle: '700', padding: { x: 2, y: 6 } }).setOrigin(0, 0.5);
+    this.caret = this.add.rectangle(INPUT.x - INPUT.width / 2 + 26, INPUT.y, 4, 44, ink('tinta')).setOrigin(0, 0.5);
     this.tweens.add({ targets: this.caret, alpha: { from: 1, to: 0 }, duration: 480, yoyo: true, repeat: -1 });
-    this.counter = this.add.text(INPUT.x + INPUT.width / 2 - 16, INPUT.y, '', { fontFamily: FONT_FAMILY, fontSize: '20px', color: Palette.rosa600, fontStyle: '500' }).setOrigin(1, 0.5);
-    this.warning = this.add.text(INPUT.x, INPUT.y + 52, '¡Ponle un nombre!', { fontFamily: FONT_FAMILY, fontSize: '24px', color: Palette.rosa600, fontStyle: '600' }).setOrigin(0.5).setAlpha(0);
-    this.choose = new Button(this, 945, INPUT.y, '¡Este!', { width: 250, height: 92, fontSize: 46 });
+    this.counter = this.add.text(INPUT.x + INPUT.width / 2 - 16, INPUT.y, '', { fontFamily: Fonts.Voice, fontSize: '22px', color: Ink.mutedTexto, padding: { x: 2, y: 4 } }).setOrigin(1, 0.5);
+    this.warning = this.add.text(INPUT.x, INPUT.y + 52, '¡Ponle un nombre!', { fontFamily: Fonts.Voice, fontSize: '26px', color: Ink.frambuesa, fontStyle: '700', padding: { x: 2, y: 6 } }).setOrigin(0.5).setAlpha(0);
+    this.choose = new Button(this, 945, INPUT.y, '¡Este!', { width: 250, height: 92, fontSize: 46, pill: 'primary' });
     this.choose.on(ObjectEvents.ButtonClick, () => this.confirm());
 
     this.field = this.add.container(0, 0, [this.box, this.nameText, this.caret, this.counter]);
@@ -172,9 +178,9 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
 
   private drawBox(error: boolean) {
     this.box.clear();
-    this.box.fillStyle(hex('rosa600'), 0.12).fillRoundedRect(INPUT.x - INPUT.width / 2 + 2, INPUT.y - INPUT.height / 2 + 7, INPUT.width, INPUT.height, 32);
-    this.box.fillStyle(hex('crema'), 1).fillRoundedRect(INPUT.x - INPUT.width / 2, INPUT.y - INPUT.height / 2, INPUT.width, INPUT.height, 32);
-    this.box.lineStyle(5, error ? hex('rosa600') : hex('rosa400'), 1).strokeRoundedRect(INPUT.x - INPUT.width / 2, INPUT.y - INPUT.height / 2, INPUT.width, INPUT.height, 32);
+    this.box.fillStyle(ink('sombraTarjeta'), 1).fillRoundedRect(INPUT.x - INPUT.width / 2 + 2, INPUT.y - INPUT.height / 2 + 7, INPUT.width, INPUT.height, 32);
+    this.box.fillStyle(ink('cremaPapel'), 1).fillRoundedRect(INPUT.x - INPUT.width / 2, INPUT.y - INPUT.height / 2, INPUT.width, INPUT.height, 32);
+    this.box.lineStyle(3, error ? ink('tomate') : ink('tinta'), 1).strokeRoundedRect(INPUT.x - INPUT.width / 2, INPUT.y - INPUT.height / 2, INPUT.width, INPUT.height, 32);
   }
 
   private pick(def: CatDef, name?: string, silent = false) {

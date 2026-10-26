@@ -37,7 +37,7 @@ export interface AlbumEntries {
 }
 
 /** The taste keys a cat can reveal: `love:<tag>`, `dislike:<tag>`, `favorite` and `color`. */
-function tasteKeys(cat: CatDef): string[] {
+export function tasteKeys(cat: CatDef): string[] {
   const prefs = cat.prefs;
   if (!prefs) return [];
   return [...prefs.loves.map((t) => `love:${t}`), ...prefs.dislikes.map((t) => `dislike:${t}`), 'favorite', 'color'];

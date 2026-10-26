@@ -13,6 +13,8 @@ export interface PolaroidOptions {
   texture?: string;
   /** What is written under the photo, in Gaegu. */
   caption?: string;
+  /** Height of the strip under the photo (default 64). */
+  captionHeight?: number;
   /** Falls in with its washi when created (default). */
   animate?: boolean;
 }
@@ -24,14 +26,14 @@ const CAPTION_H = 64;
 export class Polaroid extends Phaser.GameObjects.Container {
   private readonly washi: Phaser.GameObjects.Graphics;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, { id, width = 220, height = 270, texture, caption, animate = true }: PolaroidOptions) {
+  constructor(scene: Phaser.Scene, x: number, y: number, { id, width = 220, height = 270, texture, caption, captionHeight = CAPTION_H, animate = true }: PolaroidOptions) {
     super(scene, x, y);
     const frame = scene.add.graphics();
     frame.fillStyle(colorToNumber(Ink.sombraTarjeta), 1).fillRoundedRect(-width / 2 + 4, -height / 2 + 4, width, height, 12);
     frame.fillStyle(colorToNumber(Ink.tarjeta), 1).fillRoundedRect(-width / 2, -height / 2, width, height, 12);
     frame.lineStyle(3, colorToNumber(Ink.borde), 1).strokeRoundedRect(-width / 2, -height / 2, width, height, 12);
     const winW = width - MARGIN * 2;
-    const winH = height - MARGIN * 2 - CAPTION_H;
+    const winH = height - MARGIN * 2 - captionHeight;
     const winY = -height / 2 + MARGIN;
     frame.fillStyle(colorToNumber(Ink.cielo), 1).fillRect(-winW / 2, winY, winW, winH);
     this.add(frame);
@@ -41,7 +43,7 @@ export class Polaroid extends Phaser.GameObjects.Container {
       this.add(photo);
     }
     if (caption) {
-      this.add(scene.add.text(0, height / 2 - CAPTION_H / 2 - 2, caption, { fontFamily: Fonts.Voice, fontSize: '30px', color: Ink.tinta }).setOrigin(0.5));
+      this.add(scene.add.text(0, height / 2 - captionHeight / 2 - 2, caption, { fontFamily: Fonts.Voice, fontSize: '30px', color: Ink.tinta }).setOrigin(0.5));
     }
     this.washi = scene.add.graphics();
     this.washi.fillStyle(colorToNumber(Ink.sol), 0.7).fillRect(-45, -13, 90, 26);
