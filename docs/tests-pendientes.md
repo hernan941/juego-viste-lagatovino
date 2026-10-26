@@ -217,3 +217,13 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
   - el color favorito deja `tastes.last === 'color'`.
 - **Ojo**: `e2eState()` de los controladores devuelve coordenadas de juego, no de página. Hay que convertir `dyes.jars` o hacer que el hook las convierta.
 - **Medir el primer teñido con GPU real**: en headless con SwiftShader tarda entre 420 y 560 ms, y el umbral del ADR 0018 es de unos 100 ms. Si con GPU sigue por encima, activar el plan B (pregenerar las variantes en el build).
+
+## F18.3 y F18.4: bandejas del modo foto
+### E2E pendientes (`photomode.spec.ts`)
+- Elegir fondo, marco y pose. Lo bloqueado no se puede elegir y muestra su pista.
+- Poner un sticker arrastrándolo de `cell:<id>` a `photo`, y quitarlo llevándolo a `jar` o a `panel`.
+- El tope de 8 stickers se respeta, los stickers quedan dentro del marco y `composition` coincide con lo hecho.
+- `@mobile`: arrastrar un sticker con el levantado.
+- `@cross`: componer y guardar (con F18.5).
+- `perf.spec`: un ciclo con stickers.
+- **Ojo**: si el arrastre empieza sobre stickers solapados, toma el de arriba.

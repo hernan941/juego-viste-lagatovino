@@ -37,3 +37,9 @@ Detalles vistos al integrar. Los revisa el game-designer en la revisión de cada
 - **DressUp sigue con la estética v1**: paneles rosados, ¡Listo! rosado 3D y fondo de huellitas. Se repinta en F20.5.
 - Con 7 pestañas, la fila se achica al 90 %.
 - Hoy se pueden usar los 10 frascos aunque no estén comprados ("probar es gratis"). La compra va en F16.5.
+
+## F18.3 y F18.4: modo foto (captura s1/4-placed.png)
+- Se ve muy bien: la bandeja de stickers con los bloqueados como boceto con candado, el tarro con el contador 4 / 8 y los stickers despegados.
+- La polaroid no se rota todavía (`framePlacement`): si se rota la hoja, se desalinean el gato y los stickers. Va en F18.5 o en la revisión del GD.
+- Las esquinas cuadradas de los fondos (por ejemplo `bg-cielo`) se asoman por las esquinas redondeadas del marco polaroid. Es un problema del arte.
+- Después de [Guardar], el gato queda con cara `amor` y no vuelve a la pose elegida.
