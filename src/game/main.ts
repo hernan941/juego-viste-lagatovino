@@ -9,6 +9,7 @@ import { Showcase } from './scenes/Showcase';
 import { AudioPlugin } from './plugins/AudioPlugin';
 import { SavePlugin } from './plugins/SavePlugin';
 import { MotionPlugin } from './plugins/MotionPlugin';
+import { DyePlugin } from './plugins/DyePlugin';
 import { GAME_HEIGHT, GAME_WIDTH, Palette, PluginKeys } from './constants';
 import { installE2EHook } from './e2eHook';
 import { readPerf } from './e2ePerf';
@@ -32,6 +33,7 @@ const config: Phaser.Types.Core.GameConfig = {
       { key: PluginKeys.Audio, plugin: AudioPlugin, start: true },
       { key: PluginKeys.Save, plugin: SavePlugin, start: true },
       { key: PluginKeys.Motion, plugin: MotionPlugin, start: true },
+      { key: PluginKeys.Dye, plugin: DyePlugin, start: true },
     ],
   },
   scene: [Boot, Preloader, Title, CatSelect, ShopEntrance, DressUp, Showcase],

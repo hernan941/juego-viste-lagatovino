@@ -1,7 +1,7 @@
 import Phaser, { Scene } from 'phaser';
 import { FONT_FAMILY, GAME_HEIGHT, GAME_WIDTH, Palette, RegistryKeys, SceneKeys } from '../constants';
 import anchorsJson from '../data/anchors.json';
-import { buildAudioManifest, buildManifest } from '../data/assets';
+import { buildAudioManifest, buildDyeSourceEntries, buildManifest } from '../data/assets';
 import catsJson from '../data/cats.json';
 import clothesJson from '../data/clothes.json';
 import combosJson from '../data/combos.json';
@@ -133,6 +133,8 @@ export class Preloader extends Scene {
     for (const a of manifest) {
       this.load.svg(a.key, a.path, { width: a.size, height: a.height ?? a.size });
     }
+    // ADR 0018: the DyePlugin recolors the SVG text of the dyeable items.
+    for (const a of buildDyeSourceEntries(catalog.clothes)) this.load.text(a.key, a.path);
     for (const a of buildAudioManifest()) this.load.audio(a.key, a.urls);
   }
 

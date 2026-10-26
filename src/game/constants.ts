@@ -171,6 +171,7 @@ export const PluginKeys = {
   Audio: 'AudioPlugin',
   Save: 'SavePlugin',
   Motion: 'MotionPlugin',
+  Dye: 'DyePlugin',
 } as const;
 
 /** Sound effect keys (docs/art-direction.md section 9). Files: public/assets/audio/<key>.{ogg,mp3}. */
