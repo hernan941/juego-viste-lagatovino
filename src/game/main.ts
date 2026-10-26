@@ -13,6 +13,7 @@ import { SavePlugin } from './plugins/SavePlugin';
 import { MotionPlugin } from './plugins/MotionPlugin';
 import { DyePlugin } from './plugins/DyePlugin';
 import { GAME_HEIGHT, GAME_WIDTH, Ink, PluginKeys } from './constants';
+import { readGpuRenderer, renderOptions } from './systems/renderConfig';
 import { installE2EHook } from './e2eHook';
 import { readPerf } from './e2ePerf';
 import { installFpsCounter } from './fpsCounter';
@@ -26,10 +27,6 @@ const config: Phaser.Types.Core.GameConfig = {
   // ADR 0014: a long press must not open the browser menu over the game.
   disableContextMenu: true,
   scale: { mode: Scale.FIT, autoCenter: Scale.CENTER_BOTH },
-  // Test mode only: software WebGL (SwiftShader, which headless Chromium in the e2e uses) renders
-  // multi-texture batches with flickering, half-drawn layers, so tests batch one texture at a time.
-  // Real browsers (dev and production) use Phaser's default.
-  ...(import.meta.env.MODE === 'test' ? { render: { maxTextures: 1 } } : {}),
   plugins: {
     global: [
       { key: PluginKeys.Audio, plugin: AudioPlugin, start: true },
@@ -51,7 +48,8 @@ const StartGame = (parent: string) => {
     q.set('start', lab === 'porcelain' ? 'PorcelainLab' : 'CeremonyLab');
     window.history.replaceState(null, '', `${window.location.pathname}?${q.toString()}`);
   }
-  const game = new Game({ ...config, parent });
+  // A4: one texture per batch in test mode and on software WebGL (systems/renderConfig.ts); real GPUs keep Phaser's default.
+  const game = new Game({ ...config, ...renderOptions(import.meta.env.MODE, readGpuRenderer(document)), parent });
   if (import.meta.env.DEV) {
     void import('./scenes/dev/PorcelainLab').then((m) => game.scene.add(m.LAB_SCENE_KEY, m.PorcelainLab));
     void import('./scenes/dev/CeremonyLab').then((m) => game.scene.add(m.CEREMONY_LAB_KEY, m.CeremonyLab));
