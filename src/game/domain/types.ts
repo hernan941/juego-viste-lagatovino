@@ -145,6 +145,7 @@ export interface BrandDef {
 
 /** Scoring rules (economy.json -> scoring). */
 export interface ScoringRules {
+  /** Points per unit. `dislike` is signed (a penalty, <= 0); the others are bonuses (>= 0). */
   weights: {
     style: number;
     love: number;

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CatalogError, assertCatalog, validateCats, validateCatalog, validateClothes, validateCombos,
+  validateDyes, validateEconomy, validateShopRules,
 } from '../../src/game/data/schema';
 
 const cat = { id: 'naranja', name: 'Naranjito', coat: 'Atigrado naranja', texture: 'cat-naranja' };
@@ -153,5 +154,166 @@ describe('validateCatalog / assertCatalog', () => {
   it('assertCatalog returns the catalog when valid', () => {
     const raw = { cats: [cat], clothes: [cloth(), secret], combos: [combo()] };
     expect(assertCatalog(raw)).toEqual(raw);
+  });
+});
+
+// ---- F11.9: economy, dyes and the shop rules on the clothes (ADR 0017) ----
+const economy = (over: Record<string, unknown> = {}) => ({
+  startWallet: 100,
+  scoring: {
+    weights: { style: 1, love: 2, dislike: -3, complete: 1, combo: 3, favoriteItem: 2, favoriteDye: 1 },
+    caps: { style: 6, love: 6, combo: 6, color: 2 },
+    starThresholds: [3, 6, 10, 14],
+    ignoredTags: ['secreto', 'mece'],
+  },
+  prices: { basica: 40, linda: 70, lujo: 110, dye: 50 },
+  payout: { byStars: { 1: 5, 2: 10, 3: 18, 4: 28, 5: 40 }, nearFactor: 0.5, tip: 2 },
+  milestones: { threeStars: 15, fourStars: 25, fiveStars: 50 },
+  novelty: { window: 3 },
+  discoveryBonus: 15,
+  comboBonus: 40,
+  ...over,
+});
+const dye = (over: Record<string, unknown> = {}) => ({ id: 'rosa', name: 'Rosa', hex: '#F6BFD0', starter: true, ...over });
+
+describe('validateEconomy (F11.9)', () => {
+  it('accepts a valid economy', () => {
+    expect(validateEconomy(economy())).toEqual({ ok: true, value: economy() });
+  });
+
+  it('rejects non objects and missing blocks naming the path', () => {
+    expect(errorsOf(validateEconomy(null))).toContain('economy: debe ser un objeto');
+    const rest: Record<string, unknown> = economy();
+    delete rest.scoring;
+    delete rest.prices;
+    const msg = errorsOf(validateEconomy(rest));
+    expect(msg).toContain('economy.scoring: debe ser un objeto');
+    expect(msg).toContain('economy.prices: debe ser un objeto');
+  });
+
+  it('rejects bad numbers with their path', () => {
+    expect(errorsOf(validateEconomy(economy({ startWallet: -1 })))).toContain('economy.startWallet: debe ser un entero mayor o igual a 0');
+    expect(errorsOf(validateEconomy(economy({ discoveryBonus: 1.5 })))).toContain('economy.discoveryBonus: debe ser un entero mayor o igual a 0');
+    expect(errorsOf(validateEconomy(economy({ prices: { basica: 0, linda: 70, lujo: 110, dye: 50 } })))).toContain(
+      'economy.prices.basica: debe ser un entero mayor que 0',
+    );
+    expect(errorsOf(validateEconomy(economy({ novelty: { window: 0 } })))).toContain('economy.novelty.window: debe ser un entero mayor que 0');
+  });
+
+  it('wants prices that grow with the tier', () => {
+    expect(errorsOf(validateEconomy(economy({ prices: { basica: 80, linda: 70, lujo: 110, dye: 50 } })))).toContain(
+      'economy.prices: los precios deben crecer con el nivel (basica < linda < lujo)',
+    );
+  });
+
+  it('wants star thresholds that strictly increase', () => {
+    const scoring = { ...economy().scoring, starThresholds: [3, 6, 6, 14] };
+    expect(errorsOf(validateEconomy(economy({ scoring })))).toContain('economy.scoring.starThresholds: deben ser 4 números que crecen');
+    const short = { ...economy().scoring, starThresholds: [3, 6, 10] };
+    expect(errorsOf(validateEconomy(economy({ scoring: short })))).toContain('economy.scoring.starThresholds: deben ser 4 números que crecen');
+  });
+
+  it('wants payouts that do not shrink with the stars', () => {
+    const payout = { ...economy().payout, byStars: { 1: 5, 2: 10, 3: 9, 4: 28, 5: 40 } };
+    expect(errorsOf(validateEconomy(economy({ payout })))).toContain('economy.payout.byStars: el pago debe crecer con las estrellas');
+    const missing = { ...economy().payout, byStars: { 1: 5, 2: 10, 3: 18, 4: 28 } };
+    expect(errorsOf(validateEconomy(economy({ payout: missing })))).toContain('economy.payout.byStars.5: debe ser un entero mayor o igual a 0');
+  });
+
+  it('wants nearFactor between 0 and 1 and milestones that do not shrink', () => {
+    const payout = { ...economy().payout, nearFactor: 1.5 };
+    expect(errorsOf(validateEconomy(economy({ payout })))).toContain('economy.payout.nearFactor: debe estar entre 0 y 1');
+    expect(errorsOf(validateEconomy(economy({ milestones: { threeStars: 30, fourStars: 25, fiveStars: 50 } })))).toContain(
+      'economy.milestones: los hitos deben crecer (3 estrellas <= 4 estrellas <= 5 estrellas)',
+    );
+  });
+
+  it('checks the scoring weights: bonuses are positive, the dislike penalty is negative', () => {
+    const weights = { ...economy().scoring.weights, dislike: 3, love: -1 };
+    const msg = errorsOf(validateEconomy(economy({ scoring: { ...economy().scoring, weights } })));
+    expect(msg).toContain('economy.scoring.weights.dislike: debe ser un entero menor o igual a 0');
+    expect(msg).toContain('economy.scoring.weights.love: debe ser un entero mayor o igual a 0');
+  });
+
+  it('checks caps and ignoredTags', () => {
+    const scoring = { ...economy().scoring, caps: { style: 6, love: 6, combo: -1, color: 2 }, ignoredTags: ['ok', 3] };
+    const msg = errorsOf(validateEconomy(economy({ scoring })));
+    expect(msg).toContain('economy.scoring.caps.combo: debe ser un entero mayor o igual a 0');
+    expect(msg).toContain('economy.scoring.ignoredTags: debe ser una lista de textos');
+  });
+});
+
+describe('validateDyes (F11.9)', () => {
+  it('accepts a valid list', () => {
+    expect(validateDyes([dye(), dye({ id: 'cielo', name: 'Cielo', hex: '#CFE0F3', starter: undefined })]).ok).toBe(true);
+  });
+
+  it('rejects a bad hex, repeated ids and missing text', () => {
+    expect(errorsOf(validateDyes([dye({ hex: 'rosa' })]))).toContain('dyes[0].hex: "rosa" debe ser un color #RRGGBB');
+    expect(errorsOf(validateDyes([dye(), dye()]))).toContain('dyes[1].id: "rosa" está repetido');
+    expect(errorsOf(validateDyes([dye({ name: '' })]))).toContain('dyes[0].name: debe ser texto');
+  });
+
+  it('wants at least one starter bottle', () => {
+    expect(errorsOf(validateDyes([dye({ starter: undefined })]))).toContain('dyes: al menos un frasco debe ser starter');
+  });
+
+  it('keeps "agua" for the water tool, which is not a bottle', () => {
+    expect(errorsOf(validateDyes([dye(), dye({ id: 'agua', name: 'Agua', hex: '#CFE0F3' })]))).toContain(
+      'dyes[1].id: "agua" está reservado para la herramienta de agua',
+    );
+  });
+
+  it('rejects a non boolean starter', () => {
+    expect(errorsOf(validateDyes([dye({ starter: 'si' })]))).toContain('dyes[0].starter: debe ser true o false');
+  });
+});
+
+describe('validateClothes: shop fields (F11.9)', () => {
+  it('rejects an unknown tier and non boolean flags', () => {
+    const msg = errorsOf(validateClothes([cloth({ tier: 'barata', starter: 'si', dyeable: 1 })]));
+    expect(msg).toContain('clothes[0].tier: "barata" no existe (usa basica, linda, lujo)');
+    expect(msg).toContain('clothes[0].starter: debe ser true o false');
+    expect(msg).toContain('clothes[0].dyeable: debe ser true o false');
+  });
+});
+
+describe('validateShopRules (F11.9)', () => {
+  const starterA = cloth({ id: 'sweater-rayas', starter: true });
+  const starterB = cloth({ id: 'face-gafas', slot: 'face', category: 'face', starter: true, tags: ['gala'] });
+  const priced = cloth({ id: 'head-gorro', slot: 'head', category: 'head', tier: 'linda' });
+  const gift = cloth({ id: 'gift-hat', slot: 'head', category: 'head', secret: true });
+  const duo = combo({ requires: [{ itemId: 'sweater-rayas' }, { itemId: 'face-gafas' }] });
+
+  it('accepts starters, priced items and secrets without tier', () => {
+    expect(validateShopRules([starterA, starterB, priced, gift] as never, [duo] as never).ok).toBe(true);
+  });
+
+  it('wants tier or starter on every visible item', () => {
+    const bare = cloth({ id: 'head-sin', slot: 'head', category: 'head' });
+    expect(errorsOf(validateShopRules([starterA, starterB, bare, gift] as never, [duo] as never))).toContain(
+      'clothes "head-sin": toda prenda visible necesita tier o starter',
+    );
+  });
+
+  it('rejects an item with both tier and starter', () => {
+    const both = cloth({ id: 'head-doble', slot: 'head', category: 'head', tier: 'lujo', starter: true });
+    expect(errorsOf(validateShopRules([starterA, starterB, both, gift] as never, [duo] as never))).toContain(
+      'clothes "head-doble": no puede tener tier y starter a la vez',
+    );
+  });
+
+  it('keeps tier and starter off the secret items', () => {
+    const rich = { ...gift, tier: 'lujo' };
+    expect(errorsOf(validateShopRules([starterA, starterB, rich] as never, [duo] as never))).toContain(
+      'clothes "gift-hat": las prendas secretas no se venden ni son iniciales',
+    );
+  });
+
+  it('wants the starters to complete at least one combo', () => {
+    const lockedB = cloth({ id: 'face-gafas', slot: 'face', category: 'face', tier: 'linda', tags: ['gala'] });
+    expect(errorsOf(validateShopRules([starterA, lockedB, gift] as never, [duo] as never))).toContain(
+      'combos: las prendas iniciales deben completar al menos un combo',
+    );
   });
 });

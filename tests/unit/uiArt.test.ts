@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import dyes from '../../src/game/data/dyes.json';
 
 // F12.8, F12.13, F12.14 y F12.15: el arte de UI de la segunda etapa (art-direction v2, ADR 0016).
 // Fuente en art/, copia que carga el juego en public/assets/ (npm run art).
@@ -28,19 +29,8 @@ const EXPECTED: Record<string, string[]> = {
   'ui/runway': ['paper-card', 'stamp-star', 'stamp-star-sol', 'pencil-mark', 'note-polaroid'],
 };
 
-// Frascos de tinte: los hex salen de art-direction v2 §4 (colores de la marca) y son los de dyes.json.
-const DYE_HEX: Record<string, string> = {
-  cielo: '#CFE0F3',
-  rosa: '#F6BFD0',
-  sol: '#F3C04A',
-  lila: '#D9CDF3',
-  durazno: '#F1D1C0',
-  naranjo: '#E98A2B',
-  lapiz: '#3A5FC4',
-  frambuesa: '#C2306B',
-  tomate: '#C8372F',
-  hoja: '#3F7D3B',
-};
+// Frascos de tinte: los hex salen de dyes.json (art-direction v2 §4, colores de la marca).
+const DYE_HEX: Record<string, string> = Object.fromEntries(dyes.map((d) => [d.id, d.hex]));
 
 // Tokens de la v1 (rosa pastel, contorno marrón) que no pueden volver.
 const V1_COLORS = ['#4A3036', '#FF8FB8', '#E2578B', '#FFD1E3', '#FFF0F6', '#5A3A48'];
@@ -117,6 +107,11 @@ describe('frascos de tinte', () => {
     const svg = filesIn(source, '/art', 'ui/dyes')[`dye-${id}`];
     expect(svg).toContain(`data-dye-hex="${hex}"`);
     expect(svg).toContain(`id="liquid" fill="${hex}"`);
+  });
+
+  it('hay un frasco por cada entrada de dyes.json, más el agua', () => {
+    const bottles = Object.keys(filesIn(source, '/art', 'ui/dyes')).filter((n) => n.startsWith('dye-'));
+    expect(bottles.sort()).toEqual([...dyes.map((d) => `dye-${d.id}`), 'dye-agua'].sort());
   });
 
   it('el frasco de agua marca su líquido como agua, sin color de la marca', () => {

@@ -51,14 +51,13 @@ const svgOf = (texture: string, icon = false): string => {
   if (!c) return '';
   return clothesSvg[`/public/assets/clothes/${c.slot}/${clothingAssetName(c)}${icon ? '.icon' : ''}.svg`] ?? '';
 };
-// `dyeable` lo suma F11.9 a clothes.json; mientras tanto, los sweaters visibles (no secretos) son los teñibles.
-const dyeable = (clothes as (ClothingDef & { dyeable?: boolean; secret?: boolean })[]).filter(
-  (c) => c.dyeable === true || (c.slot === 'sweater' && !c.secret),
-);
+// Las prendas teñibles las define clothes.json (F11.9): los 16 sweaters visibles.
+const dyeable = (clothes as ClothingDef[]).filter((c) => c.dyeable === true);
 
 describe('prendas con tinta y marcas data-dye (F12.7)', () => {
   it('los 16 sweaters visibles son teñibles', () => {
     expect(dyeable.filter((c) => c.slot === 'sweater')).toHaveLength(16);
+    expect(dyeable).toHaveLength(16);
   });
 
   it.each(dyeable.map((c) => [c.id, c.texture] as const))('%s: tiene al menos un data-dye="a" con fill explícito', (_id, texture) => {
