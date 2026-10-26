@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" width="960" height="540">
   <!-- Viste Lagato · fondo del colgador: corcho con 12 ganchos, uno por gato (art-direction v2, ADR 0016). -->
-<!-- Ganchos (class="hook", data-index 0 a 11 en el orden de cats.json): x = 120 + 240 * columna, y = 58 + 170 * fila. El llavero cuelga debajo de cada gancho. -->
+<!-- Ganchos (grupos de clase hook, data-index 0 a 11 en el orden de cats.json): x = 120 + 240 * columna, y = 58 + 170 * fila. El llavero cuelga debajo de cada gancho. -->
   <path d="M40 18 H924 Q954 18 954 48 V504 Q954 534 924 534 H40 Q10 534 10 504 V48 Q10 18 40 18 Z" fill="#F4EEE3"/>
   <path d="M36 6 H920 Q950 6 950 36 V492 Q950 522 920 522 H36 Q6 522 6 492 V36 Q6 6 36 6 Z" fill="#FFFCF5" stroke="#1F1B1A" stroke-width="5" stroke-linejoin="round"/>
   <path d="M40 20 H916 Q936 20 936 40 V488 Q936 508 916 508 H40 Q20 508 20 488 V40 Q20 20 40 20 Z" fill="#EBC6B0" stroke="#1F1B1A" stroke-opacity="0.45" stroke-width="2.5" stroke-linejoin="round"/>
