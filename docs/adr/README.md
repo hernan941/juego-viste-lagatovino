@@ -23,7 +23,7 @@ Aquí se registran las decisiones de arquitectura del proyecto (formato Nygard).
 | [0016](0016-direccion-de-arte-lagatovino.md) | Dirección de arte Lagatovino | Aceptado (reemplaza la estética v1 y enmienda 0006) |
 | [0017](0017-guardado-v2-y-reglas-de-juego-en-json.md) | Guardado v2 y reglas de juego en JSON | Aceptado (amplía 0004) |
 | [0018](0018-tenido-por-recoloreado-de-svg.md) | Teñido por recoloreado del SVG en tiempo de ejecución | Aceptado (amplía 0006) |
-| [0019](0019-flujo-de-escenas-v2.md) | Flujo de escenas v2 | Aceptado (amplía 0007) |
+| [0019](0019-flujo-de-escenas-v2.md) | Flujo de escenas v2 | Aceptado (amplía 0007; enmienda: contrato de controladores de DressUp) |
 | 0020 | Sin uso: las reglas de juego en JSON se fusionaron en 0017 | — |
 | [0021](0021-el-llavero-como-tratamiento-del-render.md) | El llavero como tratamiento del render del look | Aceptado |
 

@@ -63,3 +63,60 @@ Acciones nuevas: `album`, `back`, `photo`, `hang`.
 - Dos escenas nuevas, cada una simple y con una sola responsabilidad. DressUp no crece en escenas, pero sí en capas: se organizan como controladores en `objects/` (`PriceTags`, `CheckoutSheet`, `TasteReactions`, `DyeTab`), para que las features se integren en paralelo con `isolation: worktree`.
 - La transición `flash` y el iris ✦ se suman a `TRANSITION_KINDS`.
 - Riesgo: ir y volver del álbum recrea DressUp (gato, grid y pop escalonado); si se siente pesado, se acorta el pop al volver o se evalúa la alternativa en paralelo.
+
+## Enmienda (2026-10-26): contrato de los controladores de DressUp
+Esta sección documenta el contrato que implementó F11.13. No cambia lo anterior: concreta cómo se organizan las capas de DressUp como controladores.
+
+### Qué es un controlador
+Una feature del probador vive en su propio archivo en `src/game/objects/dressup/`, implementa `DressUpController` (`DressUpController.ts`) y se suma con **una línea** en `objects/dressup/controllers.ts`. La lista guarda **fábricas** (`DressUpControllerFactory = () => DressUpController`), no instancias: DressUp crea un `ControllerHost` nuevo en `init()` y cada visita estrena controladores, como pide el reinicio de estado del ADR 0010. El orden de la lista es el orden de `attach`.
+
+```ts
+interface DressUpController {
+  readonly key: string;                       // única; su e2eState() va en el estado dressUp bajo esta clave
+  attach(ctx: DressUpContext): void;          // una vez, al final de create(), con los objetos de la escena ya creados
+  destroy(): void;                            // en shutdown, en orden inverso al de attach
+  e2eState?(): unknown;                       // modo test: datos planos en coordenadas de juego
+  e2eRoot?(): Record<string, unknown>;        // solo compatibilidad: claves en la raíz del estado dressUp
+  isSettled?(): boolean;                      // false mientras anima o corre una secuencia
+  beforeLeave?(action: 'finish' | 'change'): boolean | void | Promise<boolean>;
+}
+```
+
+### Contexto (`DressUpContext`)
+Lo que un controlador puede usar. Los objetos son los de la escena: un controlador los **decora**, nunca los reemplaza.
+- `scene`: la escena DressUp; se escucha `scene.events` para los eventos de abajo.
+- `catalog`, `anchors`, `catId`, `catName`.
+- Objetos: `cat`, `grid`, `tabs`, `layersPanel`, `sign` (cartel con el nombre) y `rainbow` (Graphics detrás del gato).
+- `hud`: Container por encima del cuarto y por debajo de la prenda arrastrada, para etiquetas y contadores. Lo destruye la escena.
+- `hearts` y `sparkles`: los emisores de partículas de la escena. Se usa `explode`; no se crean emisores nuevos para una ráfaga.
+- Consultas: `getOutfit()`, `isDragging()`, `isLeaving()` y `boundsOf(item)` (caja de los píxeles visibles de la textura, en caché).
+- `showCategory(category)`: selecciona la pestaña en silencio y llena el grid.
+- `leaveData`: lo que `beforeLeave` agrega a los datos que la escena manda a la siguiente (`go(scene, action, { gifted: [], ...leaveData })`).
+
+### Eventos de escena (`DressUpEvents` en `constants.ts`)
+| Evento | Argumentos | Cuándo |
+|---|---|---|
+| `ItemDropped` | `(item: ClothingDef)` | una prenda cae sobre el gato |
+| `ItemRemoved` | `(item: ClothingDef)` | se quita una prenda (panel de capas o arrastre fuera) |
+| `OutfitChanged` | `(outfit: Outfit, cause: 'drop' \| 'remove' \| 'restore' \| 'test')` | cambia el outfit (`OutfitCause`) |
+| `ReadyPressed` | ninguno | se pulsa ¡Listo!, antes de `beforeLeave` |
+| `CatChanged` | `(catId: string)` | justo después de `attach`, al entrar con un gato |
+
+### Puntos de extensión
+- **Celdas del grid**: `grid.addCellDecorator(fn)` registra una función que corre sobre cada celda que el grid construye (también al cambiar de pestaña) y en el acto sobre las que ya existen. Devuelve la función que la quita. `grid.refreshDecorations()` limpia las decoraciones y vuelve a aplicarlas (por ejemplo, tras una compra). El registro es `DecoratorRegistry` (`decorators.ts`, TS puro).
+- **Pestañas**: `tabs.addTab(def)` agrega una pestaña al final y recentra la fila. Emite `TabSelect` con su id; DressUp solo llena el grid con las categorías del guardarropa, y la pestaña nueva la atiende su controlador.
+
+### Ciclo de vida
+- **Salir**: al pulsar ¡Listo! u "Otro gato", la escena marca `leaving`, emite `ReadyPressed` (solo con ¡Listo!) y consulta `beforeLeave` de cada controlador **en orden**. Si uno devuelve `false`, no se sale y no se consulta a los siguientes. Si devuelve una promesa, se espera; si resuelve `false`, no se sale. `true` o nada deja pasar. Si la escena ya no está activa cuando la promesa resuelve, no hace nada. Si no se sale, `leaving` vuelve a `false`.
+- **Estado de test**: `ControllerHost.e2eState()` junta el `e2eState()` de cada controlador bajo su `key`, más las claves de `e2eRoot()` en la raíz. `mergeControllerState` lo mezcla con el estado de la escena, y **lo que reporta la escena siempre gana**. Los controladores nuevos usan solo `e2eState`.
+- **`settled`**: el `settled` del hook exige además que `isSettled()` de cada controlador sea verdadero (sin el método cuenta como verdadero).
+- **Limpieza**: en `shutdown`, `ControllerHost.destroy()` llama `destroy()` en orden inverso. Es idempotente. Cada controlador quita sus listeners, timers, tweens, decoradores y objetos propios.
+
+### Reglas
+- Los controladores **no se importan entre sí**. Se comunican por los eventos de escena, por `RegistryKeys.Progress` (`changedata-progress`, ADR 0017) y por los puntos de extensión.
+- No editan `DressUp.ts`: una feature nueva es un archivo nuevo más una línea en `controllers.ts`. Si una feature necesita algo que el contexto no da, se amplía el contexto (cambio pequeño y revisado) en vez de acceder a privados de la escena.
+- La parte sin Phaser (`runtime.ts`: `ControllerHost`, `mergeControllerState`; `decorators.ts`) se prueba con Vitest en `tests/integration/dressUpControllers.test.ts` (orden de attach y destroy, `beforeLeave` con `false` y promesas, `settled`, mezcla del estado e2e y decoradores). La lógica de juego de cada controlador va en `domain/` o en helpers puros, no en el controlador (ADR 0012).
+
+### Riesgos
+- `leaveData` es un objeto de la instancia de la escena y **no se reinicia en `init()`**. Hoy no hay fuga porque `SecretsController` escribe `gifted` en cada salida, pero un controlador que escriba una clave solo a veces la arrastraría a la visita siguiente. Mientras no se reinicie en `init()`, todo controlador que use `leaveData` debe escribir siempre sus claves.
+- El orden de `controllers.ts` importa (attach, `beforeLeave` y destroy). Es un archivo caliente cuando varias features se integran en paralelo; el orden entre features lo fija `docs/roadmap.md`.
