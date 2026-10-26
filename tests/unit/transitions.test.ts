@@ -117,7 +117,7 @@ describe('transitionTo', () => {
     expect(scene.scene.start).toHaveBeenCalledWith('DressUp', { transition: 'iris' });
   });
 
-  it.each(['heart', 'paw'] as const)('closes with a %s shaped hole: a scaled image plus rects around it, then a full cover', (kind) => {
+  it.each(['heart', 'paw', 'star'] as const)('closes with a %s shaped hole: a scaled image plus rects around it, then a full cover', (kind) => {
     const { scene, gfx, tweens, img, ctx } = fakeScene();
     transitionTo(scene as never, 'DressUp', {}, kind);
     expect(ctx.fill).toHaveBeenCalled();
@@ -130,6 +130,16 @@ describe('transitionTo', () => {
     expect(gfx.fillRect).toHaveBeenLastCalledWith(0, 0, 1280, 720);
     tweens[0].done();
     expect(scene.scene.start).toHaveBeenCalledWith('DressUp', { transition: kind });
+  });
+
+  it('the flash closes with a cream fade (never white) and starts the next scene with its kind', () => {
+    const { scene, gfx, tweens } = fakeScene();
+    transitionTo(scene as never, 'PhotoMode', {}, 'flash');
+    tweens[0].run(0.5);
+    expect(gfx.fillStyle).toHaveBeenLastCalledWith(0xfff7ec, 0.5);
+    expect(gfx.strokeCircle).not.toHaveBeenCalled();
+    tweens[0].done();
+    expect(scene.scene.start).toHaveBeenCalledWith('PhotoMode', { transition: 'flash' });
   });
 
   it('paints the texture of a shape only once', () => {
@@ -190,7 +200,7 @@ describe('transitionIn', () => {
 });
 
 describe('reduced motion (ADR 0013): every iris becomes a plain fade of the same length', () => {
-  it.each(['iris', 'heart', 'paw'] as const)('closing with %s fades instead, and the next scene is told it was a fade', (kind) => {
+  it.each(['iris', 'heart', 'paw', 'star', 'flash'] as const)('closing with %s fades instead, and the next scene is told it was a fade', (kind) => {
     const { scene, gfx, tweens, img, textures } = fakeScene(true);
     transitionTo(scene as never, 'DressUp', { catId: 'x' }, kind);
     expect(tweens[0].duration).toBe(TRANSITION_MS);
@@ -203,7 +213,7 @@ describe('reduced motion (ADR 0013): every iris becomes a plain fade of the same
     expect(scene.scene.start).toHaveBeenCalledWith('DressUp', { catId: 'x', transition: 'fade' });
   });
 
-  it.each(['iris', 'heart', 'paw'] as const)('opening a scene that was left with %s also fades', (kind) => {
+  it.each(['iris', 'heart', 'paw', 'star', 'flash'] as const)('opening a scene that was left with %s also fades', (kind) => {
     const { scene, gfx, tweens, textures } = fakeScene(true);
     transitionIn(scene as never, kind);
     tweens[0].run(0.5);

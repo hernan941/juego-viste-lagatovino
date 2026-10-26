@@ -1,4 +1,4 @@
-// Scene transitions (ADR 0007): fade and iris (circle, heart or paw). No scene calls `scene.start` directly.
+// Scene transitions (ADR 0007, 0019): fade, cream flash and iris (circle, heart, paw or ✦ star). No scene calls `scene.start` directly.
 // The math is pure; the overlay needs no masks or filters so it can be tested with a fake scene:
 // - the circle iris is a very thick circle stroke;
 // - the heart and paw irises are an image with a hole of that shape (painted once into a canvas texture),
@@ -19,7 +19,9 @@ const KINDS: readonly string[] = TRANSITION_KINDS;
 /** Side of the canvas texture of the shaped irises, and the px of one shape unit in it. */
 const IRIS_TEXTURE = 1024;
 const IRIS_UNIT_PX = 380;
-type Shaped = 'heart' | 'paw';
+type Shaped = 'heart' | 'paw' | 'star';
+/** The flash (to the photo mode) covers with cream instead of pink: a soft camera flash. */
+const FLASH_COLOR = 0xfff7ec;
 
 const clamp01 = (t: number) => Math.min(1, Math.max(0, t));
 
@@ -66,8 +68,8 @@ function paintIrisTexture(scene: Phaser.Scene, kind: Shaped): void {
   ctx.globalCompositeOperation = 'destination-out';
   ctx.fillStyle = '#000000';
   ctx.beginPath();
-  if (kind === 'heart') {
-    IRIS_SHAPES.heart.outline.forEach((p, i) => (i === 0 ? ctx.moveTo : ctx.lineTo).call(ctx, c + p.x * IRIS_UNIT_PX, c + p.y * IRIS_UNIT_PX));
+  if (kind !== 'paw') {
+    IRIS_SHAPES[kind].outline.forEach((p, i) => (i === 0 ? ctx.moveTo : ctx.lineTo).call(ctx, c + p.x * IRIS_UNIT_PX, c + p.y * IRIS_UNIT_PX));
     ctx.closePath();
   } else {
     for (const e of IRIS_SHAPES.paw.parts) {
@@ -90,12 +92,12 @@ function createOverlay(scene: Phaser.Scene, kind: TransitionKind): Overlay {
   const cx = width / 2;
   const cy = height / 2;
   const maxR = irisMaxRadius(width, height, cx, cy);
-  if (kind === 'heart' || kind === 'paw') return createShapedOverlay(scene, kind, g, cx, cy, maxR);
+  if (kind === 'heart' || kind === 'paw' || kind === 'star') return createShapedOverlay(scene, kind, g, cx, cy, maxR);
   return {
     draw(progress, direction) {
       g.clear();
-      if (kind === 'fade') {
-        g.fillStyle(COVER_COLOR, fadeAlpha(progress, direction));
+      if (kind === 'fade' || kind === 'flash') {
+        g.fillStyle(kind === 'flash' ? FLASH_COLOR : COVER_COLOR, fadeAlpha(progress, direction));
         g.fillRect(0, 0, width, height);
         return;
       }

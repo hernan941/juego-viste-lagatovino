@@ -47,7 +47,7 @@ describe('motionProfile', () => {
   });
 
   it('reduced motion turns every iris into a fade of the same duration kind', () => {
-    for (const k of ['fade', 'iris', 'heart', 'paw'] as const) expect(calm.transitionKind(k)).toBe('fade');
+    for (const k of ['fade', 'iris', 'heart', 'paw', 'star', 'flash'] as const) expect(calm.transitionKind(k)).toBe('fade');
   });
 
   it('reduced motion has no shake, a pop of at most 3 %, no spin, no breathing loops and no zoom', () => {

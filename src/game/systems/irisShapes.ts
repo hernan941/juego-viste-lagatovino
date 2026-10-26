@@ -30,6 +30,15 @@ export function heartOutline(count = 96): Point[] {
   return raw.map((p) => ({ x: p.x / far, y: p.y / far }));
 }
 
+/** Outline of a four point sparkle (the ✦ of the album): points on the axes, pinched in between. Its farthest point is at distance 1. */
+export function starOutline(pinch = 0.28): Point[] {
+  return Array.from({ length: 8 }, (_, i) => {
+    const r = i % 2 === 0 ? 1 : pinch;
+    const a = (i * Math.PI) / 4 - Math.PI / 2;
+    return { x: Math.cos(a) * r, y: Math.sin(a) * r };
+  });
+}
+
 export interface Ellipse {
   cx: number;
   cy: number;
@@ -89,11 +98,14 @@ export interface IrisShape {
 }
 
 const HEART = heartOutline(96);
+const STAR = starOutline();
+const starContains = (x: number, y: number) => pointInPolygon(x, y, STAR);
 const heartContains = (x: number, y: number) => pointInPolygon(x, y, HEART);
 const pawContains = (x: number, y: number) => PAW_PARTS.some((e) => inEllipse(x, y, e));
 
 export const IRIS_SHAPES = {
   heart: { contains: heartContains, outline: HEART, inner: innerRadius(heartContains), outer: 1 },
+  star: { contains: starContains, outline: STAR, inner: innerRadius(starContains), outer: 1 },
   paw: { contains: pawContains, parts: PAW_PARTS, inner: innerRadius(pawContains), outer: outerRadius(pawContains) },
 } as const;
 

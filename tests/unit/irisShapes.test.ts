@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  IRIS_SHAPES, coverRects, heartOutline, innerRadius, irisHoleScale, pointInPolygon,
+  IRIS_SHAPES, coverRects, heartOutline, starOutline, innerRadius, irisHoleScale, pointInPolygon,
 } from '../../src/game/systems/irisShapes';
 
 describe('heartOutline', () => {
@@ -61,6 +61,26 @@ describe('iris shapes', () => {
     expect(IRIS_SHAPES.heart.inner).toBeGreaterThan(0.3);
     expect(IRIS_SHAPES.paw.inner).toBeGreaterThan(0.2);
     expect(IRIS_SHAPES.paw.inner).toBeLessThan(IRIS_SHAPES.paw.outer);
+  });
+});
+
+describe('star shape (the ✦ iris of the album)', () => {
+  it('is a four point sparkle: points on the axes, pinched waist between them', () => {
+    const pts = starOutline();
+    expect(pts).toHaveLength(8);
+    expect(Math.max(...pts.map((p) => Math.hypot(p.x, p.y)))).toBeCloseTo(1, 5);
+    const star = IRIS_SHAPES.star;
+    expect(star.contains(0, 0)).toBe(true);
+    expect(star.contains(0, 0.9)).toBe(true);
+    expect(star.contains(0.9, 0)).toBe(true);
+    // the diagonal is pinched: far less than the points
+    expect(star.contains(0.6, 0.6)).toBe(false);
+    expect(star.contains(3, 3)).toBe(false);
+  });
+
+  it('has an inner radius, so the hole can grow past the screen', () => {
+    expect(IRIS_SHAPES.star.inner).toBeGreaterThan(0.1);
+    expect(IRIS_SHAPES.star.inner).toBeLessThan(0.6);
   });
 });
 
