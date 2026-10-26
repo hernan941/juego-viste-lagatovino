@@ -110,3 +110,11 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
   - en movimiento reducido hay fundido sin zoom;
   - en táctil dice "Toca para saltar".
 - **Revisar el glitch del texto rotado** (Phaser 4 corta franjas de los glifos en un `Text` dentro de un contenedor rotado): polaroids, `SpeechBubble` y `Card`.
+
+## F14.2: reacciones de gusto
+### E2E pendientes (F14.6)
+- Para los 12 gatos: soltar una prenda que ama, una que detesta y su favorita. En `__VISTE__.dressUp.tastes.last` y `.log` deben quedar `love`, `dislike` y `favorite`.
+- La prenda sigue puesta después de "detesta".
+- Un combo deja `combo` en el log y una prenda neutral deja `neutral`.
+- Con `?reduced`, la cara y el sonido siguen respondiendo.
+- Sin errores de consola.
