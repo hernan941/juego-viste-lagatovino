@@ -58,10 +58,10 @@ export class PriceTagsController implements DressUpController {
     this.wired = new WeakSet();
   }
 
-  e2eState(): { tags: { cells: string[]; worn: string[] } } {
+  e2eState(): { cells: string[]; worn: string[] } {
     // A cell that the grid destroyed (a tab change) leaves the map when its cell is decorated again, so those are skipped here.
     const cells = [...this.cellTags].filter(([cell, tag]) => cell.active !== false && tag.active !== false).map(([cell]) => cell.item.id);
-    return { tags: { cells, worn: [...this.wornTags.keys()] } };
+    return { cells, worn: [...this.wornTags.keys()] };
   }
 
   private owned(): string[] {

@@ -77,7 +77,7 @@ function setup(over: { owned?: string[]; outfit?: Outfit } = {}) {
     progress = { ...progress, owned: [...progress.owned, ...ids] };
     regEvents.emit(`changedata-${RegistryKeys.Progress}`, scene.registry, progress, prev);
   };
-  const state = () => (controller.e2eState() as { tags: { cells: string[]; worn: string[] } }).tags;
+  const state = () => controller.e2eState() as { cells: string[]; worn: string[] };
   return { scene, events, regEvents, grid, hud, controller, decorate, wear, own, state, decorators };
 }
 
