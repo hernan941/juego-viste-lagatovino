@@ -5,13 +5,14 @@ import { emptyProgress } from './domain/progress';
 import { GAME_WIDTH, PluginKeys, RegistryKeys, SceneKeys, SfxKeys } from './constants';
 import type { AudioPlugin } from './plugins/AudioPlugin';
 import type { SavePlugin } from './plugins/SavePlugin';
+import { restoreRules } from './plugins/saveCore';
 import type { MotionPlugin } from './plugins/MotionPlugin';
 import type { MotionPref } from './domain/types';
 import { SAVE_KEY } from './plugins/saveCore';
 import type { Session } from './domain/session';
 import { chooseCat, emptySession } from './domain/session';
 import { readSession, writeSession } from './systems/sessionStore';
-import type { Catalog } from './data/schema';
+import type { GameData } from './data/schema';
 import type { PerfCounts } from './systems/perf';
 
 /** What a scene reports to the test hook, in game coordinates (1280 x 720). */
@@ -313,14 +314,14 @@ export function installE2EHook(game: Game, readPerf: PerfReader): void {
       const save = game.plugins.get(PluginKeys.Save) as SavePlugin;
       save.flush();
       window.localStorage.removeItem(SAVE_KEY);
-      save.resetProgress(0);
+      save.resetProgress((game.registry.get(RegistryKeys.Catalog) as GameData).economy.startWallet);
       sounds.length = 0;
     },
     jump(scene: string, catId?: string, name?: string): void {
-      const catalog = game.registry.get(RegistryKeys.Catalog) as Catalog;
+      const catalog = game.registry.get(RegistryKeys.Catalog) as GameData;
       if (scene === SceneKeys.Title || scene === SceneKeys.CatSelect) {
         // The start of a visit: what was saved comes back (a first visit has nothing), as the Preloader does.
-        (game.plugins.get(PluginKeys.Save) as SavePlugin).restoreInto(catalog);
+        (game.plugins.get(PluginKeys.Save) as SavePlugin).restoreInto(catalog, restoreRules(catalog));
       } else {
         const cat = catalog.cats.find((c) => c.id === catId) ?? catalog.cats[0];
         writeSession(game.registry, chooseCat(emptySession(), cat.id, name ?? cat.name));

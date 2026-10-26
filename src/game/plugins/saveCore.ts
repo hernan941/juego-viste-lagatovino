@@ -1,4 +1,5 @@
 // Pure core of SavePlugin (ADR 0004): serialize, versioned migration and storage access.
+import type { GameData } from '../data/schema';
 import { emptyStoredProgress, sanitizeStoredProgress } from '../domain/progress';
 import { SLOT_ORDER, type Slot } from '../domain/slots';
 import { isMotionPref } from '../systems/motion';
@@ -102,4 +103,9 @@ export function saveToStorage(storage: StorageLike, data: SaveData): boolean {
   } catch {
     return false;
   }
+}
+
+/** The rules restoreInto needs, taken from the validated game data: the start wallet (economy.json) and the dyes (dyes.json). */
+export function restoreRules(data: Pick<GameData, 'economy' | 'dyes'>): { startWallet: number; dyes: GameData['dyes'] } {
+  return { startWallet: data.economy.startWallet, dyes: data.dyes };
 }
