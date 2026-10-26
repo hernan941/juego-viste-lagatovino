@@ -1,4 +1,5 @@
 // Pure TS, no Phaser (ADR 0010, 0021). The keychain: ring by stars, recipe, hanging rule, pendulum and the packaging layout.
+import type { CatPose } from './catPose';
 import type { ItemDye, KeychainRecipe, KeychainRules, Outfit, Point, Rect, Stars } from './types';
 
 export interface Ring {
@@ -170,5 +171,159 @@ export function packagingLayout(frame: Rect): PackagingLayout {
     name: rect(0.1, 0.72, 0.8, 0.08),
     stars: rect(0.25, 0.81, 0.5, 0.05),
     tagline: rect(0.15, 0.88, 0.7, 0.06),
+  };
+}
+
+// ---- Building the texture (F19.2) ----------------------------------------------------------------------------------
+
+/** Saturation of the "hand painted" look: -18 % (ADR 0021 asks for -15 to -20 %). */
+export const PORCELAIN_SATURATION = 0.82;
+/** A little warmer: red up, blue down. */
+export const PORCELAIN_WARMTH = 0.03;
+/** Width in 512 canvas px of the thin ink line outside the cream border. */
+export const INK_LINE_PX = 3;
+
+/** 32 bit FNV-1a in hex: enough to tell recipes apart. */
+function fnv1a(text: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193);
+  return (h >>> 0).toString(16);
+}
+
+const sortedEntries = (o: Record<string, string | undefined>) =>
+  Object.entries(o).filter((e): e is [string, string] => e[1] !== undefined).sort(([a], [b]) => a.localeCompare(b));
+
+/**
+ * Key of the flattened texture: `keychain~<catId>~<hash>~<px>`. The hash covers what changes the picture (the cat, the outfit,
+ * the dyes of the worn items, the pose and the ring) and nothing else, so the same look is drawn once.
+ */
+export function recipeKey(recipe: KeychainRecipe, px: number): string {
+  const ring = ringFor(recipe.stars);
+  const body = JSON.stringify([recipe.catId, sortedEntries(recipe.outfit), sortedEntries(recipe.itemDye), recipe.pose, ring.metal, ring.charm]);
+  return `keychain~${recipe.catId}~${fnv1a(body)}~${px}`;
+}
+
+/** The 4x5 ColorMatrix (20 numbers, row by row) that desaturates (`saturation` 1 = as is) and warms (`warmth` 0 = as is). */
+export function porcelainMatrix(saturation: number, warmth: number): number[] {
+  const luma = [0.2126, 0.7152, 0.0722];
+  const gain = [1 + warmth, 1, 1 - warmth];
+  const row = (c: number) => luma.map((l, i) => ((i === c ? saturation : 0) + l * (1 - saturation)) * gain[c]);
+  return [...row(0), 0, 0, ...row(1), 0, 0, ...row(2), 0, 0, 0, 0, 0, 1, 0];
+}
+
+/** Y (512 canvas px) where the cat's feet are: the origin that a pose rotates and squashes around. */
+const FEET_Y = 490;
+const CENTER_X = 256;
+
+/** Where a point of the 512 canvas ends up with a photo pose (it turns around the feet, squashes and lifts, as the cat does). */
+export function poseTransform(pose: Pick<CatPose, 'angle' | 'lift' | 'scaleX' | 'scaleY'>, p: Point): Point {
+  const x = (p.x - CENTER_X) * pose.scaleX;
+  const y = (p.y - FEET_Y) * pose.scaleY;
+  const a = (pose.angle * Math.PI) / 180;
+  return {
+    x: CENTER_X + x * Math.cos(a) - y * Math.sin(a),
+    y: FEET_Y + x * Math.sin(a) + y * Math.cos(a) - pose.lift,
+  };
+}
+
+/** Scale of the hardware art (SVGs of art/ui/keychain/) for a look rendered at `px`: the ring is ~70 px at 512. */
+export function hardwareScale(px: number): number {
+  return 0.55 * (px / 512);
+}
+
+/** Art sizes and anchors of the hardware SVGs (their viewBox). */
+export const HARDWARE_ART = {
+  eyelet: { width: 64, height: 80, root: { x: 32, y: 74 }, loop: { x: 32, y: 26 } },
+  ring: { size: 128, band: 48, outer: 62 },
+  chain: { width: 48, height: 192, top: { x: 24, y: 4 } },
+  charm: { width: 96, height: 128, eye: { x: 48, y: 17 } },
+} as const;
+
+/** Degrees the chain of the charm leans outward, so the charm hangs beside the head and not over the face. */
+const CHAIN_ANGLE = -62;
+/** Fraction of the chain art that is shown (the charm is short and sweet). */
+const CHAIN_FRACTION = 0.6;
+/** The charm is a little bigger than the hardware scale, so it reads on a 5 star keychain. */
+const CHARM_SCALE = 1.05;
+/** Px of the eyelet art that sink into the head. */
+const EYELET_SINK = 10;
+
+export interface Placed {
+  x: number;
+  y: number;
+  scale: number;
+  angle: number;
+}
+
+export interface KeychainLayout {
+  width: number;
+  height: number;
+  /** Margin kept free all around for the border. */
+  pad: number;
+  /** Top left of the look square (px x px) inside the texture. */
+  look: Point;
+  /** The thread of the eyelet (origin = art root) and the center of the ring. */
+  eyelet: Placed;
+  ring: Placed;
+  /** Origin = art top (24, 4); the charm hangs from its end by its eye (48, 17). Only with the 5 star charm. */
+  chain?: Placed;
+  charm?: Placed;
+  /** Where the keychain hangs from (top of the ring): the pivot of the swing. */
+  hang: Point;
+}
+
+/**
+ * Where everything goes in the flattened texture for a look rendered in a `px` square. `top` is where the top of the head is in the
+ * 512 canvas once the pose is applied: the eyelet screws in there and the ring hangs above. Tight: the texture is as big as the look,
+ * its border and the hardware, so a short cat gets a taller texture than a cat in a tall hat.
+ */
+export function keychainLayout(px: number, top: Point, ring: Ring, borderRadius: number): KeychainLayout {
+  const k = px / 512;
+  const h = hardwareScale(px);
+  const pad = Math.ceil((borderRadius + INK_LINE_PX) * k) + 2;
+  const { eyelet, ring: r, chain, charm } = HARDWARE_ART;
+
+  // Everything is first placed in the space of the look square (its top left is (0, 0)), then shifted to fit.
+  const root = { x: top.x * k, y: top.y * k + EYELET_SINK * h };
+  const loopY = root.y - (eyelet.root.y - eyelet.loop.y) * h;
+  const ringC = { x: root.x, y: loopY - r.band * h };
+  const hang = { x: ringC.x, y: ringC.y - r.outer * h };
+  const boxes: { x0: number; y0: number; x1: number; y1: number }[] = [
+    { x0: 0, y0: 0, x1: px, y1: px },
+    { x0: root.x - r.outer * h, y0: hang.y, x1: root.x + r.outer * h, y1: root.y },
+  ];
+
+  let chainAt: Placed | undefined;
+  let charmAt: Placed | undefined;
+  if (ring.charm) {
+    const a = (CHAIN_ANGLE * Math.PI) / 180;
+    // The chain starts on the right side of the ring and leans outward; the charm hangs straight from its end.
+    const start = { x: ringC.x + r.band * h * 1.05, y: ringC.y + r.band * h * 0.3 };
+    const len = (chain.height - chain.top.y) * CHAIN_FRACTION * h;
+    const end = { x: start.x - len * Math.sin(a), y: start.y + len * Math.cos(a) };
+    chainAt = { ...start, scale: h * CHAIN_FRACTION, angle: CHAIN_ANGLE };
+    charmAt = { ...end, scale: h * CHARM_SCALE, angle: 0 };
+    const cw = charm.width * h * CHARM_SCALE;
+    const ch = charm.height * h * CHARM_SCALE;
+    boxes.push({ x0: end.x - cw / 2, y0: end.y - charm.eye.y * h * CHARM_SCALE, x1: end.x + cw / 2, y1: end.y - charm.eye.y * h * CHARM_SCALE + ch });
+  }
+
+  const minX = Math.min(...boxes.map((b) => b.x0));
+  const minY = Math.min(...boxes.map((b) => b.y0));
+  const maxX = Math.max(...boxes.map((b) => b.x1));
+  const maxY = Math.max(...boxes.map((b) => b.y1));
+  const dx = pad - minX;
+  const dy = pad - minY;
+  const move = <T extends Point>(p: T): T => ({ ...p, x: p.x + dx, y: p.y + dy });
+  return {
+    width: Math.ceil(maxX - minX + 2 * pad),
+    height: Math.ceil(maxY - minY + 2 * pad),
+    pad,
+    look: { x: dx, y: dy },
+    eyelet: move({ ...root, scale: h, angle: 0 }),
+    ring: move({ ...ringC, scale: h, angle: 0 }),
+    chain: chainAt && move(chainAt),
+    charm: charmAt && move(charmAt),
+    hang: move(hang),
   };
 }

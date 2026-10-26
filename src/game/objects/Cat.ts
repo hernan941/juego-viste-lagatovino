@@ -285,12 +285,13 @@ export class Cat extends Phaser.GameObjects.Container {
   /**
    * Puts the cat in a photo pose (a transformation of the render and a held face, no new art). False for an unknown id.
    * The anchors and boxes of the cat do not follow the pose: it is for still pictures, not for dressing.
+   * `instant` skips the tween (to capture the cat in the same frame).
    */
-  applyPose(id: string): boolean {
+  applyPose(id: string, { instant = false }: { instant?: boolean } = {}): boolean {
     const pose = catPose(id);
     if (!pose) return false;
     this.poseId = pose.id;
-    this.moveToPose({ angle: pose.angle, y: -pose.lift, scaleX: pose.scaleX, scaleY: pose.scaleY });
+    this.moveToPose({ angle: pose.angle, y: -pose.lift, scaleX: pose.scaleX, scaleY: pose.scaleY }, instant);
     if (pose.expression === 'normal') this.release();
     else this.hold(pose.expression);
     return true;
@@ -303,10 +304,10 @@ export class Cat extends Phaser.GameObjects.Container {
     this.release();
   }
 
-  private moveToPose(to: { angle: number; y: number; scaleX: number; scaleY: number }): void {
+  private moveToPose(to: { angle: number; y: number; scaleX: number; scaleY: number }, instant = false): void {
     this.poseTween?.remove();
     const p = profileOf(this.scene);
-    if (p.reduced) {
+    if (p.reduced || instant) {
       this.poseNode.setAngle(to.angle).setY(to.y).setScale(to.scaleX, to.scaleY);
       return;
     }

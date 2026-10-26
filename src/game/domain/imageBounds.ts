@@ -1,4 +1,5 @@
 // Pure TS, no Phaser (ADR 0010). Used to build the drag ghost of an item from its own texture.
+import type { AlphaMap } from './pixelHit';
 import type { Point, Rect } from './types';
 
 /** Pixels with less alpha than this are treated as empty (anti-aliasing fringes). */
@@ -34,4 +35,17 @@ export function ghostFit(
     origin: { x: (b.x + b.width / 2) / textureWidth, y: (b.y + b.height / 2) / textureHeight },
     scale: size / Math.max(b.width, b.height),
   };
+}
+
+/**
+ * Top of the visible pixels inside the columns `fromX`..`toX` (fractions 0..1 of the width), as a fraction of the height.
+ * Null when that band is empty. It finds where something can be hung: the top of the head under a tall hat, not an ear.
+ */
+export function topOfColumns(map: AlphaMap, fromX: number, toX: number): number | null {
+  const x0 = Math.max(0, Math.floor(fromX * map.width));
+  const x1 = Math.min(map.width, Math.ceil(toX * map.width));
+  for (let y = 0; y < map.height; y++) {
+    for (let x = x0; x < x1; x++) if (map.data[y * map.width + x] >= ALPHA_THRESHOLD) return y / map.height;
+  }
+  return null;
 }
