@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { PHOTO_PREFIX, photoFileName, photoLayout } from '../../src/game/domain/photo';
+import {
+  FRAME_ANGLE_MAX,
+  FRAME_ANGLE_MIN,
+  PHOTO_PREFIX,
+  STICKER_LIMIT,
+  clampSticker,
+  framePlacement,
+  photoFileName,
+  photoLayout,
+  stickerLimit,
+} from '../../src/game/domain/photo';
 
 describe('photoFileName', () => {
   it('uses the prefix, the lowercase name and .png', () => {
@@ -67,5 +77,72 @@ describe('photoLayout', () => {
       expect(inside(r, l.frame)).toBe(true);
       expect(overlap(r, l.cat)).toBe(false);
     }
+  });
+});
+
+describe('framePlacement', () => {
+  it('is stable for the same seed', () => {
+    expect(framePlacement('luna-2026')).toEqual(framePlacement('luna-2026'));
+    expect(framePlacement(42)).toEqual(framePlacement(42));
+  });
+
+  it('always tilts between 1 and 8 degrees, either way', () => {
+    expect(FRAME_ANGLE_MIN).toBe(1);
+    expect(FRAME_ANGLE_MAX).toBe(8);
+    const signs = new Set<number>();
+    const angles = new Set<number>();
+    for (let i = 0; i < 300; i++) {
+      const { angle } = framePlacement(`seed-${i}`);
+      expect(Math.abs(angle)).toBeGreaterThanOrEqual(FRAME_ANGLE_MIN);
+      expect(Math.abs(angle)).toBeLessThanOrEqual(FRAME_ANGLE_MAX);
+      signs.add(Math.sign(angle));
+      angles.add(angle);
+    }
+    expect(signs).toEqual(new Set([-1, 1]));
+    expect(angles.size).toBeGreaterThan(50);
+  });
+
+  it('gives different tilts for different seeds', () => {
+    expect(framePlacement('a').angle).not.toBe(framePlacement('b').angle);
+  });
+});
+
+describe('stickerLimit', () => {
+  it('allows 8 stickers per photo', () => {
+    expect(STICKER_LIMIT).toBe(8);
+    expect(stickerLimit(0)).toEqual({ max: 8, left: 8, full: false });
+    expect(stickerLimit(7)).toEqual({ max: 8, left: 1, full: false });
+    expect(stickerLimit(8)).toEqual({ max: 8, left: 0, full: true });
+  });
+
+  it('never goes below zero', () => {
+    expect(stickerLimit(12)).toEqual({ max: 8, left: 0, full: true });
+  });
+});
+
+describe('clampSticker', () => {
+  const frame = { x: 100, y: 50, width: 400, height: 300 };
+
+  it('keeps a point that is inside', () => {
+    expect(clampSticker({ x: 200, y: 120 }, frame)).toEqual({ x: 200, y: 120 });
+  });
+
+  it('pulls a point back onto the edge of the frame', () => {
+    expect(clampSticker({ x: 0, y: 0 }, frame)).toEqual({ x: 100, y: 50 });
+    expect(clampSticker({ x: 900, y: 900 }, frame)).toEqual({ x: 500, y: 350 });
+  });
+
+  it('keeps the whole sticker inside with a margin (half its size)', () => {
+    expect(clampSticker({ x: 0, y: 999 }, frame, 30)).toEqual({ x: 130, y: 320 });
+  });
+
+  it('centers on the frame when the margin does not fit', () => {
+    expect(clampSticker({ x: 0, y: 0 }, frame, 500)).toEqual({ x: 300, y: 200 });
+  });
+
+  it('does not change the input', () => {
+    const p = { x: 0, y: 0 };
+    clampSticker(p, frame);
+    expect(p).toEqual({ x: 0, y: 0 });
   });
 });
