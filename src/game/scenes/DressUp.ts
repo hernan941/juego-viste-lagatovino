@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import {
-  CATEGORY_LABELS, GAME_HEIGHT, GAME_WIDTH, MEOW_KEYS, ObjectEvents, RegistryKeys, SceneKeys, SfxKeys, TextureKeys,
+  CATEGORY_LABELS, DressUpEvents, GAME_HEIGHT, GAME_WIDTH, MEOW_KEYS, ObjectEvents, RegistryKeys, SceneKeys, SfxKeys, TextureKeys,
 } from '../constants';
 import type { Catalog } from '../data/schema';
 import { DROP_BURST, petHeartSpots } from '../domain/petHearts';
@@ -33,6 +33,8 @@ import type { ClothingItem } from '../objects/ClothingItem';
 import { ItemGrid } from '../objects/ItemGrid';
 import { LayersPanel } from '../objects/LayersPanel';
 import { Tabs } from '../objects/Tabs';
+import { controllerFactories } from '../objects/dressup/controllers';
+import { ControllerHost, mergeControllerState } from '../objects/dressup/runtime';
 import { tabIconKey } from '../objects/tabIcons';
 import { drawRoom } from '../objects/room';
 import { drawPanel, hex, liftFor, makeText, touchEnv } from '../objects/ui';
@@ -124,6 +126,10 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
   private deltaTotal = 0;
   /** Test hook: the prize and counter state at each step of the gift sequence. */
   private secretTrace: { revealing: string[]; count: number; text: string }[] = [];
+  /** Feature controllers (ADR 0019) and the layer they draw their HUD on. */
+  private controllers = new ControllerHost(controllerFactories);
+  private hud!: Phaser.GameObjects.Container;
+  private categories: Category[] = [];
 
   constructor() {
     super(SceneKeys.DressUp);
@@ -152,6 +158,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.almost = new Set();
     this.reactionLog = [];
     this.secretTrace = [];
+    this.controllers = new ControllerHost(controllerFactories);
     const wanted = session.catId ?? data?.catId;
     const cat = this.catalog.cats.find((c) => c.id === wanted) ?? this.catalog.cats[0];
     this.catId = cat.id;
@@ -181,6 +188,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     const panel = this.add.graphics().setPosition(PANEL.x, PANEL.y);
     drawPanel(panel, PANEL.width, PANEL.height);
     const categories = visibleCategories(this.catalog.clothes);
+    this.categories = categories;
     const tabsWidth = categories.length * 54 + (categories.length - 1) * 10;
     this.tabs = new Tabs(this, PANEL.x + (PANEL.width - tabsWidth) / 2, 58, categories.map((id) => ({ id, label: CATEGORY_LABELS[id], icon: tabIconKey(id) })));
     this.grid = new ItemGrid(this, GRID.x, GRID.y, GRID.width, GRID.height);
@@ -188,7 +196,8 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.grid.on(ObjectEvents.ItemDrag, (_c: ClothingItem, p: Phaser.Input.Pointer) => this.moveDrag(p));
     this.grid.on(ObjectEvents.ItemDragEnd, (_c: ClothingItem, p: Phaser.Input.Pointer) => this.endDrag(p));
     this.grid.on(ObjectEvents.ItemClick, () => this.pulseHint());
-    this.tabs.on(ObjectEvents.TabSelect, (id: Category) => this.showCategory(id));
+    // A tab that a controller added has its own listener: only the wardrobe categories fill the grid.
+    this.tabs.on(ObjectEvents.TabSelect, (id: string) => this.categories.includes(id as Category) && this.showCategory(id as Category));
     this.hint = makeText(this, PANEL.x + PANEL.width / 2, 658, 'Arrastra la ropa al gatito', 20).setAlpha(0.7);
 
     // Right panel: layers.
@@ -229,6 +238,12 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
       this.applyOutfit(this.outfit, true);
       this.cat.react('drop');
     }
+    this.hud = this.add.container(0, 0).setDepth(32);
+    this.controllers.attach({
+      scene: this, catalog: this.catalog, anchors: this.anchors, cat: this.cat, grid: this.grid, tabs: this.tabs, layersPanel: this.layersPanel,
+      hud: this.hud, hearts: this.hearts, sparkles: this.sparkles, catId: this.catId, catName: this.catName, getOutfit: () => this.outfit,
+    });
+    this.events.emit(DressUpEvents.CatChanged, this.catId);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.cleanup, this);
     transitionIn(this, enterKind(data));
   }
@@ -298,6 +313,20 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
   private leave(action: 'finish' | 'change') {
     if (this.leaving) return;
     this.leaving = true;
+    if (action === 'finish') this.events.emit(DressUpEvents.ReadyPressed);
+    // A controller may stop the player (to show a box first) or ask for time (ADR 0019).
+    const verdict = this.controllers.beforeLeave(action);
+    if (verdict === true) this.depart(action);
+    else if (verdict instanceof Promise) {
+      void verdict.then((ok) => {
+        if (!this.scene.isActive()) return;
+        if (ok) this.depart(action);
+        else this.leaving = false;
+      });
+    } else this.leaving = false;
+  }
+
+  private depart(action: 'finish' | 'change') {
     if (this.drag) this.endDragQuiet();
     // A gift that was never opened is not lost: the player earned it, so it goes to the wardrobe quietly.
     const gifted = [...(this.gift ? [this.gift.comboId] : []), ...this.gifts.map((c) => c.id)];
@@ -314,6 +343,8 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
   }
 
   private cleanup() {
+    this.controllers.destroy();
+    this.hud?.destroy();
     this.drag = null;
     this.hintGhost?.destroy();
     this.hintGhost = null;
@@ -541,6 +572,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     const previous = this.outfit;
     this.hintPlanner.dropped();
     this.applyOutfit(equip(previous, item).outfit);
+    this.events.emit(DressUpEvents.ItemDropped, item);
     const done = newlyCompleted(previous, this.outfit, this.catalog.combos, this.catalog.clothes);
     const combo = done.length > 0;
     if (!combo) this.cat.react('drop');
@@ -667,6 +699,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
 
   private takeOff(d: DragState) {
     this.applyOutfit(unequip(this.outfit, d.item.slot));
+    this.events.emit(DressUpEvents.ItemRemoved, d.item);
     getAudio(this).play(SfxKeys.Remove);
     this.cat.react('remove');
     this.cat.shake();
@@ -720,6 +753,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
   private removeItem(item: ClothingDef) {
     if (this.outfit[item.slot] !== item.id) return;
     this.applyOutfit(unequip(this.outfit, item.slot));
+    this.events.emit(DressUpEvents.ItemRemoved, item);
     getAudio(this).play(SfxKeys.Remove);
     this.cat.react('remove');
     this.cat.shake();
@@ -733,6 +767,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.cat.setOutfit(layers, { stagger });
     this.layersPanel.setLayers(layers);
     this.grid.setWorn(new Set(Object.values(next)));
+    this.events.emit(DressUpEvents.OutfitChanged, next);
   }
 
   /** A ring that "pops" at the anchor (scale 0 to 1.4, alpha 1 to 0, 180 ms); reduced motion only fades it. */
@@ -787,7 +822,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
       return !!c && c.alpha > 0.99 && Math.abs(c.scale - 1) < 0.01;
     });
     const viewport = this.grid.getViewport();
-    return {
+    return mergeControllerState({
       catId: this.catId,
       catName: this.catName,
       tailAngle: this.cat.tailAngle,
@@ -816,6 +851,6 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
       clockMs: this.deltaTotal,
       fxEmitters: this.children.list.filter((o) => o instanceof Phaser.GameObjects.Particles.ParticleEmitter && o !== this.hearts && o !== this.sparkles).length,
       settled: !this.cat.settling && this.drag === null && this.giftsComing === 0 && this.reveal.active === 0 && (this.gift === null || this.gift.ready) && cellsSettled && Math.abs(viewport.scroll - viewport.targetScroll) < 0.5 && this.cat.alpha > 0.99 && Math.abs(this.cat.scaleX - this.baseCatScale) < 0.001,
-    };
+    }, this.controllers.e2eState());
   }
 }

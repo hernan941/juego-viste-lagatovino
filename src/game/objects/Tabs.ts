@@ -59,24 +59,37 @@ export class Tabs extends Phaser.GameObjects.Container {
   private readonly caption: Phaser.GameObjects.Text;
   private current: string | null = null;
   private hovered: string | null = null;
+  private readonly scn: Phaser.Scene;
 
   constructor(scene: Phaser.Scene, x: number, y: number, defs: readonly TabDef[]) {
     super(scene, x, y);
-    defs.forEach((def, i) => {
-      const tab = new Tab(scene, i * (TAB_SIZE + TAB_GAP), def);
-      tab.on('pointerdown', () => this.select(def.id));
-      tab.on('pointerover', (p: Phaser.Input.Pointer) => {
-        this.showCaption(def.id);
-        hoverSfx(scene, p, 0.5);
-      });
-      tab.on('pointerout', () => this.showCaption(null));
-      this.add(tab);
-      this.tabs.push(tab);
-    });
-    const width = defs.length * TAB_SIZE + (defs.length - 1) * TAB_GAP;
-    this.caption = makeText(scene, width / 2, TAB_SIZE + 30, '', 26, Palette.rosa600);
+    this.scn = scene;
+    this.caption = makeText(scene, 0, TAB_SIZE + 30, '', 26, Palette.rosa600);
     this.add(this.caption);
+    for (const def of defs) this.append(def);
     scene.add.existing(this);
+  }
+
+  private append(def: TabDef): void {
+    const tab = new Tab(this.scn, this.tabs.length * (TAB_SIZE + TAB_GAP), def);
+    tab.on('pointerdown', () => this.select(def.id));
+    tab.on('pointerover', (p: Phaser.Input.Pointer) => {
+      this.showCaption(def.id);
+      hoverSfx(this.scn, p, 0.5);
+    });
+    tab.on('pointerout', () => this.showCaption(null));
+    this.add(tab);
+    this.tabs.push(tab);
+    this.caption.x = (this.tabs.length * TAB_SIZE + (this.tabs.length - 1) * TAB_GAP) / 2;
+  }
+
+  /**
+   * Extension point (ADR 0019): adds a tab at the end of the row (a feature's own tab). The row stays centered on the same
+   * middle point. The tab emits TabSelect with its id like any other; the scene ignores the ids it does not know.
+   */
+  addTab(def: TabDef): void {
+    this.append(def);
+    this.x -= (TAB_SIZE + TAB_GAP) / 2;
   }
 
   get selectedId(): string | null {
