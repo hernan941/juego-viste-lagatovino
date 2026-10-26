@@ -73,3 +73,11 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
 - El reverso del llavero dice "Hecho a mano · <fecha>".
 - Ningún texto visible contiene `nombre@` ni `@nombre`.
 - Mostrar las burbujas no produce errores de consola.
+
+## F16.2: DyePlugin
+### E2E pendientes
+- Soltar un frasco en DressUp crea la textura `texture~dye` y el gato la muestra.
+- El primer teñido tarda menos de unos 100 ms, también en celular. El log `[dye]` sale en dev.
+- Los SVG teñidos cargan sin errores de consola en Chromium y Firefox.
+- Con más de 24 tintes distintos, la caché no crece y no se expulsa lo que el gato tiene puesto.
+- Al recargar con una prenda teñida, la textura se precalienta y se ve el color.
