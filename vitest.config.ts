@@ -2,6 +2,8 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
+    // The fonts test reads public/style.css as text; vitest blanks CSS files unless told otherwise.
+    css: { include: [/public\/style\.css/] },
     include: ['tests/unit/**/*.test.ts', 'tests/integration/**/*.test.ts'],
     coverage: {
       provider: 'v8',
