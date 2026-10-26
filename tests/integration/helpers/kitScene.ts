@@ -32,7 +32,6 @@ class FakeContainer {
   setDepth(d: number) { this.depth = d; return this; }
   setPosition(x: number, y: number) { this.x = x; this.y = y; return this; }
   on(ev: string, fn: Handler, context?: unknown) { this.handlers.set(ev, [...(this.handlers.get(ev) ?? []), context ? fn.bind(context) : fn]); return this; }
-  disableInteractive() { this.interactive = null; return this; }
   emit(ev: string, ...a: unknown[]) { (this.handlers.get(ev) ?? []).forEach((h) => h(...a)); return true; }
   removeAllListeners() { this.handlers.clear(); return this; }
   getWorldTransformMatrix() { return { tx: this.x, ty: this.y }; }
