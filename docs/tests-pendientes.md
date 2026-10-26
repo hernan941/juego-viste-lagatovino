@@ -182,3 +182,23 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
 - Los acentos ("Grisú", "Siamés") cargan sin errores.
 - El fondo `crema-papel` en el celular emulado.
 - Capturas a 1920 y en el celular (lo pide F12.R).
+
+## F15.4: Showcase como pasarela
+### Specs existentes que hay que adaptar
+`flow`, `photo`, `juice`, `motion`, `mobile`, `perf`, `secrets` y `boot`:
+- hay que esperar `ceremonyStep === 'done'` o `ready`;
+- "Descargar foto" ya no existe: la descarga pasa por [Modo foto] → [Guardar];
+- el hook del Showcase ya no expone `photos`, `lastPhoto`, `revealing`, etc.
+
+### E2E nuevos
+- `rating.spec.ts` (F15.5):
+  - las estrellas que da cada look;
+  - el monedero sube según `economy.json`;
+  - repetir un look paga propina;
+  - el récord y los hitos se pagan una sola vez;
+  - `bestStars` sobrevive a una recarga;
+  - `@mobile`: "Toca para seguir";
+  - `@cross`: un look de 5★.
+- Al volver del álbum con `replay:false`, la ceremonia no se repite.
+- Salir a mitad de la ceremonia no pierde botones.
+- `perf.spec`: cero fugas tras los ciclos de escena.

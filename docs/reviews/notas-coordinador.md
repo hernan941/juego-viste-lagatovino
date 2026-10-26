@@ -25,3 +25,9 @@ Detalles vistos al integrar. Los revisa el game-designer en la revisión de cada
 ## F12.R: ajustes aplicados
 - Pendiente **M6**: rehacer la prueba de porcelana con los gatos B. Ya lo cubre la captura de F19.2.
 - Falta mirar en DressUp la nube de `puaj` sobre un gato oscuro. Su posición es estimada.
+
+## F15.4: pasarela (captura runway-4200.png)
+- **Las notas polaroid de hitos tienen el pie cortado**: "¡Primeras 3 estrellas!" se lee mutilado. Podría ser el bug del texto rotado de A4, esta vez visible. Con este caso se puede reproducir.
+- "Todo muy lana": otra vez el tag en crudo en el texto (ver F15.3).
+- El fondo del Showcase todavía es la sala rosada v1, con el espejo y las huellitas (F20.6). El espejo tapa un poco los botones de salida.
+- "tiern@" en la frase de consuelo del juez: revisar el texto.
