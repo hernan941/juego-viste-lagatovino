@@ -84,3 +84,20 @@ describe('marcos de lentes con contorno de tinta (F12.R B4)', () => {
     }
   });
 });
+
+// F12.R M4: the knit stitches of cuffs, hem and collar are a neutral shade, so a dyed sweater does not keep pink or lilac cuffs.
+describe('costuras de puños, dobladillo y cuello neutras al teñir (F12.R M4)', () => {
+  const sweaters = Object.entries(
+    import.meta.glob('/public/assets/clothes/sweater/*.svg', { query: '?raw', import: 'default', eager: true }) as Record<string, string>,
+  ).filter(([p]) => !p.endsWith('.icon.svg'));
+  const STITCH = /<path fill="none" stroke="(#[0-9A-Fa-f]{6})"[^>]*? d="M(?:150 452 L150 474|196 32\d L196 33\d|210 437 L210 449)/g;
+
+  it.each(sweaters)('%s: ninguna costura de color fijo', (_p, svg) => {
+    expect([...svg.matchAll(STITCH)].map((m) => m[1]).filter((c) => c !== '#000000')).toEqual([]);
+  });
+
+  it('el rayas usa costuras de sombra (negro translucido)', () => {
+    const rayas = sweaters.find(([p]) => p.endsWith('/rayas.svg'))![1];
+    expect(rayas).toMatch(/stroke="#000000" stroke-opacity="0\.18"[^>]* d="M210 437 L210 449/);
+  });
+});

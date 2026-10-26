@@ -21,7 +21,7 @@
           <path fill="none" stroke="#FFF7EC" stroke-width="2.5" d="M120 334 L380 462 M120 462 L380 334" opacity="0.0"/></g>
         
         <rect x="100" y="446" width="312" height="40" fill="#8A5A3C" data-dye="b"/>
-        <path fill="none" stroke="#6E4630" stroke-width="5" d="M150 452 L150 474 M170 454 L170 478 M342 454 L342 478 M362 452 L362 474"/>
+        <path fill="none" stroke="#000000" stroke-opacity="0.18" stroke-width="5" d="M150 452 L150 474 M170 454 L170 478 M342 454 L342 478 M362 452 L362 474"/>
         <path fill="none" stroke="#1F1B1A" stroke-width="5" d="M128 446 L384 446"/>
         
         <use href="#sw-head" fill="#000" fill-opacity="0.15" transform="translate(0 20)"/>
