@@ -90,3 +90,23 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
 4. Si `beforeLeave` devuelve `false`, el jugador no sale de DressUp (con S3).
 5. Specs que usen `sayNo`, las poses, `setItemTexture` y `setOutfit({instant})`.
 6. Revisar `boot.spec` y `save.spec` en `firefox` y `chromium-1920`.
+
+## F20.1, F20.2 y F20.4: repintado de Preloader, ShopEntrance y CatSelect
+### E2E pendientes
+- **Preloader**: la barra (también en movimiento reducido), sin errores de consola.
+- **CatSelect**:
+  - las polaroids aparecen en orden, y el gato elegido salta y maúlla;
+  - la barra del nombre aparece solo después de elegir;
+  - el anillo marca al gato elegido;
+  - si el nombre está vacío, sale un aviso;
+  - "¡Este!" lleva a la tienda;
+  - al volver, el gato guardado aparece preseleccionado;
+  - en el celular, tocar el campo abre el input del DOM;
+  - con progreso sembrado, cada polaroid muestra "♥ n/m" y la mejor estrella.
+- **ShopEntrance**:
+  - el letrero coincide con `brand.shopSign`;
+  - la burbuja "¡Pasa nomás!" aparece con la campanita y desaparece antes del zoom;
+  - un click o un toque salta la escena;
+  - en movimiento reducido hay fundido sin zoom;
+  - en táctil dice "Toca para saltar".
+- **Revisar el glitch del texto rotado** (Phaser 4 corta franjas de los glifos en un `Text` dentro de un contenedor rotado): polaroids, `SpeechBubble` y `Card`.
