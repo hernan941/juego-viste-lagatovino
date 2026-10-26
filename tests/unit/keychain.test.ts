@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   PENDULUM_REST,
+  borderCopiesFor,
   borderOffsets,
   defaultReplace,
   hangKeychain,
@@ -55,6 +56,14 @@ describe('borderOffsets', () => {
   it('has no points when asked for none', () => {
     expect(borderOffsets(0, 10)).toEqual([]);
     expect(borderOffsets(-3, 10)).toEqual([]);
+  });
+});
+
+describe('borderCopiesFor', () => {
+  it('uses 12 copies per ring at 512 px and 8 on 256 px thumbnails', () => {
+    expect(borderCopiesFor(512)).toBe(12);
+    expect(borderCopiesFor(1080)).toBe(12);
+    expect(borderCopiesFor(256)).toBe(8);
   });
 });
 
