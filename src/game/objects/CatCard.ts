@@ -63,8 +63,13 @@ export class CatCard extends Phaser.GameObjects.Container {
   setTally(tally: CatTally): void {
     const old = this.tallyLabel;
     this.tallyLabel = createTallyLabel(this.scene, 0, CARD_H / 2 - 20, tally);
-    this.polaroid.add(this.tallyLabel);
+    // Level, like the constructor: inside the tilted polaroid the glyphs would be cut (see the note there).
+    this.add(this.tallyLabel);
     old.destroy();
+    const p = profileOf(this.scene);
+    this.tallyLabel.setAlpha(0);
+    if (!p.reduced) this.tallyLabel.setScale(0.8);
+    this.scene.tweens.add({ targets: this.tallyLabel, alpha: 1, scale: 1, duration: 200, ease: p.ease('Back.easeOut') });
   }
 
   /** Falls in after `delay` ms, with its washi sticking down, and starts answering to the pointer. */
