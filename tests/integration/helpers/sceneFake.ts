@@ -35,7 +35,7 @@ export class FakeScene {
   events = new Emitter();
   input = Object.assign(new Emitter(), { enabled: true, keyboard: new Emitter() });
   tweens: { records: TweenRec[]; add(c: Record<string, unknown>): TweenRec; killTweensOf(t: unknown): void; killAll(): void; chain(c: Record<string, unknown>): TweenRec };
-  time: { delayed: { ms: number; fn: () => void }[]; delayedCall(ms: number, fn: () => void): { remove(): void }; removeAllEvents(): void };
+  time: { delayed: { ms: number; fn: () => void }[]; delayedCall(ms: number, fn: () => void): { remove(): void }; addEvent(c: { delay: number; callback: () => void }): { remove(): void }; removeAllEvents(): void };
   scale = { width: 1280, height: 720 };
   textures = { exists: () => true };
   plugins: { get(key: string): { played: string[]; play(k: string): void; playRandom(k: string[]): void } };
@@ -56,13 +56,17 @@ export class FakeScene {
       killAll: () => { for (const r of records) r.removed = true; },
     };
     const delayed: { ms: number; fn: () => void }[] = [];
-    this.time = { delayed, delayedCall: (ms, fn) => { delayed.push({ ms, fn }); return { remove() {} }; }, removeAllEvents: () => { delayed.length = 0; } };
+    this.time = {
+      delayed, delayedCall: (ms, fn) => { delayed.push({ ms, fn }); return { remove() {} }; },
+      addEvent: (c) => { delayed.push({ ms: c.delay, fn: c.callback }); return { remove() {} }; },
+      removeAllEvents: () => { delayed.length = 0; },
+    };
     const played = this.played;
     const audio = { played, play: (k: string) => { played.push(k); }, playRandom: (ks: string[]) => { played.push(ks[0]!); } };
     this.plugins = { get: () => audio };
     const made = this.made;
     const make = (kind: string) => (...a: unknown[]) => { const o = loose({ kind, args: a, destroyed: false }); made.push(o); return o; };
-    this.add = { image: make('image'), text: make('text'), graphics: make('graphics'), rectangle: make('rectangle'), container: make('container'), existing: (o) => o };
+    this.add = { image: make('image'), text: make('text'), graphics: make('graphics'), rectangle: make('rectangle'), particles: make('particles'), container: make('container'), existing: (o) => o };
   }
   get activeTweens() { return this.tweens.records.filter((r) => !r.removed); }
 }
