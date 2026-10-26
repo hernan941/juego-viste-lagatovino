@@ -18,6 +18,7 @@ import { shownProgress, yarnState, type YarnOptions } from '../domain/yarn';
 import { e2eStart, type UiState } from '../e2eHook';
 import { hex } from '../objects/ui';
 import { getSave } from '../plugins/SavePlugin';
+import { restoreRules } from '../plugins/saveCore';
 import { go } from '../systems/navigate';
 import { writeSession } from '../systems/sessionStore';
 import { profileOf } from '../systems/motion';
@@ -129,7 +130,7 @@ export class Preloader extends Scene {
     this.registry.set(RegistryKeys.Catalog, catalog);
     this.registry.set(RegistryKeys.Anchors, anchors.value);
     // The cat, name and outfit of the last visit (ADR 0004): CatSelect preselects them and DressUp wears them.
-    getSave(this).restoreInto(catalog);
+    getSave(this).restoreInto(catalog, restoreRules(catalog));
     for (const a of manifest) {
       this.load.svg(a.key, a.path, { width: a.size, height: a.height ?? a.size });
     }

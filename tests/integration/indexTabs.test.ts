@@ -15,11 +15,15 @@ const defs: TabDef[] = [
 
 type FakeTab = { emit(ev: string, ...a: unknown[]): void; interactive: { hitArea: { width: number; height: number } }; list: { y: number }[] };
 
+/** The tabs among the children of the container (the caption comes first, so they are the last `count`). */
+function tabItems(tabs: Tabs, count: number): FakeTab[] {
+  return (tabs as unknown as { list: unknown[] }).list.slice(-count) as FakeTab[];
+}
+
 function make(reduced = false) {
   const scene = makeFakeScene(reduced);
   const tabs = new Tabs(scene as never, 0, 0, defs, { style: 'index' });
-  const items = (tabs as unknown as { list: unknown[] }).list.slice(0, 3) as FakeTab[];
-  return { scene, tabs, items };
+  return { scene, tabs, items: tabItems(tabs, defs.length) };
 }
 
 beforeEach(() => {
@@ -68,5 +72,13 @@ describe('Tabs index style (F12.2)', () => {
     tabs.select('c', true);
     expect(scene.tweens.records.filter((r) => r.config.y === -TAB_RISE)).toHaveLength(0);
     expect(tabs.selectedId).toBe('c');
+  });
+
+  it('a tab added later with addTab keeps the index style', () => {
+    const { tabs } = make();
+    tabs.addTab({ id: 'd', label: 'D', icon: 'i-d', color: 'rosa' });
+    const added = tabItems(tabs, 4)[3]!;
+    expect(added.interactive.hitArea.width).toBeGreaterThanOrEqual(80);
+    expect(added.interactive.hitArea.height).toBeGreaterThanOrEqual(80);
   });
 });

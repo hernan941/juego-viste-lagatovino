@@ -19,10 +19,12 @@ vi.mock('phaser', () => ({
 
 import { RegistryKeys } from '../../src/game/constants';
 import { SavePlugin, getSave } from '../../src/game/plugins/SavePlugin';
-import { SAVE_KEY, defaultSave, serialize } from '../../src/game/plugins/saveCore';
+import { SAVE_KEY, defaultSave, restoreRules, serialize } from '../../src/game/plugins/saveCore';
 import type { Catalog } from '../../src/game/data/schema';
 import { emptyProgress, emptyStoredProgress } from '../../src/game/domain/progress';
 import type { Progress } from '../../src/game/domain/types';
+import economyJson from '../../src/game/data/economy.json';
+import dyesJson from '../../src/game/data/dyes.json';
 
 const catalog = {
   cats: [{ id: 'luna', name: 'Luna' }],
@@ -182,6 +184,16 @@ describe('SavePlugin', () => {
       expect(progressInRegistry(registry)).toEqual(emptyProgress(100));
       vi.advanceTimersByTime(1000);
       expect(store.has(SAVE_KEY)).toBe(false);
+    });
+
+    it('a new player starts with the wallet of economy.json and the starter dyes (restoreRules)', () => {
+      const { registry, plugin } = setup();
+      const data = { ...catalog, economy: economyJson, dyes: dyesJson } as unknown as Parameters<typeof restoreRules>[0];
+      plugin.restoreInto(catalog, restoreRules(data));
+      const progress = progressInRegistry(registry);
+      expect(economyJson.startWallet).toBeGreaterThan(0);
+      expect(progress.wallet).toBe(economyJson.startWallet);
+      expect(restoreRules(data).dyes).toBe(data.dyes);
     });
 
     it('a v1 save comes back as v2: the secrets, what was worn and the start wallet', () => {
