@@ -12,10 +12,12 @@ export default defineConfig({
   reporter: 'list',
   use: { baseURL: 'http://localhost:8080', viewport: { width: 1280, height: 720 } },
   projects: [
-    { name: 'chromium', testIgnore: /load\.spec/, use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 720 } } },
+    { name: 'chromium', grepInvert: /@mobile/, testIgnore: /load\.spec/, use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 720 } } },
     // F9: the @cross subset (boot, flow with download, drag, tabs, a combo, reload, mute, reduced motion) in the other browser and at full HD.
     { name: 'firefox', grep: /@cross/, testIgnore: /load\.spec/, use: { ...devices['Desktop Firefox'], viewport: { width: 1280, height: 720 } } },
     { name: 'chromium-1920', grep: /@cross/, testIgnore: /load\.spec/, use: { ...devices['Desktop Chrome'], viewport: { width: 1920, height: 1080 } } },
+    // F11.16 (ADR 0014 §8): the @mobile subset on an emulated phone in landscape (touch, mobile viewport, coarse pointer).
+    { name: 'mobile', grep: /@mobile/, testIgnore: /load\.spec/, use: { ...devices['Pixel 7 landscape'] } },
     // F9: the load time against the production build, alone at the end (a busy machine would measure the other tests).
     {
       name: 'load',
