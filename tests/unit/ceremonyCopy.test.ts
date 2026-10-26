@@ -1,0 +1,63 @@
+import { describe, expect, it } from 'vitest';
+import { eventNote, formatPoints, judgeLines, ratingLineText } from '../../src/game/domain/copy';
+import type { CeremonyEvent } from '../../src/game/domain/ceremony';
+
+describe('formatPoints', () => {
+  it('signs every number and uses the real minus', () => {
+    expect(formatPoints(3)).toBe('+3');
+    expect(formatPoints(-3)).toBe('−3');
+    expect(formatPoints(0)).toBe('0');
+  });
+});
+
+describe('ratingLineText (F15.3)', () => {
+  it('says each kind of line in Spanish and names the tag', () => {
+    expect(ratingLineText({ kind: 'style', points: 2, ref: 'clasico' })).toContain('clasico');
+    expect(ratingLineText({ kind: 'love', points: 2, ref: 'invierno' })).toContain('invierno');
+    expect(ratingLineText({ kind: 'dislike', points: -3, ref: 'invierno' })).toContain('invierno');
+    expect(ratingLineText({ kind: 'complete', points: 2 })).toMatch(/completo/i);
+    expect(ratingLineText({ kind: 'favoriteItem', points: 2 })).toMatch(/favorit/i);
+    expect(ratingLineText({ kind: 'favoriteDye', points: 1 })).toMatch(/color/i);
+  });
+  it('uses the name of the combo when it is given, and the id otherwise', () => {
+    expect(ratingLineText({ kind: 'combo', points: 3, ref: 'navidad' }, (id) => `Look ${id}!`)).toContain('Look navidad!');
+    expect(ratingLineText({ kind: 'combo', points: 3, ref: 'navidad' })).toContain('navidad');
+  });
+  it('does not break without a ref', () => {
+    expect(ratingLineText({ kind: 'style', points: 1 })).not.toContain('undefined');
+  });
+});
+
+describe('judge comfort (F15.3)', () => {
+  it('comforts a low score with the generic @, never next to the name', () => {
+    const line = judgeLines({ name: 'Kofi' }).comfort();
+    expect(line).toMatch(/tiern/);
+    expect(line).not.toContain('Kofi');
+  });
+});
+
+describe('eventNote', () => {
+  const notes: CeremonyEvent[] = [
+    { type: 'milestone', stars: 5, amount: 50 },
+    { type: 'tasteFound', taste: 'favorite', amount: 15 },
+    { type: 'tasteFound', taste: 'love:gala', amount: 15 },
+    { type: 'tasteFound', taste: 'dislike:gala', amount: 15 },
+    { type: 'tasteFound', taste: 'color', amount: 15 },
+    { type: 'comboFirst', comboId: 'navidad', amount: 40 },
+    { type: 'setCompleted', setId: 'navidad' },
+    { type: 'unlock', ids: ['a', 'b'] },
+  ];
+  it('gives every event a title, an icon and the reward when it pays', () => {
+    for (const e of notes) {
+      const n = eventNote(e);
+      expect(n.title.length).toBeGreaterThan(3);
+      expect(n.icon.length).toBeGreaterThan(0);
+      expect(n.title).not.toContain('undefined');
+      expect(n.reward).toBe('amount' in e ? `+${e.amount}` : undefined);
+    }
+  });
+  it('mentions the stars of a record and the tag of a taste', () => {
+    expect(eventNote(notes[0]!).title).toContain('5');
+    expect(eventNote(notes[2]!).title).toContain('gala');
+  });
+});

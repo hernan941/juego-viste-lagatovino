@@ -40,16 +40,20 @@ const config: Phaser.Types.Core.GameConfig = {
 };
 
 const StartGame = (parent: string) => {
-  // F12.9: the porcelain lab (`?lab=porcelain`) exists only in development: `import.meta.env.DEV` is false in a build, so the
-  // dynamic import (and the scene) never reach `dist/`. It reuses the test shortcut `?e2e=1&start=` of the Preloader.
-  if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('lab') === 'porcelain') {
+  // Dev labs (`?lab=porcelain`, F12.9, and `?lab=ceremony`, F15.3) exist only in development: `import.meta.env.DEV` is false in a build, so
+  // the dynamic imports (and the scenes) never reach `dist/`. They reuse the test shortcut `?e2e=1&start=` of the Preloader.
+  const lab = import.meta.env.DEV ? new URLSearchParams(window.location.search).get('lab') : null;
+  if (lab === 'porcelain' || lab === 'ceremony') {
     const q = new URLSearchParams(window.location.search);
     q.set('e2e', '1');
-    q.set('start', 'PorcelainLab');
+    q.set('start', lab === 'porcelain' ? 'PorcelainLab' : 'CeremonyLab');
     window.history.replaceState(null, '', `${window.location.pathname}?${q.toString()}`);
   }
   const game = new Game({ ...config, parent });
-  if (import.meta.env.DEV) void import('./scenes/dev/PorcelainLab').then((m) => game.scene.add(m.LAB_SCENE_KEY, m.PorcelainLab));
+  if (import.meta.env.DEV) {
+    void import('./scenes/dev/PorcelainLab').then((m) => game.scene.add(m.LAB_SCENE_KEY, m.PorcelainLab));
+    void import('./scenes/dev/CeremonyLab').then((m) => game.scene.add(m.CEREMONY_LAB_KEY, m.CeremonyLab));
+  }
   installE2EHook(game, readPerf);
   installFpsCounter(game);
   return game;

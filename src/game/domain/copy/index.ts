@@ -7,3 +7,4 @@ export * from './tastes';
 export * from './album';
 export * from './photo';
 export * from './keychain';
+export * from './ceremony';

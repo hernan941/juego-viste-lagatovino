@@ -6,6 +6,7 @@ export function judgeLines(judge: CharacterDef) {
   const vars = { judge: judge.name };
   return {
     intro: (): string => fillTemplate('{judge} entra con su libreta... a ver qué tal ese look', vars),
+    comfort: (): string => '¡Igual quedaste tiern@!',
     verdict: (catName: string, stars: number): string => {
       if (stars >= 5) return `¡Perfecto, ${catName}! Cinco estrellas, me encantó`;
       if (stars >= 3) return `Bien ahí, ${catName}. Me gustó harto`;
