@@ -96,9 +96,9 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     this.cat.appear();
     this.dropIn();
 
-    this.save = new Button(this, 1040, 560, photoLines.save, { pill: 'primary', width: 320, height: 76, fontSize: 36 }).setDepth(20);
+    this.save = new Button(this, 1090, 560, photoLines.save, { pill: 'primary', width: 260, height: 76, fontSize: 36 }).setDepth(20);
     this.save.on(ObjectEvents.ButtonClick, () => void this.snap());
-    this.keep = new Button(this, 1040, 652, photoLines.keepDressing, { pill: 'secondary', width: 320, height: 76, fontSize: 32 }).setDepth(20);
+    this.keep = new Button(this, 1090, 652, photoLines.keepDressing, { pill: 'secondary', width: 260, height: 76, fontSize: 28 }).setDepth(20);
     this.keep.on(ObjectEvents.ButtonClick, () => this.leave());
     this.mute = new MuteButton(this, GAME_WIDTH - 56, 56).setDepth(50);
     this.motion = new MotionButton(this, GAME_WIDTH - 128, 56).setDepth(50);
@@ -177,7 +177,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
   private toast(text: string) {
     this.toastLog.push(text);
     this.bubble?.destroy();
-    const bubble = new SpeechBubble(this, 1040, 500, text).setDepth(60);
+    const bubble = new SpeechBubble(this, 1090, 500, text).setDepth(60);
     this.bubble = bubble;
     this.time.delayedCall(1800, () => {
       bubble.destroy();

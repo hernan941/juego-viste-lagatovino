@@ -22,6 +22,7 @@ class AlbumTabView extends Phaser.GameObjects.Container {
     const art = scene.add.image(0, 0, def.icon).setDisplaySize(TAB_W, TAB_H);
     // The text goes in the middle of the art (art-direction v2: "el texto lo pone Phaser").
     const label = scene.add.text(0, 2, def.label, { fontFamily: Fonts.Title, fontSize: '28px', color: Ink.tinta, padding: { x: 2, y: 6 } }).setOrigin(0.5);
+    if (label.width > TAB_W - 28) label.setScale((TAB_W - 28) / label.width);
     this.view = scene.add.container(0, 0, [art, label]);
     this.add(this.view);
     this.setSize(TAB_W, TAB_H);

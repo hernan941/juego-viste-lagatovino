@@ -102,7 +102,7 @@ export class Album extends Phaser.Scene implements E2EUi {
     this.tabs.on(ObjectEvents.TabLocked, () => this.sayLocked());
     this.dropIn();
 
-    this.back = new Button(this, 110, 50, albumLines.back, { pill: 'primary', width: 156, height: 64, fontSize: 32 }).setDepth(20);
+    this.back = new Button(this, 90, 50, albumLines.back, { pill: 'primary', width: 130, height: 64, fontSize: 30 }).setDepth(20);
     this.back.on(ObjectEvents.ButtonClick, () => this.leave());
     this.prev = new Button(this, 52, BOOK.y, '‹', { pill: 'secondary', width: 88, height: 88, fontSize: 56 }).setDepth(20);
     this.prev.on(ObjectEvents.ButtonClick, () => this.turnBy(-1));
