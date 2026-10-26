@@ -1,0 +1,16 @@
+# Tests pendientes de la segunda etapa
+
+El 2026-10-26 el usuario pidió dejar los tests nuevos para el final. Desde entonces, las tareas se implementan sin TDD y cada agente informa aquí los tests que faltan. Se escriben en una fase de tests antes del cierre (F21).
+
+## F12.2 y F12.3: kit de UI
+1. `tests/e2e/kit.spec.ts` (o la escena de laboratorio): una escena con `Button` píldora y pestañas índice. Verifica con el mouse que el click emite la acción y que la pestaña activa sube, sin errores de consola.
+2. Un test de integración o e2e del kit con Card, Polaroid, SpeechBubble y PaperBackground, sin errores de consola.
+3. `pillButton.test.ts`: el hover invierte los colores (primario y secundario), y el área de toque crece con `any-pointer: coarse`.
+4. `indexTabs.test.ts`: el `color` de `Ink` de cada pestaña, y la regresión de `style: 'chip'`.
+5. `kitObjects.test.ts`:
+   - el tween de la washi, y que no se anima con movimiento reducido;
+   - que `SpeechBubble.setText` redibuja la burbuja;
+   - que `destroy()` limpia los listeners.
+6. `particleTextures.test.ts`: que una textura que ya existe no se regenera.
+7. `kit.test.ts`: `tabLayout` con `count = 0` y `hoverTarget` en los dos modos.
+8. Confirmar los umbrales de coverage.
