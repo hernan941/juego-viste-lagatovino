@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   DYE_MIX,
@@ -23,6 +22,7 @@ const SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width
   </g>
 </svg>`;
 
+const sweaters = import.meta.glob('/art/clothes/sweater/hoodie-orejitas.svg', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 const COLORS = { a: '#AA0000', b: '#00BB00' };
 
 describe('deriveTone', () => {
@@ -118,7 +118,7 @@ describe('sizeSvg', () => {
 
 describe('with a real sweater', () => {
   it('recolors the marks of art/clothes and keeps the ink', () => {
-    const svg = readFileSync('art/clothes/sweater/hoodie-orejitas.svg', 'utf8');
+    const svg = Object.values(sweaters)[0];
     const real = recolorSvg(svg, COLORS);
     expect(real).toContain('fill="#AA0000" data-dye="a"');
     expect(real).toContain('fill="#00BB00" data-dye="b"');
