@@ -9,10 +9,10 @@
   <g id="paws" data-fill="#56505F">
   </g><!--/paws-->
   <g id="head" data-fill="#3E3A47">
-    <!-- halo de los ojos: deja ver el óvalo #33242A y su brillo -->
+    <!-- halo de los ojos: deja ver el ojo de tinta y su brillo -->
     <ellipse fill="#56505F" cx="192" cy="224" rx="24" ry="29"/>
     <ellipse fill="#56505F" cx="320" cy="224" rx="24" ry="29"/>
-    <!-- hocico un poco más claro para que se lea la boca :3 sobre el negro -->
+    <!-- hocico un poco más claro para que se lea la boca en "y" sobre el negro -->
     <path fill="#56505F" d="M256 236 C266 228 290 230 292 248 C294 264 272 268 256 260 C240 268 218 264 220 248 C222 230 246 228 256 236 Z"/>
   </g><!--/head-->
 </svg>

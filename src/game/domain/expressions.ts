@@ -1,5 +1,5 @@
 // Cat expressions and when to use them (docs/game-design.md, "Qué expresión usar en cada momento").
-export const EXPRESSIONS = ['normal', 'feliz', 'sorpresa', 'parpadeo', 'amor'] as const;
+export const EXPRESSIONS = ['normal', 'feliz', 'sorpresa', 'parpadeo', 'amor', 'puaj'] as const;
 export type Expression = (typeof EXPRESSIONS)[number];
 
 export type ReactionEvent = 'grab' | 'drop' | 'combo' | 'remove';

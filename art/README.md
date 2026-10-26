@@ -9,7 +9,7 @@ art/
   tools/build-art.mjs       # compositor: genera los gatos y los iconos (Node ≥ 18, sin dependencias)
   cats/
     base/silhouette.svg     # plantilla: geometría única de la pose (cola, cuerpo, patitas, cabeza+orejas)
-    base/face-*.svg         # caras: normal, feliz, sorpresa, parpadeo y amor (capas intercambiables)
+    base/face-*.svg         # caras: normal, feliz, sorpresa, parpadeo, amor y puaj (capas intercambiables)
     coats/<id>.svg          # pelaje por gato: color base + patrón por parte
     <id>.svg                # GENERADO: gato completo (silueta + pelaje + cara normal), autocontenido
     noface/<id>.svg         # GENERADO: el mismo gato sin cara y sin cola (lo que carga el juego)

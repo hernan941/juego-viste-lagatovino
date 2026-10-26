@@ -1,13 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
 
 // Art direction v2 (ADR 0016): ink outline #1F1B1A, brush copy under the stroke, durazno ears.
-const ASSETS = join(__dirname, '../../public/assets');
-const svgs = (dir: string) =>
-  readdirSync(join(ASSETS, dir))
-    .filter((f) => f.endsWith('.svg'))
-    .map((f) => [f, readFileSync(join(ASSETS, dir, f), 'utf8')] as const);
+const all = import.meta.glob('/public/assets/cats/**/*.svg', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+const svgs = (dir: 'cats/noface' | 'cats/tail'): [string, string][] =>
+  Object.entries(all)
+    .filter(([p]) => p.includes(`/${dir}/`))
+    .map(([p, svg]) => [p.split('/').pop() as string, svg]);
 
 describe('gatos con trazo de tinta (F12.5)', () => {
   const bodies = svgs('cats/noface');
