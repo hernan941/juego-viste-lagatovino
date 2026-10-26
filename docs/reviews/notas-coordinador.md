@@ -31,3 +31,9 @@ Detalles vistos al integrar. Los revisa el game-designer en la revisión de cada
 - "Todo muy lana": otra vez el tag en crudo en el texto (ver F15.3).
 - El fondo del Showcase todavía es la sala rosada v1, con el espejo y las huellitas (F20.6). El espejo tapa un poco los botones de salida.
 - "tiern@" en la frase de consuelo del juez: revisar el texto.
+
+## F16.3: pestaña Tintes (captura desktop-5-dyed.png)
+- El teñido funciona: un sweater de rayas pasó a verde hoja.
+- **DressUp sigue con la estética v1**: paneles rosados, ¡Listo! rosado 3D y fondo de huellitas. Se repinta en F20.5.
+- Con 7 pestañas, la fila se achica al 90 %.
+- Hoy se pueden usar los 10 frascos aunque no estén comprados ("probar es gratis"). La compra va en F16.5.

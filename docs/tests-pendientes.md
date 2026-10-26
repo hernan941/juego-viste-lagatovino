@@ -202,3 +202,18 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
 - Al volver del álbum con `replay:false`, la ceremonia no se repite.
 - Salir a mitad de la ceremonia no pierde botones.
 - `perf.spec`: cero fugas tras los ciclos de escena.
+
+## F16.3: pestaña Tintes
+### E2E pendientes
+- `dye.spec.ts`:
+  - arrastrar el frasco rosa al sweater lo tiñe;
+  - el color sobrevive a una recarga (`dressUp.dyes`, `itemDye` y `saved`).
+- `@mobile`: arrastrar un frasco con el dedo. Hay que poner el dedo unas 64 unidades por debajo, por el levantado.
+- F16.6:
+  - los 16 sweaters aceptan tinte;
+  - una prenda no teñible rebota;
+  - `agua` devuelve el color original;
+  - sobre el gato sin prenda sale "¡A mí no!";
+  - el color favorito deja `tastes.last === 'color'`.
+- **Ojo**: `e2eState()` de los controladores devuelve coordenadas de juego, no de página. Hay que convertir `dyes.jars` o hacer que el hook las convierta.
+- **Medir el primer teñido con GPU real**: en headless con SwiftShader tarda entre 420 y 560 ms, y el umbral del ADR 0018 es de unos 100 ms. Si con GPU sigue por encima, activar el plan B (pregenerar las variantes en el build).
