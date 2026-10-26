@@ -43,3 +43,8 @@ Detalles vistos al integrar. Los revisa el game-designer en la revisión de cada
 - La polaroid no se rota todavía (`framePlacement`): si se rota la hoja, se desalinean el gato y los stickers. Va en F18.5 o en la revisión del GD.
 - Las esquinas cuadradas de los fondos (por ejemplo `bg-cielo`) se asoman por las esquinas redondeadas del marco polaroid. Es un problema del arte.
 - Después de [Guardar], el gato queda con cara `amor` y no vuelve a la pose elegida.
+
+## A4: textos cortados (resuelto)
+- La causa es el batching multi-textura de Phaser sobre WebGL por software (SwiftShader). No tenía que ver con la rotación. `systems/renderConfig.ts` pone `maxTextures: 1` cuando el renderer es por software o el modo es test. Con GPU real se usa el valor por defecto.
+- Varios "cortes" que se vieron en capturas headless (notas polaroid, estrellas a medias) eran este mismo artefacto.
+- Hace falta un ADR o una nota en el 0011, que hoy lo limita al modo test. Va junto con los otros pendientes de ADR: el evento `ItemDyed`, `Cat.itemAt`/`highlightItem` y `PORCELAIN_SATURATION`.
