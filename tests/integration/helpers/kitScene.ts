@@ -26,6 +26,9 @@ class FakeContainer {
   setSize(w: number, h: number) { this.width = w; this.height = h; return this; }
   setInteractive(cfg: FakeContainer['interactive']) { this.interactive = cfg; return this; }
   disableInteractive() { this.interactive = null; return this; }
+  setVisible() { return this; }
+  setY(y: number) { this.y = y; return this; }
+  setX(x: number) { this.x = x; return this; }
   setScale(s: number) { this.scale = s; return this; }
   setAngle(a: number) { this.angle = a; return this; }
   setAlpha(a: number) { this.alpha = a; return this; }
@@ -43,6 +46,7 @@ export const phaserMock = {
     GameObjects: { Container: FakeContainer },
     Plugins: { BasePlugin: class {} },
     Scenes: { Events: { SHUTDOWN: 'shutdown', UPDATE: 'update' } },
+    TintModes: { MULTIPLY: 0, FILL: 1 },
     Math: { Vector2: class { constructor(public x: number, public y: number) {} } },
     Geom: {
       Rectangle: Object.assign(
@@ -101,7 +105,7 @@ export function makeFakeScene(reduced = false): FakeScene {
     image: (_x, _y, key) => { const i = chain({ key, width: 100, height: 100 }); made.images.push(i); return i; },
     container: (x, y, children) => new FakeContainer(scene, x as number, y as number).add(children ?? []),
     rectangle: () => new FakeContainer(scene),
-    zone: () => new FakeContainer(scene),
+    zone: (x, y, w, h) => new FakeContainer(scene, x as number, y as number).setSize(w as number, h as number),
     existing: (o) => o,
   };
   return scene;

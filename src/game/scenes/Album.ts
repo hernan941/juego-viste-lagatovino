@@ -224,7 +224,7 @@ export class Album extends Phaser.Scene implements E2EUi {
       info: {
         tab: this.tab, tabs: ALBUM_TABS.map((t) => t.id), enabledTabs: ALBUM_TABS.filter((t) => t.enabled).map((t) => t.id),
         from: this.origin.from ?? null, hang: this.hang, turning: this.turning, turns: this.turns,
-        pct: c.pct, got: c.got, total: c.total, tally,
+        pct: c.pct, got: c.got, total: c.total, tally, page: this.page?.info?.() ?? null,
       },
     };
   }
