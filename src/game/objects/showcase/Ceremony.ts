@@ -254,15 +254,16 @@ export class Ceremony {
     if (!text) return;
     const scene = this.scene;
     const p = profileOf(scene);
-    const at = this.layout.buttonsFrom;
+    // Next to the purse, where the buttons land (the judge and his bubble are below and must not be covered).
+    const at = { x: this.layout.wallet.x - 70, y: this.layout.wallet.y + 4 };
     const label = scene.add
-      .text(at.x, at.y - 40, text, { fontFamily: Fonts.Title, fontSize: '30px', color: Ink.lapiz, padding: { x: 4, y: 8 } })
-      .setOrigin(0.5)
+      .text(at.x, at.y + 14, text, { fontFamily: Fonts.Title, fontSize: '30px', color: Ink.lapiz, padding: { x: 4, y: 8 } })
+      .setOrigin(1, 0.5)
       .setDepth(this.depth + 3)
       .setAlpha(0);
     this.labels.push(label);
     const done = () => { this.labels = this.labels.filter((l) => l !== label); label.destroy(); };
-    scene.tweens.add({ targets: label, alpha: 1, y: at.y - (p.reduced ? 40 : 90), duration: 300 / this.speed, ease: p.ease('Back.easeOut'), hold: 900 / this.speed, onComplete: () => {
+    scene.tweens.add({ targets: label, alpha: 1, y: at.y, duration: 300 / this.speed, ease: p.ease('Back.easeOut'), hold: 900 / this.speed, onComplete: () => {
       scene.tweens.add({ targets: label, alpha: 0, duration: 300 / this.speed, onComplete: done });
     } });
   }

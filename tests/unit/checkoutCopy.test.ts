@@ -14,7 +14,7 @@ describe('the till voice (F13.6)', () => {
   });
 
   it('"not enough" speaks with the voice of the seller and sends the player to rate looks (M3)', () => {
-    expect(shopLines.notEnough(80)).toBe('¡Uy! Te faltan 80 botones. Califica un par de looks y vuelves');
+    expect(shopLines.notEnough(80)).toBe('¡Uy! Te faltan 80. Califica un par de looks y vuelves');
   });
 
   it('names a bottle and the total', () => {

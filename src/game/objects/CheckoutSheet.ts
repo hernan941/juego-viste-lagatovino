@@ -16,7 +16,7 @@ const CARD = { w: 960, h: 620 };
 const BUTTONS = { y: 232, h: 88, gap: 14 };
 /** The list: x of the picture, of the name and of the price (right aligned), and the vertical room it has. */
 const LIST = { icon: -150, name: -112, price: 400, top: -196, room: 268, maxStep: 52, remove: 440 };
-const SELLER = { x: -340, y: -58, height: 230 };
+const SELLER = { x: -340, y: -72, height: 200 };
 const ROW_START_MS = 220;
 /** Alpha of [Llevar todo] while the wallet does not reach. */
 const PALE = 0.55;
@@ -177,7 +177,7 @@ export class CheckoutSheet extends ModalSheet {
     this.totalText = totalText;
     dynamic.add([rule, totalText]);
     if (missing > 0) {
-      const short = scene.add.text(LIST.price, 152, shopLines.notEnough(missing), { fontFamily: Fonts.Voice, fontStyle: 'bold', fontSize: '28px', color: Ink.mutedTexto, align: 'right', wordWrap: { width: 480 }, padding: { x: 2, y: 6 } }).setOrigin(1, 0.5);
+      const short = scene.add.text(LIST.price, 152, shopLines.notEnough(missing), { fontFamily: Fonts.Voice, fontStyle: 'bold', fontSize: '26px', color: Ink.mutedTexto, align: 'right', wordWrap: { width: 620 }, padding: { x: 2, y: 6 } }).setOrigin(1, 0.5);
       dynamic.add(short);
     }
     this.add(dynamic);
