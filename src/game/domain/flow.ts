@@ -76,3 +76,21 @@ export function albumArgs(from: string, fromData: object = {}): { from: string; 
 export function hangArgs(catId: string): { from: string; tab: 'colgador'; hang: string } {
   return { from: SceneKeys.DressUp, tab: 'colgador', hang: catId };
 }
+
+/** What DressUp hands to the album so it finds its fitting room as it was: the tab it was on and how far its grid was scrolled. */
+export function dressUpAlbumData(tab: string | null, scroll: number): { tab?: string; scroll: number } {
+  return tab ? { tab, scroll } : { scroll };
+}
+
+export interface DressUpRestore {
+  tab: string | null;
+  scroll: number;
+}
+
+/** Reads `dressUpAlbumData` back when the album returns it (anything that is not a name or a number is dropped). */
+export function dressUpRestore(data: unknown): DressUpRestore {
+  const d = (typeof data === 'object' && data !== null ? data : {}) as { tab?: unknown; scroll?: unknown };
+  const tab = typeof d.tab === 'string' && d.tab !== '' ? d.tab : null;
+  const scroll = typeof d.scroll === 'number' && Number.isFinite(d.scroll) && d.scroll > 0 ? d.scroll : 0;
+  return { tab, scroll };
+}

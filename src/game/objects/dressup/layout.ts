@@ -8,3 +8,5 @@ export const WALLET_POSITION = { x: 896, y: 34 } as const;
 export const CELL_TAG = { x: 36, y: -62, scale: 0.46 } as const;
 /** The tag of a worn item, from the slot anchor of the cat: to the side, so it covers the garment as little as it can. */
 export const WORN_TAG = { dx: 96, dy: -34, scale: 0.62 } as const;
+/** The notebook button: top of the screen, left of the room (the purse and the secrets counter keep the right). */
+export const ALBUM_BUTTON_AT = { x: 500, y: 34 } as const;

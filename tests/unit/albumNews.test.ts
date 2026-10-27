@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { albumNews, gotOfSection, pendingMilestones, seenIdOf, type AlbumSection } from '../../src/game/domain/album';
+import { albumHasNews, albumNews, gotOfSection, pendingMilestones, seenIdOf, type AlbumSection } from '../../src/game/domain/album';
 import { applyAlbumNews, emptyProgress, markSeen } from '../../src/game/domain/progress';
 import { assertGameData } from '../../src/game/data/schema';
 import cats from '../../src/game/data/cats.json';
@@ -99,5 +99,17 @@ describe('applyAlbumNews (ADR 0017)', () => {
   it('has no events when nothing happened', () => {
     const p = emptyProgress(5);
     expect(applyAlbumNews(p, catalog)).toEqual({ progress: p, events: [] });
+  });
+});
+
+describe('albumHasNews (the sparkle of the notebook button)', () => {
+  it('is on while something got is unseen, and off once every section was seen', () => {
+    const p = withAbriguito();
+    expect(albumHasNews(p, catalog)).toBe(true);
+    const seenAll = (['items', 'tastes', 'combos', 'dyes', 'keychains'] as const).flatMap((s) => gotOfSection(s, p, catalog));
+    expect(albumHasNews(markSeen(p, seenAll), catalog)).toBe(false);
+  });
+  it('a brand new player already has the starters to look at', () => {
+    expect(albumHasNews(emptyProgress(0), catalog)).toBe(true);
   });
 });

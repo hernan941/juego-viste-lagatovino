@@ -3,7 +3,8 @@ import { Fonts, GAME_WIDTH, Ink, MEOW_KEYS, ObjectEvents, RegistryKeys, SceneKey
 import type { GameData } from '../data/schema';
 import { catReaction, ceremonyPlan, type CeremonyStep } from '../domain/ceremony';
 import { showcaseTitle } from '../domain/copy';
-import { giftedFrom } from '../domain/flow';
+import { albumHasNews } from '../domain/album';
+import { albumArgs, giftedFrom } from '../domain/flow';
 import type { Expression } from '../domain/expressions';
 import { getLayers } from '../domain/outfit';
 import { flourishFor } from '../domain/pose';
@@ -15,6 +16,7 @@ import { Button } from '../objects/Button';
 import { Cat } from '../objects/Cat';
 import { FullscreenButton } from '../objects/FullscreenButton';
 import { MotionButton } from '../objects/MotionButton';
+import { NotebookButton } from '../objects/NotebookButton';
 import { MuteButton } from '../objects/MuteButton';
 import { SecretCounter } from '../objects/SecretCounter';
 import { WalletHud } from '../objects/WalletHud';
@@ -42,6 +44,8 @@ const EXITS = { photo: 185, keep: 480, change: 775 } as const;
 const LAYOUT = { judgeAt: { x: 1060, y: 745 }, cardAt: { x: 930, y: 252 }, notesAt: { x: 475, y: 108 }, notesWidth: 420, buttonsFrom: { x: 1060, y: 690 }, confettiAt: { x: 380, y: -10 } };
 /** The purse sits over the middle of the runway, clear of the judge's card. */
 const WALLET_AT = { x: 896, y: 28 };
+/** The notebook stamp joins the exits (top right, next to the fullscreen, motion and sound stamps). */
+const NOTEBOOK_AT = { x: GAME_WIDTH - 272, y: 56 };
 
 /**
  * Showcase (S1): the runway. The look is rated and paid when the scene opens (the progress is written first, so seeing the ceremony
@@ -64,6 +68,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
   private mute!: MuteButton;
   private motion!: MotionButton;
   private fullscreen: FullscreenButton | null = null;
+  private notebook: NotebookButton | null = null;
   private counter!: SecretCounter;
   private hearts!: Phaser.GameObjects.Particles.ParticleEmitter;
   private pose: Expression = 'feliz';
@@ -89,6 +94,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
     this.rating = null;
     this.ceremony = null;
     this.photo = this.keep = this.change = null;
+    this.notebook = null;
     this.hint = null;
     this.poses = 0;
     this.pose = 'feliz';
@@ -174,7 +180,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.ceremony?.destroy();
       this.cat?.destroy();
-      for (const o of [this.photo, this.keep, this.change, this.hint, this.mute, this.motion, this.fullscreen, this.counter, this.hud]) o?.destroy();
+      for (const o of [this.photo, this.keep, this.change, this.notebook, this.hint, this.mute, this.motion, this.fullscreen, this.counter, this.hud]) o?.destroy();
       this.tweens.killAll();
     });
     transitionIn(this, this.enter);
@@ -234,6 +240,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
     this.photo = make(EXITS.photo, runwayLines.photo, 'primary', 250, () => this.leave('photo'));
     this.keep = make(EXITS.keep, runwayLines.keepDressing, 'secondary', 300, () => this.leave('keepDressing'));
     this.change = make(EXITS.change, runwayLines.change, 'secondary', 250, () => this.leave('change'));
+    this.openNotebook();
     const stars = this.rating?.stars ?? 3;
     if (!celebrated) {
       // Back from the album: the cat wears the face of its verdict at once.
@@ -242,6 +249,22 @@ export class Showcase extends Phaser.Scene implements E2EUi {
     }
     this.ready = true;
     this.time.addEvent({ delay: FLOURISH_MS, loop: true, callback: () => this.flourish(stars) });
+  }
+
+  /** The notebook stamp pops in with the exits; its sparkle says there is something new in the album. */
+  private openNotebook() {
+    const progress = this.registry.get(RegistryKeys.Progress) as Progress | undefined;
+    const button = new NotebookButton(this, NOTEBOOK_AT.x, NOTEBOOK_AT.y, progress ? albumHasNews(progress, this.catalog) : false).setDepth(50);
+    button.on(ObjectEvents.NotebookPress, () => this.openAlbum());
+    appear(this, button, { pop: true });
+    this.notebook = button;
+  }
+
+  private openAlbum() {
+    if (this.leaving) return;
+    this.leaving = true;
+    // The runway comes back by itself (the album's "Volver" adds `replay: false`): there is nothing to hand over.
+    go(this, 'album', albumArgs(SceneKeys.Showcase, {}));
   }
 
   /** A flourish that rotates (squash, a wag, a glance aside) so the pose never looks mechanical. */
@@ -289,7 +312,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
       const p = b ? b.getCenter() : undefined;
       if (p) buttons[key] = { x: p.x, y: p.y };
     }
-    for (const [key, b] of Object.entries({ mute: this.mute, motion: this.motion, fullscreen: this.fullscreen })) if (b) buttons[key] = b.getCenter();
+    for (const [key, b] of Object.entries({ mute: this.mute, motion: this.motion, fullscreen: this.fullscreen, album: this.notebook })) if (b) buttons[key] = b.getCenter();
     return {
       ready: this.ready && !this.leaving,
       buttons,

@@ -115,6 +115,8 @@ export const ObjectEvents = {
   MuteToggle: 'mute-toggle',
   /** FullscreenButton: (entering: boolean) after the tap */
   FullscreenToggle: 'fullscreen-toggle',
+  /** NotebookButton: pressed and released on it */
+  NotebookPress: 'notebook-press',
   /** MotionButton: (reduced: boolean) after toggling */
   MotionToggle: 'motion-toggle',
   /** Cat: the player petted it (a click on its body, with a cooldown) */

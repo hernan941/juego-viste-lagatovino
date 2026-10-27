@@ -218,6 +218,13 @@ export class ItemGrid extends Phaser.GameObjects.Container {
     return [...this.cells.values()].every((c) => c.alpha > 0.99 && Math.abs(c.scale - 1) < 0.01);
   }
 
+  /** Puts the scroll at `offset` at once (clamped), for a grid that comes back as it was. */
+  setScroll(offset: number): void {
+    this.offset = clampScroll(offset, this.contentH, this.viewHeight);
+    this.target = this.offset;
+    this.applyScroll();
+  }
+
   /** Viewport in game coordinates plus the scroll state. */
   getViewport(): Rect & { scroll: number; targetScroll: number; maxScroll: number } {
     const o = this.worldOrigin();

@@ -201,3 +201,8 @@ export function pendingMilestones(progress: Progress, catalogs: AlbumCatalogs): 
   const seen = new Set(progress.albumSeen);
   return albumMilestones(completion(progress, catalogs).pct).filter((m) => !seen.has(seenIdOf.milestone(m)));
 }
+
+/** True while some entry got has not been seen: the notebook button shows its sparkle. */
+export function albumHasNews(progress: Progress, catalogs: AlbumCatalogs): boolean {
+  return newlySeen(progress.albumSeen, gotEntries(progress, catalogs)).length > 0;
+}

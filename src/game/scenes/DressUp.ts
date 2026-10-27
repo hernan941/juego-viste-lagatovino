@@ -3,6 +3,7 @@ import {
   CATEGORY_LABELS, DressUpEvents, GAME_HEIGHT, GAME_WIDTH, MEOW_KEYS, ObjectEvents, RegistryKeys, SceneKeys, SfxKeys,
 } from '../constants';
 import type { Catalog } from '../data/schema';
+import { dressUpRestore, type DressUpRestore } from '../domain/flow';
 import { petHeartSpots } from '../domain/petHearts';
 import { itemsInCategory, visibleCategories } from '../domain/catalog';
 import { newlyCompleted, secretRewards } from '../domain/combos';
@@ -84,6 +85,8 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
   /** Feature controllers (ADR 0019) and the layer they draw their HUD on. */
   private controllers = new ControllerHost(controllerFactories);
   private leaveData: Record<string, unknown> = {};
+  /** The tab and the scroll the album hands back (F17.6): applied once the controllers have added their tabs. */
+  private restore: DressUpRestore = { tab: null, scroll: 0 };
   private hud!: Phaser.GameObjects.Container;
   private categories: Category[] = [];
 
@@ -91,7 +94,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     super(SceneKeys.DressUp);
   }
 
-  init(data?: { catId?: string }) {
+  init(data?: { catId?: string; tab?: unknown; scroll?: unknown }) {
     this.catalog = this.registry.get(RegistryKeys.Catalog) as Catalog;
     this.anchors = this.registry.get(RegistryKeys.Anchors) as AnchorsDef;
     const session = readSession(this.registry);
@@ -101,6 +104,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.leaving = false;
     this.pets = 0;
     this.leaveData = {};
+    this.restore = dressUpRestore(data);
     this.controllers = new ControllerHost(controllerFactories);
     const wanted = session.catId ?? data?.catId;
     const cat = this.catalog.cats.find((c) => c.id === wanted) ?? this.catalog.cats[0];
@@ -177,6 +181,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
       getOutfit: () => this.outfit, isDragging: () => this.drag !== null, isLeaving: () => this.leaving, boundsOf: (item) => this.bounds.of(item),
       showCategory: (category) => { this.tabs.select(category, true); this.showCategory(category); }, leaveData: this.leaveData,
     });
+    this.restoreView();
     this.events.emit(DressUpEvents.CatChanged, this.catId);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.cleanup, this);
     transitionIn(this, enterKind(data));
@@ -233,6 +238,17 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.fx?.destroy();
     this.tweens.killAll();
     for (const o of [this.doneButton, this.changeButton, this.mute, this.motion, this.fullscreen, this.sign, this.cat, this.grid, this.tabs, this.layersPanel]) o?.destroy();
+  }
+
+  /** Back from the album: the tab it was on and how far the grid was scrolled (a tab of a controller answers to its own listener). */
+  private restoreView() {
+    const { tab, scroll } = this.restore;
+    if (!tab) return;
+    if (this.categories.includes(tab as Category)) {
+      this.tabs.select(tab, true);
+      this.showCategory(tab as Category);
+      if (scroll > 0) this.grid.setScroll(scroll);
+    } else if (tab in this.tabs.getTabPositions()) this.tabs.select(tab);
   }
 
   private showCategory(category: Category) {
