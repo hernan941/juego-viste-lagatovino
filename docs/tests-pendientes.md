@@ -254,3 +254,20 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
 - El paginador de Prendas muestra 2 hojas (30 y 20 entradas). Tocar una entrada abre su ficha y tocarla otra vez la cierra.
 - Movimiento reducido en las 4 páginas.
 - `perf.spec`: cambiar entre las 4 páginas sin fugas (sobre todo Gatos, con 12 `Cat`).
+
+## F13.6 y F14.5: la caja de la vendedora y el gato que lee el outfit
+### E2E pendientes
+- `shop.spec`, la caja (con `wear` de prendas sin pagar y `dressUp.checkout` del hook: `open`, `total`, `lines`, `buttons`, `outcomes`):
+  - sin prendas sin pagar, ¡Listo! va directo a la pasarela y la caja no se abre;
+  - "Cambiar de gato" con prendas sin pagar no abre la caja;
+  - [Seguir probando] (o tocar fuera) deja al jugador en el probador, sin cambios;
+  - [Sacarme lo que no tengo] saca solo lo no pagado (también los tintes sin pagar), no gasta nada y al Showcase solo llega lo propio (`lastRating`, `outfit`);
+  - [Llevar todo] con saldo: baja el monedero en el total, agrega a `owned` y `dyesOwned`, y pasa a la pasarela; recargar conserva la compra;
+  - [Llevar todo] sin saldo: el monedero tiembla, no cambia nada y la caja sigue abierta;
+  - un doble toque en [Llevar todo] cobra una sola vez;
+  - `@mobile`: tocar [Llevar todo] y [Sacarme lo que no tengo] (botones de 88 de alto).
+- `secrets.spec`, combo con una pieza sin pagar: suena la reacción corta, aparece la frase "regalito" y no sale la cajita (`gift` es null); al comprar la pieza que falta (por etiqueta o en la caja) la cajita sale; si se paga en la caja al salir, el premio llega en `gifted` al Showcase.
+- `tastes.spec`, el gato nuevo lee el outfit: cambiar de gato con 3 prendas puestas produce 3 reacciones en `dressUp.tastes.log` (en el orden de los slots); volver del Showcase con el mismo gato no repite la lectura; un gusto ya descubierto no paga otra vez; recargar con el outfit guardado lee una vez.
+- Movimiento reducido: la caja y la lectura funcionan sin temblor, rotación ni vuelo (la cruz solo se desvanece).
+- `perf.spec`: abrir y cerrar la caja varias veces no deja objetos ni tweens colgados.
+- Falta el tipo de `dressUp.checkout` en `e2eHook.ts` (el estado de los controladores llega sin tipar).

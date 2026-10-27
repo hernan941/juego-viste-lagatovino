@@ -195,6 +195,8 @@ export const RegistryKeys = {
   Progress: 'progress',
   /** Last RatingResult, so Showcase and PhotoMode can recover it (ADR 0019). */
   LastRating: 'lastRating',
+  /** Id of the cat whose look was last read on arrival (F14.5): only a different cat reads the look it finds. */
+  ReadCat: 'readCat',
 } as const;
 
 /** Textures generated in code (particles). */

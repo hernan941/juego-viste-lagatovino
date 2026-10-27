@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { tasteLines } from '../../src/game/domain/copy';
-import { TASTE_KINDS, tasteFxPlan } from '../../src/game/domain/tasteFx';
+import { TASTE_KINDS, readFxPlan, tasteFxPlan } from '../../src/game/domain/tasteFx';
 
 describe('tasteFxPlan', () => {
   it('has a plan for every kind of reaction', () => {
@@ -32,6 +32,38 @@ describe('tasteFxPlan', () => {
   it('every bubble has a line of text', () => {
     for (const kind of TASTE_KINDS) {
       if (tasteFxPlan(kind).bubble) expect(tasteLines.bubble(kind as 'dislike' | 'favorite' | 'color').length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe('readFxPlan (F14.5)', () => {
+  it('has a plan for every kind of reaction', () => {
+    for (const kind of TASTE_KINDS) expect(readFxPlan(kind)).toBeDefined();
+  });
+
+  it('is smaller than the reaction to a drop: a pop on the garment and a soft sound', () => {
+    for (const kind of TASTE_KINDS) {
+      const read = readFxPlan(kind);
+      expect(read.hearts).toBeLessThanOrEqual(tasteFxPlan(kind).hearts);
+      expect(read.sparks).toBeLessThanOrEqual(5);
+      expect(read.volume).toBeLessThanOrEqual(0.6);
+    }
+  });
+
+  it('love and the favorite throw hearts and purr; the favorite also sparkles', () => {
+    expect(readFxPlan('love')).toMatchObject({ hearts: 1, sound: 'purr', mark: false });
+    expect(readFxPlan('favorite').sparks).toBeGreaterThan(0);
+    expect(readFxPlan('favorite').hearts).toBeGreaterThan(readFxPlan('love').hearts);
+  });
+
+  it('dislike marks the garment with a cross and a low meow, no hearts', () => {
+    expect(readFxPlan('dislike')).toMatchObject({ hearts: 0, mark: true, sound: 'meowLow' });
+  });
+
+  it('color sparkles a little; combo and neutral add nothing', () => {
+    expect(readFxPlan('color').sparks).toBeGreaterThan(0);
+    for (const kind of ['combo', 'neutral'] as const) {
+      expect(readFxPlan(kind)).toMatchObject({ hearts: 0, sparks: 0, mark: false, sound: null });
     }
   });
 });
