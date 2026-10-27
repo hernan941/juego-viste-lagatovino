@@ -32,13 +32,13 @@ describe('lines by feature', () => {
     const all = JSON.stringify([
       judgeLines(brand.judge).intro(), sellerLines(brand.seller).greeting(), sellerLines(brand.seller).checkout(120),
       shopLines.priceTag(30), shopLines.notEnough(10), shopLines.bought, tasteLines.love('Luna'), tasteLines.hate('Luna'),
-      albumLines.percent(40), photoLines.signature(brand), keychainLines.saved('Luna'),
+      albumLines.percent(40), photoLines.signature(brand), keychainLines.replaceTitle('Luna'),
       shopLines.mine, shopLines.purchaseTitle, shopLines.purchaseLine('Gorro', 40), tasteLines.sheetTitle('Luna'), tasteLines.count(1, 5), tasteLines.knowsYou(), tasteLines.closeHint(),
     ]);
     expect(all).not.toMatch(/Kofi|Catalina|Cata\b/);
   });
   it('leaves no unfilled marker', () => {
-    const all = [judgeLines(brand.judge).intro(), sellerLines(brand.seller).greeting(), sellerLines(brand.seller).checkout(5), albumLines.percent(3), photoLines.signature(brand), keychainLines.saved('Luna')];
+    const all = [judgeLines(brand.judge).intro(), sellerLines(brand.seller).greeting(), sellerLines(brand.seller).checkout(5), albumLines.percent(3), photoLines.signature(brand), keychainLines.replaceTitle('Luna')];
     for (const t of all) expect(t).not.toMatch(/[{}]/);
   });
   it('uses the Chilean voice', () => {
@@ -50,7 +50,7 @@ describe('lines by feature', () => {
 describe('the @ rule', () => {
   const name = 'Luna';
   const texts = (): string[] => [
-    tasteLines.love(name), tasteLines.hate(name), keychainLines.saved(name), judgeLines(brand.judge).verdict(name, 3),
+    tasteLines.love(name), tasteLines.hate(name), keychainLines.replaceTitle(name), judgeLines(brand.judge).verdict(name, 3),
     photoLines.caption(name), shopLines.notEnough(5), albumLines.percent(10), copy.showcaseTitle(name),
     tasteLines.sheetTitle(name), tasteLines.count(2, 5), tasteLines.knowsYou(), shopLines.purchaseLine('Gorro', 40), shopLines.mine,
   ];

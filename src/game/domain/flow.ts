@@ -73,8 +73,8 @@ export function albumArgs(from: string, fromData: object = {}): { from: string; 
 }
 
 /** What the photo mode passes when the keychain is hung: the hanger tab, and back to DressUp afterwards. */
-export function hangArgs(catId: string): { from: string; tab: 'colgador'; hang: string } {
-  return { from: SceneKeys.DressUp, tab: 'colgador', hang: catId };
+export function hangArgs(catId: string, hung = true): { from: string; tab: 'colgador'; hang?: string } {
+  return hung ? { from: SceneKeys.DressUp, tab: 'colgador', hang: catId } : { from: SceneKeys.DressUp, tab: 'colgador' };
 }
 
 /** What DressUp hands to the album so it finds its fitting room as it was: the tab it was on and how far its grid was scrolled. */

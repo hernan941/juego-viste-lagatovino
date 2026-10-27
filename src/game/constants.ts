@@ -129,6 +129,8 @@ export const ObjectEvents = {
   SheetConfirm: 'sheet-confirm',
   /** PurchaseSheet: [Todavia no] or a tap outside; CatSheet: a tap outside */
   SheetCancel: 'sheet-cancel',
+  /** ReplaceSheet: [Dejar el anterior] was pressed (the keychain on the hook stays) */
+  SheetKeep: 'sheet-keep',
   /** CheckoutSheet: [Llevar todo] was pressed but the wallet is short */
   SheetShort: 'sheet-short',
   /** CheckoutSheet: [Sacarme lo que no tengo] was pressed */

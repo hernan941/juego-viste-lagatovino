@@ -20,6 +20,7 @@ export class PackageCard extends Phaser.GameObjects.Container {
   private readonly picture: Phaser.GameObjects.Image;
   private readonly rest: Point;
   private moving: Phaser.Tweens.Tween | null = null;
+  private thumb: Phaser.GameObjects.Image | null = null;
   private gone = false;
 
   constructor(scene: Phaser.Scene, x: number, y: number, ops: readonly SheetOp[]) {
@@ -61,6 +62,28 @@ export class PackageCard extends Phaser.GameObjects.Container {
     return this.run({ y: this.rest.y, duration: RISE_MS, ease: p.ease('Back.easeOut') });
   }
 
+  /**
+   * The saved picture as a small print that drops tilted next to the card and flies "to the pocket" (a point of the screen), shrinking
+   * (F9's reveal). Nothing with reduced motion. Resolves when it is gone.
+   */
+  flyThumb(to: Point): Promise<void> {
+    const p = profileOf(this.scene);
+    if (p.reduced || this.gone) return Promise.resolve();
+    const { scene } = this;
+    const thumb = scene.add.image(this.rest.x, this.rest.y, this.key).setScale(0.3).setAngle(-9).setDepth(this.depth + 1).setAlpha(0);
+    this.thumb = thumb;
+    return new Promise((resolve) => {
+      const done = () => { thumb.destroy(); if (this.thumb === thumb) this.thumb = null; resolve(); };
+      scene.tweens.chain({
+        targets: thumb,
+        tweens: [
+          { alpha: 1, y: this.rest.y - 30, scale: 0.34, angle: 8, duration: 260, ease: 'Back.easeOut' },
+          { x: to.x, y: to.y, scale: 0.08, angle: 30, alpha: 0.2, duration: 460, delay: 120, ease: 'Sine.easeIn', onComplete: done },
+        ],
+      });
+    });
+  }
+
   /** Goes back down (or fades away with reduced motion) and asks to be destroyed by whoever holds it. */
   sink(): Promise<void> {
     const p = profileOf(this.scene);
@@ -93,7 +116,12 @@ export class PackageCard extends Phaser.GameObjects.Container {
     this.gone = true;
     this.stopMoving();
     const { scene } = this;
-    if (scene?.tweens) scene.tweens.killTweensOf(this);
+    if (scene?.tweens) {
+      scene.tweens.killTweensOf(this);
+      if (this.thumb) scene.tweens.killTweensOf(this.thumb);
+    }
+    this.thumb?.destroy();
+    this.thumb = null;
     if (scene?.textures?.exists(this.key)) scene.textures.remove(this.key);
     this.removeAllListeners();
     super.destroy(fromScene);
