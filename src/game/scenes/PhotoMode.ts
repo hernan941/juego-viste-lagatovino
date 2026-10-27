@@ -3,6 +3,9 @@ import { Fonts, GAME_HEIGHT, GAME_WIDTH, Ink, MEOW_KEYS, ObjectEvents, RegistryK
 import type { GameData } from '../data/schema';
 import { photoUnlocks, type PhotoUnlocks } from '../domain/album';
 import { photoLines } from '../domain/copy';
+import { catPose } from '../domain/catPose';
+import type { Expression } from '../domain/expressions';
+import { sheetOps, SHEET_LAYOUT, starRow, type SheetOp } from '../domain/photoSheet';
 import { isInsideDropZone } from '../domain/dropZone';
 import { getLayers } from '../domain/outfit';
 import { initialPieces, photoFileName, resolveLook, stickerLimit, type PhotoLook } from '../domain/photo';
@@ -10,7 +13,7 @@ import {
   PHOTO_SIZE, canPick, composition, pieceStates, placeSticker, removeSticker, stickerAngle, type PhotoComposition,
 } from '../domain/photoComposition';
 import { emptyProgress } from '../domain/progress';
-import type { AnchorsDef, PhotoPiece, PhotoPose, PlacedSticker, Point, Progress, Rect } from '../domain/types';
+import type { AnchorsDef, ItemDye, PhotoPiece, PhotoPose, PlacedSticker, Point, Progress, Rect } from '../domain/types';
 import type { E2EUi, UiState } from '../e2eHook';
 import { Button } from '../objects/Button';
 import { Cat } from '../objects/Cat';
@@ -20,12 +23,13 @@ import { Tabs, type TabDef } from '../objects/Tabs';
 import { Card } from '../objects/kit/Card';
 import { PaperBackground } from '../objects/kit/PaperBackground';
 import { SpeechBubble } from '../objects/kit/SpeechBubble';
-import { PHOTO_POSE, takePhoto } from '../objects/photo';
+import { composePhoto } from '../objects/photo';
 import { PhotoTray, type TrayKind } from '../objects/photomode/PhotoTray';
 import { Sticker } from '../objects/photomode/Sticker';
 import { tabIconKey } from '../objects/tabIcons';
 import { touchEnv } from '../objects/ui';
 import { getAudio } from '../plugins/AudioPlugin';
+import { getDye } from '../plugins/DyePlugin';
 import { savePhoto } from '../systems/download';
 import { go } from '../systems/navigate';
 import { profileOf } from '../systems/motion';
@@ -35,9 +39,7 @@ import { enterKind, transitionIn } from '../systems/transitions';
 
 /** The composition of the photo is the art of the pieces (540 x 675): its middle, and where the cat stands inside its window. */
 const SHEET = { x: GAME_WIDTH / 2, y: GAME_HEIGHT / 2 };
-const CAT = { feetY: 560, size: 430 };
-/** The name goes in the bottom margin of the frame (y 567 to 660 of its art, centered on the sheet). */
-const NAME_Y = SHEET.y + 276;
+const CAT = { feetY: SHEET.y + SHEET_LAYOUT.cat.feetY, size: SHEET_LAYOUT.cat.size };
 const POSE_PREFIX = 'pose-';
 /** The photo, in the coordinates of the screen. */
 const PHOTO_RECT: Rect = { x: SHEET.x - PHOTO_SIZE.width / 2, y: SHEET.y - PHOTO_SIZE.height / 2, width: PHOTO_SIZE.width, height: PHOTO_SIZE.height };
@@ -72,6 +74,7 @@ interface Held {
 export class PhotoMode extends Phaser.Scene implements E2EUi {
   private enter: ReturnType<typeof enterKind> = null;
   private look!: PhotoLook;
+  private itemDye: ItemDye = {};
   private catalog!: GameData;
   private anchors!: AnchorsDef;
   private unlocks!: PhotoUnlocks;
@@ -115,7 +118,9 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
 
   init(data?: unknown) {
     this.enter = enterKind(data as { transition?: unknown });
-    this.look = resolveLook(data, readSession(this.registry), this.registry.get(RegistryKeys.LastRating));
+    const session = readSession(this.registry);
+    this.look = resolveLook(data, session, this.registry.get(RegistryKeys.LastRating));
+    this.itemDye = { ...session.itemDye };
     this.ready = false;
     this.leaving = false;
     this.photoBusy = false;
@@ -149,10 +154,10 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     this.shown = { bg: this.pieceImage(this.catalog.photo.backgrounds, this.background), frame: this.pieceImage(this.catalog.photo.frames, this.frame) };
     if (this.shown.bg) this.bgLayer.add(this.shown.bg);
     if (this.shown.frame) this.frameLayer.add(this.shown.frame);
-    const name = this.add.text(0, NAME_Y - SHEET.y, this.look.catName, { fontFamily: Fonts.Voice, fontSize: '44px', color: Ink.tinta, padding: { x: 4, y: 8 } }).setOrigin(0.5);
-    this.sheet = this.add.container(SHEET.x, SHEET.y, [this.bgLayer, this.frameLayer, name]).setDepth(DEPTH.sheet);
+    this.sheet = this.add.container(SHEET.x, SHEET.y, [this.bgLayer, this.frameLayer, ...this.margin()]).setDepth(DEPTH.sheet);
     this.cat = new Cat(this, SHEET.x, CAT.feetY, def, this.anchors, CAT.size).setDepth(DEPTH.cat);
     this.cat.setOutfit(getLayers(this.look.outfit, this.catalog.clothes));
+    void this.dyeWorn();
     this.cat.appear();
     this.dropIn();
     this.buildTable();
@@ -177,6 +182,42 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
 
   update(_time: number, delta: number) {
     this.held?.sticker.follow(this.held.target, delta);
+  }
+
+  /** The dyes of the worn items (the session keeps them): the photo and the keychain show the colors the cat was dressed with. */
+  private async dyeWorn() {
+    const dyed = Object.entries(this.itemDye).filter(([itemId]) => this.cat.wornIds.includes(itemId));
+    if (dyed.length === 0) return;
+    const dye = getDye(this);
+    await Promise.all(dyed.map(async ([itemId, dyeId]) => {
+      try {
+        const key = await dye.ensure(itemId, dyeId);
+        if (this.scene.isActive()) this.cat.setItemTexture(itemId, key);
+      } catch {
+        // A dye that cannot be made leaves the plain item.
+      }
+    }));
+  }
+
+  /** What is written in the bottom margin of the frame, as the saved picture has it: the name, the stars and "Xoxo, mau!". */
+  private margin(): Phaser.GameObjects.GameObject[] {
+    const { name, stars, signature } = SHEET_LAYOUT;
+    const out: Phaser.GameObjects.GameObject[] = [];
+    const text = (value: string, x: number, y: number, size: number, maxWidth: number, angle = 0) => {
+      const t = this.add.text(x, y, value, { fontFamily: Fonts.Voice, fontSize: `${size}px`, color: Ink.tinta, padding: { x: 4, y: 8 } }).setOrigin(0.5).setAngle(angle);
+      if (t.width > maxWidth) t.setScale(maxWidth / t.width);
+      return t;
+    };
+    out.push(text(this.look.catName, name.x, name.y, name.fontSize, name.maxWidth));
+    if (this.look.rating) {
+      for (const slot of starRow(this.look.rating.stars)) {
+        const star = this.add.image(slot.x, stars.y, slot.filled ? stars.filled : stars.empty);
+        star.setScale(stars.size / star.height).setAlpha(slot.filled ? 1 : stars.emptyAlpha);
+        out.push(star);
+      }
+    }
+    out.push(text(photoLines.signature(this.catalog.brand), signature.x, signature.y, signature.fontSize, signature.maxWidth, signature.angle));
+    return out;
   }
 
   /** The art of the picked piece, 1:1 around the middle of the sheet; null when nothing is unlocked. */
@@ -282,7 +323,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
 
   /** The cat takes the pose that is chosen (with a little squash), and the dormilón gets its "zzz". */
   private strike() {
-    const key = (this.pose ?? '').slice(POSE_PREFIX.length);
+    const key = this.poseKey();
     this.cat.applyPose(key);
     this.cat.squash();
     this.showZzz(key === 'dormilon');
@@ -298,7 +339,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
       return;
     }
     if (old) return;
-    const zzz = this.add.image(SHEET.x + 100, CAT.feetY - 360, 'photo-sticker-zzz').setDisplaySize(84, 84).setDepth(DEPTH.placed).setAlpha(0);
+    const zzz = this.add.image(SHEET.x + SHEET_LAYOUT.zzz.x, SHEET.y + SHEET_LAYOUT.zzz.y, SHEET_LAYOUT.zzz.texture).setDisplaySize(SHEET_LAYOUT.zzz.size, SHEET_LAYOUT.zzz.size).setDepth(DEPTH.placed).setAlpha(0);
     this.zzz = zzz;
     this.tweens.add({ targets: zzz, alpha: 1, duration: 250 });
     if (p.loops) this.tweens.add({ targets: zzz, y: zzz.y - 12, angle: 6, duration: 1100, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
@@ -440,17 +481,33 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     this.tweens.add({ targets: this.sheet, alpha: 1, y, duration: 420, ease: p.ease('Back.easeOut') });
   }
 
-  /** [Guardar]: shutter, a soft flash, the cat poses (in love, at rest), the PNG is saved and a bubble says so. */
+  /** The picture that is saved: what is on the table (pieces, pose, stickers), the name, the stars and the signature of the brand. */
+  private sheetOps(): SheetOp[] {
+    return sheetOps({
+      photo: this.catalog.photo, composition: this.getComposition(), catName: this.look.catName,
+      stars: this.look.rating?.stars ?? null, signature: photoLines.signature(this.catalog.brand),
+    });
+  }
+
+  /** The face of the chosen pose: the picture shows the cat as the table does. */
+  private poseExpression(): Expression {
+    return catPose(this.poseKey())?.expression ?? 'normal';
+  }
+
+  private poseKey(): string {
+    return (this.pose ?? '').slice(POSE_PREFIX.length);
+  }
+
+  /** [Guardar]: shutter, a soft flash, the composition of the table is saved as a PNG and a bubble says so. The cat does not change. */
   private async snap() {
     if (this.photoBusy || this.leaving) return;
     this.photoBusy = true;
     getAudio(this).play(SfxKeys.Shutter);
-    this.cat.hold(PHOTO_POSE);
     this.flash();
     // Let the flash start before the (short) work of drawing the picture.
     await new Promise<void>((resolve) => this.time.delayedCall(140, resolve));
     if (!this.scene.isActive()) return;
-    const url = await takePhoto(this, this.cat, this.anchors, this.look.catName, PHOTO_POSE);
+    const url = await composePhoto(this, this.cat, this.sheetOps(), this.poseExpression());
     if (!this.scene.isActive()) return;
     const file = photoFileName(this.look.catName);
     // A computer downloads the PNG; a phone opens the share sheet (ADR 0014).

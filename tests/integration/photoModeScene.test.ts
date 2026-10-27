@@ -5,23 +5,24 @@ vi.mock('phaser', async () => (await import('./helpers/sceneFake')).phaserSceneM
 const h = vi.hoisted(() => ({
   go: vi.fn(),
   transitionIn: vi.fn(),
-  takePhoto: vi.fn(async () => 'data:image/png;base64,AAAA'),
+  composePhoto: vi.fn(async (...args: unknown[]) => (args.length >= 0 ? 'data:image/png;base64,AAAA' : '')),
   savePhoto: vi.fn(async () => 'downloaded'),
   buttons: [] as { label: string; emit(ev: string): void; destroyed: boolean }[],
-  cats: [] as { outfit: string[]; held: string[]; destroyed: boolean }[],
+  cats: [] as { outfit: string[]; held: string[]; textures: Record<string, string>; destroyed: boolean }[],
   bubbles: [] as { text: string; destroyed: boolean }[],
   trays: [] as { kinds: string[]; selected: Record<string, string | null>; emit(ev: string, ...a: unknown[]): void; destroyed: boolean }[],
   tabs: [] as { emit(ev: string, ...a: unknown[]): void; destroyed: boolean }[],
   stickers: [] as { id: string; at: { x: number; y: number }; emit(ev: string, ...a: unknown[]): void; calls: string[]; destroyed: boolean }[],
 }));
 
+vi.mock('../../src/game/plugins/DyePlugin', () => ({ getDye: () => ({ ensure: async (_i: string, d: string) => `dyed-${d}` }) }));
 vi.mock('../../src/game/systems/navigate', () => ({ go: (...a: unknown[]) => h.go(...a) }));
 vi.mock('../../src/game/systems/transitions', () => ({
   enterKind: (d: { transition?: string } | undefined) => d?.transition ?? null,
   transitionIn: (...a: unknown[]) => h.transitionIn(...a),
 }));
 vi.mock('../../src/game/systems/download', () => ({ savePhoto: (...a: unknown[]) => h.savePhoto(...(a as [])) }));
-vi.mock('../../src/game/objects/photo', () => ({ PHOTO_POSE: 'amor', takePhoto: (...a: unknown[]) => h.takePhoto(...(a as [])) }));
+vi.mock('../../src/game/objects/photo', () => ({ composePhoto: (...a: unknown[]) => h.composePhoto(...a) }));
 vi.mock('../../src/game/objects/ui', () => ({ touchEnv: () => ({ touch: false, scale: 1 }) }));
 vi.mock('../../src/game/plugins/AudioPlugin', () => ({ getAudio: (s: { plugins: { get(k: string): unknown } }) => s.plugins.get('audio') }));
 vi.mock('../../src/game/objects/Cat', () => ({
@@ -36,6 +37,8 @@ vi.mock('../../src/game/objects/Cat', () => ({
     applyPose(id: string) { this.poses.push(id); return true; }
     clearPose() { this.poses.push('none'); }
     squash() {}
+    textures: Record<string, string> = {};
+    setItemTexture(id: string, key: string) { this.textures[id] = key; }
     destroy() { this.destroyed = true; }
   },
 }));
@@ -143,7 +146,7 @@ const run = (scene: FakeScene) => { for (const d of [...scene.time.delayed]) d.f
 beforeEach(() => {
   vi.stubGlobal('document', { createElement: () => ({}), body: {} });
   vi.stubGlobal('navigator', {});
-  for (const m of [h.go, h.transitionIn, h.takePhoto, h.savePhoto]) m.mockClear();
+  for (const m of [h.go, h.transitionIn, h.composePhoto, h.savePhoto]) m.mockClear();
   for (const list of [h.buttons, h.cats, h.bubbles, h.trays, h.tabs, h.stickers]) list.length = 0;
 });
 
@@ -153,6 +156,20 @@ describe('PhotoMode scene (F18.2)', () => {
     expect(h.cats).toHaveLength(1);
     expect(h.cats[0]!.outfit).toEqual([sweater.id]);
     expect(h.transitionIn).toHaveBeenCalledWith(expect.anything(), 'flash', expect.anything());
+  });
+
+  it('puts the dyes of the worn items on the cat, as the session keeps them', async () => {
+    const scene = new PhotoMode() as unknown as Scene;
+    scene.registry.set(RegistryKeys.Catalog, catalog);
+    scene.registry.set(RegistryKeys.Anchors, anchors);
+    scene.registry.set(RegistryKeys.Progress, emptyProgress(0));
+    scene.registry.set('catId', catalog.cats[0]!.id);
+    scene.registry.set('catName', 'Luna');
+    scene.registry.set('outfit', { sweater: sweater.id });
+    scene.registry.set('itemDye', { [sweater.id]: 'rosa' });
+    scene.init();
+    scene.create();
+    await vi.waitFor(() => expect(h.cats[0]!.textures).toEqual({ [sweater.id]: 'dyed-rosa' }));
   });
 
   it('wears the look it was handed, not the session', () => {
@@ -180,13 +197,34 @@ describe('PhotoMode scene (F18.2)', () => {
     expect(h.bubbles.map((b) => b.text)).toEqual(['¡Foto lista!']);
   });
 
+  it('Guardar saves the composition of the table (pieces, stickers, name and stars), not the card of the Showcase', async () => {
+    const scene = open({ rating: { points: 90, stars: 4, breakdown: [] } });
+    button('Guardar').emit(ObjectEvents.ButtonClick);
+    run(scene);
+    await vi.waitFor(() => expect(h.composePhoto).toHaveBeenCalledTimes(1));
+    const [, , ops, expression] = h.composePhoto.mock.calls[0] as unknown as [unknown, unknown, { kind: string; text?: string; texture?: string }[], string];
+    expect(ops.map((o) => o.kind)).toContain('cat');
+    expect(ops.find((o) => o.kind === 'text')?.text).toBe('Luna');
+    expect(ops.filter((o) => o.texture === 'ui-stamp-sol')).toHaveLength(4);
+    expect(ops.some((o) => o.texture === catalog.photo.backgrounds[0]!.texture)).toBe(true);
+    expect(expression).toBe('normal');
+  });
+
+  it('the cat keeps the pose that was chosen: Guardar does not make it hold other eyes (it used to stay in love)', async () => {
+    const scene = open();
+    button('Guardar').emit(ObjectEvents.ButtonClick);
+    run(scene);
+    await vi.waitFor(() => expect(h.savePhoto).toHaveBeenCalledTimes(1));
+    expect(h.cats[0]!.held).toEqual([]);
+  });
+
   it('ignores a second Guardar while the first is going', async () => {
     const scene = open();
     button('Guardar').emit(ObjectEvents.ButtonClick);
     button('Guardar').emit(ObjectEvents.ButtonClick);
     run(scene);
     await vi.waitFor(() => expect(h.savePhoto).toHaveBeenCalledTimes(1));
-    expect(h.takePhoto).toHaveBeenCalledTimes(1);
+    expect(h.composePhoto).toHaveBeenCalledTimes(1);
   });
 
   it('Seguir vistiendo goes on dressing, once', () => {
