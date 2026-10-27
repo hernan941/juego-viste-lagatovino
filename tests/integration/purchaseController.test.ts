@@ -189,7 +189,7 @@ describe('PurchaseController (F13.5)', () => {
     expect(cellCut.options.y).toBeLessThan(200);
   });
 
-  it('after the cut: register sound, amor face, "¡Es mío!", hearts and the cell celebrates', () => {
+  it('after the cut: register sound, amor face, "Me lo quedo!", hearts and the cell celebrates', () => {
     const t = setup();
     t.press(priced);
     t.sheet().emit(ObjectEvents.SheetConfirm);
@@ -198,7 +198,7 @@ describe('PurchaseController (F13.5)', () => {
     expect(t.calls).toContain('face:amor');
     expect(t.calls.some((c) => c.startsWith('hearts:'))).toBe(true);
     expect(t.calls).toContain('celebrate');
-    expect(made.said).toContain('¡Es mío!');
+    expect(made.said).toContain('Me lo quedo!');
     expect(t.controller.e2eState().bought).toEqual([priced.id]);
   });
 
@@ -322,14 +322,14 @@ describe('PurchaseController (F13.5)', () => {
       expect((made.cuts[0] as { options: Record<string, unknown> }).options).toMatchObject({ x: 120, y: 330, scale: 0.4, price: 50 });
     });
 
-    it('after the cut: register, amor face, "¡Es mío!" and sparkles at the tag', () => {
+    it('after the cut: register, amor face, "Me lo quedo!" and sparkles at the tag', () => {
       const t = setup();
       t.pressDye(lila);
       t.sheet().emit(ObjectEvents.SheetConfirm);
       t.run();
       expect(t.sounds).toContain(SfxKeys.Register);
       expect(t.calls).toContain('face:amor');
-      expect(made.said).toContain('¡Es mío!');
+      expect(made.said).toContain('Me lo quedo!');
       expect(t.calls).not.toContain('celebrate');
     });
 

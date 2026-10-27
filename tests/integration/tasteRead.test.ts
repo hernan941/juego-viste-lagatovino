@@ -145,7 +145,7 @@ describe('the new cat reads the look (F14.5)', () => {
     t.arrive();
     t.run();
     expect(t.calls).toContain('face:amor');
-    expect(made.said).toEqual(['¡MI FAVORITO!']);
+    expect(made.said).toEqual(['MI FAVORITO!']);
   });
 
   it('a look the cat does not like ends with the puaj face (sayNo) and "mmm… no"', () => {

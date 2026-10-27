@@ -171,7 +171,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
       getAudio(this).playRandom(MEOW_KEYS);
       if (this.gifted.length > 0) {
         this.time.delayedCall(700, () => {
-          this.toast('¡Te guardé tu regalito!', 'sol');
+          this.toast('Regalito guardado!', 'sol');
           this.counter.setCount(won, catalog.combos.length, true);
         });
       }

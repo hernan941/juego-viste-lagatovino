@@ -148,7 +148,7 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
   private createBar() {
     new Card(this, BAR.x + BAR.width / 2, BAR.y + BAR.height / 2, { width: BAR.width, height: BAR.height });
     this.hint = this.add
-      .text(GAME_WIDTH / 2, BAR.y + BAR.height / 2, 'Elige al gatito que más te guste', { fontFamily: Fonts.Voice, fontSize: '40px', color: Ink.tinta, padding: { x: 2, y: 6 } })
+      .text(GAME_WIDTH / 2, BAR.y + BAR.height / 2, 'Elige al gatito que te tinca', { fontFamily: Fonts.Voice, fontSize: '40px', color: Ink.tinta, padding: { x: 2, y: 6 } })
       .setOrigin(0.5);
     if (profileOf(this).loops) this.tweens.add({ targets: this.hint, y: this.hint.y - 6, duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
 
@@ -159,7 +159,7 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
     this.caret = this.add.rectangle(INPUT.x - INPUT.width / 2 + 26, INPUT.y, 4, 44, ink('tinta')).setOrigin(0, 0.5);
     this.tweens.add({ targets: this.caret, alpha: { from: 1, to: 0 }, duration: 480, yoyo: true, repeat: -1 });
     this.counter = this.add.text(INPUT.x + INPUT.width / 2 - 16, INPUT.y, '', { fontFamily: Fonts.Voice, fontSize: '22px', color: Ink.mutedTexto, padding: { x: 2, y: 4 } }).setOrigin(1, 0.5);
-    this.warning = this.add.text(INPUT.x, INPUT.y + 52, '¡Ponle un nombre!', { fontFamily: Fonts.Voice, fontSize: '26px', color: Ink.frambuesa, fontStyle: '700', padding: { x: 2, y: 6 } }).setOrigin(0.5).setAlpha(0);
+    this.warning = this.add.text(INPUT.x, INPUT.y + 52, 'Ponle un nombre!', { fontFamily: Fonts.Voice, fontSize: '26px', color: Ink.frambuesa, fontStyle: '700', padding: { x: 2, y: 6 } }).setOrigin(0.5).setAlpha(0);
     this.choose = new Button(this, 945, INPUT.y, '¡Este!', { width: 250, height: 92, fontSize: 46, pill: 'primary' });
     this.choose.on(ObjectEvents.ButtonClick, () => this.confirm());
 

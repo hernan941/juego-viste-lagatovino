@@ -64,7 +64,7 @@ export class GiftBox extends Phaser.GameObjects.Container {
     // The instruction: a cream pill with a pink border, above the bow and inside the mirror (it used to sit over the gold frame),
     // and a dotted arrow that rises away from the bow, to show which way to pull.
     const label = scene.add
-      .text(0, -3, '¡Arrastra el moño!', { fontFamily: FONT_FAMILY, fontSize: '22px', color: Palette.texto, fontStyle: '600', padding: { x: 4, y: 6 } })
+      .text(0, -3, 'Arrastra el lazo!', { fontFamily: FONT_FAMILY, fontSize: '22px', color: Palette.texto, fontStyle: '600', padding: { x: 4, y: 6 } })
       .setOrigin(0.5);
     const pillW = label.width + 40;
     const pill = scene.add.graphics();

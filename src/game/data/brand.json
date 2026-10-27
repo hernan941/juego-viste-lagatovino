@@ -2,7 +2,7 @@
   "judge": { "name": "El gato supervisor", "texture": "char-judge" },
   "seller": { "name": "La vendedora", "texture": "char-seller" },
   "shopSign": "Lagatovino · hecho a mano",
-  "packagingLine": "Hecho a mano con cariño",
+  "packagingLine": "Hecho a mano con amor",
   "reverseLine": "Hecho a mano · {date}",
   "signature": "Xoxo, mau!"
 }

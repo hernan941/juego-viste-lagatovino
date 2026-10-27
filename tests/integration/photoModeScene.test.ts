@@ -239,7 +239,7 @@ describe('PhotoMode scene (F18.2)', () => {
     expect(h.savePhoto.mock.calls[0]).toEqual([expect.objectContaining({ touch: false }), 'data:image/png;base64,AAAA', photoFileName('Luna')]);
     await vi.waitFor(() => expect(scene.getE2EUi().info.photos).toBe(1));
     expect(scene.getE2EUi().info).toMatchObject({ photoBusy: false, lastPhoto: photoFileName('Luna') });
-    expect(h.bubbles.map((b) => b.text)).toEqual(['¡Foto lista!']);
+    expect(h.bubbles.map((b) => b.text)).toEqual(['Foto lista!']);
   });
 
   it('the plain photo is the composition of the table (pieces, stickers, name and stars), not the card of the Showcase', async () => {
@@ -366,7 +366,7 @@ describe('PhotoMode trays (F18.3)', () => {
   it('the tray also reports a locked press, with the same answer', () => {
     ready();
     tray().emit(ObjectEvents.TrayLocked, 'backgrounds', 'bg-rayado');
-    expect(h.bubbles.at(-1)!.text).toBe('Llena el 50 % del álbum');
+    expect(h.bubbles.at(-1)!.text).toBe('Llena el 50 % del cuaderno');
   });
 
   it('a pose is applied to the cat by id without the prefix', () => {
@@ -442,7 +442,7 @@ describe('PhotoMode stickers (F18.4)', () => {
     for (let i = 0; i < 9; i++) drag(scene, 'sticker-estrella', { x: 560 + i * 10, y: 300 });
     expect(scene.getComposition().stickers).toHaveLength(8);
     expect(h.stickers[8]!.calls).toContain('poof');
-    expect(h.bubbles.at(-1)!.text).toBe('¡Ya no caben más stickers!');
+    expect(h.bubbles.at(-1)!.text).toBe('Foto llena de stickers!');
   });
 
   it('a placed sticker is removed when it is dragged to the jar', () => {
@@ -605,7 +605,7 @@ describe('PhotoMode: Guardar turns the cat into a keychain (F19.3)', () => {
     expect(h.composePhoto).not.toHaveBeenCalled();
     await vi.waitFor(() => expect(phaseOf(scene)).toBe('ready'));
     expect(info(scene)).toMatchObject({ photos: 1, lastPhoto: photoFileName('Luna') });
-    expect(h.bubbles.map((b) => b.text)).toEqual(['¡Luna ya es llavero! Quedó precioso']);
+    expect(h.bubbles.map((b) => b.text)).toEqual(['Luna ya es llavero! Se ve precioso']);
     expect(card.tappable).toBe(true);
   });
 

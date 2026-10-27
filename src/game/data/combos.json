@@ -1,8 +1,8 @@
 [
   {
     "id": "galactico",
-    "hint": "Algo galáctico…",
-    "name": "¡Gatito galáctico!",
+    "hint": "Algo de otra galaxia…",
+    "name": "Gatito estelar!",
     "requires": [
       {
         "itemId": "sweater-cohete"
@@ -17,7 +17,7 @@
   {
     "id": "navidad",
     "hint": "Huele a chocolate caliente…",
-    "name": "¡Look Navidad!",
+    "name": "Look Navidad!",
     "requires": [
       {
         "itemId": "sweater-navideno"
@@ -35,8 +35,8 @@
   },
   {
     "id": "fresas",
-    "hint": "Un jardín de fresas y flores…",
-    "name": "¡Jardín de fresas!",
+    "hint": "Fresas y flores por todos lados…",
+    "name": "Fresas en flor!",
     "requires": [
       {
         "slot": "sweater",
@@ -55,7 +55,7 @@
   {
     "id": "realeza",
     "hint": "Digno de una majestad…",
-    "name": "¡Su Majestad Gatuna!",
+    "name": "Su Majestad Gatuna!",
     "requires": [
       {
         "slot": "head",
@@ -75,8 +75,8 @@
   },
   {
     "id": "enamorado",
-    "hint": "Un look de corazón…",
-    "name": "¡Gatito enamorado!",
+    "hint": "Un look lleno de amor…",
+    "name": "Gatito enamorado!",
     "requires": [
       {
         "slot": "sweater",
@@ -96,8 +96,8 @@
   },
   {
     "id": "arcoiris",
-    "hint": "Colores después de la lluvia…",
-    "name": "¡Arcoíris calentito!",
+    "hint": "Colores tras la lluvia…",
+    "name": "Cielo de colores calentito!",
     "requires": [
       {
         "slot": "sweater",

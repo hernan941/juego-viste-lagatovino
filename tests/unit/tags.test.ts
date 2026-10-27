@@ -44,7 +44,7 @@ describe('validateTags', () => {
 
 describe('tag copy helpers', () => {
   it('give the readable form and fall back to the id', () => {
-    expect(tagLabel(names, 'clasico')).toBe('clásico');
+    expect(tagLabel(names, 'clasico')).toBe('de siempre');
     expect(tagLove(names, 'invierno')).toBe('el invierno');
     expect(tagStyle(names, 'gala')).toBe('Todo de gala');
     expect(tagLabel(undefined, 'raro')).toBe('raro');

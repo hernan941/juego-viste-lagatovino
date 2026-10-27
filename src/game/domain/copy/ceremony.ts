@@ -16,7 +16,7 @@ export function ratingLineText(line: BreakdownLine, comboName: (id: string) => s
     case 'style': return ref ? tagStyle(tags, ref) : 'Prendas que combinan';
     case 'love': return ref ? `Le encanta ${tagLove(tags, ref)}` : 'Lo que le encanta';
     case 'dislike': return ref ? `No le tinca ${tagLove(tags, ref)}` : 'Algo que no le tinca';
-    case 'favoriteItem': return '¡Su prenda favorita!';
+    case 'favoriteItem': return 'Su prenda favorita!';
     case 'complete': return 'Look completo';
     case 'combo': return ref ? `Combo ${comboName(ref)}` : 'Combo';
     case 'favoriteDye': return 'Su color favorito';
@@ -47,19 +47,19 @@ const tagOf = (taste: string): string => taste.slice(taste.indexOf(':') + 1);
 export function eventNote(event: Exclude<ProgressEvent, { type: 'coins' }>, tags?: TagNames): EventNote {
   switch (event.type) {
     case 'milestone':
-      return { icon: '★', title: `¡Primeras ${event.stars} estrellas!`, reward: `+${event.amount}` };
+      return { icon: '★', title: `Primeras ${event.stars} estrellas!`, reward: `+${event.amount}` };
     case 'tasteFound': {
       const reward = `+${event.amount}`;
-      if (event.taste === 'favorite') return { icon: '♥', title: '¡Su prenda favorita!', reward };
-      if (event.taste === 'color') return { icon: '✦', title: '¡Su color favorito!', reward };
+      if (event.taste === 'favorite') return { icon: '♥', title: 'Su prenda favorita!', reward };
+      if (event.taste === 'color') return { icon: '✦', title: 'Su color favorito!', reward };
       if (event.taste.startsWith('dislike:')) return { icon: '?', title: `No le tinca ${tagLove(tags, tagOf(event.taste))}`, reward };
       return { icon: '♥', title: `Le encanta ${tagLove(tags, tagOf(event.taste))}`, reward };
     }
     case 'comboFirst':
-      return { icon: '✦', title: '¡Primer combo!', reward: `+${event.amount}` };
+      return { icon: '✦', title: 'Primer combo!', reward: `+${event.amount}` };
     case 'setCompleted':
-      return { icon: '✦', title: '¡Set completo!' };
+      return { icon: '✦', title: 'Set completo!' };
     case 'unlock':
-      return { icon: '✿', title: event.ids.length > 1 ? '¡Novedades para el modo foto!' : '¡Novedad para el modo foto!' };
+      return { icon: '✿', title: event.ids.length > 1 ? 'Novedades para el modo foto!' : 'Novedad para el modo foto!' };
   }
 }

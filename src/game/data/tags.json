@@ -12,7 +12,7 @@
   "navidad": {
     "label": "Navidad",
     "love": "la Navidad",
-    "style": "Todo muy navideño"
+    "style": "Todo muy de Navidad"
   },
   "invierno": {
     "label": "invierno",
@@ -35,9 +35,9 @@
     "style": "Todo muy tierno"
   },
   "clasico": {
-    "label": "clásico",
-    "love": "lo clásico",
-    "style": "Todo muy clásico"
+    "label": "de siempre",
+    "love": "lo de siempre",
+    "style": "Todo muy de siempre"
   },
   "deportivo": {
     "label": "deportivo",
@@ -50,9 +50,9 @@
     "style": "Todo muy gatuno"
   },
   "arcoiris": {
-    "label": "arcoíris",
-    "love": "el arcoíris",
-    "style": "Todo arcoíris"
+    "label": "colores",
+    "love": "los colores",
+    "style": "Todo de colores"
   },
   "mar": {
     "label": "mar",
@@ -75,9 +75,9 @@
     "style": "Todo con huellitas"
   },
   "comodo": {
-    "label": "cómodo",
-    "love": "lo cómodo",
-    "style": "Todo muy cómodo"
+    "label": "calentito",
+    "love": "lo calentito",
+    "style": "Todo muy calentito"
   },
   "frutal": {
     "label": "frutal",
@@ -150,7 +150,7 @@
     "style": "Todo listo pa' la fiesta"
   },
   "heroe": {
-    "label": "héroe",
+    "label": "heroico",
     "love": "lo heroico",
     "style": "Todo muy heroico"
   },
@@ -162,6 +162,6 @@
   "magia": {
     "label": "magia",
     "love": "la magia",
-    "style": "Todo mágico"
+    "style": "Todo con magia"
   }
 }

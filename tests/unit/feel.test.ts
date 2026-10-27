@@ -67,17 +67,17 @@ describe('staggerDelays', () => {
 
 describe('showcaseTitle (the plaque reads the look)', () => {
   it('praises a normal look', () => {
-    for (const n of [1, 2, 3, 4]) expect(showcaseTitle('Luna', n)).toBe('¡Qué lindo look, Luna!');
-    expect(showcaseTitle('Luna')).toBe('¡Qué lindo look, Luna!');
+    for (const n of [1, 2, 3, 4]) expect(showcaseTitle('Luna', n)).toBe('Lindo look, Luna!');
+    expect(showcaseTitle('Luna')).toBe('Lindo look, Luna!');
   });
 
   it('celebrates a cat with nothing on, as it is', () => {
-    expect(showcaseTitle('Luna', 0)).toBe('¡Al natural, Luna!');
+    expect(showcaseTitle('Luna', 0)).toBe('Al natural, Luna!');
   });
 
   it('celebrates a very dressed cat (5 or 6 pieces)', () => {
-    expect(showcaseTitle('Luna', 5)).toBe('¡Qué look tan completo, Luna!');
-    expect(showcaseTitle('Luna', 6)).toBe('¡Qué look tan completo, Luna!');
+    expect(showcaseTitle('Luna', 5)).toBe('Look completo, Luna!');
+    expect(showcaseTitle('Luna', 6)).toBe('Look completo, Luna!');
   });
 });
 

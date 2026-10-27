@@ -16,7 +16,7 @@ describe('formatPoints', () => {
 
 describe('ratingLineText (F15.3)', () => {
   it('says each kind of line in Spanish and names the tag', () => {
-    expect(ratingLineText({ kind: 'style', points: 2, ref: 'clasico' }, undefined, names)).toBe('Todo muy clásico');
+    expect(ratingLineText({ kind: 'style', points: 2, ref: 'clasico' }, undefined, names)).toBe('Todo muy de siempre');
     expect(ratingLineText({ kind: 'love', points: 2, ref: 'invierno' }, undefined, names)).toBe('Le encanta el invierno');
     expect(ratingLineText({ kind: 'dislike', points: -3, ref: 'gala' }, undefined, names)).toBe('No le tinca la ropa de gala');
     expect(ratingLineText({ kind: 'style', points: 2, ref: 'lana' }, undefined, names)).toBe('Todo de lana');

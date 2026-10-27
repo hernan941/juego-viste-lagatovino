@@ -7,7 +7,7 @@ export function splitShopSign(sign: string): { name: string; tagline: string } {
 
 /** The plaque of the Showcase: it reads the look (nothing on, or a very dressed cat, have their own line). */
 export function showcaseTitle(name: string, wornCount?: number): string {
-  if (wornCount === 0) return `¡Al natural, ${name}!`;
-  if (wornCount !== undefined && wornCount >= 5) return `¡Qué look tan completo, ${name}!`;
-  return `¡Qué lindo look, ${name}!`;
+  if (wornCount === 0) return `Al natural, ${name}!`;
+  if (wornCount !== undefined && wornCount >= 5) return `Look completo, ${name}!`;
+  return `Lindo look, ${name}!`;
 }

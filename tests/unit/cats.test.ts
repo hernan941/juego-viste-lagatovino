@@ -5,8 +5,8 @@ import { validateCats } from '../../src/game/data/schema';
 // F3: the 12 common cats of docs/art-direction.md §2 (ids and provisional names).
 const CAST: [string, string][] = [
   ['naranja', 'Naranjito'], ['negro', 'Luna'], ['calico', 'Tricolor'],
-  ['gris', 'Grisú'], ['blanco', 'Nieve'], ['esmoquin', 'Michi'], ['carey', 'Carey'],
-  ['siames', 'Siamés'], ['marron', 'Canela'], ['crema', 'Vainilla'], ['azul', 'Humo'],
+  ['gris', 'Ceniza'], ['blanco', 'Nieve'], ['esmoquin', 'Michi'], ['carey', 'Carey'],
+  ['siames', 'Siam'], ['marron', 'Canela'], ['crema', 'Vainilla'], ['azul', 'Humo'],
   ['naranja-blanco', 'Mandarina'],
 ];
 

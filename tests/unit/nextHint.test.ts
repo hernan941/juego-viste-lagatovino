@@ -55,13 +55,13 @@ describe('the judge says the hint (A4)', () => {
   const judge = judgeLines({ name: 'Kofi' });
   const tags = { estrellas: { label: 'estrellas', love: 'las estrellas', style: 'Todo con estrellas' } };
   it('names the taste when there is one', () => {
-    expect(judge.hint('Mau', { missing: 2, love: 'estrellas' }, tags)).toBe('Te faltaron 2 puntitos… ¿y si pruebas con las estrellas?');
+    expect(judge.hint('Mau', { missing: 2, love: 'estrellas' }, tags)).toBe('Te faltaron 2 puntitos… prueba con las estrellas!');
   });
   it('asks what the cat loves when no taste is known', () => {
-    expect(judge.hint('Mau', { missing: 2 })).toBe('Te faltaron 2 puntitos… ¿qué le encantará a Mau?');
+    expect(judge.hint('Mau', { missing: 2 })).toBe('Te faltaron 2 puntitos… a Mau le gusta algo especial!');
   });
   it('says "puntito" for one', () => {
-    expect(judge.hint('Mau', { missing: 1 })).toBe('Te faltó 1 puntito… ¿qué le encantará a Mau?');
+    expect(judge.hint('Mau', { missing: 1 })).toBe('Te falta 1 puntito… a Mau le gusta algo especial!');
   });
   it('is added after the verdict of 3 and 4 stars, but a repeated look keeps only its own line', () => {
     const hint = { missing: 2, love: 'estrellas' };
