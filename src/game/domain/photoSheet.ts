@@ -1,8 +1,8 @@
 // Pure TS, no Phaser (ADR 0010). What the saved picture of the photo mode draws (F18.5) as a list of operations in the coordinates of
 // the sheet (its middle is 0, 0, the art is 540 x 675). The scene only runs the list into a RenderTexture, so the order, the places and
 // what is skipped are tested here. The packaging of the keychain (F19.3) draws the same sheet, without the cat, inside its window.
-import { PHOTO_SIZE, STICKER_SIZE, type PhotoComposition } from './photoComposition';
-import type { PhotoPiece } from './types';
+import { PHOTO_SIZE, STICKER_SIZE, backgroundCrop, type PhotoComposition } from './photoComposition';
+import type { PhotoPiece, Rect } from './types';
 
 /** Where things go on the sheet, in px of the sheet from its middle. The table (PhotoMode) and the saved picture share these. */
 export const SHEET_LAYOUT = {
@@ -22,7 +22,9 @@ export const SLEEPY_POSE = 'pose-dormilon';
 export const STAR_COUNT = 5;
 
 export type SheetOp =
-  | { kind: 'image'; texture: string; x: number; y: number; width?: number; height?: number; scale?: number; angle?: number; alpha?: number }
+  | { kind: 'image'; texture: string; x: number; y: number; width?: number; height?: number; scale?: number; angle?: number; alpha?: number;
+      /** Only this part of the art (texture px from its top left) is drawn. */
+      crop?: Rect }
   | { kind: 'text'; text: string; x: number; y: number; fontSize: number; maxWidth: number; angle?: number }
   | { kind: 'cat'; x: number; y: number; size: number }
   /** The keychain of the packaging, hanging from (x, y) at `scale` (the scene knows its texture and hardware). */
@@ -52,11 +54,11 @@ export interface SheetInput {
 type PieceList = readonly Pick<PhotoPiece, 'id' | 'texture'>[];
 const pieceOf = (list: PieceList, id: string | null) => list.find((p) => p.id === id);
 
-/** The background and the frame of the sheet (the art goes 1:1 around the middle). */
+/** The background (cut to the window of the frame, F1) and the frame of the sheet (the art goes 1:1 around the middle). */
 export function paperOps({ photo, composition }: Pick<SheetInput, 'photo' | 'composition'>): SheetOp[] {
   const ops: SheetOp[] = [];
   const bg = pieceOf(photo.backgrounds, composition.background);
-  if (bg) ops.push({ kind: 'image', texture: bg.texture, x: 0, y: 0 });
+  if (bg) ops.push({ kind: 'image', texture: bg.texture, x: 0, y: 0, crop: backgroundCrop(composition.frame) });
   const frame = pieceOf(photo.frames, composition.frame);
   if (frame) ops.push({ kind: 'image', texture: frame.texture, x: 0, y: 0 });
   return ops;

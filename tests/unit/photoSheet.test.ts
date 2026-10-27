@@ -38,6 +38,13 @@ describe('sheetOps', () => {
     expect(list[list.length - 1]).toBe('text:Xoxo, mau!');
   });
 
+  it('cuts the background to the window of the frame, so its square corners never show past the rounded frame (F1)', () => {
+    const bg = sheetOps(input({ composition: { ...base, frame: 'frame-polaroid' } }))[0];
+    expect(bg).toMatchObject({ kind: 'image', texture: 'tex-bg-b', crop: { x: 36, y: 36, width: 468, height: 531 } });
+    // The frame is whole: it is not cut.
+    expect(sheetOps(input())[1]).not.toHaveProperty('crop');
+  });
+
   it('puts the cat where the table puts it and the art of the sheet 1:1 around the middle', () => {
     const ops = sheetOps(input());
     const cat = ops.find((o) => o.kind === 'cat');

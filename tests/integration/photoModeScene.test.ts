@@ -167,6 +167,7 @@ vi.mock('../../src/game/objects/kit/SpeechBubble', async () => ({
 
 import { PhotoMode } from '../../src/game/scenes/PhotoMode';
 import { ObjectEvents, RegistryKeys } from '../../src/game/constants';
+import { backgroundCrop } from '../../src/game/domain/photoComposition';
 import { emptyProgress } from '../../src/game/domain/progress';
 import { photoFileName } from '../../src/game/domain/photo';
 import { assertGameData } from '../../src/game/data/schema';
@@ -365,6 +366,21 @@ describe('PhotoMode trays (F18.3)', () => {
     const scene = ready();
     tray().emit(ObjectEvents.TrayPick, 'frames', 'frame-polaroid');
     expect(scene.getComposition().frame).toBe('frame-polaroid');
+  });
+
+  it('cuts every background to the window of the frame, also after the background or the frame changes (F1)', () => {
+    const scene = ready();
+    const crops = (texture: string) => (scene.made as unknown as { args: unknown[]; crop?: unknown; destroyed: boolean }[])
+      .filter((o) => o.args[2] === texture && !o.destroyed).map((o) => o.crop);
+    expect(crops('photo-bg-cuadriculado')).toEqual([backgroundCrop('frame-polaroid')]);
+    tray().emit(ObjectEvents.TrayPick, 'backgrounds', 'bg-cielo');
+    expect(crops('photo-bg-cielo')).toEqual([backgroundCrop('frame-polaroid')]);
+    // A frame with another window re-cuts the background that is already there.
+    const frame = catalog.photo.frames.find((f) => f.unlock === 'starter' && f.id !== 'frame-polaroid');
+    if (frame) {
+      tray().emit(ObjectEvents.TrayPick, 'frames', frame.id);
+      expect(crops('photo-bg-cielo')).toEqual([backgroundCrop(frame.id)]);
+    }
   });
 
   it('a locked frame is not chosen', () => {

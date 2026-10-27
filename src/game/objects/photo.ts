@@ -135,6 +135,7 @@ export function drawSheetOps(
       temp.push(img);
       const k = (op.height !== undefined ? op.height / img.height : op.width !== undefined ? op.width / img.width : (op.scale ?? 1)) * at.scale;
       img.setScale(k).setAngle(op.angle ?? 0).setAlpha(op.alpha ?? 1);
+      if (op.crop) img.setCrop(op.crop.x, op.crop.y, op.crop.width, op.crop.height);
       rt.draw(img);
     } else if (op.kind === 'text') {
       const text = scene.make.text({

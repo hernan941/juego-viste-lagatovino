@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  PHOTO_SIZE, STICKER_ANGLE_MAX, STICKER_HALF, canPick, composition, photoArea, pieceStates, placeSticker, removeSticker, stickerAngle,
+  FRAME_WINDOWS, PHOTO_SIZE, STICKER_ANGLE_MAX, STICKER_HALF, backgroundCrop, canPick, composition, frameWindow, photoArea, pieceStates,
+  placeSticker, removeSticker, stickerAngle,
 } from '../../src/game/domain/photoComposition';
+import photoJson from '../../src/game/data/photo.json';
 import { photoLines } from '../../src/game/domain/copy/photo';
 import { STICKER_LIMIT } from '../../src/game/domain/photo';
 
@@ -102,5 +104,35 @@ describe('unlockHint', () => {
   });
   it('has a line for the full sheet', () => {
     expect(photoLines.full.length).toBeGreaterThan(0);
+  });
+});
+
+describe('frameWindow (F1: the background is cut to the window of the frame)', () => {
+
+  it('has a window for every frame of the catalog, inside the sheet and big enough for the cat', () => {
+    for (const f of photoJson.frames) {
+      expect(FRAME_WINDOWS[f.id], f.id).toBeDefined();
+      const w = frameWindow(f.id);
+      expect(w.x).toBeGreaterThanOrEqual(-PHOTO_SIZE.width / 2);
+      expect(w.y).toBeGreaterThanOrEqual(-PHOTO_SIZE.height / 2);
+      expect(w.x + w.width).toBeLessThanOrEqual(PHOTO_SIZE.width / 2);
+      expect(w.y + w.height).toBeLessThanOrEqual(PHOTO_SIZE.height / 2);
+      expect(w.width).toBeGreaterThan(PHOTO_SIZE.width * 0.7);
+      expect(w.height).toBeGreaterThan(PHOTO_SIZE.height * 0.7);
+    }
+  });
+
+  it('reads the polaroid window from its art: (36, 36) to (504, 567) in the 540 x 675 sheet', () => {
+    expect(frameWindow('frame-polaroid')).toEqual({ x: 36 - 270, y: 36 - 337.5, width: 468, height: 531 });
+  });
+
+  it('falls back to a safe window for a frame that is unknown or missing', () => {
+    expect(frameWindow(null)).toEqual(frameWindow('nope'));
+    expect(frameWindow('nope').width).toBeGreaterThan(0);
+  });
+
+  it('the crop of the background in texture px is the window moved by half the sheet', () => {
+    const w = frameWindow('frame-cuaderno');
+    expect(backgroundCrop('frame-cuaderno')).toEqual({ x: w.x + 270, y: w.y + 337.5, width: w.width, height: w.height });
   });
 });

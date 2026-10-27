@@ -55,6 +55,32 @@ export function canPick(id: string, list: readonly { id: string }[], open: Reado
   return open.has(id) && list.some((p) => p.id === id);
 }
 
+/**
+ * The transparent window of each frame in the 540 x 675 art, as [left, top, right, bottom] (taken from the art in art/photo/frames).
+ * The background is cut to it (F1): its square corners would otherwise show past the rounded outline of the frame.
+ */
+export const FRAME_WINDOWS: Readonly<Record<string, readonly [number, number, number, number]>> = {
+  'frame-polaroid': [36, 36, 504, 567],
+  'frame-cuaderno': [74, 40, 504, 590],
+  'frame-dorado': [44, 44, 496, 631],
+  'frame-acuarela': [44, 44, 496, 631],
+  'frame-kofi': [40, 40, 500, 524],
+};
+/** The window of a frame that is unknown, or when there is none (a safe one, inside the thinnest border). */
+const DEFAULT_WINDOW = [44, 44, 496, 631] as const;
+
+/** The window of a frame in the coordinates of the sheet (its middle is 0, 0). */
+export function frameWindow(frameId: string | null): Rect {
+  const [l, t, r, b] = (frameId !== null && FRAME_WINDOWS[frameId]) || DEFAULT_WINDOW;
+  return { x: l - PHOTO_SIZE.width / 2, y: t - PHOTO_SIZE.height / 2, width: r - l, height: b - t };
+}
+
+/** The crop of the background art in texture px: the window of the frame, from the top left of the art. */
+export function backgroundCrop(frameId: string | null): Rect {
+  const w = frameWindow(frameId);
+  return { x: w.x + PHOTO_SIZE.width / 2, y: w.y + PHOTO_SIZE.height / 2, width: w.width, height: w.height };
+}
+
 /** A copy of the table as it is now (nothing shared with the live state). */
 export function composition(state: PhotoComposition): PhotoComposition {
   return { background: state.background, frame: state.frame, pose: state.pose, stickers: state.stickers.map((s) => ({ ...s })) };

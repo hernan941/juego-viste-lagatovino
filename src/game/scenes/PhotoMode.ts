@@ -12,7 +12,7 @@ import { isInsideDropZone } from '../domain/dropZone';
 import { getLayers } from '../domain/outfit';
 import { initialPieces, photoFileName, resolveLook, stickerLimit, type PhotoLook } from '../domain/photo';
 import {
-  PHOTO_SIZE, canPick, composition, pieceStates, placeSticker, removeSticker, stickerAngle, type PhotoComposition,
+  PHOTO_SIZE, backgroundCrop, canPick, composition, pieceStates, placeSticker, removeSticker, stickerAngle, type PhotoComposition,
 } from '../domain/photoComposition';
 import { hangArgs } from '../domain/flow';
 import { emptyProgress } from '../domain/progress';
@@ -256,7 +256,11 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
   /** The art of the picked piece, 1:1 around the middle of the sheet; null when nothing is unlocked. */
   private pieceImage(list: readonly { id: string; texture: string }[], id: string | null): Phaser.GameObjects.Image | null {
     const piece = list.find((p) => p.id === id);
-    return piece ? this.add.image(0, 0, piece.texture) : null;
+    if (!piece) return null;
+    const image = this.add.image(0, 0, piece.texture);
+    // A background is cut to the window of the frame, so its square corners never show past the rounded frame (F1).
+    if (list === this.catalog.photo.backgrounds) image.setCrop(backgroundCrop(this.frame) as Phaser.Geom.Rectangle); // Phaser only reads x, y, width and height
+    return image;
   }
 
   /** The panel on the left (tabs and tray) and the jar on the right, with the count of stickers under it. */
@@ -314,6 +318,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
       audio.play(SfxKeys.Paper);
     } else if (kind === 'frames') {
       this.frame = id;
+      this.shown.bg?.setCrop(backgroundCrop(id) as Phaser.Geom.Rectangle);
       this.swapPiece('frame', this.catalog.photo.frames, id);
       audio.play(SfxKeys.Paper);
     } else {
