@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
-import { FONT_FAMILY, ObjectEvents, Palette, SfxKeys } from '../constants';
+import { Fonts, Ink, ObjectEvents, SfxKeys, colorToNumber } from '../constants';
 import { getAudio } from '../plugins/AudioPlugin';
 import { profileOf } from '../systems/motion';
-import { hex, kitHitRect } from './ui';
+import { kitHitRect } from './ui';
 
 const SHOW_MS = 2000;
 
@@ -26,7 +26,7 @@ export class NameSign extends Phaser.GameObjects.Container {
     super(scene, x, y);
     this.baseText = catName;
     this.label = scene.add
-      .text(0, 11, catName, { fontFamily: FONT_FAMILY, fontSize: '34px', color: Palette.texto, fontStyle: '600' })
+      .text(0, 11, catName, { fontFamily: Fonts.Title, fontSize: '36px', color: Ink.tinta, padding: { x: 4, y: 8 } })
       .setOrigin(0.5);
     this.art = scene.add.graphics();
     this.add([this.art, this.label]);
@@ -86,11 +86,13 @@ export class NameSign extends Phaser.GameObjects.Container {
     const width = Math.max(190, this.label.width + 70);
     const g = this.art;
     g.clear();
-    g.lineStyle(4, hex('contorno'), 1).beginPath().moveTo(-width / 2 + 34, -34).lineTo(-width / 2 + 34, -12).moveTo(width / 2 - 34, -34).lineTo(width / 2 - 34, -12).strokePath();
-    g.fillStyle(hex('rosa600'), 0.18).fillRoundedRect(-width / 2 + 3, -16 + 7, width, 54, 27);
-    g.fillStyle(hex('mantequilla'), 1).fillRoundedRect(-width / 2, -16, width, 54, 27);
-    g.lineStyle(4, 0xf5d86a, 1).strokeRoundedRect(-width / 2, -16, width, 54, 27);
-    g.fillStyle(0xffffff, 0.6).fillRoundedRect(-width / 2 + 20, -10, 50, 6, 3);
+    // Two strings of ink, a paper tag with a flat shadow and a washi strip on its top edge (it hangs from the page).
+    g.lineStyle(3, colorToNumber(Ink.tinta), 1).beginPath().moveTo(-width / 2 + 40, -40).lineTo(-width / 2 + 40, -12).moveTo(width / 2 - 40, -40).lineTo(width / 2 - 40, -12).strokePath();
+    g.fillStyle(colorToNumber(Ink.sombraTarjeta), 1).fillRoundedRect(-width / 2 + 4, -16 + 4, width, 54, 18);
+    g.fillStyle(colorToNumber(Ink.tarjeta), 1).fillRoundedRect(-width / 2, -16, width, 54, 18);
+    g.lineStyle(3, colorToNumber(Ink.tinta), 1).strokeRoundedRect(-width / 2, -16, width, 54, 18);
+    g.fillStyle(colorToNumber(Ink.sol), 0.7).fillRoundedRect(-24, -26, 48, 18, 3);
+    g.lineStyle(2, colorToNumber(Ink.borde), 1).strokeRoundedRect(-24, -26, 48, 18, 3);
   }
 
   /** Flip (X with squash) to `text`, hold `holdMs`, flip back to the name of the cat. */

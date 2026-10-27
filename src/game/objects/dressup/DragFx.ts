@@ -6,10 +6,9 @@ import { anchorForSlot } from '../../domain/slots';
 import { profileOf } from '../../systems/motion';
 import type { Cat } from '../Cat';
 import { getAudio } from '../../plugins/AudioPlugin';
-import { SfxKeys } from '../../constants';
+import { Ink, SfxKeys, colorToNumber } from '../../constants';
 import type { ClothingItem } from '../ClothingItem';
 import type { ItemGrid } from '../ItemGrid';
-import { hex } from '../ui';
 
 /** The item in the player's hand. */
 export interface DragLike {
@@ -84,8 +83,8 @@ export class DragFx {
     const { scene } = this.deps;
     this.hideAnchorDot();
     const dot = scene.add.graphics().setDepth(4600).setPosition(at.x, at.y);
-    dot.lineStyle(5, hex('rosa400'), 1).strokeCircle(0, 0, 16);
-    dot.fillStyle(hex('rosa400'), 0.35).fillCircle(0, 0, 16);
+    dot.lineStyle(4, colorToNumber(Ink.lapiz), 1).strokeCircle(0, 0, 16);
+    dot.fillStyle(colorToNumber(Ink.sol), 0.55).fillCircle(0, 0, 16);
     dot.setScale(profileOf(scene).reduced ? 1 : 0.2).setAlpha(0);
     this.anchorDot = dot;
     scene.tweens.add({ targets: dot, scale: 1, alpha: 1, duration: 140, ease: profileOf(scene).ease('Back.easeOut') });
@@ -155,8 +154,8 @@ export class DragFx {
     const { scene } = this.deps;
     const z = this.deps.dropZone();
     this.zoneGlow.clear();
-    this.zoneGlow.fillStyle(hex('rosa400'), 0.14).fillRoundedRect(z.x - 8, z.y - 8, z.width + 16, z.height + 16, 48);
-    this.zoneGlow.lineStyle(6, hex('rosa400'), 0.9).strokeRoundedRect(z.x - 8, z.y - 8, z.width + 16, z.height + 16, 48);
+    this.zoneGlow.fillStyle(colorToNumber(Ink.sol), 0.14).fillRoundedRect(z.x - 8, z.y - 8, z.width + 16, z.height + 16, 48);
+    this.zoneGlow.lineStyle(5, colorToNumber(Ink.lapiz), 0.9).strokeRoundedRect(z.x - 8, z.y - 8, z.width + 16, z.height + 16, 48);
     scene.tweens.killTweensOf(this.zoneGlow);
     scene.tweens.add({
       targets: this.zoneGlow, alpha: on ? 1 : 0, duration: 140,

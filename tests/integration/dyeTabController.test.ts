@@ -149,7 +149,7 @@ describe('DyeTabController: the tab (F16.3)', () => {
 
   it('adds the 7th tab with its own icon and name', () => {
     const { tabs } = setup();
-    expect(tabs.addTab).toHaveBeenCalledWith({ id: DYE_TAB_ID, label: 'Tintes', icon: 'tab-icon-tintes' });
+    expect(tabs.addTab).toHaveBeenCalledWith({ id: DYE_TAB_ID, label: 'Tintes', icon: 'tab-icon-tintes', color: 'naranjo' });
   });
 
   it('shrinks the row of tabs to fit the panel, around the same middle point', () => {

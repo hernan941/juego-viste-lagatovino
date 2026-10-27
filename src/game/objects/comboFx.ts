@@ -1,7 +1,7 @@
 // Visual reactions of the combos (docs/game-design.md, "Combos de F8"). Each one only adds to the base
 // reaction (love face, double hearts, name bubble). Everything created here cleans itself up.
 import Phaser from 'phaser';
-import { FONT_FAMILY, Palette, SfxKeys, TextureKeys } from '../constants';
+import { Fonts, Ink, SfxKeys, TextureKeys, colorToNumber } from '../constants';
 import { comboReactionPlan } from '../domain/combos';
 import { RAINBOW, rainbowPoints } from '../domain/rainbow';
 import { SNOW, snowSpan } from '../domain/snow';
@@ -10,7 +10,6 @@ import { getAudio } from '../plugins/AudioPlugin';
 import { profileOf } from '../systems/motion';
 import type { Cat } from './Cat';
 import type { NameSign } from './NameSign';
-import { hex } from './ui';
 
 const FX_DEPTH = 3500;
 export interface ComboFxContext {
@@ -29,22 +28,25 @@ export function showBubble(
   { fontSize = 34, tail }: { fontSize?: number; tail?: 'left' | 'right' } = {},
 ): void {
   const label = scene.add
-    .text(0, 0, text, { fontFamily: FONT_FAMILY, fontSize: `${fontSize}px`, color: Palette.texto, fontStyle: '600', padding: { x: 4, y: 8 } })
+    .text(0, 0, text, { fontFamily: Fonts.Voice, fontSize: `${fontSize}px`, fontStyle: '700', color: Ink.tinta, padding: { x: 4, y: 8 } })
     .setOrigin(0.5);
   const w = label.width + 56;
+  // A speech bubble of the notebook (art-direction section 6): a card with an ink edge and a flat shadow; the "cute" tone is `rosa`.
+  const fill = colorToNumber(tone === 'rosa50' ? Ink.rosa : Ink.tarjeta);
+  const edge = colorToNumber(Ink.tinta);
   const g = scene.add.graphics();
-  g.fillStyle(hex('rosa600'), 0.18).fillRoundedRect(-w / 2 + 2, -26 + 8, w, 56, 28);
-  g.fillStyle(hex(tone), 1).fillRoundedRect(-w / 2, -26, w, 56, 28);
-  g.lineStyle(4, hex('rosa200'), 1).strokeRoundedRect(-w / 2, -26, w, 56, 28);
+  g.fillStyle(colorToNumber(Ink.sombraTarjeta), 1).fillRoundedRect(-w / 2 + 4, -26 + 4, w, 56, 22);
+  g.fillStyle(fill, 1).fillRoundedRect(-w / 2, -26, w, 56, 22);
+  g.lineStyle(3, edge, 1).strokeRoundedRect(-w / 2, -26, w, 56, 22);
   if (tail) {
-    // A little tail toward the one who speaks (the cat): a triangle on the chosen side of the bubble.
+    // A little tail toward the one who speaks (the cat): a triangle on the chosen side of the bubble, open where it joins.
     const s = tail === 'left' ? -1 : 1;
-    const pts = [new Phaser.Math.Vector2(s * (w / 2 - 6), -6), new Phaser.Math.Vector2(s * (w / 2 + 22), 8), new Phaser.Math.Vector2(s * (w / 2 - 6), 16)];
-    g.fillStyle(hex(tone), 1).fillPoints(pts, true);
-    g.lineStyle(4, hex('rosa200'), 1).beginPath().moveTo(pts[0].x, pts[0].y).lineTo(pts[1].x, pts[1].y).lineTo(pts[2].x, pts[2].y).strokePath();
-    g.fillStyle(hex(tone), 1).fillRect(s * (w / 2 - 8) - 4, -3, 8, 17);
+    const pts = [new Phaser.Math.Vector2(s * (w / 2 - 2), -4), new Phaser.Math.Vector2(s * (w / 2 + 24), 10), new Phaser.Math.Vector2(s * (w / 2 - 2), 16)];
+    g.fillStyle(fill, 1).fillPoints(pts, true);
+    g.lineStyle(3, edge, 1).beginPath().moveTo(pts[0].x, pts[0].y).lineTo(pts[1].x, pts[1].y).lineTo(pts[2].x, pts[2].y).strokePath();
+    g.fillStyle(fill, 1).fillRect(Math.min(s * (w / 2 - 6), s * (w / 2 + 1)), -3, 7, 18);
   }
-  const bubble = scene.add.container(x, y, [g, label]).setDepth(FX_DEPTH + 10).setScale(0).setAlpha(0);
+  const bubble = scene.add.container(x, y, [g, label]).setDepth(FX_DEPTH + 10).setScale(0).setAlpha(0).setAngle(2);
   scene.tweens.chain({
     targets: bubble,
     tweens: [

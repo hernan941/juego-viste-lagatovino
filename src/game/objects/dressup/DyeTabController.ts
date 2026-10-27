@@ -30,7 +30,7 @@ import { liftFor } from '../ui';
 import type { ClothingItem } from '../ClothingItem';
 import { CELL_SIZE } from '../ClothingItem';
 import type { DressUpContext, DressUpController } from './DressUpController';
-import { WORN_TAG } from './layout';
+import { DYE_TAB_COLOR, WORN_TAG } from './layout';
 import type { DyeTagRequest } from './PurchaseController';
 
 /** Id of the tab (not a wardrobe category: the scene ignores it and this controller answers it). */
@@ -103,7 +103,7 @@ export class DyeTabController implements DressUpController {
   attach(ctx: DressUpContext): void {
     this.ctx = ctx;
     this.alive = true;
-    ctx.tabs.addTab({ id: DYE_TAB_ID, label: dyeLines.tab, icon: tabIconKey(DYE_TAB_ID) });
+    ctx.tabs.addTab({ id: DYE_TAB_ID, label: dyeLines.tab, icon: tabIconKey(DYE_TAB_ID), color: DYE_TAB_COLOR });
     this.fitTabs();
     this.removeDecorators = [
       ctx.grid.addCellDecorator((cell: ClothingItem) => this.hangDot(cell.item, (dot) => cell.addDecoration(dot), CELL_DOT)),

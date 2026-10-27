@@ -1,12 +1,11 @@
 import Phaser from 'phaser';
-import { ObjectEvents } from '../constants';
+import { Ink, ObjectEvents, colorToNumber } from '../constants';
 import {
   classifyGesture, clampScroll, contentHeight, scrollbarThumb, smoothStep, wheelTarget,
 } from '../domain/scroll';
 import type { ClothingDef, Point, Rect } from '../domain/types';
 import { CELL_SIZE, ClothingItem } from './ClothingItem';
 import { DecoratorRegistry, type CellDecorator } from './dressup/decorators';
-import { hex } from './ui';
 
 export const GRID_COLUMNS = 3;
 const GAP = 22;
@@ -181,8 +180,8 @@ export class ItemGrid extends Phaser.GameObjects.Container {
     g.clear();
     const thumb = scrollbarThumb(this.offset, this.contentH, this.viewHeight, this.viewHeight, SCROLLBAR_MIN);
     if (!thumb) return;
-    g.fillStyle(hex('rosa200'), 1).fillRoundedRect(0, 0, SCROLLBAR_W, this.viewHeight, SCROLLBAR_W / 2);
-    g.fillStyle(hex('rosa400'), 1).fillRoundedRect(0, thumb.y, SCROLLBAR_W, thumb.height, SCROLLBAR_W / 2);
+    g.fillStyle(colorToNumber(Ink.borde), 1).fillRoundedRect(0, 0, SCROLLBAR_W, this.viewHeight, SCROLLBAR_W / 2);
+    g.fillStyle(colorToNumber(Ink.lineaLapiz), 1).fillRoundedRect(0, thumb.y, SCROLLBAR_W, thumb.height, SCROLLBAR_W / 2);
     // Brighter while it moves, calmer when it rests.
     this.scrollbarTween?.remove();
     this.scrollbar.setAlpha(1);

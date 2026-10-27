@@ -1,10 +1,10 @@
 import Phaser from 'phaser';
-import { Ink, ObjectEvents, Palette, SfxKeys, colorToNumber, type InkToken } from '../constants';
+import { Fonts, Ink, ObjectEvents, SfxKeys, colorToNumber, type InkToken } from '../constants';
 import type { Point } from '../domain/types';
 import { getAudio } from '../plugins/AudioPlugin';
 import { TAB_RISE, tabLayout } from '../systems/kit';
 import { profileOf } from '../systems/motion';
-import { addHover, addKitFeedback, addPress, hex, hitRect, kitHitRect, makeText, type ScaleTo } from './ui';
+import { addHover, addKitFeedback, addPress, hitRect, kitHitRect, type ScaleTo } from './ui';
 import { hoverSfx } from './hoverSfx';
 
 export interface TabDef {
@@ -57,9 +57,9 @@ class Tab extends Phaser.GameObjects.Container {
   setSelected(active: boolean, silent = false): void {
     if (this.index) return this.setSelectedIndex(active, silent);
     this.bg.clear();
-    this.bg.fillStyle(hex('rosa600'), 0.18);
+    this.bg.fillStyle(colorToNumber(Ink.sombraTarjeta), 1);
     this.bg.fillRoundedRect(-TAB_SIZE / 2, -TAB_SIZE / 2 + 5, TAB_SIZE, TAB_SIZE, 20);
-    this.bg.fillStyle(active ? hex('rosa400') : hex('rosa200'), 1);
+    this.bg.fillStyle(colorToNumber(active ? Ink.rosa : Ink.tarjeta), 1);
     this.bg.fillRoundedRect(-TAB_SIZE / 2, -TAB_SIZE / 2, TAB_SIZE, TAB_SIZE, 20);
     if (active && !silent) {
       const p = profileOf(this.scene);
@@ -104,7 +104,8 @@ export class Tabs extends Phaser.GameObjects.Container {
     super(scene, x, y);
     this.scn = scene;
     this.style = options.style;
-    this.caption = makeText(scene, 0, TAB_SIZE + 30, '', 26, Palette.rosa600);
+    // The name of the tab is handwriting in ink, under the row.
+    this.caption = scene.add.text(0, TAB_SIZE + 30, '', { fontFamily: Fonts.Voice, fontStyle: '700', fontSize: '30px', color: Ink.tinta, padding: { x: 4, y: 8 } }).setOrigin(0.5);
     this.add(this.caption);
     for (const def of defs) this.append(def);
     scene.add.existing(this);
