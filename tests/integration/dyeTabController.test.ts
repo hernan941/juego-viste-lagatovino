@@ -15,6 +15,21 @@ vi.mock('../../src/game/objects/kit/SpeechBubble', () => {
   };
 });
 
+// A stand-in for the sweep: it records the textures it was asked to lay over a garment; it ends at once unless a test holds it.
+vi.mock('../../src/game/objects/DyeSweep', () => {
+  const log: { key: string; done: () => void; finish: ReturnType<typeof vi.fn> }[] = [];
+  const control = { hold: false };
+  return {
+    log, control,
+    startSweep: (_scene: unknown, _layer: unknown, key: string, done: () => void) => {
+      const entry = { key, done, finish: vi.fn(() => done()) };
+      log.push(entry);
+      if (!control.hold) done();
+      return { finish: entry.finish };
+    },
+  };
+});
+
 import { DressUpEvents, ObjectEvents, RegistryKeys } from '../../src/game/constants';
 import clothesJson from '../../src/game/data/clothes.json';
 import dyesJson from '../../src/game/data/dyes.json';
@@ -22,9 +37,12 @@ import type { ClothingDef, DyeDef, ItemDye } from '../../src/game/domain/types';
 import { controllerFactories } from '../../src/game/objects/dressup/controllers';
 import type { DressUpContext } from '../../src/game/objects/dressup/DressUpController';
 import { DYE_TAB_ID, DyeTabController } from '../../src/game/objects/dressup/DyeTabController';
+import * as sweepModule from '../../src/game/objects/DyeSweep';
+import { emptyProgress } from '../../src/game/domain/progress';
 import * as bubbleModule from '../../src/game/objects/kit/SpeechBubble';
 import { makeFakeScene } from './helpers/kitScene';
 
+const sweeps = sweepModule as unknown as { log: { key: string; done: () => void; finish: ReturnType<typeof vi.fn> }[]; control: { hold: boolean } };
 const said = (bubbleModule as unknown as { made: string[] }).made;
 const clothes = clothesJson as unknown as ClothingDef[];
 const dyes = dyesJson as unknown as DyeDef[];
@@ -45,12 +63,12 @@ interface FakeJar { dye: DyeDef; emit(e: string, ...a: unknown[]): void; destroy
 const pointer = (x: number, y: number, extra: Record<string, unknown> = {}) => ({ id: 1, x, y, wasTouch: false, ...extra });
 const flush = async () => { for (let i = 0; i < 5; i++) await Promise.resolve(); };
 
-function setup(over: { itemDye?: ItemDye; outfit?: Record<string, string>; itemAt?: ClothingDef | null; dragging?: boolean; ready?: boolean } = {}) {
+function setup(over: { itemDye?: ItemDye; outfit?: Record<string, string>; itemAt?: ClothingDef | null; dragging?: boolean; ready?: boolean; noImage?: boolean; favoriteDye?: string } = {}) {
   const scene = makeFakeScene() as ReturnType<typeof makeFakeScene> & Record<string, unknown>;
   const calls: string[] = [];
   const events = new Emitter();
   const regEvents = new Emitter();
-  const store = new Map<string, unknown>([[RegistryKeys.ItemDye, over.itemDye ?? {}], [RegistryKeys.Outfit, over.outfit ?? {}], ['reducedMotion', false]]);
+  const store = new Map<string, unknown>([[RegistryKeys.ItemDye, over.itemDye ?? {}], [RegistryKeys.Outfit, over.outfit ?? {}], [RegistryKeys.Progress, emptyProgress(0)], ['reducedMotion', false]]);
   scene.events = events;
   scene.registry = {
     events: regEvents,
@@ -58,6 +76,7 @@ function setup(over: { itemDye?: ItemDye; outfit?: Record<string, string>; itemA
     set: (k: string, v: unknown) => { const prev = store.get(k); store.set(k, v); regEvents.emit(`changedata-${k}`, scene.registry, v, prev); },
   } as never;
   (scene.time as unknown as { now: number }).now = 1000;
+  (scene.time as unknown as { delayedCall: unknown }).delayedCall = () => ({ remove() {} });
   const sounds: string[] = [];
   const ensure = vi.fn((itemId: string, dyeId: string) => Promise.resolve(`${itemId}~${dyeId}`));
   const dyeService = {
@@ -76,25 +95,30 @@ function setup(over: { itemDye?: ItemDye; outfit?: Record<string, string>; itemA
     addTab: vi.fn(), selectedId: 'sweater' as string | null, x: 20, setScale: vi.fn(),
     getTabPositions: () => Object.fromEntries(Array.from({ length: 7 }, (_, i) => [`t${i}`, { x: 20 + 27 + i * 64, y: 85 }])),
   });
-  const grid = { setItems: vi.fn() };
+  const cellDecorators: ((cell: unknown) => void)[] = [];
+  const removeCellDecorator = vi.fn();
+  const grid = { setItems: vi.fn(), addCellDecorator: vi.fn((fn: (cell: unknown) => void) => { cellDecorators.push(fn); return removeCellDecorator; }) };
+  const rowDecorators: ((row: unknown, item: ClothingDef) => void)[] = [];
+  const removeRowDecorator = vi.fn();
+  const layersPanel = { addRowDecorator: vi.fn((fn: (row: unknown, item: ClothingDef) => void) => { rowDecorators.push(fn); return removeRowDecorator; }) };
   const catCalls: Record<string, unknown[][]> = {};
   const rec = (name: string) => (...a: unknown[]) => { (catCalls[name] ??= []).push(a); };
   let at: ClothingDef | null = over.itemAt === undefined ? sweater : over.itemAt;
   const cat = {
     itemAt: () => at, highlightItem: rec('highlightItem'), setItemTexture: rec('setItemTexture'), sayNo: rec('sayNo'), lookAt: rec('lookAt'),
-    squash: rec('squash'), shake: rec('shake'), lookAtBelly: rec('lookAtBelly'), playFaces: rec('playFaces'),
+    squash: rec('squash'), shake: rec('shake'), lookAtBelly: rec('lookAtBelly'), playFaces: rec('playFaces'), getItemImage: () => (over.noImage ? null : {}),
     getAnchorWorld: () => ({ x: 700, y: 300 }), getDropZoneRect: () => ({ x: 500, y: 100, width: 400, height: 500 }),
   };
   const hud = (add.container as (...a: unknown[]) => unknown)(0, 0, []);
   const ctx = {
-    scene, tabs, grid, cat, hud, catalog: { cats: [], clothes, combos: [], dyes }, getOutfit: () => over.outfit ?? {},
+    scene, tabs, grid, layersPanel, cat, hud, catalog: { cats: [{ id: 'naranja', prefs: { favoriteDye: over.favoriteDye ?? 'rosa' } }], clothes, combos: [], dyes, economy: { discoveryBonus: 15 } }, getOutfit: () => over.outfit ?? {},
     isDragging: () => over.dragging ?? false, isLeaving: () => false, catId: 'naranja',
   } as unknown as DressUpContext;
   const controller = new DyeTabController();
   controller.attach(ctx);
   const state = () => controller.e2eState() as { open: boolean; jars: Record<string, { x: number; y: number }>; dragging: boolean; target: string | null; last: string | null; applied: Record<string, string> };
   const openTab = () => { tabs.selectedId = DYE_TAB_ID; tabs.emit(ObjectEvents.TabSelect, DYE_TAB_ID); };
-  return { scene, events, regEvents, store, tabs, grid, cat, catCalls, controller, state, openTab, sounds, calls, dyeService, setAt: (i: ClothingDef | null) => { at = i; } };
+  return { cellDecorators, rowDecorators, removeCellDecorator, removeRowDecorator, scene, events, regEvents, store, tabs, grid, cat, catCalls, controller, state, openTab, sounds, calls, dyeService, setAt: (i: ClothingDef | null) => { at = i; } };
 }
 
 /** The jars the controller made (they are Containers of the fake Phaser, found through the hud and the scene). */
@@ -111,6 +135,8 @@ function drag(controller: DyeTabController, dyeId: string, to = { x: 700, y: 300
 
 beforeEach(() => {
   said.length = 0;
+  sweeps.log.length = 0;
+  sweeps.control.hold = false;
   vi.stubGlobal('window', { innerWidth: 1280, innerHeight: 720, matchMedia: () => ({ matches: false }) });
 });
 afterEach(() => vi.unstubAllGlobals());
@@ -368,5 +394,203 @@ describe('DyeTabController: cleanup (F16.3)', () => {
   it('is settled when no bottle flies', () => {
     const { controller } = setup();
     expect(controller.isSettled()).toBe(true);
+  });
+});
+
+describe('DyeTabController: the sweep (F16.4)', () => {
+  it('lays the new color over the item and swaps the real texture only when the sweep ends', async () => {
+    sweeps.control.hold = true;
+    const { openTab, controller, store, catCalls } = setup({ outfit: { sweater: sweater.id } });
+    openTab();
+    drag(controller, 'rosa').drop();
+    await flush();
+    expect(sweeps.log.map((s) => s.key)).toEqual([`${sweater.id}~rosa`]);
+    // The color is already saved (a reload mid-sweep keeps it), but the cat still shows the old texture.
+    expect(store.get(RegistryKeys.ItemDye)).toEqual({ [sweater.id]: 'rosa' });
+    expect(catCalls.setItemTexture).toBeUndefined();
+    sweeps.log[0].done();
+    expect(catCalls.setItemTexture.at(-1)).toEqual([sweater.id, `${sweater.id}~rosa`]);
+  });
+
+  it('water sweeps back to the original texture of the item', async () => {
+    sweeps.control.hold = true;
+    const { openTab, controller, catCalls } = setup({ outfit: { sweater: sweater.id }, itemDye: { [sweater.id]: 'rosa' }, ready: true });
+    await flush();
+    sweeps.log.length = 0;
+    openTab();
+    drag(controller, 'agua').drop();
+    await flush();
+    expect(sweeps.log.map((s) => s.key)).toEqual([sweater.texture]);
+    sweeps.log[0].done();
+    expect(catCalls.setItemTexture.at(-1)).toEqual([sweater.id, null]);
+  });
+
+  it('an item that is not on the cat (nothing to sweep) changes at once', async () => {
+    const { openTab, controller, catCalls } = setup({ outfit: { sweater: sweater.id }, noImage: true });
+    openTab();
+    drag(controller, 'rosa').drop();
+    await flush();
+    expect(sweeps.log).toHaveLength(0);
+    expect(catCalls.setItemTexture.at(-1)).toEqual([sweater.id, `${sweater.id}~rosa`]);
+  });
+
+  it('a second dye on the same item ends the sweep that was running', async () => {
+    sweeps.control.hold = true;
+    const { openTab, controller } = setup({ outfit: { sweater: sweater.id } });
+    openTab();
+    drag(controller, 'rosa').drop();
+    await flush();
+    drag(controller, 'lila').drop();
+    await flush();
+    expect(sweeps.log[0].finish).toHaveBeenCalled();
+    expect(sweeps.log).toHaveLength(2);
+  });
+
+  it('leaving ends the running sweeps', async () => {
+    sweeps.control.hold = true;
+    const { openTab, controller } = setup({ outfit: { sweater: sweater.id } });
+    openTab();
+    drag(controller, 'rosa').drop();
+    await flush();
+    controller.destroy();
+    expect(sweeps.log[0].finish).toHaveBeenCalled();
+  });
+
+  it('is not settled while a sweep runs', async () => {
+    sweeps.control.hold = true;
+    const { openTab, controller } = setup({ outfit: { sweater: sweater.id } });
+    openTab();
+    drag(controller, 'rosa').drop();
+    await flush();
+    expect(controller.isSettled()).toBe(false);
+    expect((controller.e2eState() as { sweeping: string[] }).sweeping).toEqual([sweater.id]);
+    sweeps.log[0].done();
+    expect((controller.e2eState() as { sweeping: string[] }).sweeping).toEqual([]);
+  });
+
+  it('a dye that came with the session appears without a sweep', async () => {
+    setup({ outfit: { sweater: sweater.id }, itemDye: { [sweater.id]: 'lila' } });
+    await flush();
+    expect(sweeps.log).toHaveLength(0);
+  });
+});
+
+describe('DyeTabController: the cat looks at its belly (F16.4)', () => {
+  it('surprise first, then happy, and a look at the belly', async () => {
+    const { openTab, controller, catCalls } = setup({ outfit: { sweater: sweater.id } });
+    openTab();
+    drag(controller, 'lila').drop();
+    await flush();
+    expect(catCalls.playFaces.at(-1)?.[0]).toMatchObject({ lead: 'sorpresa', expression: 'feliz' });
+    expect(catCalls.lookAtBelly).toBeDefined();
+  });
+
+  it('a refused drop does not make the cat happy', async () => {
+    const { openTab, controller, catCalls } = setup({ itemAt: hat });
+    openTab();
+    drag(controller, 'lila').drop();
+    await flush();
+    expect(catCalls.playFaces).toBeUndefined();
+  });
+});
+
+describe('DyeTabController: my favorite color (F16.4)', () => {
+  const progressOf = (store: Map<string, unknown>) => store.get(RegistryKeys.Progress) as ReturnType<typeof emptyProgress>;
+
+  it('the favorite color pays the discovery once, with buttons flying into the purse', async () => {
+    const { openTab, controller, store, events } = setup({ outfit: { sweater: sweater.id }, favoriteDye: 'rosa' });
+    const flights = vi.fn();
+    events.on(DressUpEvents.WalletFlight, flights);
+    openTab();
+    drag(controller, 'rosa').drop();
+    await flush();
+    expect(progressOf(store).tastesFound.naranja).toEqual(['color']);
+    expect(progressOf(store).wallet).toBe(15);
+    expect(flights).toHaveBeenCalledWith(expect.objectContaining({ direction: 'in', coins: 15 }));
+    // The same color again pays nothing more.
+    drag(controller, 'lila').drop();
+    await flush();
+    drag(controller, 'rosa').drop();
+    await flush();
+    expect(progressOf(store).wallet).toBe(15);
+    expect(flights).toHaveBeenCalledTimes(1);
+  });
+
+  it('another color is not a discovery', async () => {
+    const { openTab, controller, store } = setup({ outfit: { sweater: sweater.id }, favoriteDye: 'rosa' });
+    openTab();
+    drag(controller, 'lila').drop();
+    await flush();
+    expect(progressOf(store).wallet).toBe(0);
+    expect(progressOf(store).tastesFound).toEqual({});
+  });
+
+  it('water is never a favorite color', async () => {
+    const { openTab, controller, store } = setup({ outfit: { sweater: sweater.id }, favoriteDye: 'agua' });
+    openTab();
+    drag(controller, 'agua').drop();
+    await flush();
+    expect(progressOf(store).wallet).toBe(0);
+  });
+});
+
+describe('DyeTabController: the dot of color (F16.4)', () => {
+  const fakeCell = (item: ClothingDef) => {
+    const hung: { hex: string | null }[] = [];
+    return { item, hung, addDecoration: <T,>(o: T) => { hung.push(o as never); return o; } };
+  };
+
+  it('hangs a dot on every wardrobe cell and on every layer row', () => {
+    const { cellDecorators, rowDecorators } = setup();
+    expect(cellDecorators).toHaveLength(1);
+    expect(rowDecorators).toHaveLength(1);
+    const cell = fakeCell(sweater);
+    cellDecorators[0](cell);
+    expect(cell.hung).toHaveLength(1);
+  });
+
+  it('the dot shows the color of the dye on the item, and goes away with water', async () => {
+    const { cellDecorators, openTab, controller } = setup({ outfit: { sweater: sweater.id } });
+    const cell = fakeCell(sweater);
+    cellDecorators[0](cell);
+    expect(cell.hung[0].hex).toBeNull();
+    openTab();
+    drag(controller, 'rosa').drop();
+    await flush();
+    expect(cell.hung[0].hex).toBe(dyes.find((d) => d.id === 'rosa')!.hex);
+    drag(controller, 'agua').drop();
+    await flush();
+    expect(cell.hung[0].hex).toBeNull();
+  });
+
+  it('a dye that came with the session is already on the dot of a new cell', () => {
+    const { cellDecorators } = setup({ itemDye: { [sweater.id]: 'lila' } });
+    const cell = fakeCell(sweater);
+    cellDecorators[0](cell);
+    expect(cell.hung[0].hex).toBe(dyes.find((d) => d.id === 'lila')!.hex);
+  });
+
+  it('an item that does not take a dye gets no dot', () => {
+    const { cellDecorators, rowDecorators } = setup();
+    const cell = fakeCell(hat);
+    cellDecorators[0](cell);
+    const row = { added: [] as unknown[], add(o: unknown) { this.added.push(o); } };
+    rowDecorators[0](row, hat);
+    expect(cell.hung).toHaveLength(0);
+    expect(row.added).toHaveLength(0);
+  });
+
+  it('the row of the layers panel gets its dot too, with the same color', () => {
+    const { rowDecorators } = setup({ itemDye: { [sweater.id]: 'hoja' } });
+    const row = { added: [] as { hex: string | null }[], add(o: { hex: string | null }) { this.added.push(o); } };
+    rowDecorators[0](row, sweater);
+    expect(row.added[0].hex).toBe(dyes.find((d) => d.id === 'hoja')!.hex);
+  });
+
+  it('takes the decorators away when it leaves', () => {
+    const { controller, removeCellDecorator, removeRowDecorator } = setup();
+    controller.destroy();
+    expect(removeCellDecorator).toHaveBeenCalled();
+    expect(removeRowDecorator).toHaveBeenCalled();
   });
 });

@@ -818,6 +818,11 @@ export class Cat extends Phaser.GameObjects.Container {
     }
   }
 
+  /** The layer image of a worn item, or null (the dye sweep lays a copy with the new color over it, F16.4). */
+  getItemImage(itemId: string): Phaser.GameObjects.Image | null {
+    return [...this.layers.values()].find((l) => l.item.id === itemId)?.image ?? null;
+  }
+
   /**
    * The worn item whose visible pixels are under a point in game coordinates, the one drawn in front when several overlap, or
    * null (a dye bottle looks for its target with this). Reads the pixels of the texture shown, so a dyed copy is found as well.
