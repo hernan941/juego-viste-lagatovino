@@ -67,3 +67,7 @@ Resultados del jugador modelo con el `economy.json` actual, con 5 semillas:
 - `payout.byStars` pasa a {1:3, 2:5, 3:8, 4:10, 5:14}. Los números que propuso el GD ({3,6,10,14,20}) no cumplían en todas las semillas.
 - Resultado: 50 % en las sesiones 3–4, 100 % en las sesiones 10–11 y entre 70 y 73 % del flujo saliendo de descubrir (con poco margen en dos semillas).
 - **Riesgo de sensación**: que 5★ pague solo 14 botones puede sentirse mezquino al lado de los +15 de un gusto o los +40 de un combo. El GD debe confirmarlo en la revisión final, jugando.
+
+## F16.5: comprar tintes
+- Las etiquetas de los frascos y de las prendas teñidas viven en `DyeTabController` (eventos `DyeTagPressed` y `DyesBought`), separadas de `PriceTagsController`. Hay que registrarlo en el ADR 0018 o en el 0019.
+- La etiqueta "Tinte Lila" de la prenda cae cerca de la alfombra. Revisarlo con el GD.

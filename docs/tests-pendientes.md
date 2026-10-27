@@ -325,3 +325,17 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
 - Argolla según las estrellas: dorada desde 4★ y con dije en 5★. Se comprueba con píxeles del PNG.
 - Para cada gato de `cats.json`, nada del look queda fuera del borde crema (píxeles).
 - `@mobile`: Guardar con el dedo abre el menú de compartir con el PNG del empaque.
+
+## F16.5: comprar tintes
+### E2E pendientes (`dye.spec`)
+1. Probar un frasco ajeno deja la etiqueta en el frasco y en la prenda (`dyes.jarTags` y `dyes.wornTags`).
+2. Comprar desde la etiqueta del frasco: el monedero baja 50, `dyesOwned` incluye el frasco y se van las dos etiquetas.
+3. Comprar desde la etiqueta de la prenda teñida.
+4. [Todavía no] no cambia nada.
+5. Sin saldo: el monedero tiembla, aparece el mensaje y no se cobra.
+6. En la caja (¡Listo! y [Llevar todo]) se cobran las prendas y los frascos, y se van todas las etiquetas.
+7. [Sacarme lo que no tengo] devuelve la prenda a su color pagado.
+8. El frasco rosa (inicial) y el agua no llevan etiqueta.
+9. Recargar conserva `dyesOwned`.
+10. `@mobile`: tocar la etiqueta con el dedo.
+11. Sin errores de consola.
