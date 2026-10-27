@@ -271,3 +271,8 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
 6. En movimiento reducido el tinte se aplica sin máscara y `settled` pasa a verdadero.
 7. `@mobile`: arrastrar un frasco con el dedo, y el barrido termina.
 8. Sin errores de consola.
+
+## F20.6: Showcase repintado
+### E2E pendientes
+- Los botones `photo`, `keep` y `change` siguen clicables en su nueva posición (y=664).
+- `info.secrets` conserva el formato "Secretos X/N".
