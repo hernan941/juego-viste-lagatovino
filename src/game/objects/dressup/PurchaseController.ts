@@ -119,6 +119,7 @@ export class PurchaseController implements DressUpController {
     const flight: WalletFlightRequest = { direction: 'out', at: garment, coins: result.price };
     scene.events.emit(DressUpEvents.WalletFlight, flight);
     scene.registry.set(RegistryKeys.Progress, result.progress);
+    scene.events.emit(DressUpEvents.ItemsBought, [item.id]);
     const cut: TagCut = new TagCut(scene, { ...tag, price: result.price, onDone: () => this.cuts.delete(cut) });
     this.cuts.add(cut);
     this.later(REGISTER_MS, () => this.celebrate(item, garment));

@@ -175,6 +175,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
       scene: this, catalog: this.catalog, anchors: this.anchors, cat: this.cat, grid: this.grid, tabs: this.tabs, layersPanel: this.layersPanel,
       hud: this.hud, hearts: this.hearts, sparkles: this.sparkles, sign: this.sign, rainbow: this.rainbow, catId: this.catId, catName: this.catName,
       getOutfit: () => this.outfit, isDragging: () => this.drag !== null, isLeaving: () => this.leaving, boundsOf: (item) => this.bounds.of(item),
+      removeItem: (item) => this.removeItem(item),
       showCategory: (category) => { this.tabs.select(category, true); this.showCategory(category); }, leaveData: this.leaveData,
     });
     this.events.emit(DressUpEvents.CatChanged, this.catId);

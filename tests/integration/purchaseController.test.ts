@@ -155,6 +155,19 @@ describe('PurchaseController (F13.5)', () => {
     expect(flight?.args[0]).toMatchObject({ direction: 'out', coins: 40, at: { x: 600, y: 300 } });
   });
 
+  it('announces the bought item (a combo that waited for it can give its box)', () => {
+    const t = setup({ wallet: 100 });
+    t.press(priced);
+    t.sheet().emit(ObjectEvents.SheetConfirm);
+    const bought = t.emitted.filter((e) => e.event === DressUpEvents.ItemsBought);
+    expect(bought).toHaveLength(1);
+    expect(bought[0].args[0]).toEqual([priced.id]);
+    const short = setup({ wallet: 0 });
+    short.press(priced);
+    short.sheet().emit(ObjectEvents.SheetConfirm);
+    expect(short.emitted.some((e) => e.event === DressUpEvents.ItemsBought)).toBe(false);
+  });
+
   it('the scissors cut the tag where it hangs: on the cat when it is worn, in its cell otherwise', () => {
     const worn = setup({ worn: true });
     worn.press(priced);
