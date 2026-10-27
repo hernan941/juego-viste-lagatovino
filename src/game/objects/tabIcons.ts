@@ -1,14 +1,19 @@
 // Silhouette icons of the wardrobe tabs (art-direction section 6: simple silhouette of the category,
 // same outline as everything else). Drawn once into textures, like the particles.
 import Phaser from 'phaser';
-import { colorToNumber, Palette } from '../constants';
+import { Ink, colorToNumber } from '../constants';
 import type { Category } from '../domain/types';
-import { hex } from './ui';
 
 export const TAB_ICON_SIZE = 64;
 export const tabIconKey = (category: Category | string): string => `tab-icon-${category}`;
 
-const LINE = colorToNumber(Palette.contorno);
+const LINE = colorToNumber(Ink.tinta);
+
+/** Fill colors of the icons: brand tokens, and the garment tones of art-direction section 4 (dorado, verde). */
+const FILLS = {
+  crema: Ink.cremaPapel, mantequilla: '#F5D86A', menta: '#6CC59A', lavanda: Ink.lila, cielo: Ink.cielo, rosa400: Ink.rosa,
+} as const;
+const col = (name: keyof typeof FILLS): number => colorToNumber(FILLS[name]);
 
 type Draw = (g: Phaser.GameObjects.Graphics) => void;
 
@@ -43,57 +48,57 @@ const ICONS: Record<string, Draw> = {
   sweater: (g) => {
     const pts = [[24, 8], [28, 12], [36, 12], [40, 8], [56, 14], [61, 46], [50, 48], [47, 30], [47, 56], [17, 56], [17, 30], [14, 48], [3, 46], [8, 14]]
       .map(([x, y]) => new Phaser.Math.Vector2(x, y));
-    g.fillStyle(hex('mantequilla'), 1).fillPoints(pts, true);
+    g.fillStyle(col('mantequilla'), 1).fillPoints(pts, true);
     g.lineStyle(4, LINE, 1).strokePoints(pts, true);
-    g.fillStyle(hex('crema'), 1).fillEllipse(32, 12, 14, 8);
+    g.fillStyle(col('crema'), 1).fillEllipse(32, 12, 14, 8);
     g.lineStyle(3, LINE, 1).strokeEllipse(32, 12, 14, 8);
-    rr(g, hex('crema'), 49, 43, 14, 8, 3);
-    rr(g, hex('crema'), 1, 43, 14, 8, 3);
+    rr(g, col('crema'), 49, 43, 14, 8, 3);
+    rr(g, col('crema'), 1, 43, 14, 8, 3);
     g.lineStyle(3, 0xf2c94c, 1).lineBetween(19, 44, 45, 44);
     g.lineStyle(3, 0xffffff, 0.9).lineBetween(24, 22, 24, 34);
   },
   // Beanie: dome, folded brim and pompon.
   head: (g) => {
-    circle(g, hex('crema'), 32, 15, 7);
+    circle(g, col('crema'), 32, 15, 7);
     rr(g, 0xf0707a, 14, 20, 36, 26, { tl: 18, tr: 18, bl: 4, br: 4 });
-    rr(g, hex('crema'), 10, 40, 44, 12, 6);
+    rr(g, col('crema'), 10, 40, 44, 12, 6);
     g.lineStyle(3, 0xffffff, 0.8).lineBetween(21, 28, 24, 24);
   },
   // Scarf: a U that wraps the neck, with a hanging end and fringe.
   neck: (g) => {
-    rr(g, hex('menta'), 38, 28, 15, 26, 6);
-    g.lineStyle(3, 0x6cc59a, 1).lineBetween(41, 56, 41, 61).lineBetween(45.5, 56, 45.5, 61).lineBetween(50, 56, 50, 61);
-    g.lineStyle(3, 0x6cc59a, 1).lineBetween(38, 38, 53, 38);
+    rr(g, col('menta'), 38, 28, 15, 26, 6);
+    g.lineStyle(3, 0x4fa77e, 1).lineBetween(41, 56, 41, 61).lineBetween(45.5, 56, 45.5, 61).lineBetween(50, 56, 50, 61);
+    g.lineStyle(3, 0x4fa77e, 1).lineBetween(38, 38, 53, 38);
     // The wrap: a thick U (outline first, then the color on top).
     g.lineStyle(17, LINE, 1).beginPath().arc(32, 20, 19, 0.15, Math.PI - 0.15).strokePath();
-    g.lineStyle(10, hex('menta'), 1).beginPath().arc(32, 20, 19, 0.15, Math.PI - 0.15).strokePath();
-    g.lineStyle(3, 0x6cc59a, 1).lineBetween(17, 30, 21, 26).lineBetween(26, 38, 28, 33).lineBetween(37, 38, 36, 33);
+    g.lineStyle(10, col('menta'), 1).beginPath().arc(32, 20, 19, 0.15, Math.PI - 0.15).strokePath();
+    g.lineStyle(3, 0x4fa77e, 1).lineBetween(17, 30, 21, 26).lineBetween(26, 38, 28, 33).lineBetween(37, 38, 36, 33);
   },
   // Glasses: two round lenses with a bridge.
   face: (g) => {
     g.lineStyle(4, LINE, 1).lineBetween(26, 30, 38, 30).lineBetween(4, 28, 12, 30).lineBetween(60, 28, 52, 30);
-    circle(g, hex('cielo'), 19, 33, 12);
-    circle(g, hex('cielo'), 45, 33, 12);
+    circle(g, col('cielo'), 19, 33, 12);
+    circle(g, col('cielo'), 45, 33, 12);
     g.fillStyle(0xffffff, 0.9).fillCircle(15, 29, 3).fillCircle(41, 29, 3);
   },
   // Mitten: a ribbed cuff, a thumb that points up on a diagonal and a little heart.
   paws: (g) => {
-    tiltedEllipse(g, hex('lavanda'), 13, 30, 7.5, 12, -0.6);
-    rr(g, hex('lavanda'), 17, 12, 31, 36, { tl: 15, tr: 15, bl: 9, br: 9 });
-    rr(g, hex('crema'), 16, 44, 33, 14, 5);
+    tiltedEllipse(g, col('lavanda'), 13, 30, 7.5, 12, -0.6);
+    rr(g, col('lavanda'), 17, 12, 31, 36, { tl: 15, tr: 15, bl: 9, br: 9 });
+    rr(g, col('crema'), 16, 44, 33, 14, 5);
     g.lineStyle(3, 0xb7a5f2, 1).lineBetween(23, 46, 23, 56).lineBetween(32, 46, 32, 56).lineBetween(41, 46, 41, 56);
-    g.fillStyle(hex('rosa400'), 1).fillCircle(29, 26, 4).fillCircle(37, 26, 4).fillTriangle(25, 28, 41, 28, 33, 38);
+    g.fillStyle(col('rosa400'), 1).fillCircle(29, 26, 4).fillCircle(37, 26, 4).fillTriangle(25, 28, 41, 28, 33, 38);
     g.fillStyle(0xffffff, 0.8).fillCircle(28, 24, 1.5);
   },
   // Dye: a corked bottle with the color inside and a drop beside it.
   tintes: (g) => {
-    rr(g, hex('mantequilla'), 21, 4, 18, 12, 4);
+    rr(g, col('mantequilla'), 21, 4, 18, 12, 4);
     g.fillStyle(0xffffff, 0.85).fillRoundedRect(25, 14, 10, 10, 2);
     g.lineStyle(4, LINE, 1).strokeRoundedRect(25, 14, 10, 10, 2);
     rr(g, 0xffffff, 12, 22, 36, 38, { tl: 14, tr: 14, bl: 10, br: 10 });
-    g.fillStyle(hex('rosa400'), 1).fillRoundedRect(15, 38, 30, 19, { tl: 6, tr: 6, bl: 8, br: 8 });
+    g.fillStyle(col('rosa400'), 1).fillRoundedRect(15, 38, 30, 19, { tl: 6, tr: 6, bl: 8, br: 8 });
     g.fillStyle(0xffffff, 0.9).fillRoundedRect(17, 26, 3, 8, 1);
-    g.fillStyle(hex('rosa400'), 1).fillTriangle(54, 22, 49, 31, 59, 31).fillCircle(54, 33, 5);
+    g.fillStyle(col('rosa400'), 1).fillTriangle(54, 22, 49, 31, 59, 31).fillCircle(54, 33, 5);
     g.lineStyle(3, LINE, 1).strokeCircle(54, 33, 5);
   },
   // Balloon with its string.
@@ -109,19 +114,19 @@ const ICONS: Record<string, Draw> = {
 /** Icons of the photo-mode tabs (S6): a landscape, a frame, a cat face and a star sticker. */
 const PHOTO_ICONS: Record<string, Draw> = {
   backgrounds: (g) => {
-    rr(g, hex('cielo'), 6, 8, 52, 48, 8);
+    rr(g, col('cielo'), 6, 8, 52, 48, 8);
     g.fillStyle(0xffffff, 1).fillCircle(24, 26, 8).fillCircle(34, 24, 10).fillCircle(44, 28, 7).fillRect(24, 26, 20, 9);
-    g.fillStyle(hex('menta'), 1).fillRect(8, 46, 48, 8);
+    g.fillStyle(col('menta'), 1).fillRect(8, 46, 48, 8);
   },
   frames: (g) => {
-    rr(g, hex('mantequilla'), 6, 6, 52, 52, 8);
-    rr(g, hex('crema'), 17, 17, 30, 30, 4);
-    g.fillStyle(hex('rosa400'), 1).fillCircle(32, 32, 7);
+    rr(g, col('mantequilla'), 6, 6, 52, 52, 8);
+    rr(g, col('crema'), 17, 17, 30, 30, 4);
+    g.fillStyle(col('rosa400'), 1).fillCircle(32, 32, 7);
   },
   poses: (g) => {
-    g.fillStyle(hex('lavanda'), 1).fillTriangle(15, 24, 21, 6, 29, 20).fillTriangle(49, 24, 43, 6, 35, 20);
+    g.fillStyle(col('lavanda'), 1).fillTriangle(15, 24, 21, 6, 29, 20).fillTriangle(49, 24, 43, 6, 35, 20);
     g.lineStyle(4, LINE, 1).strokeTriangle(15, 24, 21, 6, 29, 20).strokeTriangle(49, 24, 43, 6, 35, 20);
-    ellipse(g, hex('lavanda'), 32, 36, 46, 38);
+    ellipse(g, col('lavanda'), 32, 36, 46, 38);
     g.fillStyle(LINE, 1).fillCircle(24, 34, 3).fillCircle(40, 34, 3);
     g.lineStyle(3, LINE, 1).beginPath().moveTo(28, 42).lineTo(32, 45).lineTo(36, 42).strokePath();
   },
@@ -131,7 +136,7 @@ const PHOTO_ICONS: Record<string, Draw> = {
       const a = -Math.PI / 2 + (i * Math.PI) / 5;
       return new Phaser.Math.Vector2(32 + Math.cos(a) * r, 33 + Math.sin(a) * r);
     });
-    g.fillStyle(hex('mantequilla'), 1).fillPoints(pts, true);
+    g.fillStyle(col('mantequilla'), 1).fillPoints(pts, true);
     g.lineStyle(4, LINE, 1).strokePoints(pts, true);
   },
 };

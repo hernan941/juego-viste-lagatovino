@@ -3,13 +3,12 @@ import type Phaser from 'phaser';
 import { DROP_BURST } from '../../domain/petHearts';
 import type { Point } from '../../domain/types';
 import { profileOf } from '../../systems/motion';
-import { TextureKeys } from '../../constants';
-import { hex } from '../ui';
+import { Ink, TextureKeys, colorToNumber } from '../../constants';
 
 /** A ring that "pops" at the anchor (scale 0 to 1.4, alpha 1 to 0, 180 ms); reduced motion only fades it. */
 function popRing(scene: Phaser.Scene, at: Point, power: number): void {
   const ring = scene.add.graphics().setDepth(3990).setPosition(at.x, at.y);
-  ring.lineStyle(7, hex('rosa400'), 1).strokeCircle(0, 0, 46 * (power > 1 ? 1.3 : 1));
+  ring.lineStyle(6, colorToNumber(Ink.tinta), 1).strokeCircle(0, 0, 46 * (power > 1 ? 1.3 : 1));
   const calm = profileOf(scene).reduced;
   ring.setScale(calm ? 1 : 0);
   scene.tweens.add({ targets: ring, scale: calm ? 1 : 1.4, alpha: 0, duration: 180, ease: 'Sine.easeOut', onComplete: () => ring.destroy() });

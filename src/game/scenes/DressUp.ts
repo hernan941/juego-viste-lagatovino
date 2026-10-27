@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import {
-  CATEGORY_LABELS, DressUpEvents, GAME_HEIGHT, GAME_WIDTH, MEOW_KEYS, ObjectEvents, RegistryKeys, SceneKeys, SfxKeys,
+  CATEGORY_LABELS, DressUpEvents, Fonts, GAME_HEIGHT, GAME_WIDTH, Ink, MEOW_KEYS, ObjectEvents, RegistryKeys, SceneKeys, SfxKeys,
 } from '../constants';
 import type { Catalog } from '../data/schema';
 import { dressUpRestore, type DressUpRestore } from '../domain/flow';
@@ -34,10 +34,12 @@ import type { OutfitCause } from '../objects/dressup/DressUpController';
 import { DragFx, type DragState } from '../objects/dressup/DragFx';
 import { celebrate, createBursts, pulse } from '../objects/dressup/dropFx';
 import { ItemBounds } from '../objects/dressup/itemBounds';
-import { GHOST_HOME_SIZE, GHOST_SIZE } from '../objects/dressup/layout';
+import { CHANGE_BUTTON, DONE_BUTTON, GHOST_HOME_SIZE, GHOST_SIZE, GRID, LAYERS_PANEL, PANEL, TABS_Y, categoryTabColor } from '../objects/dressup/layout';
+import { Card } from '../objects/kit/Card';
+import { PaperBackground } from '../objects/kit/PaperBackground';
 import { tabIconKey } from '../objects/tabIcons';
 import { drawRoom } from '../objects/room';
-import { drawPanel, liftFor, makeText, touchEnv } from '../objects/ui';
+import { liftFor, touchEnv } from '../objects/ui';
 import { profileOf } from '../systems/motion';
 import { applyLift, dragThreshold, isDragPointer } from '../systems/touch';
 import { enterKind, transitionIn } from '../systems/transitions';
@@ -48,9 +50,6 @@ const CAT_SIZE = 540;
 /** Forgiving margin around the cat's drop zone and magnet radius, in game px (ADR 0008). */
 const DROP_MARGIN = 36;
 const MAGNET_RADIUS = 110;
-/** Left panel: tabs, then the scrollable grid, then the hint (game px). */
-const PANEL = { x: 36, y: 36, width: 404, height: 648 };
-const GRID = { x: 62, y: 164, width: 368 - 12, height: 464 };
 
 /** The fitting room (F2 vertical slice): one cat, two tabs, a grid, the mirror and the layers panel. */
 export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
@@ -61,6 +60,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
   private grid!: ItemGrid;
   private tabs!: Tabs;
   private layersPanel!: LayersPanel;
+  private panel!: Card;
   private fx!: DragFx;
   private hint!: Phaser.GameObjects.Text;
   private bounds!: ItemBounds;
@@ -116,7 +116,8 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     // A finger jitters more than a mouse (ADR 0014): the press becomes a drag after ~10 CSS px.
     const env = touchEnv();
     this.input.dragDistanceThreshold = dragThreshold(env.touch, env.scale);
-    drawRoom(this, CAT_X, CAT_FEET_Y);
+    new PaperBackground(this, { animate: false }).setDepth(-10);
+    drawRoom(this, CAT_X, CAT_FEET_Y).setDepth(-5);
     this.bounds = new ItemBounds(this);
     this.fx = new DragFx({
       scene: this, cat: () => this.cat, anchors: this.anchors, baseCatScale: () => this.baseCatScale,
@@ -136,12 +137,15 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.cat.on(ObjectEvents.ItemDragEnd, (_item: ClothingDef, p: Phaser.Input.Pointer) => this.endDrag(p));
 
     // Left panel: tabs and grid.
-    const panel = this.add.graphics().setPosition(PANEL.x, PANEL.y);
-    drawPanel(panel, PANEL.width, PANEL.height);
+    this.panel = new Card(this, PANEL.x + PANEL.width / 2, PANEL.y + PANEL.height / 2, { width: PANEL.width, height: PANEL.height, animate: false });
     const categories = visibleCategories(this.catalog.clothes);
     this.categories = categories;
     const tabsWidth = categories.length * 54 + (categories.length - 1) * 10;
-    this.tabs = new Tabs(this, PANEL.x + (PANEL.width - tabsWidth) / 2, 58, categories.map((id) => ({ id, label: CATEGORY_LABELS[id], icon: tabIconKey(id) })));
+    // Notebook index tabs hanging from the top edge of the card (they come after the card, so they draw over it).
+    this.tabs = new Tabs(
+      this, PANEL.x + (PANEL.width - tabsWidth) / 2, TABS_Y,
+      categories.map((id) => ({ id, label: CATEGORY_LABELS[id], icon: tabIconKey(id), color: categoryTabColor(id) })), { style: 'index' },
+    );
     this.grid = new ItemGrid(this, GRID.x, GRID.y, GRID.width, GRID.height);
     this.grid.on(ObjectEvents.ItemDragStart, (c: ClothingItem, p: Phaser.Input.Pointer) => this.beginDrag(c.item, p, false, c));
     this.grid.on(ObjectEvents.ItemDrag, (_c: ClothingItem, p: Phaser.Input.Pointer) => this.moveDrag(p));
@@ -149,18 +153,21 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.grid.on(ObjectEvents.ItemClick, () => this.pulseHint());
     // A tab that a controller added has its own listener: only the wardrobe categories fill the grid.
     this.tabs.on(ObjectEvents.TabSelect, (id: string) => this.categories.includes(id as Category) && this.showCategory(id as Category));
-    this.hint = makeText(this, PANEL.x + PANEL.width / 2, 658, 'Arrastra la ropa al gatito', 20).setAlpha(0.7);
+    // The hint is handwriting in pencil, at the foot of the card.
+    this.hint = this.add
+      .text(PANEL.x + PANEL.width / 2, PANEL.y + PANEL.height - 28, 'Arrastra la ropa al gatito', { fontFamily: Fonts.Voice, fontStyle: '700', fontSize: '26px', color: Ink.mutedTexto, padding: { x: 4, y: 8 } })
+      .setOrigin(0.5).setAlpha(0.8);
 
     // Right panel: layers.
-    this.layersPanel = new LayersPanel(this, 968, 60);
+    this.layersPanel = new LayersPanel(this, LAYERS_PANEL.x, LAYERS_PANEL.y);
     this.layersPanel.on(ObjectEvents.LayerRemove, (item: ClothingDef) => this.removeItem(item));
 
     ({ hearts: this.hearts, sparkles: this.sparkles } = createBursts(this));
 
     this.createNameSign();
-    this.doneButton = new Button(this, 1093, 568, '¡Listo!', { width: 250, height: 88, fontSize: 42 });
+    this.doneButton = new Button(this, DONE_BUTTON.x, DONE_BUTTON.y, '¡Listo!', { ...DONE_BUTTON, pill: 'primary' });
     this.doneButton.on(ObjectEvents.ButtonClick, () => this.leave('finish'));
-    this.changeButton = new Button(this, 1093, 652, 'Cambiar de gato', { width: 220, height: 62, fontSize: 24, tone: 'lavanda' });
+    this.changeButton = new Button(this, CHANGE_BUTTON.x, CHANGE_BUTTON.y, 'Cambiar de gato', { ...CHANGE_BUTTON, pill: 'secondary' });
     this.changeButton.on(ObjectEvents.ButtonClick, () => this.leave('change'));
     this.mute = new MuteButton(this, 1240, 686).setScale(0.8);
     this.motion = new MotionButton(this, 1240, 636).setScale(0.8);
@@ -238,7 +245,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.drag = null;
     this.fx?.destroy();
     this.tweens.killAll();
-    for (const o of [this.doneButton, this.changeButton, this.mute, this.motion, this.fullscreen, this.sign, this.cat, this.grid, this.tabs, this.layersPanel]) o?.destroy();
+    for (const o of [this.doneButton, this.changeButton, this.mute, this.motion, this.fullscreen, this.sign, this.cat, this.grid, this.tabs, this.layersPanel, this.panel]) o?.destroy();
   }
 
   /** Back from the album: the tab it was on and how far the grid was scrolled (a tab of a controller answers to its own listener). */

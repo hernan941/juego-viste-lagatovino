@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
-import { ObjectEvents, TextureKeys } from '../constants';
+import { Ink, ObjectEvents, TextureKeys, colorToNumber } from '../constants';
 import type { ClothingDef, Rect } from '../domain/types';
 import { profileOf } from '../systems/motion';
-import { addHover, hex, type ScaleTo } from './ui';
+import { addHover, type ScaleTo } from './ui';
 import { hoverSfx } from './hoverSfx';
 
 export const CELL_SIZE = 104;
@@ -34,10 +34,10 @@ export class ClothingItem extends Phaser.GameObjects.Container {
     this.item = item;
     this.icon = scene.add.image(0, 0, item.icon).setDisplaySize(CELL_SIZE, CELL_SIZE);
     this.wornRing = scene.add.graphics().setAlpha(0);
-    this.wornRing.lineStyle(5, hex('menta'), 1).strokeRoundedRect(-CELL_SIZE / 2 - 2, -CELL_SIZE / 2 - 2, CELL_SIZE + 4, CELL_SIZE + 4, 16);
+    this.wornRing.lineStyle(4, colorToNumber(Ink.hoja), 1).strokeRoundedRect(-CELL_SIZE / 2 - 2, -CELL_SIZE / 2 - 2, CELL_SIZE + 4, CELL_SIZE + 4, 16);
     this.view = scene.add.container(0, 0, [this.icon, this.wornRing]);
     if (item.secret) {
-      this.badge = scene.add.image(CELL_SIZE / 2 - 12, -CELL_SIZE / 2 + 12, TextureKeys.Sparkle).setScale(0.78);
+      this.badge = scene.add.image(CELL_SIZE / 2 - 12, -CELL_SIZE / 2 + 12, TextureKeys.InkSparkle).setScale(0.7);
       this.view.add(this.badge);
       if (profileOf(scene).loops) scene.tweens.add({ targets: this.badge, angle: 90, scale: { from: 0.6, to: 0.95 }, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     }
@@ -150,7 +150,7 @@ export class ClothingItem extends Phaser.GameObjects.Container {
     this.scene.tweens.add({ targets: this.icon, alpha: lifted ? 0.3 : 1, duration: 120 });
   }
 
-  /** A mint ring marks the items that are being worn. */
+  /** A green (hoja) ring marks the items that are being worn. */
   setWorn(worn: boolean): void {
     this.scene.tweens.add({ targets: this.wornRing, alpha: worn ? 1 : 0, duration: 150 });
   }
