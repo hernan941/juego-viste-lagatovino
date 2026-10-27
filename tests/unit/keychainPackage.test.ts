@@ -2,7 +2,8 @@
 // operations that draw the kraft packaging (S8, ADR 0021). Pure: the scene runs them into a RenderTexture.
 import { describe, expect, it } from 'vitest';
 import { HARDWARE_ART, hardwareParts, keychainLayout, packagingLayout, ringFor } from '../../src/game/domain/keychain';
-import { CARD_SIZE, fitKeychain, packageOps } from '../../src/game/domain/keychainPackage';
+import { CARD_SIZE, fitKeychain, packageOps, splitAtKeychain } from '../../src/game/domain/keychainPackage';
+import { FRAME_ANGLE_MAX, FRAME_ANGLE_MIN, framePlacement } from '../../src/game/domain/photo';
 import { PHOTO_SIZE } from '../../src/game/domain/photoComposition';
 import type { SheetOp } from '../../src/game/domain/photoSheet';
 
@@ -60,6 +61,7 @@ describe('packageOps', () => {
     stars: 4,
     brand: { shopSign: 'Lagatovino · hecho a mano', signature: 'Xoxo, mau!' },
     cardTexture: 'card-art',
+    chainTexture: 'chain-art',
     keychain: { width: 560, height: 640, hang: { x: 280, y: 30 } },
   });
   const ops = () => packageOps(input());
@@ -83,27 +85,73 @@ describe('packageOps', () => {
     expect(tag.y).toBeCloseTo(layout.tagline.y + layout.tagline.height / 2);
   });
 
-  it('puts the photo (background, frame and stickers, the sheet at a smaller size) inside the window', () => {
+  const image = (list: SheetOp[], texture: string) => list.find((o) => o.kind === 'image' && o.texture === texture) as Extract<SheetOp, { kind: 'image' }>;
+  const rad = (deg: number) => (deg * Math.PI) / 180;
+
+  it('puts the photo (background, frame and stickers, the sheet at a smaller size) in the window, tilted like a polaroid pinned by hand (F2)', () => {
     const list = ops();
-    const bg = list.find((o) => o.kind === 'image' && o.texture === 'tex-bg-a') as Extract<SheetOp, { kind: 'image' }>;
-    expect(bg.x).toBeCloseTo(layout.window.x + layout.window.width / 2);
-    expect(bg.y).toBeCloseTo(layout.window.y + layout.window.height / 2);
+    const bg = image(list, 'tex-bg-a');
+    const frame = image(list, 'tex-frame-a');
     const k = bg.scale!;
+    // The window is the box of the photo, whatever the tilt: the sheet fits inside it.
     expect(PHOTO_SIZE.width * k).toBeLessThanOrEqual(layout.window.width + 1e-9);
     expect(PHOTO_SIZE.height * k).toBeLessThanOrEqual(layout.window.height + 1e-9);
-    const sticker = list.find((o) => o.kind === 'image' && o.texture === 'tex-st-1') as Extract<SheetOp, { kind: 'image' }>;
-    expect(sticker.x).toBeCloseTo(bg.x + 100 * k);
-    expect(sticker.y).toBeCloseTo(bg.y - 120 * k);
-    expect(sticker.angle).toBe(4);
+    // Between 1 and 8 degrees either way, never straight, and the same for every piece of the sheet.
+    const a = bg.angle!;
+    expect(Math.abs(a)).toBeGreaterThanOrEqual(FRAME_ANGLE_MIN);
+    expect(Math.abs(a)).toBeLessThanOrEqual(FRAME_ANGLE_MAX);
+    expect(frame.angle).toBe(a);
+    expect(a).toBe(framePlacement('Mochi|frame-a').angle);
+    // The middle of the sheet is the middle of the window (the tilt turns it around its middle).
+    expect(bg.x).toBeCloseTo(layout.window.x + layout.window.width / 2);
+    expect(bg.y).toBeCloseTo(layout.window.y + layout.window.height / 2);
+    // A sticker keeps its place on the sheet: its offset turns with it, and so does its own angle.
+    const sticker = image(list, 'tex-st-1');
+    const dx = 100 * k;
+    const dy = -120 * k;
+    expect(sticker.x).toBeCloseTo(bg.x + dx * Math.cos(rad(a)) - dy * Math.sin(rad(a)));
+    expect(sticker.y).toBeCloseTo(bg.y + dx * Math.sin(rad(a)) + dy * Math.cos(rad(a)));
+    expect(sticker.angle).toBeCloseTo(4 + a);
   });
 
-  it('hangs the keychain from the top of its rectangle, fitted, over the photo', () => {
+  it('tilts the same photo the same way every time', () => {
+    expect(image(ops(), 'tex-bg-a').angle).toBe(image(ops(), 'tex-bg-a').angle);
+  });
+
+  it('hangs a chain from the hole to the ring, over the card and under the keychain (F2)', () => {
+    const list = ops();
+    const chain = image(list, 'chain-art');
+    const len = layout.chain.to.y - layout.chain.from.y;
+    expect(chain.x).toBeCloseTo(layout.hole.x);
+    expect(chain.y).toBeCloseTo(layout.chain.from.y + len / 2);
+    expect(chain.height).toBeCloseTo(len);
+    expect(list.findIndex((o) => o === chain)).toBeGreaterThan(0);
+    expect(list.findIndex((o) => o === chain)).toBeLessThan(list.findIndex((o) => o.kind === 'keychain'));
+  });
+
+  it('hangs the keychain from the end of the chain, fitted, over the paper of the photo', () => {
     const list = ops();
     const kc = list.find((o) => o.kind === 'keychain') as Extract<SheetOp, { kind: 'keychain' }>;
     expect(kc.x).toBeCloseTo(layout.hang.x);
     expect(kc.y).toBeCloseTo(layout.hang.y);
     expect(kc.scale).toBeCloseTo(fitKeychain(layout.keychain, { width: 560, height: 640 }, { x: 280, y: 30 }));
-    expect(list.findIndex((o) => o.kind === 'keychain')).toBeGreaterThan(list.findIndex((o) => o.kind === 'image' && o.texture === 'tex-st-1'));
+    const at = (o: SheetOp | undefined) => list.findIndex((x) => x === o);
+    expect(list.findIndex((o) => o.kind === 'keychain')).toBeGreaterThan(at(image(list, 'tex-frame-a')));
+  });
+
+  it('shows every sticker of the photo, in front of the keychain and inside the window (K3: they used to hide behind it)', () => {
+    const two = [{ id: 'st-1', x: 100, y: -120, angle: 4 }, { id: 'st-1', x: -80, y: 150, angle: -6 }];
+    const list = packageOps({ ...input(), composition: { ...input().composition, stickers: two } });
+    const stickers = list.filter((o): o is Extract<SheetOp, { kind: 'image' }> => o.kind === 'image' && o.texture === 'tex-st-1');
+    expect(stickers).toHaveLength(2);
+    const kc = list.findIndex((o) => o.kind === 'keychain');
+    for (const st of stickers) {
+      expect(list.indexOf(st)).toBeGreaterThan(kc);
+      expect(st.x).toBeGreaterThanOrEqual(layout.window.x);
+      expect(st.x).toBeLessThanOrEqual(layout.window.x + layout.window.width);
+      expect(st.y).toBeGreaterThanOrEqual(layout.window.y);
+      expect(st.y).toBeLessThanOrEqual(layout.window.y + layout.window.height);
+    }
   });
 
   it('draws the 5 stars of the rating under the name, 4 of them filled', () => {
@@ -120,5 +168,18 @@ describe('packageOps', () => {
 
   it('draws no stars when the look was not rated', () => {
     expect(packageOps({ ...input(), stars: null }).some((o) => o.kind === 'image' && o.texture.startsWith('ui-stamp'))).toBe(false);
+  });
+});
+
+describe('splitAtKeychain (the screen draws what is behind the live keychain and what is in front of it apart)', () => {
+  it('splits the list at the keychain, which belongs to neither part', () => {
+    const a: SheetOp = { kind: 'image', texture: 'a', x: 0, y: 0 };
+    const b: SheetOp = { kind: 'image', texture: 'b', x: 0, y: 0 };
+    const kc: SheetOp = { kind: 'keychain', x: 0, y: 0, scale: 1 };
+    expect(splitAtKeychain([a, kc, b])).toEqual({ behind: [a], front: [b] });
+  });
+  it('has nothing in front when there is no keychain', () => {
+    const a: SheetOp = { kind: 'image', texture: 'a', x: 0, y: 0 };
+    expect(splitAtKeychain([a])).toEqual({ behind: [a], front: [] });
   });
 });

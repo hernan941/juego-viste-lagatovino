@@ -1,9 +1,10 @@
 // The kraft packaging card of the keychain on the screen (S8): the same operations that make the PNG, drawn once (without the
-// keychain, which hangs from its hole live and keeps swinging) into a texture. It rises from below the screen, can be tapped to put
+// keychain, which hangs from its hole live and keeps swinging) into a texture. What goes in front of the keychain (the stickers) is
+// drawn into a second image that follows the card, one depth above the live keychain. It rises from below the screen, can be tapped to put
 // away, and sinks again. Its texture is freed on `destroy`.
 import Phaser from 'phaser';
 import { ObjectEvents } from '../../constants';
-import { CARD_SIZE } from '../../domain/keychainPackage';
+import { CARD_SIZE, splitAtKeychain } from '../../domain/keychainPackage';
 import { packagingLayout } from '../../domain/keychain';
 import type { SheetOp } from '../../domain/photoSheet';
 import type { Point } from '../../domain/types';
@@ -18,6 +19,8 @@ let counter = 0;
 export class PackageCard extends Phaser.GameObjects.Container {
   private readonly key: string;
   private readonly picture: Phaser.GameObjects.Image;
+  private readonly frontKey: string;
+  private readonly front: Phaser.GameObjects.Image | null = null;
   private readonly rest: Point;
   private moving: Phaser.Tweens.Tween | null = null;
   private thumb: Phaser.GameObjects.Image | null = null;
@@ -27,7 +30,26 @@ export class PackageCard extends Phaser.GameObjects.Container {
     super(scene, x, y);
     this.rest = { x, y };
     this.key = `package-card~${counter++}`;
-    const texture = scene.textures.addDynamicTexture(this.key, CARD_SIZE.width, CARD_SIZE.height);
+    this.frontKey = `${this.key}~front`;
+    const { behind, front } = splitAtKeychain(ops);
+    this.paint(this.key, behind);
+    if (front.length > 0) this.paint(this.frontKey, front);
+    this.picture = scene.add.image(0, 0, this.key);
+    this.add(this.picture);
+    this.setSize(CARD_SIZE.width, CARD_SIZE.height);
+    this.setPosition(x, scene.scale.height + CARD_SIZE.height);
+    this.setVisible(false);
+    scene.add.existing(this);
+    if (front.length > 0) {
+      this.front = scene.add.image(x, this.y, this.frontKey).setVisible(false);
+      scene.events.on(Phaser.Scenes.Events.POST_UPDATE, this.followFront, this);
+    }
+  }
+
+  /** Draws `ops` (in the coordinates of the card) into a new texture of the size of the card. */
+  private paint(key: string, ops: readonly SheetOp[]): void {
+    const { scene } = this;
+    const texture = scene.textures.addDynamicTexture(key, CARD_SIZE.width, CARD_SIZE.height);
     if (!texture) throw new Error('PackageCard: no dynamic texture');
     const temp: Phaser.GameObjects.GameObject[] = [];
     try {
@@ -36,12 +58,11 @@ export class PackageCard extends Phaser.GameObjects.Container {
     } finally {
       for (const o of temp) o.destroy();
     }
-    this.picture = scene.add.image(0, 0, this.key);
-    this.add(this.picture);
-    this.setSize(CARD_SIZE.width, CARD_SIZE.height);
-    this.setPosition(x, scene.scale.height + CARD_SIZE.height);
-    this.setVisible(false);
-    scene.add.existing(this);
+  }
+
+  /** The front image goes where the card is, one depth above the live keychain (the card moves with tweens). */
+  private followFront(): void {
+    this.front?.setPosition(this.x, this.y).setAlpha(this.alpha).setVisible(this.visible).setDepth(this.depth + 2);
   }
 
   /** Where the keychain hangs on the screen: the hole of the card. */
@@ -122,7 +143,9 @@ export class PackageCard extends Phaser.GameObjects.Container {
     }
     this.thumb?.destroy();
     this.thumb = null;
-    if (scene?.textures?.exists(this.key)) scene.textures.remove(this.key);
+    scene?.events?.off(Phaser.Scenes.Events.POST_UPDATE, this.followFront, this);
+    this.front?.destroy();
+    for (const key of [this.key, this.frontKey]) if (scene?.textures?.exists(key)) scene.textures.remove(key);
     this.removeAllListeners();
     super.destroy(fromScene);
   }

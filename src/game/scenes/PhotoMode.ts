@@ -589,7 +589,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     const ops = packageOps({
       photo: this.catalog.photo, composition: this.getComposition(), catName: this.look.catName, stars: this.look.rating?.stars ?? null,
       brand: { shopSign: withBrand(brand).shopSign, signature: photoLines.signature(brand) },
-      cardTexture: KeychainTextures.PackageCard, keychain: { width: layout.width, height: layout.height, hang: layout.hang },
+      cardTexture: KeychainTextures.PackageCard, chainTexture: KeychainTextures.Chain, keychain: { width: layout.width, height: layout.height, hang: layout.hang },
     });
     const card = new PackageCard(this, SHEET.x, SHEET.y, ops).setDepth(DEPTH.card);
     this.card = card;

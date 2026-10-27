@@ -281,8 +281,8 @@ describe('packagingLayout', () => {
 
   it('puts the hole on the top center and the rest from top to bottom', () => {
     expect(l.hole.x).toBe(frame.x + frame.width / 2);
-    expect(l.hole.y).toBeLessThan(l.sign.y);
-    const order = [l.sign, l.window, l.name, l.stars, l.tagline];
+    expect(l.hole.y).toBeLessThan(l.window.y);
+    const order = [l.window, l.name, l.stars, l.tagline, l.sign];
     for (let i = 1; i < order.length; i++) expect(order[i].y).toBeGreaterThanOrEqual(order[i - 1].y + order[i - 1].height);
   });
 
@@ -291,16 +291,27 @@ describe('packagingLayout', () => {
     expect(card.hole.x).toBeCloseTo(270, 0);
     expect(card.hole.y).toBeCloseTo(56, 0);
     expect(card.hole.radius).toBeCloseTo(15, 0);
-    // The sign must not sit on the hole.
-    expect(card.sign.y).toBeGreaterThanOrEqual(card.hole.y + card.hole.radius);
+    // The chain goes from the hole down to the ring, so nothing but the chain sits between them.
+    expect(card.window.y).toBeGreaterThanOrEqual(card.hole.y + card.hole.radius);
     const zone: Rect = { x: 34, y: 92, width: 472, height: 548 };
     for (const r of [card.sign, card.window, card.keychain, card.name, card.stars, card.tagline]) expect(inside(r, zone)).toBe(true);
   });
 
-  it('hangs the keychain inside the window of the picture', () => {
-    expect(inside(l.keychain, l.window)).toBe(true);
+  it('hangs the keychain from the ring at the end of a chain that starts at the hole (F2)', () => {
     expect(l.hang.x).toBe(frame.x + frame.width / 2);
-    expect(l.hang.y).toBeGreaterThanOrEqual(l.window.y);
+    expect(l.hang.y).toBe(l.keychain.y);
+    expect(l.chain.from).toEqual({ x: l.hole.x, y: l.hole.y });
+    expect(l.chain.to).toEqual(l.hang);
+    expect(l.chain.to.y).toBeGreaterThan(l.chain.from.y);
+    // A visible chain: at least a tenth of the card.
+    expect(l.chain.to.y - l.chain.from.y).toBeGreaterThan(frame.height * 0.05);
+  });
+
+  it('makes the keychain big (a third more than before) and in front of a photo that is a little bigger than the window of it (F2)', () => {
+    expect(l.keychain.width).toBeGreaterThanOrEqual(frame.width * 0.6);
+    expect(l.keychain.y + l.keychain.height).toBeLessThanOrEqual(l.name.y);
+    // The photo sits behind the keychain and its bottom shows below it.
+    expect(l.window.y + l.window.height).toBeGreaterThan(l.keychain.y + l.keychain.height);
   });
 
   it('has no overlaps between the text and the picture', () => {

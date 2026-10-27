@@ -157,13 +157,15 @@ export function pushStrength(angle: number): number {
 export interface PackagingLayout {
   /** Hole to hang the card. */
   hole: Point & { radius: number };
-  /** "Lagatovino · hecho a mano". */
+  /** The chain that goes through the hole and down to the ring of the keychain. */
+  chain: { from: Point; to: Point };
+  /** "Lagatovino · hecho a mano", at the bottom of the card. */
   sign: Rect;
-  /** The picture: background, frame and stickers. */
+  /** The photo, pinned behind the keychain: its box (a tilt turns it around its middle). */
   window: Rect;
-  /** Where the keychain goes inside the window. */
+  /** Where the keychain goes: big, in front of the photo and under the chain. */
   keychain: Rect;
-  /** Point where the ring hangs (top center of the keychain). */
+  /** Point where the ring hangs (top center of the keychain), the end of the chain. */
   hang: Point;
   name: Rect;
   stars: Rect;
@@ -173,22 +175,25 @@ export interface PackagingLayout {
 
 /**
  * Proportional layout of the kraft card inside `frame` (any size, any origin), measured on the art `package-card.svg` (540 x 675): the
- * hole is at (270, 56) and the content goes inside the dashed zone (34, 92) to (506, 640), so nothing sits on the hole.
+ * hole is at (270, 56) and the content goes inside the dashed zone (34, 92) to (506, 640). From the hole a chain goes down to the ring
+ * of the keychain (F2), which is big and hangs in front of a tilted photo; its text goes under them.
  */
 export function packagingLayout(frame: Rect): PackagingLayout {
   const { x, y, width: w, height: h } = frame;
   const rect = (fx: number, fy: number, fw: number, fh: number): Rect => ({ x: x + fx * w, y: y + fy * h, width: fw * w, height: fh * h });
-  const window = rect(0.12, 0.2, 0.76, 0.46);
-  const keychain = rect(0.22, 0.215, 0.56, 0.42);
+  const hole = { x: x + w / 2, y: y + (56 / 675) * h, radius: (15 / 540) * w };
+  const keychain = rect(0.19, 0.166, 0.62, 0.542);
+  const hang = { x: x + w / 2, y: keychain.y };
   return {
-    hole: { x: x + w / 2, y: y + (56 / 675) * h, radius: (15 / 540) * w },
-    sign: rect(0.15, 0.14, 0.7, 0.05),
-    window,
+    hole,
+    chain: { from: { x: hole.x, y: hole.y }, to: hang },
+    sign: rect(0.15, 0.9, 0.7, 0.04),
+    window: rect(0.12, 0.215, 0.76, 0.51),
     keychain,
-    hang: { x: x + w / 2, y: keychain.y },
-    name: rect(0.1, 0.685, 0.8, 0.075),
-    stars: rect(0.25, 0.765, 0.5, 0.05),
-    tagline: rect(0.15, 0.835, 0.7, 0.065),
+    hang,
+    name: rect(0.1, 0.73, 0.8, 0.06),
+    stars: rect(0.25, 0.795, 0.5, 0.04),
+    tagline: rect(0.15, 0.84, 0.7, 0.05),
   };
 }
 
