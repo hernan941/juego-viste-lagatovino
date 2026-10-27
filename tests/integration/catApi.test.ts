@@ -345,6 +345,15 @@ describe('Cat.itemAt (F16.3)', () => {
   });
 });
 
+describe('Cat.getItemImage (F16.4)', () => {
+  it('gives the layer image of a worn item (the dye sweep lays its copy over it) and null otherwise', () => {
+    const { f, cat } = make();
+    const layer = wearSweater(f, cat);
+    expect(cat.getItemImage('sweater-rayas')).toBe(layer);
+    expect(cat.getItemImage('head-gorro')).toBeNull();
+  });
+});
+
 describe('Cat.highlightItem (F16.3)', () => {
   it('lights a halo of copies behind the worn item, and puts it out with null', () => {
     const { f, cat } = make();

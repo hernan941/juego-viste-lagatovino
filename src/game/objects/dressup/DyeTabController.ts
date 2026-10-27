@@ -11,17 +11,22 @@ import { WATER_DYE } from '../../domain/dye';
 import { isInsideDropZone } from '../../domain/dropZone';
 import { anchorForSlot } from '../../domain/slots';
 import { tiltToward } from '../../domain/tilt';
-import type { ClothingDef, DyeDef, Point } from '../../domain/types';
+import { applyDiscovery } from '../../domain/progress';
+import type { ClothingDef, DyeDef, EconomyRules, Point, Progress } from '../../domain/types';
 import { getAudio } from '../../plugins/AudioPlugin';
 import { getDye } from '../../plugins/DyePlugin';
 import { profileOf } from '../../systems/motion';
 import { readSession } from '../../systems/sessionStore';
 import { applyLift, isDragPointer } from '../../systems/touch';
+import { DyeDot } from '../DyeDot';
 import { DyeJar } from '../DyeJar';
+import { startSweep, type SweepHandle } from '../DyeSweep';
 import { SpeechBubble } from '../kit/SpeechBubble';
 import { tabIconKey } from '../tabIcons';
 import { TAB_SIZE } from '../Tabs';
 import { liftFor } from '../ui';
+import type { ClothingItem } from '../ClothingItem';
+import { CELL_SIZE } from '../ClothingItem';
 import type { DressUpContext, DressUpController } from './DressUpController';
 
 /** Id of the tab (not a wardrobe category: the scene ignores it and this controller answers it). */
@@ -38,10 +43,15 @@ const GHOST_HEIGHT = 150;
 const DRIP_EVERY_MS = 420;
 const BUBBLE_MS = 1300;
 const BOUNCE_BACK_MS = 250;
+/** The dot of color: on the corner of the wardrobe cell, and on the icon of the row of the layers panel (panel px). */
+const DOT_RADIUS = 11;
+const CELL_DOT = { x: CELL_SIZE / 2 - 12, y: -CELL_SIZE / 2 + 12 } as const;
+const ROW_DOT = { x: -58, y: 14 } as const;
 
 /** What the catalog of the registry carries besides the clothes (GameData, ADR 0017). */
 interface WithDyes {
   dyes: readonly DyeDef[];
+  economy: EconomyRules;
 }
 
 /** The bottle in the player's hand. */
@@ -77,12 +87,22 @@ export class DyeTabController implements DressUpController {
   private timers: Phaser.Time.TimerEvent[] = [];
   private flying = 0;
   private last: DyeDropResult['kind'] | null = null;
+  /** Items whose next texture arrives with a sweep, and the sweeps that are running (one per item). */
+  private sweepNext = new Set<string>();
+  private sweeping = new Map<string, SweepHandle>();
+  /** The dots of color that hang on cells and rows, and the functions that take their decorators away. */
+  private dots: { dot: DyeDot; itemId: string }[] = [];
+  private removeDecorators: (() => void)[] = [];
 
   attach(ctx: DressUpContext): void {
     this.ctx = ctx;
     this.alive = true;
     ctx.tabs.addTab({ id: DYE_TAB_ID, label: dyeLines.tab, icon: tabIconKey(DYE_TAB_ID) });
     this.fitTabs();
+    this.removeDecorators = [
+      ctx.grid.addCellDecorator((cell: ClothingItem) => this.hangDot(cell.item, (dot) => cell.addDecoration(dot), CELL_DOT)),
+      ctx.layersPanel.addRowDecorator((row, item) => this.hangDot(item, (dot) => row.add(dot), ROW_DOT)),
+    ];
     ctx.tabs.on(ObjectEvents.TabSelect, this.onTab, this);
     ctx.scene.events.on('update', this.onUpdate, this);
     ctx.scene.registry.events.on(`changedata-${RegistryKeys.ItemDye}`, this.syncAll, this);
@@ -96,6 +116,13 @@ export class DyeTabController implements DressUpController {
     tabs.off(ObjectEvents.TabSelect, this.onTab, this);
     scene.events.off('update', this.onUpdate, this);
     scene.registry.events.off(`changedata-${RegistryKeys.ItemDye}`, this.syncAll, this);
+    for (const remove of this.removeDecorators) remove();
+    this.removeDecorators = [];
+    this.dots = [];
+    // A sweep that is still climbing ends now: the cat gets its final texture (and the old one is let go).
+    for (const sweep of [...this.sweeping.values()]) sweep.finish();
+    this.sweeping.clear();
+    this.sweepNext.clear();
     for (const t of this.timers) t.remove();
     this.timers = [];
     this.bubble?.destroy();
@@ -112,8 +139,9 @@ export class DyeTabController implements DressUpController {
     this.applied.clear();
   }
 
-  e2eState(): { open: boolean; jars: Record<string, Point>; dragging: boolean; target: string | null; last: string | null; applied: Record<string, string> } {
+  e2eState(): { sweeping: string[]; open: boolean; jars: Record<string, Point>; dragging: boolean; target: string | null; last: string | null; applied: Record<string, string> } {
     return {
+      sweeping: [...this.sweeping.keys()],
       open: this.open,
       jars: Object.fromEntries(this.jars.filter((j) => j.active !== false).map((j) => [j.dye.id, j.getCenter()])),
       dragging: this.drag !== null,
@@ -125,7 +153,7 @@ export class DyeTabController implements DressUpController {
 
   /** False while a bottle flies back or the bottles are still popping in (feeds `settled` of the hook). */
   isSettled(): boolean {
-    return this.flying === 0 && this.drag === null && this.jars.every((j) => j.alpha > 0.99 && Math.abs(j.scale - 1) < 0.01);
+    return this.flying === 0 && this.sweeping.size === 0 && this.drag === null && this.jars.every((j) => j.alpha > 0.99 && Math.abs(j.scale - 1) < 0.01);
   }
 
   /** Seven tabs are wider than the panel: the row shrinks to fit, around the same middle point. */
@@ -334,13 +362,30 @@ export class DyeTabController implements DressUpController {
     if (!this.alive) return;
     const { scene, cat } = this.ctx;
     const session = readSession(scene.registry);
+    this.sweepNext.add(item.id);
     scene.registry.set(RegistryKeys.ItemDye, applyDye(session.itemDye, item.id, dye.id));
     const p = profileOf(scene);
     getAudio(scene).play(SfxKeys.Blup);
     cat.squash();
+    // Surprise first, then happy: it looks at its belly to see the new color.
+    cat.playFaces({ lead: 'sorpresa', expression: 'feliz', ms: 900 });
     cat.lookAtBelly(900);
     this.splash(dye, anchor, p);
+    this.discoverColor(dye, anchor);
     scene.events.emit(DressUpEvents.ItemDyed, item, dye.id);
+  }
+
+  /** The favorite color of the cat found for the first time pays (once per cat); the buttons fly in from the garment. */
+  private discoverColor(dye: DyeDef, at: Point): void {
+    const { scene, catalog, catId } = this.ctx;
+    const prefs = catalog.cats.find((c) => c.id === catId)?.prefs;
+    const progress = scene.registry.get(RegistryKeys.Progress) as Progress | undefined;
+    if (!prefs || !progress || dye.id === WATER_ID || dye.id !== prefs.favoriteDye) return;
+    const { progress: next, events } = applyDiscovery(progress, 'taste', 'color', (catalog as unknown as WithDyes).economy, catId);
+    const paid = events.find((e) => e.type === 'tasteFound');
+    if (next === progress || !paid || paid.type !== 'tasteFound') return;
+    scene.registry.set(RegistryKeys.Progress, next);
+    scene.events.emit(DressUpEvents.WalletFlight, { direction: 'in', at, coins: paid.amount });
   }
 
   /** The splash: a flat burst of the color (the art is white, it takes the hex of the dye) and a few drops that fly out. */
@@ -421,6 +466,7 @@ export class DyeTabController implements DressUpController {
    */
   private syncAll(): void {
     const { scene, catalog } = this.ctx;
+    this.refreshDots();
     const wanted = readSession(scene.registry).itemDye;
     const plugin = getDye(scene);
     for (const item of catalog.clothes) {
@@ -441,17 +487,52 @@ export class DyeTabController implements DressUpController {
     }
   }
 
-  /** Puts a texture (or the original, with null) on the cat for the item and holds it in the cache while it is shown. */
+  /**
+   * Puts a texture (or the original, with null) on the cat for the item and holds it in the cache while it is shown. After a drop
+   * the new color climbs the garment (DyeSweep) and the real texture is swapped when it arrives; a dye that came with the
+   * session, or a garment that is not on the cat, changes at once.
+   */
   private show(itemId: string, key: string | null, dyeId: string): void {
-    const plugin = getDye(this.ctx.scene);
+    const { scene, cat, catalog } = this.ctx;
+    const plugin = getDye(scene);
     const old = this.applied.get(itemId);
     if (key === null) this.applied.delete(itemId);
     else {
       plugin.retain(key);
       this.applied.set(itemId, { dyeId, key });
     }
-    this.ctx.cat.setItemTexture(itemId, key);
-    if (old) plugin.release(old.key);
+    this.sweeping.get(itemId)?.finish();
+    const apply = () => {
+      this.sweeping.delete(itemId);
+      cat.setItemTexture(itemId, key);
+      if (old) plugin.release(old.key);
+    };
+    const layer = this.sweepNext.delete(itemId) ? cat.getItemImage(itemId) : null;
+    const base = catalog.clothes.find((c) => c.id === itemId)?.texture;
+    if (!layer || !(key ?? base)) return apply();
+    this.sweeping.set(itemId, startSweep(scene, layer, (key ?? base)!, apply));
+  }
+
+  // ---- The dot of color --------------------------------------------------------
+
+  /** Hangs a dot on a cell or a row of a dyeable item; it shows the color the item has now and follows it. */
+  private hangDot(item: ClothingDef, hang: (dot: DyeDot) => void, at: Point): void {
+    if (!item.dyeable) return;
+    const dot = new DyeDot(this.ctx.scene, at.x, at.y, DOT_RADIUS);
+    hang(dot);
+    this.dots = this.dots.filter((d) => d.dot.active !== false);
+    this.dots.push({ dot, itemId: item.id });
+    dot.setDye(this.hexOf(item.id));
+  }
+
+  private hexOf(itemId: string): string | null {
+    const dyeId = readSession(this.ctx.scene.registry).itemDye[itemId];
+    return (this.ctx.catalog as unknown as WithDyes).dyes.find((d) => d.id === dyeId)?.hex ?? null;
+  }
+
+  private refreshDots(): void {
+    this.dots = this.dots.filter((d) => d.dot.active !== false);
+    for (const { dot, itemId } of this.dots) dot.setDye(this.hexOf(itemId));
   }
 
   private later(ms: number, fn: () => void): void {

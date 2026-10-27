@@ -11,6 +11,9 @@ const HEIGHT = 450;
 const ROW_H = 56;
 const TOP = 70;
 
+/** What a feature hangs on a row of the panel (F16.4). */
+export type RowDecorator = (row: Phaser.GameObjects.Container, item: ClothingDef) => void;
+
 class Row extends Phaser.GameObjects.Container {
   readonly closeButton: Phaser.GameObjects.Container;
 
@@ -42,6 +45,7 @@ class Row extends Phaser.GameObjects.Container {
 /** Panel with the worn layers, front to back, each with its ✕. Emits LayerRemove with the item. */
 export class LayersPanel extends Phaser.GameObjects.Container {
   private rows = new Map<string, Row>();
+  private decorators: RowDecorator[] = [];
   private readonly empty: Phaser.GameObjects.Text;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
@@ -81,9 +85,23 @@ export class LayersPanel extends Phaser.GameObjects.Container {
       row.setPosition(WIDTH / 2 + 40, y).setAlpha(0);
       this.add(row);
       this.rows.set(item.id, row);
+      for (const decorate of this.decorators) decorate(row, item);
       this.scene.tweens.add({ targets: row, x: WIDTH / 2, alpha: 1, duration: 260, ease: profileOf(this.scene).ease('Back.easeOut') });
     });
     this.scene.tweens.add({ targets: this.empty, alpha: ordered.length === 0 ? 0.6 : 0, duration: 200 });
+  }
+
+  /**
+   * Extension point (F16.4, like the grid's): `decorate` runs on every row the panel builds, and now on the rows that are
+   * already there. The row is a Container in panel px (centered on 0, 0; 214 wide, 52 high): hang the decoration on it, it
+   * leaves with the row. Returns the function that removes the decorator.
+   */
+  addRowDecorator(decorate: RowDecorator): () => void {
+    this.decorators.push(decorate);
+    for (const row of this.rows.values()) decorate(row, row.item);
+    return () => {
+      this.decorators = this.decorators.filter((d) => d !== decorate);
+    };
   }
 
   /** Item ids in panel order (front first) and the game position of each ✕, for tests. */
