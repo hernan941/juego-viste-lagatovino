@@ -34,7 +34,7 @@ import type { OutfitCause } from '../objects/dressup/DressUpController';
 import { DragFx, type DragState } from '../objects/dressup/DragFx';
 import { celebrate, createBursts, pulse } from '../objects/dressup/dropFx';
 import { ItemBounds } from '../objects/dressup/itemBounds';
-import { GHOST_HOME_SIZE, GHOST_SIZE } from '../objects/dressup/layout';
+import { CAT_SIZE, GHOST_HOME_SIZE, GHOST_SIZE } from '../objects/dressup/layout';
 import { tabIconKey } from '../objects/tabIcons';
 import { drawRoom } from '../objects/room';
 import { drawPanel, liftFor, makeText, touchEnv } from '../objects/ui';
@@ -44,7 +44,6 @@ import { enterKind, transitionIn } from '../systems/transitions';
 
 const CAT_X = 700;
 const CAT_FEET_Y = 612;
-const CAT_SIZE = 540;
 /** Forgiving margin around the cat's drop zone and magnet radius, in game px (ADR 0008). */
 const DROP_MARGIN = 36;
 const MAGNET_RADIUS = 110;
