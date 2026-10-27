@@ -17,6 +17,7 @@ const h = vi.hoisted(() => ({
   cats: [] as { outfit: string[]; held: string[]; destroyed: boolean }[],
   huds: [] as { calls: string[]; destroyed: boolean }[],
   ceremonies: [] as CeremonyRec[],
+  backdrops: [] as unknown[][],
 }));
 
 vi.mock('../../src/game/systems/navigate', () => ({ go: (...a: unknown[]) => h.go(...a) }));
@@ -25,7 +26,8 @@ vi.mock('../../src/game/systems/transitions', () => ({
   transitionIn: (...a: unknown[]) => h.transitionIn(...a),
 }));
 vi.mock('../../src/game/objects/ui', () => ({ touchEnv: () => ({ touch: false, scale: 1 }), hex: () => 0, makeText: () => ({}) }));
-vi.mock('../../src/game/objects/room', () => ({ drawRoom: () => undefined }));
+vi.mock('../../src/game/objects/showcase/runwayBackdrop', () => ({ drawRunwayBackdrop: (...a: unknown[]) => { h.backdrops.push(a); return undefined; } }));
+vi.mock('../../src/game/objects/kit/PaperBackground', () => ({ PaperBackground: class { setDepth() { return this; } } }));
 vi.mock('../../src/game/plugins/AudioPlugin', () => ({ getAudio: (s: { plugins: { get(k: string): unknown } }) => s.plugins.get('audio') }));
 vi.mock('../../src/game/plugins/SavePlugin', () => ({ getSave: () => ({ secrets: [] }) }));
 vi.mock('../../src/game/objects/Cat', () => ({
@@ -57,7 +59,7 @@ vi.mock('../../src/game/objects/Button', async () => {
 vi.mock('../../src/game/objects/MuteButton', async () => ({ MuteButton: class { setDepth() { return this; } getCenter() { return { x: 0, y: 0 }; } destroy() {} } }));
 vi.mock('../../src/game/objects/MotionButton', async () => ({ MotionButton: class { setDepth() { return this; } getCenter() { return { x: 0, y: 0 }; } destroy() {} } }));
 vi.mock('../../src/game/objects/FullscreenButton', async () => ({ FullscreenButton: { create: () => null } }));
-vi.mock('../../src/game/objects/SecretCounter', async () => ({ SecretCounter: class { text = ''; setDepth() { return this; } setCount() {} destroy() {} } }));
+vi.mock('../../src/game/objects/showcase/SecretsTag', async () => ({ SecretsTag: class { text = ''; setDepth() { return this; } setCount() {} destroy() {} } }));
 vi.mock('../../src/game/objects/WalletHud', async () => ({
   WalletHud: class {
     calls: string[] = []; destroyed = false;
@@ -84,6 +86,7 @@ vi.mock('../../src/game/objects/showcase/Ceremony', () => ({
   },
 }));
 
+import { rectsOverlap, runwayStage } from '../../src/game/systems/runwayLayout';
 import { Showcase } from '../../src/game/scenes/Showcase';
 import { ObjectEvents, RegistryKeys } from '../../src/game/constants';
 import { emptyProgress } from '../../src/game/domain/progress';
@@ -127,10 +130,24 @@ const progressOf = (scene: Scene) => scene.registry.get(RegistryKeys.Progress) a
 
 beforeEach(() => {
   for (const m of [h.go, h.transitionIn]) m.mockClear();
-  for (const list of [h.buttons, h.cats, h.huds, h.ceremonies] as unknown[][]) list.length = 0;
+  for (const list of [h.buttons, h.cats, h.huds, h.ceremonies, h.backdrops] as unknown[][]) list.length = 0;
 });
 
 describe('Showcase as a runway (F15.4)', () => {
+  it('is a notebook page (F20.6): paper plus the drawn stage, and the exits sit clear of the stage', () => {
+    const scene = open();
+    expect(h.backdrops).toHaveLength(1);
+    run(scene);
+    h.ceremonies[0]!.finish();
+    return Promise.resolve().then(() => {
+      const stage = runwayStage(h.backdrops[0]![1] as number, h.backdrops[0]![2] as number);
+      for (const b of h.buttons) {
+        const c = (b as unknown as { getCenter(): { x: number; y: number } }).getCenter();
+        expect(rectsOverlap(stage, { x: c.x - 100, y: c.y - 38, width: 200, height: 76 })).toBe(false);
+      }
+    });
+  });
+
   it('rates the look and writes the progress and the rating BEFORE the ceremony plays', () => {
     const scene = open();
     const rating = scene.registry.get(RegistryKeys.LastRating) as RatingResult;
