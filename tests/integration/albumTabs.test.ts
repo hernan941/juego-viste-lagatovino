@@ -10,9 +10,9 @@ import { makeFakeScene } from './helpers/kitScene';
 
 type FakeTab = { emit(ev: string, ...a: unknown[]): void; interactive: { hitArea: { width: number; height: number } }; alpha: number };
 
-function make(reduced = false) {
+function make(reduced = false, defs: typeof ALBUM_TABS = ALBUM_TABS) {
   const scene = makeFakeScene(reduced);
-  const tabs = new AlbumTabs(scene as never, 640, 0, ALBUM_TABS);
+  const tabs = new AlbumTabs(scene as never, 640, 0, defs);
   const items = (tabs as unknown as { list: unknown[] }).list as FakeTab[];
   return { scene, tabs, items };
 }
@@ -43,7 +43,8 @@ describe('AlbumTabs (F17.2)', () => {
   });
 
   it('a disabled tab never gets selected: it only says it is locked, and looks faded', () => {
-    const { tabs, items } = make();
+    // No tab is off since the hanger came (F19.5), so the last one is switched off here.
+    const { tabs, items } = make(false, ALBUM_TABS.map((t) => (t.id === 'colgador' ? { ...t, enabled: false } : t)));
     const picks = vi.fn();
     const locked = vi.fn();
     tabs.select('prendas', true);

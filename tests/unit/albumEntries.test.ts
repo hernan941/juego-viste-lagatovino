@@ -7,10 +7,10 @@ import dyes from '../../src/game/data/dyes.json';
 import economy from '../../src/game/data/economy.json';
 import { gotEntries, type AlbumCatalogs } from '../../src/game/domain/album';
 import {
-  HALF, catEntries, comboEntries, dyeEntries, gridPositions, itemEntries, paginate, tasteGlyph,
+  HALF, HANGER, catEntries, comboEntries, dyeEntries, gridPositions, hangerHooks, itemEntries, keychainEntries, paginate, tasteGlyph,
   type EntryContext,
 } from '../../src/game/domain/albumEntries';
-import type { CatDef, ClothingDef, ComboDef, DyeDef, EconomyRules, PhotoCatalog, Progress, SetDef } from '../../src/game/domain/types';
+import type { CatDef, ClothingDef, ComboDef, DyeDef, EconomyRules, KeychainRecipe, PhotoCatalog, Progress, SetDef } from '../../src/game/domain/types';
 
 const catalogs: AlbumCatalogs & { economy: EconomyRules } = {
   clothes: clothes as ClothingDef[], cats: cats as CatDef[], combos: combos as ComboDef[], dyes: dyes as DyeDef[],
@@ -185,5 +185,65 @@ describe('comboEntries', () => {
     const loose = e.pieces.find((p) => !p.icon)!;
     expect(loose.label).toBe('invierno');
     expect(navidad.requires).toHaveLength(e.pieces.length);
+  });
+});
+
+const recipeOf = (cat: CatDef, stars: 1 | 2 | 3 | 4 | 5 = 3): KeychainRecipe => ({
+  catId: cat.id, catName: 'Luna', outfit: {}, itemDye: {}, pose: 'pose-sentadito', stars,
+  photo: { background: 'bg-cuadriculado', frame: 'frame-polaroid', stickers: [] }, createdAt: '2026-01-01T00:00:00.000Z',
+});
+
+describe('keychainEntries (F19.5)', () => {
+  it('has one hook per cat, in the order of cats.json, all empty at the start', () => {
+    const list = keychainEntries(ctx(empty()));
+    expect(list.map((e) => e.catId)).toEqual((cats as CatDef[]).map((c) => c.id));
+    expect(list).toHaveLength(12);
+    for (const e of list) {
+      expect(e).toMatchObject({ recipe: null, stars: null, isNew: false });
+      expect(e.id).toBe(`keychain:${e.catId}`);
+    }
+  });
+
+  it('a saved keychain fills its hook with its recipe and its stars, and is new until it is seen', () => {
+    const cat = (cats as CatDef[])[2]!;
+    const p = { ...empty(), keychains: { [cat.id]: recipeOf(cat, 5) } };
+    const e = keychainEntries(ctx(p)).find((x) => x.catId === cat.id)!;
+    expect(e).toMatchObject({ stars: 5, isNew: true, name: cat.name });
+    expect(e.recipe).toBe(p.keychains[cat.id]);
+    const seen = { ...p, albumSeen: [`keychain:${cat.id}`] };
+    expect(keychainEntries(ctx(seen)).find((x) => x.catId === cat.id)!.isNew).toBe(false);
+  });
+
+  it('the entries it calls got are exactly the ones the album counts', () => {
+    const cat = (cats as CatDef[])[0]!;
+    const p = { ...empty(), keychains: { [cat.id]: recipeOf(cat) } };
+    const got = keychainEntries(ctx(p)).filter((e) => e.recipe).map((e) => e.id);
+    expect(gotEntries(p, catalogs).filter((id) => id.startsWith("keychain:"))).toEqual(got);
+  });
+});
+
+describe('hangerHooks (F19.5)', () => {
+  const hooks = hangerHooks(12);
+  it('has 4 columns by 3 rows of hooks, the first two columns on the left half and the other two on the right', () => {
+    expect(hooks).toHaveLength(12);
+    expect(hooks.filter((h) => h.side === 'left')).toHaveLength(6);
+    expect(hooks.map((h) => h.side).slice(0, 4)).toEqual(['left', 'left', 'right', 'right']);
+  });
+  it('follows the hooks of the art (x = 120 + 240 col, y = 58 + 170 row) at the scale of the board', () => {
+    const s = HANGER.scale;
+    const left = -(HANGER.art.width / 2) * s;
+    const top = HANGER.centerY - (HANGER.art.height / 2) * s;
+    expect(hooks[0]!.x).toBeCloseTo(left + 120 * s);
+    expect(hooks[5]!.x).toBeCloseTo(left + 360 * s);
+    expect(hooks[5]!.y).toBeCloseTo(top + (58 + 170) * s);
+    expect(hooks[11]!.x).toBeCloseTo(left + 840 * s);
+  });
+  it('gives the position inside its own half too', () => {
+    for (const h of hooks) expect(h.localX).toBeCloseTo(h.x - HALF[h.side].center);
+  });
+  it('fits the page area, with the whole board inside it', () => {
+    const s = HANGER.scale;
+    expect(HANGER.centerY + (HANGER.art.height / 2) * s).toBeLessThanOrEqual(HALF.height / 2);
+    expect((HANGER.art.width / 2) * s).toBeLessThanOrEqual(450);
   });
 });

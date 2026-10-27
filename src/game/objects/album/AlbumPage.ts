@@ -9,6 +9,8 @@ export interface AlbumPageContext {
   catalog: GameData;
   progress: Progress;
   completion: AlbumCompletion;
+  /** The cat whose keychain was just hung (`hang` of the scene data): the hanger flies it to its hook when the notebook opens. */
+  hang?: string | null;
 }
 
 /**
@@ -20,6 +22,8 @@ export interface AlbumPage {
   destroy(): void;
   /** What the page shows right now, for the e2e hook (ids and states); optional. */
   info?(): Record<string, unknown>;
+  /** Called when the notebook opens (the cover is up): a page that has something to show for the visit does it here. */
+  reveal?(): void | Promise<void>;
 }
 
 export type AlbumPageFactory = (scene: Phaser.Scene, tab: AlbumTabId, ctx: AlbumPageContext) => AlbumPage;

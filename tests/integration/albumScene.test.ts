@@ -7,7 +7,7 @@ const h = vi.hoisted(() => ({
   transitionIn: vi.fn(),
   buttons: [] as { label: string; emit(ev: string): void; destroyed: boolean }[],
   tabs: [] as { selectedId: string | null; emit(ev: string, ...a: unknown[]): void; destroyed: boolean; selected: string[] }[],
-  pages: [] as { tab: string; destroyed: boolean; info?: () => unknown }[],
+  pages: [] as { tab: string; destroyed: boolean; revealed: number; ctx: { hang?: string | null }; info?: () => unknown }[],
   bubbles: [] as { text: string; destroyed: boolean }[],
   covers: [] as { options: { pct: number; setsDone: number; setsTotal: number }; opened: boolean; destroyed: boolean; openUp(cb: () => void): void; finish(): void }[],
   stamps: [] as { pct: number; destroyed: boolean; dismissed: boolean; dismiss(): void; callbacks: { onLand?: () => void; onDone?: () => void } }[],
@@ -76,8 +76,8 @@ vi.mock('../../src/game/objects/album/MilestoneStamp', () => ({
   },
 }));
 vi.mock('../../src/game/objects/album/pages', () => ({
-  createPage: (_scene: unknown, tab: string) => {
-    const page = { tab, destroyed: false, view: {}, destroy() { page.destroyed = true; } };
+  createPage: (_scene: unknown, tab: string, ctx: { hang?: string | null }) => {
+    const page = { tab, ctx, destroyed: false, revealed: 0, view: {}, destroy() { page.destroyed = true; }, reveal() { page.revealed++; } };
     h.pages.push(page);
     return page;
   },
@@ -131,10 +131,18 @@ describe('Album scene (F17.2)', () => {
     expect(h.pages.map((p) => p.tab)).toEqual(['tintes']);
   });
 
-  it('opens the hanger tab on a disabled tab as the first one, never on the hanger (F19.5 turns it on)', () => {
+  it('opens on the hanger when asked, handing the page the cat that was just hung', () => {
     const album = open({ from: 'DressUp', tab: 'colgador', hang: 'gato-01' });
-    expect(h.pages.map((p) => p.tab)).toEqual(['prendas']);
+    expect(h.pages.map((p) => p.tab)).toEqual(['colgador']);
+    expect(h.pages[0]!.ctx.hang).toBe('gato-01');
     expect(album.getE2EUi().info.hang).toBe('gato-01');
+  });
+
+  it('tells the page to reveal itself only once the cover is up (the keychain flies when you can see it)', () => {
+    const album = open({ from: 'DressUp', tab: 'colgador', hang: 'gato-01' });
+    expect(h.pages[0]!.revealed).toBe(0);
+    run(album);
+    expect(h.pages[0]!.revealed).toBe(1);
   });
 
   it('enters with the transition it was started with', () => {

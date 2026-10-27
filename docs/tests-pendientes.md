@@ -325,3 +325,25 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
 - Argolla según las estrellas: dorada desde 4★ y con dije en 5★. Se comprueba con píxeles del PNG.
 - Para cada gato de `cats.json`, nada del look queda fuera del borde crema (píxeles).
 - `@mobile`: Guardar con el dedo abre el menú de compartir con el PNG del empaque.
+
+## F19.4 y F19.5: empaque listo, [Colgarlo] y pestaña Colgador
+### E2E pendientes (`keychain.spec`, sin hardcodear ids: iterar `cats.json`)
+- Con la tarjeta arriba aparece "¡Tu llavero está listo!" con [Colgarlo] en lugar de [Guardar], y [Seguir vistiendo] sigue ahí; un toque en la tarjeta los quita y Guardar vuelve.
+- [Colgarlo] con el gancho vacío: `keychains[catId]` queda con la receta (estrellas, outfit, pose, pieza del modo foto) y va al álbum en la pestaña `colgador` con `hang = catId` (`ui.info.hang`).
+- [Colgarlo] con un llavero ya colgado pregunta siempre "¿Cambio el llavero de X?":
+  - se resalta [Cambiarlo] si las estrellas nuevas son iguales o mayores, y [Dejar el anterior] si son menores;
+  - [Cambiarlo] reemplaza la receta y el llavero vuela al gancho;
+  - [Dejar el anterior] no toca `keychains` y abre el colgador sin volar nada (`hang` es `null`);
+  - un toque fuera cierra la pregunta y no pasa nada.
+- Colgador:
+  - 12 ganchos en el orden de `cats.json` (`ui.info.page.shown`: `hung` o `empty`), con los llaveros del progreso;
+  - después de recargar, el llavero sigue en su gancho;
+  - el llavero que acaba de colgarse entra volando y suena "clic" (`sounds` incluye `sfx-click` y `sfx-chain`);
+  - un toque en un llavero lo balancea y suena `sfx-chain` y luego `sfx-porcelain` (`info.page.swinging`); un toque en otro detiene el primero;
+  - un segundo toque sobre el mismo lo trae al frente (`info.page.big`), donde un toque lo vuelve a balancear y arrastrar horizontal lo empuja; un toque fuera lo devuelve;
+  - un gancho vacío abre la tarjeta con la pista;
+  - el contador de la pestaña y el álbum cuentan el primer llavero de cada gato.
+- `perf.spec`: abrir el colgador con 12 llaveros y salir no deja texturas `keychain~…` ni tweens; solo un llavero se balancea a la vez.
+- `motion.spec`: con movimiento reducido el vuelo es un fundido y el balanceo es de ±3°.
+- `@mobile`: tocar un llavero del colgador, y [Colgarlo] con el dedo.
+- **Ojo**: `AlbumTabs.getTabPositions()` devuelve el mismo punto (640, 52,6) para las cinco pestañas. Para cambiar de pestaña en un e2e, usar `buttons.next` o las coordenadas reales de la imagen (la pestaña Colgador está en x ≈ 1008, y ≈ 55) hasta que se corrija.

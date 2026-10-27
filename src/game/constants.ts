@@ -246,6 +246,8 @@ export const KeychainTextures = {
   VarnishStreak: 'ui-keychain-varnish-streak',
   /** The kraft card of the packaging (540 x 675, hole at (270, 56)). */
   PackageCard: 'ui-keychain-package-card',
+  /** The cork board of the hanger page of the album (960 x 540, 12 hooks). */
+  HangerBoard: 'ui-keychain-hanger-board',
 } as const;
 
 /** Global plugin keys (GameConfig.plugins.global). */

@@ -34,7 +34,7 @@ class AlbumTabView extends Phaser.GameObjects.Container {
 
 /**
  * The five index tabs of the notebook (art-direction v2 section 6.3). Each one is the art of `ui/album/tab-*.svg` with its name on top;
- * the selected one rises TAB_RISE px. A disabled tab (the hanger, until F19.5) wobbles and emits TabLocked instead of selecting.
+ * the selected one rises TAB_RISE px. A disabled tab (none since F19.5) wobbles and emits TabLocked instead of selecting.
  */
 export class AlbumTabs extends Phaser.GameObjects.Container {
   private readonly tabs: AlbumTabView[] = [];

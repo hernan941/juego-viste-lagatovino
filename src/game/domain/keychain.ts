@@ -139,6 +139,21 @@ export function pendulumDuration({ amp, damping }: PendulumParams): number {
   return (Math.log(Math.abs(amp) / PENDULUM_REST) / damping) * 1000;
 }
 
+/** The most a keychain is pushed by a drag, in degrees (the same as its full swing). */
+export const PUSH_MAX_ANGLE = 14;
+/** Degrees of push per game px of drag. */
+const PUSH_PER_PX = 0.12;
+
+/** The angle a keychain is pushed to by a horizontal drag of `dx` px: it follows the finger, held at the full swing. */
+export function pushAngle(dx: number): number {
+  return Math.max(-PUSH_MAX_ANGLE, Math.min(PUSH_MAX_ANGLE, dx * PUSH_PER_PX));
+}
+
+/** The strength (-1 to 1) of the swing that a pushed angle lets go with. */
+export function pushStrength(angle: number): number {
+  return Math.max(-1, Math.min(1, angle / PUSH_MAX_ANGLE));
+}
+
 export interface PackagingLayout {
   /** Hole to hang the card. */
   hole: Point & { radius: number };

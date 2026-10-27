@@ -4,7 +4,7 @@ import { gotEntries, tasteKeys, type AlbumCatalogs } from './album';
 import { WATER_DYE } from './dye';
 import { dyePrice, priceOf } from './economy';
 import { albumLines } from './copy/album';
-import type { CatDef, ClothingDef, EconomyRules, Progress, Stars } from './types';
+import type { CatDef, ClothingDef, EconomyRules, KeychainRecipe, Progress, Stars } from './types';
 
 /** The notebook is open: each page lives in one half of the sheet, and the rings of the spine run down the middle (x = 0). */
 export const HALF = {
@@ -194,5 +194,62 @@ export function comboEntries(ctx: EntryContext): ComboEntry[] {
       id: combo.id, name: combo.name, state: got.has(albumId) ? 'got' : 'missing', hint: combo.hint ?? albumLines.secretHint, pieces,
       reward: { id: prize.id, icon: prize.icon, texture: prize.texture, name: prize.name }, isNew: isNewEntry(albumId, got, seen),
     };
+  });
+}
+
+export interface KeychainEntry {
+  /** The id the album counts it by (`keychain:<catId>`). */
+  id: string;
+  catId: string;
+  name: string;
+  def: CatDef;
+  /** What hangs on the hook; null while it is empty. */
+  recipe: KeychainRecipe | null;
+  stars: Stars | null;
+  isNew: boolean;
+}
+
+/** The 12 hooks of the hanger, one per cat in the order of cats.json: the saved recipe (or none) and whether it is new to the player. */
+export function keychainEntries(ctx: EntryContext): KeychainEntry[] {
+  const { seen } = sets(ctx);
+  return ctx.catalog.cats.map((cat) => {
+    const recipe = ctx.progress.keychains[cat.id] ?? null;
+    const id = `keychain:${cat.id}`;
+    return { id, catId: cat.id, name: cat.name, def: cat, recipe, stars: recipe?.stars ?? null, isNew: recipe !== null && !seen.has(id) };
+  });
+}
+
+/** The cork board of the hanger on the open sheet (art `hanger-board.svg`, 960 x 540): a scale and where its middle sits on the page. */
+export const HANGER = {
+  scale: 0.78,
+  art: { width: 960, height: 540 },
+  /** Y of the middle of the board in the page: the margin above it is for the title. */
+  centerY: 28,
+  columns: 4,
+  /** Hooks of the art: x = 120 + 240 * column, y = 58 + 170 * row. */
+  hook: { x: 120, y: 58, stepX: 240, stepY: 170 },
+} as const;
+
+export interface HangerHook {
+  index: number;
+  /** In the coordinates of the page (its middle is 0, 0) and of its own half. */
+  x: number;
+  y: number;
+  side: 'left' | 'right';
+  localX: number;
+}
+
+/** Where each hook is: the board spans the spine, so the first two columns belong to the left half and the other two to the right one. */
+export function hangerHooks(count: number): HangerHook[] {
+  const { scale, art, centerY, columns, hook } = HANGER;
+  const left = -(art.width / 2) * scale;
+  const top = centerY - (art.height / 2) * scale;
+  return Array.from({ length: count }, (_, index) => {
+    const col = index % columns;
+    const row = Math.floor(index / columns);
+    const x = left + (hook.x + hook.stepX * col) * scale;
+    const y = top + (hook.y + hook.stepY * row) * scale;
+    const side = col < columns / 2 ? 'left' : 'right';
+    return { index, x, y, side, localX: x - HALF[side].center };
   });
 }

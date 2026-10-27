@@ -395,6 +395,29 @@ describe('Keychain: the swing', () => {
     expect(k.angle).toBeCloseTo(7, 6);
   });
 
+  it('a push to the left (negative strength) starts on the left, and its tinks are still positive', async () => {
+    const scene = new FakeScene();
+    const k = make(scene, recipe());
+    await k.whenReady();
+    const tinks: number[] = [];
+    k.on(ObjectEvents.KeychainTink, (s: number) => tinks.push(s));
+    k.swing(-0.5);
+    at(scene, 0);
+    expect(k.angle).toBeCloseTo(-7, 6);
+    for (let t = 0; t <= 1600; t += 15) at(scene, t);
+    expect(tinks.length).toBeGreaterThan(0);
+    for (const t of tinks) expect(t).toBeGreaterThanOrEqual(0);
+  });
+
+  it('a push beyond the full swing is held at the full swing, on either side', async () => {
+    const scene = new FakeScene();
+    const k = make(scene, recipe());
+    await k.whenReady();
+    k.swing(-3);
+    at(scene, 0);
+    expect(k.angle).toBeCloseTo(-14, 6);
+  });
+
   it('rests straight and says so when it ends', async () => {
     const scene = new FakeScene();
     const k = make(scene, recipe());

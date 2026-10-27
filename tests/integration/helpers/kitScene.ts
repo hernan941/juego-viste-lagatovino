@@ -23,6 +23,7 @@ class FakeContainer {
   private handlers = new Map<string, Handler[]>();
   constructor(public scene: unknown, x = 0, y = 0) { this.x = x; this.y = y; }
   add(c: unknown) { this.list.push(...(Array.isArray(c) ? c : [c])); return this; }
+  addAt(c: unknown, i: number) { this.list.splice(i, 0, c); return this; }
   setSize(w: number, h: number) { this.width = w; this.height = h; return this; }
   setInteractive(cfg: FakeContainer['interactive']) { this.interactive = cfg; return this; }
   disableInteractive() { this.interactive = null; return this; }
