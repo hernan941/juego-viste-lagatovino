@@ -46,7 +46,6 @@ export class TasteChip extends Phaser.GameObjects.Container {
     this.found = found;
     const colors = KIND[chip.kind];
     const fill = found ? colorToNumber(colors.fill) : HIDDEN_FILL;
-    const glyphColor = colorToNumber(colors.glyph);
     // The name first, so the pill can be as wide as it needs.
     const label = scene.add.text(0, 1, found ? chip.label : '???', {
       fontFamily: Fonts.Voice, fontStyle: 'bold', fontSize: '30px', color: found ? Ink.tinta : Ink.mutedTexto, padding: { x: 2, y: 6 },
@@ -62,7 +61,7 @@ export class TasteChip extends Phaser.GameObjects.Container {
     const icon = scene.add.graphics();
     const cx = -width / 2 + height / 2;
     // A hidden taste has the same glyph, washed out (a flat lighter color: a see-through one would show the overlaps).
-    drawGlyph(icon, chip.kind, cx, 0, glyphR, found ? glyphColor : lighten(glyphColor, 0.6), 1);
+    drawGlyph(icon, chip.kind, cx, 0, glyphR, glyphColorFor(chip, found), 1);
     this.add(icon);
     const textX = cx + glyphR + 10;
     const room = width / 2 - 18 - textX;
@@ -117,6 +116,15 @@ export class TasteChip extends Phaser.GameObjects.Container {
   }
 }
 
+/**
+ * The color of the glyph: the one of its kind, except the dot of the favorite color, which wears the dye itself (an orange cat
+ * with a blue dot would teach something false). A hidden taste has the same color, washed out.
+ */
+export function glyphColorFor(chip: ChipText, found: boolean): number {
+  const own = chip.kind === 'color' && chip.swatch ? colorToNumber(chip.swatch) : colorToNumber(KIND[chip.kind].glyph);
+  return found ? own : lighten(own, 0.6);
+}
+
 /** `color` moved `amount` (0..1) toward white. */
 function lighten(color: number, amount: number): number {
   const channel = (shift: number) => Math.round(((color >> shift) & 0xff) * (1 - amount) + 255 * amount);
@@ -145,7 +153,8 @@ function drawGlyph(g: Phaser.GameObjects.Graphics, kind: ChipKind, cx: number, c
       break;
     }
     case 'color':
-      g.fillCircle(cx, cy, r * 0.85);
+      // A pale dye on the pale pill needs an outline to be seen.
+      g.fillCircle(cx, cy, r * 0.85).lineStyle(3, colorToNumber(Ink.tinta), alpha).strokeCircle(cx, cy, r * 0.85);
       break;
   }
 }

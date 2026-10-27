@@ -12,5 +12,6 @@ export function nameLookup({ catalog }: Pick<DressUpContext, 'catalog'>): NameLo
     tag: (id) => tagLabel(extra.tags, id),
     item: (id) => catalog.clothes.find((c) => c.id === id)?.name ?? id,
     dye: (id) => dyes.find((d) => d.id === id)?.name ?? id,
+    dyeHex: (id) => dyes.find((d) => d.id === id)?.hex,
   };
 }

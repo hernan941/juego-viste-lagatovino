@@ -10,6 +10,7 @@ const catDefs = cats as unknown as CatDef[];
 const names: NameLookup = {
   item: (id) => (clothes as unknown as ClothingDef[]).find((c) => c.id === id)?.name ?? id,
   tag: (id) => ({ clasico: 'clásico' } as Record<string, string>)[id] ?? id,
+  dyeHex: (id) => (dyes as unknown as DyeDef[]).find((d) => d.id === id)?.hex,
   dye: (id) => (dyes as unknown as DyeDef[]).find((d) => d.id === id)?.name ?? id,
 };
 const cat = catDefs.find((c) => c.id === 'naranja')!;
@@ -27,6 +28,15 @@ describe('tasteChip (F14.3)', () => {
     const chip = tasteChip('color', names, cat);
     expect(chip).toMatchObject({ kind: 'color', glyph: '●' });
     expect(chip.label).toBe(names.dye(cat.prefs!.favoriteDye));
+  });
+  it('color: carries the hex of the dye, so the dot is painted with it (A5b)', () => {
+    const chip = tasteChip('color', names, cat);
+    expect(chip.swatch).toBe((dyes as unknown as DyeDef[]).find((d) => d.id === cat.prefs!.favoriteDye)!.hex);
+    expect(chip.swatch).toMatch(/^#[0-9A-Fa-f]{6}$/);
+  });
+  it('the other kinds have no swatch', () => {
+    expect(tasteChip('love:estrellas', names).swatch).toBeUndefined();
+    expect(tasteChip('favorite', names, cat).swatch).toBeUndefined();
   });
 });
 
