@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('phaser', async () => (await import('./helpers/kitScene')).phaserMock);
 
-import { ObjectEvents } from '../../src/game/constants';
+import { Ink, ObjectEvents } from '../../src/game/constants';
 import { Button } from '../../src/game/objects/Button';
 import { CheckoutSheet, type CheckoutSheetOptions } from '../../src/game/objects/CheckoutSheet';
 import { makeFakeScene, phaserMock, type FakeScene, type TweenRecord } from './helpers/kitScene';
@@ -73,6 +73,12 @@ describe('CheckoutSheet (F13.6)', () => {
     buttons[0].emit(ObjectEvents.ButtonClick);
     expect(events).toEqual([ObjectEvents.SheetShort]);
     expect(scene.made.texts.map((t) => String(t.text)).some((t) => t.includes('30'))).toBe(true);
+  });
+
+  it('"te faltan" is written in the muted ink, never in alarm red (M3)', () => {
+    const { scene } = make({ missing: 30 });
+    const text = scene.made.texts.find((t) => String(t.text).includes('Te faltan 30'));
+    expect((text?.style as { color: string }).color).toBe(Ink.mutedTexto);
   });
 
   it('[Sacarme lo que no tengo] and [Seguir probando] each have their own answer', () => {

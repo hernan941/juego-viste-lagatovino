@@ -177,7 +177,7 @@ export class CheckoutSheet extends ModalSheet {
     this.totalText = totalText;
     dynamic.add([rule, totalText]);
     if (missing > 0) {
-      const short = scene.add.text(LIST.price, 152, shopLines.notEnough(missing), { fontFamily: Fonts.Voice, fontStyle: 'bold', fontSize: '28px', color: Ink.frambuesa, padding: { x: 2, y: 6 } }).setOrigin(1, 0.5);
+      const short = scene.add.text(LIST.price, 152, shopLines.notEnough(missing), { fontFamily: Fonts.Voice, fontStyle: 'bold', fontSize: '28px', color: Ink.mutedTexto, align: 'right', wordWrap: { width: 480 }, padding: { x: 2, y: 6 } }).setOrigin(1, 0.5);
       dynamic.add(short);
     }
     this.add(dynamic);

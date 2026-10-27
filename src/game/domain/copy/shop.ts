@@ -4,7 +4,7 @@ import { fillTemplate } from './template';
 
 export const shopLines = {
   priceTag: (price: number): string => `${price} botones`,
-  notEnough: (missing: number): string => `Te faltan ${missing} botones, ¡ya vas a juntarlos!`,
+  notEnough: (missing: number): string => `¡Uy! Te faltan ${missing} botones. Califica un par de looks y vuelves`,
   bought: '¡Es tuyo! Buena elección',
   /** What the cat says right after the purchase. */
   mine: '¡Es mío!',
