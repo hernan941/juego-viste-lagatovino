@@ -43,10 +43,9 @@ const GHOST_HEIGHT = 150;
 const DRIP_EVERY_MS = 420;
 const BUBBLE_MS = 1300;
 const BOUNCE_BACK_MS = 250;
-/** The dot of color: on the corner of the wardrobe cell, and on the icon of the row of the layers panel (panel px). */
-const DOT_RADIUS = 11;
-const CELL_DOT = { x: CELL_SIZE / 2 - 12, y: -CELL_SIZE / 2 + 12 } as const;
-const ROW_DOT = { x: -58, y: 14 } as const;
+/** The dot of color: on the top-left corner of the wardrobe cell (the price tag takes the right one), and on the icon of the row of the layers panel (panel px). */
+const CELL_DOT = { x: -CELL_SIZE / 2 + 12, y: -CELL_SIZE / 2 + 12, radius: 11 } as const;
+const ROW_DOT = { x: -64, y: 14, radius: 8 } as const;
 
 /** What the catalog of the registry carries besides the clothes (GameData, ADR 0017). */
 interface WithDyes {
@@ -516,9 +515,9 @@ export class DyeTabController implements DressUpController {
   // ---- The dot of color --------------------------------------------------------
 
   /** Hangs a dot on a cell or a row of a dyeable item; it shows the color the item has now and follows it. */
-  private hangDot(item: ClothingDef, hang: (dot: DyeDot) => void, at: Point): void {
+  private hangDot(item: ClothingDef, hang: (dot: DyeDot) => void, at: Point & { radius: number }): void {
     if (!item.dyeable) return;
-    const dot = new DyeDot(this.ctx.scene, at.x, at.y, DOT_RADIUS);
+    const dot = new DyeDot(this.ctx.scene, at.x, at.y, at.radius);
     hang(dot);
     this.dots = this.dots.filter((d) => d.dot.active !== false);
     this.dots.push({ dot, itemId: item.id });
