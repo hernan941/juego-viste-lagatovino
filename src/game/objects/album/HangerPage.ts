@@ -112,6 +112,8 @@ export class HangerPage extends BookPage {
       keychain = new Keychain(scene, rest.x, rest.y, entry.recipe, keychainData(this.ctx.catalog, this.anchors), { px: 256, deferred: true, cache: true });
       rest.scale = fitKeychain(FIT, keychain.layout, keychain.layout.hang);
       keychain.setScale(rest.scale);
+      // The one that was just hung is not seen at rest while the notebook falls: `reveal` shows it, flying in (K1).
+      if (entry.catId === this.ctx.hang) keychain.setAlpha(0);
       keychain.on(ObjectEvents.KeychainTink, (strength: number) => getAudio(scene).play(SfxKeys.Porcelain, { volume: 0.25 + 0.5 * strength }));
       keychain.on(ObjectEvents.KeychainSwingEnd, () => { if (this.swingingId === entry.catId) this.swingingId = null; });
       parts.push(keychain);
@@ -243,6 +245,7 @@ export class HangerPage extends BookPage {
     try {
       await keychain.whenReady();
     } catch {
+      keychain.setAlpha(1);
       return;
     }
     if (this.gone) return;

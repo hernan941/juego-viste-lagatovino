@@ -308,6 +308,19 @@ describe('the keychain that was just hung flies to its hook (F19.5)', () => {
     expect(kc()[0]!.swings).toEqual([1]);
   });
 
+  it('K1: the keychain that was just hung is hidden from the start, so it is not at rest on its hook before it flies', async () => {
+    const { page, scene } = make(progressWith(0, 4), { hang: catList[4]!.id });
+    expect(kc()[1]!.alpha).toBe(0);
+    expect(kc()[0]!.alpha).toBe(1);
+    const flying = page.reveal();
+    await settle();
+    // It starts the flight from below, still invisible, and only then does the tween show it.
+    expect(kc()[1]!.alpha).toBe(0);
+    expect(kc()[1]!.y).toBeGreaterThan(kc()[0]!.y + 100);
+    for (const r of scene.tweens.records) (r.config.onComplete as (() => void) | undefined)?.();
+    await flying;
+  });
+
   it('a hang for a cat without a keychain flies nothing and does not fail', async () => {
     const { page, scene } = make(emptyProgress(0), { hang: catList[0]!.id });
     const before = scene.tweens.records.length;
