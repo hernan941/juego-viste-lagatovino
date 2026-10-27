@@ -245,3 +245,12 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
 - `secrets.spec`: el primer combo paga +40 una sola vez, también si se sale sin abrir la cajita.
 - `@cross`: descubrir, recargar y ver la ficha.
 - Movimiento reducido: la compra y la ficha funcionan sin vuelo ni rotación.
+
+## F17.3 y F17.4: páginas del álbum
+### E2E pendientes (`album.spec`)
+- Con `grant`, una prenda pasa de boceto a color. Con `grantDyes`, un frasco pasa de boceto a color.
+- Un gusto descubierto aparece en la polaroid de su gato (`info.page.shown` y `marks`).
+- Un combo ganado llena su hueco.
+- El paginador de Prendas muestra 2 hojas (30 y 20 entradas). Tocar una entrada abre su ficha y tocarla otra vez la cierra.
+- Movimiento reducido en las 4 páginas.
+- `perf.spec`: cambiar entre las 4 páginas sin fugas (sobre todo Gatos, con 12 `Cat`).

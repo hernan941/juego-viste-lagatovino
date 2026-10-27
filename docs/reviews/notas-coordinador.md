@@ -48,3 +48,17 @@ Detalles vistos al integrar. Los revisa el game-designer en la revisión de cada
 - La causa es el batching multi-textura de Phaser sobre WebGL por software (SwiftShader). No tenía que ver con la rotación. `systems/renderConfig.ts` pone `maxTextures: 1` cuando el renderer es por software o el modo es test. Con GPU real se usa el valor por defecto.
 - Varios "cortes" que se vieron en capturas headless (notas polaroid, estrellas a medias) eran este mismo artefacto.
 - Hace falta un ADR o una nota en el 0011, que hoy lo limita al modo test. Va junto con los otros pendientes de ADR: el evento `ItemDyed`, `Cat.itemAt`/`highlightItem` y `PORCELAIN_SATURATION`.
+
+## F13.8: balance de la economía (para F21.1)
+Resultados del jugador modelo con el `economy.json` actual, con 5 semillas:
+
+| Meta | Objetivo | Medido |
+|---|---|---|
+| 50 % de lo comprable | sesiones 3–5 | sesión 3 |
+| 100 % | ≤ 12 (el diseño dice 9–10) | sesiones 5–6 |
+| % del dinero que sale de descubrir | 90 % | ~60 % |
+
+- **Se compra todo demasiado rápido.** Después, el jugador acumula más de 6000 botones sin nada en qué gastarlos (unos 230 por sesión).
+- **Recomendación**: bajar `byStars` a algo como 1:3, 2:6, 3:10, 4:17, 5:24 (variante A) o 1:3, 2:5, 3:9, 4:14, 5:20 (variante B). Así el 100 % cae hacia las sesiones 7–10 y el 50 % sigue en rango, sin subir precios.
+- El objetivo del 90 % "por descubrir" puede leerse como el potencial único (2320 de 2350) o como el flujo real. Lo decide el GD.
+- Para evitar acumular sin gastar, una idea: cuando un gato ya tiene 5★ y todos sus gustos, sus looks nuevos pagan solo propina.
