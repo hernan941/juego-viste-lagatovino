@@ -37,6 +37,26 @@ export function checkoutPlan(
   };
 }
 
+/** A line of the till: a garment or a bottle of dye. */
+export interface CartLineRef {
+  kind: 'item' | 'dye';
+  id: string;
+}
+
+/**
+ * The look without one line of the till (A6): a garment comes off with the dye it carried; a bottle is cleared from every garment
+ * that wore it and the garments stay. The inputs are never changed.
+ */
+export function withoutLine(outfit: Outfit, itemDye: ItemDye, ref: CartLineRef): { outfit: Outfit; itemDye: ItemDye } {
+  if (ref.kind === 'item') {
+    return {
+      outfit: Object.fromEntries(Object.entries(outfit).filter(([, id]) => id !== ref.id)) as Outfit,
+      itemDye: Object.fromEntries(Object.entries(itemDye).filter(([id]) => id !== ref.id)),
+    };
+  }
+  return { outfit: { ...outfit }, itemDye: Object.fromEntries(Object.entries(itemDye).filter(([, dye]) => dye !== ref.id)) };
+}
+
 /** The progress after paying the whole cart, or null when the wallet is short (nothing is ever paid in part). */
 export function payPlan(progress: Progress, plan: CheckoutPlan): Progress | null {
   const paid = checkout(plan.cart, progress.wallet, progress.owned, progress.dyesOwned);
