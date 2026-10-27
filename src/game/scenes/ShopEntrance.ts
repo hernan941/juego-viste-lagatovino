@@ -136,7 +136,7 @@ export class ShopEntrance extends Phaser.Scene implements E2EUi {
     });
     this.cat.react('combo');
     // The shop answers: "¡Pasa nomás!" pops over the cat's head.
-    this.bubble = new SpeechBubble(this, this.cat.x + 36, WALK_FEET_Y - CAT_SIZE - 6, '¡Pasa nomás!', { maxWidth: 360 }).setDepth(30);
+    this.bubble = new SpeechBubble(this, this.cat.x + 36, WALK_FEET_Y - CAT_SIZE - 6, 'Pasa, pasa!', { maxWidth: 360 }).setDepth(30);
     this.world.add(this.bubble);
     this.time.delayedCall(550, () => this.openDoor());
   }

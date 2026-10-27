@@ -5,12 +5,12 @@ import { hangArgs } from '../../src/game/domain/flow';
 
 describe('keychain copy (F19.4, F19.5)', () => {
   it('says the keychain is ready and offers both ways out', () => {
-    expect(keychainLines.ready).toBe('¡Tu llavero está listo!');
+    expect(keychainLines.ready).toBe('Llavero listo!');
     expect(keychainLines.hang).toBe('Colgarlo');
   });
 
   it('asks before replacing a keychain, naming the cat and both ratings', () => {
-    expect(keychainLines.replaceTitle('Luna')).toBe('¿Cambio el llavero de Luna?');
+    expect(keychainLines.replaceTitle('Luna')).toBe('Cambio el llavero de Luna?');
     expect(keychainLines.replaceStars(3, 5)).toBe('Antes 3 de 5 · Ahora 5 de 5');
     expect(keychainLines.replaceYes).toBe('Cambiarlo');
     expect(keychainLines.replaceNo).toBe('Dejar el anterior');

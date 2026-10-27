@@ -20,25 +20,25 @@ export interface VerdictCase {
 export function judgeLines(judge: CharacterDef) {
   const vars = { judge: judge.name };
   const lines = {
-    intro: (): string => fillTemplate('{judge} entra con su libreta... a ver qué tal ese look', vars),
+    intro: (): string => fillTemplate('{judge} entra con su libreta... a ver ese look', vars),
     /** 1-2 stars: he is kind. */
-    comfort: (catName: string): string => `¡Igual te ves adorable, ${catName}!`,
+    comfort: (catName: string): string => `Igual te ves adorable, ${catName}!`,
     verdict: (catName: string, stars: number): string => {
-      if (stars >= 5) return `¡Perfecto, ${catName}! Cinco estrellas, me encantó`;
-      if (stars === 4) return `¡Uf, ${catName}! Casi perfecto…`;
-      if (stars === 3) return `Bien ahí, ${catName}. Me gustó harto`;
-      return `¡Igual te ves adorable, ${catName}!`;
+      if (stars >= 5) return `Perfecto, ${catName}! Cinco estrellas, lo amo`;
+      if (stars === 4) return `Uf, ${catName}! Casi perfecto…`;
+      if (stars === 3) return `Bien, ${catName}. Me gusta harto`;
+      return `Igual te ves adorable, ${catName}!`;
     },
     /** The same look as one of the last ones (it pays a tip). */
-    repeated: (): string => 'Este look ya me lo mostraste… ¡sorpréndeme!',
+    repeated: (): string => 'Este look ya me lo mostraste… a probar otro!',
     /** One slot of difference from a recent look. */
-    nearSame: (): string => 'Mmm, se parece harto al de recién',
+    nearSame: (): string => 'Mmm, se parece harto al anterior',
     /** No clothes at all. */
-    bare: (): string => '¿Y la ropa? ¡Igual te ves adorable!',
+    bare: (): string => 'Y la ropa? Igual te ves adorable!',
     /** The clue to reach the next star: a taste to try if the player knows one, else a question. */
     hint: (catName: string, { missing, love }: NextHint, tags?: TagNames): string => {
-      const lack = missing === 1 ? 'Te faltó 1 puntito' : `Te faltaron ${missing} puntitos`;
-      return love === undefined ? `${lack}… ¿qué le encantará a ${catName}?` : `${lack}… ¿y si pruebas con ${tagLove(tags, love)}?`;
+      const lack = missing === 1 ? 'Te falta 1 puntito' : `Te faltaron ${missing} puntitos`;
+      return love === undefined ? `${lack}… a ${catName} le gusta algo especial!` : `${lack}… prueba con ${tagLove(tags, love)}!`;
     },
   };
   return {

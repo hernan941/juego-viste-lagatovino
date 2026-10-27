@@ -7,16 +7,16 @@ export const photoLines = {
   signature: (brand: BrandDef): string => withBrand(brand).signature,
   save: 'Guardar',
   keepDressing: 'Seguir vistiendo',
-  saved: '¡Foto lista!',
+  saved: 'Foto lista!',
   /** Names of the trays (the tabs of the photo table). */
   tabs: { backgrounds: 'Fondos', frames: 'Marcos', poses: 'Poses', stickers: 'Stickers' },
-  full:'¡Ya no caben más stickers!',
+  full:'Foto llena de stickers!',
   /** How to unlock a piece that is still locked; `setName` gives the name of a set by id. */
   unlockHint: (unlock: PhotoUnlock, setName: (id: string) => string | undefined): string => {
     if (unlock === 'starter') return '';
     if ('set' in unlock) return `Completa ${setName(unlock.set) ? `el set ${setName(unlock.set)}` : 'un set'}`;
-    if ('albumPct' in unlock) return `Llena el ${unlock.albumPct} % del álbum`;
+    if ('albumPct' in unlock) return `Llena el ${unlock.albumPct} % del cuaderno`;
     return 'Consigue 5 estrellas';
   },
-  caption: (catName: string): string => `${catName}, versión foto`,
+  caption: (catName: string): string => `${catName}, en modo foto`,
 };

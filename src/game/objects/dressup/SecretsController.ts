@@ -265,7 +265,7 @@ export class SecretsController implements DressUpController {
     this.unlocked = getSave(scene).secrets;
     this.reveal.begin(combo.id, item.id);
     this.traceSecrets();
-    sign.announce(`¡${item.name}!`);
+    sign.announce(`${item.name}!`);
     // Show the tab of the prize so the cell is there (invisible) when it lands.
     this.ctx.showCategory(item.category);
     grid.setWorn(new Set(Object.values(this.ctx.getOutfit())));
@@ -306,7 +306,7 @@ export class SecretsController implements DressUpController {
     if (!fresh) return;
     const head = cat.getAnchorWorld('head');
     sparkles.explode(profileOf(scene).count(6), head.x + 90, head.y - 30);
-    showBubble(scene, head.x + 160, head.y + 10, '¡Casi...!', 'rosa50', { fontSize: 26, tail: 'left' });
+    showBubble(scene, head.x + 160, head.y + 10, 'Casi...!', 'rosa50', { fontSize: 26, tail: 'left' });
     const hint = almostHint(outfit, catalog.combos, catalog.clothes, this.unlocked);
     const tab = hint && tabs.getTabPositions()[hint.category];
     if (tab && !this.ctx.isDragging()) {

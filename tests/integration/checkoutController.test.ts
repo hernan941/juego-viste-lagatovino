@@ -252,7 +252,7 @@ describe('CheckoutController (F13.6)', () => {
     expect(t.verdicts).toEqual([true]);
     expect(t.sounds).toContain(SfxKeys.Register);
     expect(t.calls).toContain('face:amor');
-    expect(made.said).toContain('¡Es tuyo! Buena elección');
+    expect(made.said).toContain('Es tuyo! Buen ojo');
   });
 
   it('paying also pays the unpaid bottles', () => {

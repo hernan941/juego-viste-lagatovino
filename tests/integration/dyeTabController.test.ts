@@ -296,17 +296,17 @@ describe('DyeTabController: letting go (F16.3)', () => {
     openTab();
     drag(controller, 'rosa').drop();
     await flush();
-    expect(said).toContain('Ese no se tiñe');
+    expect(said).toContain('Ese no lleva color');
     expect(store.get(RegistryKeys.ItemDye)).toEqual({});
     expect(heard).not.toHaveBeenCalled();
   });
 
-  it('on the cat without a garment there: "¡A mí no!" and the cat shakes', async () => {
+  it('on the cat without a garment there: "Ese color no!" and the cat shakes', async () => {
     const { openTab, controller, catCalls, store } = setup({ itemAt: null });
     openTab();
     drag(controller, 'rosa', { x: 700, y: 300 }).drop();
     await flush();
-    expect(said).toContain('¡A mí no!');
+    expect(said).toContain('Ese color no!');
     expect(catCalls.sayNo).toBeDefined();
     expect(store.get(RegistryKeys.ItemDye)).toEqual({});
   });

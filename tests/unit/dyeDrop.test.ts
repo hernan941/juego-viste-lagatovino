@@ -58,8 +58,8 @@ describe('applyDye', () => {
 
 describe('dyeLines', () => {
   it('has the two voices of the refusals', () => {
-    expect(dyeLines.notMe).toBe('¡A mí no!');
-    expect(dyeLines.notDyeable).toBe('Ese no se tiñe');
+    expect(dyeLines.notMe).toBe('Ese color no!');
+    expect(dyeLines.notDyeable).toBe('Ese no lleva color');
   });
 
   it('names the tab and the tip', () => {

@@ -110,7 +110,7 @@ describe('Ceremony', () => {
     scene.advance(plan.totalMs);
     const texts = scene.made.texts.map((t) => String(t.text));
     expect(texts).toContain('Al natural');
-    expect(texts.some((t) => t.includes('¿Y la ropa?'))).toBe(true);
+    expect(texts.some((t) => t.includes('Y la ropa?'))).toBe(true);
   });
 
   it('a repeated look pays a tip and says why: Kofi asks to be surprised and a "Propina +2" note rises (A3)', () => {
@@ -121,7 +121,7 @@ describe('Ceremony', () => {
     void ceremony.play();
     scene.advance(plan.totalMs);
     const texts = scene.made.texts.map((t) => String(t.text));
-    expect(texts.some((t) => t.includes('sorpréndeme'))).toBe(true);
+    expect(texts.some((t) => t.includes('a probar otro'))).toBe(true);
     expect(texts).toContain('Propina +2');
   });
 
@@ -129,7 +129,7 @@ describe('Ceremony', () => {
     const { scene, plan, ceremony } = setup(4, 'full', { hint: { missing: 2, love: 'estrellas' }, tags: { estrellas: { label: 'estrellas', love: 'las estrellas', style: '' } } });
     void ceremony.play();
     scene.advance(plan.totalMs);
-    expect(scene.made.texts.some((t) => String(t.text).includes('Te faltaron 2 puntitos… ¿y si pruebas con las estrellas?'))).toBe(true);
+    expect(scene.made.texts.some((t) => String(t.text).includes('Te faltaron 2 puntitos… prueba con las estrellas!'))).toBe(true);
   });
 
   it('a tap skips x3 and every button still counts', async () => {

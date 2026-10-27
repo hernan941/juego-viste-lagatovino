@@ -16,7 +16,7 @@
   ],
   "stickers": [
     { "id": "sticker-estrella", "name": "Estrella", "texture": "photo-sticker-estrella", "unlock": "starter" },
-    { "id": "sticker-corazon", "name": "Corazón", "texture": "photo-sticker-corazon", "unlock": "starter" },
+    { "id": "sticker-corazon", "name": "Corazoncito", "texture": "photo-sticker-corazon", "unlock": "starter" },
     { "id": "sticker-huellita", "name": "Huellita", "texture": "photo-sticker-huellita", "unlock": "starter" },
     { "id": "sticker-xoxo", "name": "Xoxo, mau!", "texture": "photo-sticker-xoxo", "unlock": "starter" },
     { "id": "sticker-fresa", "name": "Fresa", "texture": "photo-sticker-fresa", "unlock": { "set": "fresas-y-flores" } },
@@ -32,7 +32,7 @@
     { "id": "pose-sentadito", "name": "Sentadito", "unlock": "starter" },
     { "id": "pose-coqueto", "name": "Coqueto", "unlock": "starter" },
     { "id": "pose-saltito", "name": "Saltito", "unlock": { "firstFiveStar": true } },
-    { "id": "pose-dormilon", "name": "Dormilón", "unlock": { "albumPct": 75 } }
+    { "id": "pose-dormilon", "name": "Siestita", "unlock": { "albumPct": 75 } }
   ],
   "keychain": { "goldFrom": 4, "charmFrom": 5, "borderCopies": 12, "borderRadius": 14, "borderColor": "#FFFCF5", "varnishAlpha": 0.5, "saturation": 0.82, "warmth": 0.03 }
 }

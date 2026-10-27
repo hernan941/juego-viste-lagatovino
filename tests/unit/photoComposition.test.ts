@@ -94,7 +94,7 @@ describe('unlockHint', () => {
   const sets = (id: string) => (id === 'abriguito' ? 'Abriguito' : undefined);
   it('says how to get each kind of piece', () => {
     expect(photoLines.unlockHint({ set: 'abriguito' }, sets)).toBe('Completa el set Abriguito');
-    expect(photoLines.unlockHint({ albumPct: 50 }, sets)).toBe('Llena el 50 % del álbum');
+    expect(photoLines.unlockHint({ albumPct: 50 }, sets)).toBe('Llena el 50 % del cuaderno');
     expect(photoLines.unlockHint({ firstFiveStar: true }, sets)).toBe('Consigue 5 estrellas');
   });
   it('does not break with a set it does not know', () => {

@@ -123,7 +123,7 @@ function petals({ scene, cat }: ComboFxContext): void {
   scene.time.delayedCall(560, () => {
     cat.hop();
     getAudio(scene).play(SfxKeys.Click, { rate: 1.6, volume: 0.8 });
-    showBubble(scene, cat.x + 150, cat.getAnchorWorld('head').y - 80, '¡achís!', 'rosa50');
+    showBubble(scene, cat.x + 150, cat.getAnchorWorld('head').y - 80, 'achu!', 'rosa50');
   });
 }
 

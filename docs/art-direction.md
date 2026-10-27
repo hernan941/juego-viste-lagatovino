@@ -132,9 +132,10 @@ Son 44 prendas visibles más 6 secretas. Cada prenda tiene un **icono** para el 
 - **Tipografías** (autoalojadas en `public/fonts/`, licencia SIL OFL 1.1, sin Google Fonts):
   - **Londrina Solid** 400 y 900: títulos, cartel del nombre, monedero y estrellas;
   - **Gaegu** 400 y 700: lo que "dice" alguien (burbujas del gato, el juez, la vendedora, pistas y el nombre en la foto);
+  - **Regla de Gaegu**: Gaegu no trae tildes, ñ ni ¡¿ (caerían a otra fuente y se verían rotas). En Gaegu se eligen palabras sin tilde, ñ ni ¡¿ (por ejemplo "Siestita" y no "Dormilón"; se permiten "!" y "?" sin su signo de apertura). Londrina Solid sí puede llevarlas. Lo vigila `tests/unit/voiceGlyphs.test.ts`.
   - fuente del sistema: texto corrido (hojas de compra, textos del álbum).
   - El texto va en `tinta` o `muted-texto`, nunca en `#000`.
-- **Voz** (`domain/copy.ts`): "¡Pasa nomás!", "Si te tinca, te lo llevas", "Xoxo, mau!" como firma de la foto. La @ va en frases genéricas ("tu gat@"), nunca pegada al nombre del jugador. Los nombres del juez y de la vendedora salen de `data/brand.json`.
+- **Voz** (`domain/copy.ts`): "Pasa, pasa!", "Si te tinca, te lo llevas", "Xoxo, mau!" como firma de la foto. La @ va en frases genéricas ("tu gat@"), nunca pegada al nombre del jugador. Los nombres del juez y de la vendedora salen de `data/brand.json`.
 - **Objetivos de toque**: ≥ 80 unidades del juego (ADR 0014), aunque el dibujo sea más chico.
 
 ## 7. Escenarios

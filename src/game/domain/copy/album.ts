@@ -5,30 +5,30 @@ import type { Tally } from '../album';
 const MILESTONE_PRIZE: Record<number, string> = {
   25: 'Stickers y un marco para tus fotos',
   50: 'Un fondo rayado para tus fotos',
-  75: 'Una pose nueva y más stickers',
+  75: 'Una pose nueva y varios stickers',
   100: 'Un marco de Kofi y una nota de Catalina',
 };
 
 export const albumLines = {
-  percent: (pct: number): string => `Llevas el ${pct}% de tu álbum`,
+  percent: (pct: number): string => `Llevas el ${pct}% completo`,
   /** The secondary button of the Title. */
-  titleButton: (pct: number): string => `Mi álbum · ${pct}%`,
+  titleButton: (pct: number): string => `Mi álbum · ${pct}%`, // Fonts.Title: accents allowed
   tally: (t: Tally): string => `${t.got} de ${t.total}`,
-  coverTitle: 'Mi álbum',
+  coverTitle: 'Mi álbum', // Fonts.Title: accents allowed
   coverPercent: (pct: number): string => `Llevas el ${pct} %`,
   coverSets: (done: number, total: number): string => `Sets: ${done} de ${total}`,
-  milestoneStamp: (pct: number): string => `¡${pct} %!`,
+  milestoneStamp: (pct: number): string => `¡${pct} %!`, // Fonts.Title: accents allowed
   milestonePrize: (pct: number): string => MILESTONE_PRIZE[pct] ?? 'Algo nuevo para el modo foto',
   hangerSoon: 'El colgador llega pronto',
   back: 'Volver',
-  empty: 'Todavía está vacío, ¡a vestir gatos!',
+  empty: 'Nada por ahora, a vestir gatos!',
   secretHint: 'Es un secreto…',
-  catHintFallback: 'Aún te falta conocerlo…',
+  catHintFallback: 'Te falta conocerlo…',
   /** The price written in pencil under a sketch. */
   price: (n: number): string => `${n}`,
   free: 'gratis',
   best: (stars: number): string => `Mejor: ${stars} de 5`,
-  noStars: 'Aún sin calificar',
+  noStars: 'Sin calificar',
   tastesTitle: 'Gustos',
   hidden: '?',
   pageOf: (page: number, pages: number): string => `${page} / ${pages}`,

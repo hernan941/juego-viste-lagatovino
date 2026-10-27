@@ -8,15 +8,15 @@ describe('the judge lines per case (F15.6)', () => {
     const lines = [2, 3, 4, 5].map((s) => judge.verdict('Mau', s));
     expect(new Set(lines).size).toBe(4);
     expect(judge.verdict('Mau', 1)).toBe(judge.verdict('Mau', 2));
-    expect(judge.verdict('Mau', 1)).toBe('¡Igual te ves adorable, Mau!');
-    expect(judge.verdict('Mau', 4)).toBe('¡Uf, Mau! Casi perfecto…');
+    expect(judge.verdict('Mau', 1)).toBe('Igual te ves adorable, Mau!');
+    expect(judge.verdict('Mau', 4)).toBe('Uf, Mau! Casi perfecto…');
   });
   it('says the novelty cases', () => {
-    expect(judge.repeated()).toBe('Este look ya me lo mostraste… ¡sorpréndeme!');
-    expect(judge.nearSame()).toBe('Mmm, se parece harto al de recién');
-    expect(judge.bare()).toBe('¿Y la ropa? ¡Igual te ves adorable!');
+    expect(judge.repeated()).toBe('Este look ya me lo mostraste… a probar otro!');
+    expect(judge.nearSame()).toBe('Mmm, se parece harto al anterior');
+    expect(judge.bare()).toBe('Y la ropa? Igual te ves adorable!');
   });
-  it('what he says at the verdict: a bare cat gets "¿Y la ropa?" whatever the stars (A2)', () => {
+  it('what he says at the verdict: a bare cat gets "Y la ropa?" whatever the stars (A2)', () => {
     expect(judge.say({ catName: 'Mau', stars: 1, bare: true })).toBe(judge.bare());
   });
   it('what he says at the verdict: a repeated look is called out, a near one too, and a bare cat comes first (A3)', () => {

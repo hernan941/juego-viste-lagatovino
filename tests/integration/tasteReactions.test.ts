@@ -137,15 +137,15 @@ describe('TasteReactions (F14.2)', () => {
     t.drop(favorite);
     expect(t.calls).toContain('sparks');
     expect(t.calls).toContain('face:amor');
-    expect(said).toContain('¡MI FAVORITO!');
+    expect(said).toContain('MI FAVORITO!');
     expect(t.fx.e2eState().last).toBe('favorite');
   });
 
-  it('color: the cat glances at the garment and says "¡mi color!"', () => {
+  it('color: the cat glances at the garment and says "mi color!"', () => {
     const t = setup({ dye: { [neutral.id]: prefs.favoriteDye } });
     t.drop(neutral);
     expect(t.calls).toContain('glance');
-    expect(said).toContain('¡mi color!');
+    expect(said).toContain('mi color!');
     expect(t.fx.e2eState().last).toBe('color');
   });
 
@@ -176,11 +176,11 @@ describe('TasteReactions (F14.2)', () => {
 describe('TasteReactions: dyeing an item (F16.3)', () => {
   const otherDye = ['rosa', 'lila', 'sol', 'hoja'].find((d) => d !== prefs.favoriteDye)!;
 
-  it('dyeing with the favorite color makes the cat glance at the garment and say "¡mi color!"', () => {
+  it('dyeing with the favorite color makes the cat glance at the garment and say "mi color!"', () => {
     const t = setup();
     t.events.emit(DressUpEvents.ItemDyed, neutral, prefs.favoriteDye);
     expect(t.calls).toContain('glance');
-    expect(said).toContain('¡mi color!');
+    expect(said).toContain('mi color!');
     expect(t.fx.e2eState().last).toBe('color');
   });
 
