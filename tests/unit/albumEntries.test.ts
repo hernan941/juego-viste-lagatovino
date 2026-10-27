@@ -247,6 +247,8 @@ describe('hangerHooks (F19.5)', () => {
     const s = HANGER.scale;
     expect(HANGER.centerY + (HANGER.art.height / 2) * s).toBeLessThanOrEqual(HALF.height / 2);
     expect((HANGER.art.width / 2) * s).toBeLessThanOrEqual(450);
+  });
+});
 
 describe('setEntries (L1): the sets of the album', () => {
   const withSets: EntryContext = { ...ctx(empty()), catalog: { ...catalogs, sets: setsJson as SetDef[], photo: photoJson as unknown as PhotoCatalog } };
