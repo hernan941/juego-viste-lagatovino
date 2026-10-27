@@ -5,6 +5,7 @@ import { albumHasNews, completion, hasAlbumProgress } from '../domain/album';
 import { albumLines } from '../domain/copy';
 import { albumArgs } from '../domain/flow';
 import { emptyProgress } from '../domain/progress';
+import { ALBUM_BUTTON, START_BUTTON, START_HALO } from '../domain/titleLayout';
 import type { AnchorsDef, Progress } from '../domain/types';
 import type { E2EUi, UiState } from '../e2eHook';
 import { Button } from '../objects/Button';
@@ -31,7 +32,7 @@ const PEEK = [
 /** Y of the feet of a peeking cat when it is hidden and when it has popped up. */
 const HIDDEN_DY = 330;
 const HILL_TOP = 600;
-const ALBUM_Y = 472;
+const ALBUM_Y = ALBUM_BUTTON.y;
 
 /** Title: the notebook cover. Grid paper, the bouncing logo, kittens peeking from behind a drawn hill, "Iniciar" and, once there is progress, "Mi álbum" with its percentage. */
 export class Title extends Phaser.Scene implements E2EUi {
@@ -183,9 +184,9 @@ export class Title extends Phaser.Scene implements E2EUi {
 
   private createStart() {
     const cx = GAME_WIDTH / 2;
-    const cy = 374;
+    const cy = START_BUTTON.y;
     const halo = this.add.graphics().setDepth(19);
-    halo.fillStyle(ink('sol'), 0.55).fillRoundedRect(-170, -56, 340, 112, 56).setPosition(cx, cy).setAlpha(0);
+    halo.fillStyle(ink('sol'), 0.55).fillRoundedRect(-170, -START_HALO.height / 2, 340, START_HALO.height, START_HALO.height / 2).setPosition(cx, cy).setAlpha(0);
     this.start = new Button(this, cx, cy, 'Iniciar', { pill: 'primary', width: 300, height: 94, fontSize: 56 }).setDepth(30).setScale(0);
     this.start.input!.enabled = false;
     this.time.delayedCall(1500, () => {
@@ -194,7 +195,7 @@ export class Title extends Phaser.Scene implements E2EUi {
         onComplete: () => {
           this.start.input!.enabled = true;
           this.ready = true;
-          if (profileOf(this).loops) this.tweens.add({ targets: halo, alpha: { from: 0.2, to: 0.9 }, scale: { from: 1, to: 1.12 }, duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+          if (profileOf(this).loops) this.tweens.add({ targets: halo, alpha: { from: 0.2, to: 0.9 }, scale: { from: 1, to: START_HALO.maxScale }, duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
           else this.tweens.add({ targets: halo, alpha: 0.6, duration: 400 });
         },
       });
@@ -214,7 +215,7 @@ export class Title extends Phaser.Scene implements E2EUi {
     const progress = (this.registry.get(RegistryKeys.Progress) as Progress | undefined) ?? emptyProgress(0);
     if (!hasAlbumProgress(progress, catalog)) return;
     const label = albumLines.titleButton(completion(progress, catalog).pct);
-    const button = new Button(this, GAME_WIDTH / 2, ALBUM_Y, label, { pill: 'secondary', width: 330, height: 74, fontSize: 36 }).setDepth(30).setScale(0);
+    const button = new Button(this, GAME_WIDTH / 2, ALBUM_Y, label, { pill: 'secondary', width: ALBUM_BUTTON.width, height: ALBUM_BUTTON.height, fontSize: 36 }).setDepth(30).setScale(0);
     this.album = button;
     button.input!.enabled = false;
     // The same ✦ as the notebook stamp: something new inside.
