@@ -18,7 +18,7 @@ export class PurchaseSheet extends ModalSheet {
   private readonly take: Button;
   private readonly notYet: Button;
 
-  constructor(scene: Phaser.Scene, readonly item: ClothingDef, readonly price: number) {
+  constructor(scene: Phaser.Scene, readonly item: Pick<ClothingDef, 'id' | 'name' | 'icon'>, readonly price: number) {
     super(scene, { width: CARD.w, height: CARD.h });
     const title = scene.add.text(0, -CARD.h / 2 + 52, shopLines.purchaseTitle, { fontFamily: Fonts.Title, fontSize: '46px', color: Ink.tinta, padding: { x: 2, y: 6 } }).setOrigin(0.5);
     const picture = scene.add.image(0, -34, item.icon);

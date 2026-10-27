@@ -175,12 +175,16 @@ export const DressUpEvents = {
   WalletFlight: 'wallet-flight',
   /** (item: ClothingDef) the player touched the price tag of an item that is not bought (on the cat or in its cell) */
   PriceTagPressed: 'price-tag-pressed',
+  /** (request: DyeTagRequest) the player touched the price tag of a dye bottle that is not bought (on the bottle or on the garment dyed with it) */
+  DyeTagPressed: 'dye-tag-pressed',
   /** the player cannot pay: the purse shakes (blinks with reduced motion) */
   WalletShake: 'wallet-shake',
   /** (item: ClothingDef, dyeId: string) a dye bottle was dropped on a worn item and the color is on it (water included) */
   ItemDyed: 'item-dyed',
   /** (ids: string[]) items were just paid (a purchase or the till at Ready): a combo that waited for them can give its box */
   ItemsBought: 'items-bought',
+  /** (ids: string[]) bottles of dye were just paid (a purchase or the till at Ready) */
+  DyesBought: 'dyes-bought',
 } as const;
 
 export const RegistryKeys = {

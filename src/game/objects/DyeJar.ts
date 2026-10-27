@@ -4,12 +4,15 @@ import { dyeKey } from '../data/assets';
 import type { DyeDef, Point } from '../domain/types';
 import { profileOf } from '../systems/motion';
 import { hoverSfx } from './hoverSfx';
+import { PriceTag } from './PriceTag';
 import { addHover, hitRect, type ScaleTo } from './ui';
 
 /** The bottle in its cell: the art is 128 x 176, drawn at the height of a wardrobe cell (104). */
 export const JAR_W = 76;
 export const JAR_H = 104;
 const LABEL_Y = JAR_H / 2 + 20;
+/** The price tag of a bottle that is not bought: from the top right corner of the cell, like the tags of the garments (cell px from its center). */
+export const JAR_TAG = { x: 30, y: -66, scale: 0.4 } as const;
 
 /**
  * A dye bottle in the dye tab: draggable, with its name under it. Emits JarDragStart / JarDrag / JarDragEnd (jar, pointer)
@@ -23,6 +26,8 @@ export class DyeJar extends Phaser.GameObjects.Container {
   private readonly scaleView: ScaleTo;
   private wiggleTween?: Phaser.Tweens.Tween;
   private dragged = false;
+  private tag: PriceTag | null = null;
+  private tagPrice = 0;
 
   constructor(scene: Phaser.Scene, x: number, y: number, dye: DyeDef) {
     super(scene, x, y);
@@ -35,7 +40,11 @@ export class DyeJar extends Phaser.GameObjects.Container {
     this.setSize(JAR_W, JAR_H + 36);
     this.setInteractive({ hitArea: hitRect(JAR_W, JAR_H + 36, { width: JAR_W + 14, height: JAR_H + 44 }), hitAreaCallback: Phaser.Geom.Rectangle.Contains, draggable: true, useHandCursor: true });
     this.scaleView = addHover(this, 1.06, this.view);
-    this.on('pointerover', (p: Phaser.Input.Pointer) => hoverSfx(scene, p, 0.35));
+    this.on('pointerover', (p: Phaser.Input.Pointer) => {
+      hoverSfx(scene, p, 0.35);
+      if (!p.wasTouch) this.tag?.setHover(true);
+    });
+    this.on('pointerout', () => this.tag?.setHover(false));
     this.on('pointerdown', () => {
       this.dragged = false;
       this.scaleView(0.94, 60);
@@ -62,6 +71,47 @@ export class DyeJar extends Phaser.GameObjects.Container {
   getCenter(): Point {
     const m = this.getWorldTransformMatrix();
     return { x: m.tx, y: m.ty };
+  }
+
+  /** What the bottle costs while it hangs a tag (0: it is the player's). */
+  get price(): number {
+    return this.tagPrice;
+  }
+
+  /** Where the thread of the tag is, in game coordinates (where the scissors cut and the buttons go). */
+  getTagPoint(): Point {
+    const c = this.getCenter();
+    return { x: c.x + JAR_TAG.x, y: c.y + JAR_TAG.y };
+  }
+
+  /** Hangs the price tag of cardboard on the bottle (it is only a picture: the cell keeps the touch). */
+  setPrice(price: number): void {
+    if (price === this.tagPrice) return;
+    this.dropTag();
+    this.tagPrice = price;
+    if (price <= 0) return;
+    this.tag = new PriceTag(this.scene, JAR_TAG.x, JAR_TAG.y, price, { scale: JAR_TAG.scale, phase: (this.x % 5) * 70 });
+    this.view.add(this.tag);
+  }
+
+  /** The bottle is the player's: the tag falls away softly. */
+  clearPrice(): void {
+    const tag = this.tag;
+    this.tag = null;
+    this.tagPrice = 0;
+    if (!tag) return;
+    this.scene.tweens.add({ targets: tag, alpha: 0, y: tag.y + 24, duration: 200, ease: 'Sine.easeIn', onComplete: () => tag.destroy() });
+  }
+
+  /** The tag is poked (a touch on the bottle). */
+  flickTag(): void {
+    this.tag?.flick();
+  }
+
+  private dropTag(): void {
+    this.tag?.destroy();
+    this.tag = null;
+    this.tagPrice = 0;
   }
 
   /** Pop-in used when the tab opens (0.8 to 1.05 to 1), one bottle after another. */

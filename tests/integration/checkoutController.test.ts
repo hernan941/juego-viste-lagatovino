@@ -201,6 +201,17 @@ describe('CheckoutController (F13.6)', () => {
     expect(t.progress().wallet).toBe(450);
   });
 
+  it('announces the paid bottles (DyesBought) so the shelf drops their tags, and only when there are some', () => {
+    const t = setup({ worn: [free], dyed: { [free.id]: bottle.id } });
+    t.leave();
+    t.sheet().emit(ObjectEvents.SheetConfirm);
+    expect(t.emitted.filter((e) => e.event === DressUpEvents.DyesBought).map((e) => e.args[0])).toEqual([[bottle.id]]);
+    const none = setup();
+    none.leave();
+    none.sheet().emit(ObjectEvents.SheetConfirm);
+    expect(none.emitted.some((e) => e.event === DressUpEvents.DyesBought)).toBe(false);
+  });
+
   it('a second tap on [Llevar todo] does not pay twice', () => {
     const t = setup();
     t.leave();

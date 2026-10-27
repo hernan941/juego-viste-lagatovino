@@ -5,13 +5,14 @@
 import type Phaser from 'phaser';
 import { DressUpEvents, Fonts, GAME_HEIGHT, GAME_WIDTH, Ink, ObjectEvents, RegistryKeys, SfxKeys, TextureKeys, colorToNumber } from '../../constants';
 import { dyeKey, WATER_ID } from '../../data/assets';
-import { dyeLines } from '../../domain/copy';
+import { dyeLines, shopLines } from '../../domain/copy';
 import { applyDye, resolveDyeDrop, type DyeDropResult } from '../../domain/dyeDrop';
 import { WATER_DYE } from '../../domain/dye';
 import { isInsideDropZone } from '../../domain/dropZone';
 import { anchorForSlot } from '../../domain/slots';
 import { tiltToward } from '../../domain/tilt';
 import { applyDiscovery } from '../../domain/progress';
+import { unpaidDyePrice } from '../../domain/purchase';
 import type { ClothingDef, DyeDef, EconomyRules, Point, Progress } from '../../domain/types';
 import { getAudio } from '../../plugins/AudioPlugin';
 import { getDye } from '../../plugins/DyePlugin';
@@ -19,15 +20,18 @@ import { profileOf } from '../../systems/motion';
 import { readSession } from '../../systems/sessionStore';
 import { applyLift, isDragPointer } from '../../systems/touch';
 import { DyeDot } from '../DyeDot';
-import { DyeJar } from '../DyeJar';
+import { DyeJar, JAR_TAG } from '../DyeJar';
 import { startSweep, type SweepHandle } from '../DyeSweep';
 import { SpeechBubble } from '../kit/SpeechBubble';
+import { PriceTag } from '../PriceTag';
 import { tabIconKey } from '../tabIcons';
 import { TAB_SIZE } from '../Tabs';
 import { liftFor } from '../ui';
 import type { ClothingItem } from '../ClothingItem';
 import { CELL_SIZE } from '../ClothingItem';
 import type { DressUpContext, DressUpController } from './DressUpController';
+import { WORN_TAG } from './layout';
+import type { DyeTagRequest } from './PurchaseController';
 
 /** Id of the tab (not a wardrobe category: the scene ignores it and this controller answers it). */
 export const DYE_TAB_ID = 'tintes';
@@ -92,6 +96,9 @@ export class DyeTabController implements DressUpController {
   /** The dots of color that hang on cells and rows, and the functions that take their decorators away. */
   private dots: { dot: DyeDot; itemId: string }[] = [];
   private removeDecorators: (() => void)[] = [];
+  /** The tags of the bottles that are not bought, hanging on the garments that wear them (by item id), and the ones that are fading out. */
+  private wornTags = new Map<string, { tag: PriceTag; dyeId: string }>();
+  private leavingTags = new Set<PriceTag>();
 
   attach(ctx: DressUpContext): void {
     this.ctx = ctx;
@@ -105,6 +112,9 @@ export class DyeTabController implements DressUpController {
     ctx.tabs.on(ObjectEvents.TabSelect, this.onTab, this);
     ctx.scene.events.on('update', this.onUpdate, this);
     ctx.scene.registry.events.on(`changedata-${RegistryKeys.ItemDye}`, this.syncAll, this);
+    ctx.scene.registry.events.on(`changedata-${RegistryKeys.Progress}`, this.refreshTags, this);
+    ctx.scene.events.on(DressUpEvents.OutfitChanged, this.syncWornTags, this);
+    ctx.scene.events.on(DressUpEvents.DyesBought, this.onBought, this);
     this.syncAll();
   }
 
@@ -115,6 +125,13 @@ export class DyeTabController implements DressUpController {
     tabs.off(ObjectEvents.TabSelect, this.onTab, this);
     scene.events.off('update', this.onUpdate, this);
     scene.registry.events.off(`changedata-${RegistryKeys.ItemDye}`, this.syncAll, this);
+    scene.registry.events.off(`changedata-${RegistryKeys.Progress}`, this.refreshTags, this);
+    scene.events.off(DressUpEvents.OutfitChanged, this.syncWornTags, this);
+    scene.events.off(DressUpEvents.DyesBought, this.onBought, this);
+    for (const { tag } of this.wornTags.values()) tag.destroy();
+    for (const tag of this.leavingTags) tag.destroy();
+    this.wornTags.clear();
+    this.leavingTags.clear();
     for (const remove of this.removeDecorators) remove();
     this.removeDecorators = [];
     this.dots = [];
@@ -138,7 +155,7 @@ export class DyeTabController implements DressUpController {
     this.applied.clear();
   }
 
-  e2eState(): { sweeping: string[]; open: boolean; jars: Record<string, Point>; dragging: boolean; target: string | null; last: string | null; applied: Record<string, string> } {
+  e2eState(): { sweeping: string[]; open: boolean; jars: Record<string, Point>; dragging: boolean; target: string | null; last: string | null; applied: Record<string, string>; jarTags: string[]; wornTags: Record<string, string> } {
     return {
       sweeping: [...this.sweeping.keys()],
       open: this.open,
@@ -147,6 +164,8 @@ export class DyeTabController implements DressUpController {
       target: this.drag?.target?.id ?? null,
       last: this.last,
       applied: Object.fromEntries([...this.applied].map(([item, { dyeId }]) => [item, dyeId])),
+      jarTags: this.jars.filter((j) => j.price > 0).map((j) => j.dye.id),
+      wornTags: Object.fromEntries([...this.wornTags].map(([item, { dyeId }]) => [item, dyeId])),
     };
   }
 
@@ -202,6 +221,7 @@ export class DyeTabController implements DressUpController {
       jar.on(ObjectEvents.JarDrag, this.onJarMove, this);
       jar.on(ObjectEvents.JarDragEnd, this.onJarEnd, this);
       jar.on(ObjectEvents.JarClick, this.onJarClick, this);
+      jar.setPrice(this.priceOf(dye));
       panel.add(jar);
       jar.popIn(120 + Math.min(i, 11) * 45);
       return jar;
@@ -235,7 +255,13 @@ export class DyeTabController implements DressUpController {
     d.jar.setLifted(false);
   }
 
-  private onJarClick(): void {
+  private onJarClick(jar: DyeJar): void {
+    // A bottle with a tag is bought by touching it, like a garment: the tag is poked and the purchase controller asks.
+    if (jar.price > 0) {
+      jar.flickTag();
+      this.ctx.scene.events.emit(DressUpEvents.DyeTagPressed, { dye: jar.dye, at: jar.getTagPoint(), scale: JAR_TAG.scale } satisfies DyeTagRequest);
+      return;
+    }
     // A tap on a bottle does not dye: the tip pulses and says how (equipping is by dragging, ADR 0008).
     const tip = this.tip;
     if (!tip) return;
@@ -466,6 +492,7 @@ export class DyeTabController implements DressUpController {
   private syncAll(): void {
     const { scene, catalog } = this.ctx;
     this.refreshDots();
+    this.syncWornTags();
     const wanted = readSession(scene.registry).itemDye;
     const plugin = getDye(scene);
     for (const item of catalog.clothes) {
@@ -510,6 +537,73 @@ export class DyeTabController implements DressUpController {
     const base = catalog.clothes.find((c) => c.id === itemId)?.texture;
     if (!layer || !(key ?? base)) return apply();
     this.sweeping.set(itemId, startSweep(scene, layer, (key ?? base)!, apply));
+  }
+
+  // ---- The price tags of the bottles -------------------------------------------
+
+  private progress(): Progress {
+    return this.ctx.scene.registry.get(RegistryKeys.Progress) as Progress;
+  }
+
+  /** What a bottle costs the player now (0: the starter, the water or one already bought). */
+  private priceOf(dye: DyeDef): number {
+    if (dye.id === WATER_ID) return 0;
+    return unpaidDyePrice(dye, this.progress()?.dyesOwned ?? [], (this.ctx.catalog as unknown as WithDyes).economy);
+  }
+
+  /** The bought bottles lose their tags (on the shelf and on the cat) and pop. */
+  private refreshTags(): void {
+    for (const jar of this.jars) {
+      const price = this.priceOf(jar.dye);
+      if (price <= 0 && jar.price > 0) jar.clearPrice();
+    }
+    this.syncWornTags();
+  }
+
+  private onBought(ids: string[]): void {
+    this.refreshTags();
+    for (const jar of this.jars) if (ids.includes(jar.dye.id)) jar.receivePop();
+  }
+
+  /** One tag for each worn garment dyed with a bottle that is not bought: "Tinte lila" and its price, on the other side of the garment's own tag. */
+  private syncWornTags(): void {
+    const { scene, catalog, cat } = this.ctx;
+    const dyes = (catalog as unknown as WithDyes).dyes;
+    const wanted = new Map<string, DyeDef>();
+    const itemDye = readSession(scene.registry).itemDye;
+    for (const id of Object.values(this.ctx.getOutfit())) {
+      const dye = dyes.find((d) => d.id === itemDye[id]);
+      if (dye && this.priceOf(dye) > 0) wanted.set(id, dye);
+    }
+    for (const [id, { tag, dyeId }] of [...this.wornTags]) {
+      if (wanted.get(id)?.id === dyeId) continue;
+      this.wornTags.delete(id);
+      this.fadeOutTag(tag);
+    }
+    for (const [id, dye] of wanted) {
+      if (this.wornTags.has(id)) continue;
+      const item = catalog.clothes.find((c) => c.id === id);
+      if (!item) continue;
+      const anchor = cat.getAnchorWorld(anchorForSlot(item.slot));
+      const at = { x: anchor.x - WORN_TAG.dx, y: anchor.y + WORN_TAG.dy };
+      const tag = new PriceTag(scene, at.x, at.y, this.priceOf(dye), { scale: WORN_TAG.scale, interactive: true });
+      const label = scene.add.text(0, 206, shopLines.dyeRow(dye.name), { fontFamily: Fonts.Voice, fontStyle: 'bold', fontSize: '46px', color: Ink.tinta, stroke: Ink.cremaPapel, strokeThickness: 8 }).setOrigin(0.5);
+      tag.add(label);
+      tag.on(ObjectEvents.PriceTagPress, () => scene.events.emit(DressUpEvents.DyeTagPressed, { dye, at, scale: WORN_TAG.scale } satisfies DyeTagRequest));
+      this.ctx.hud.add(tag);
+      this.wornTags.set(id, { tag, dyeId: dye.id });
+    }
+  }
+
+  private fadeOutTag(tag: PriceTag): void {
+    const { scene } = this.ctx;
+    this.leavingTags.add(tag);
+    const gone = () => {
+      this.leavingTags.delete(tag);
+      tag.destroy();
+    };
+    if (profileOf(scene).reduced) scene.tweens.add({ targets: tag, alpha: 0, duration: 150, onComplete: gone });
+    else scene.tweens.add({ targets: tag, alpha: 0, y: tag.y + 24, duration: 200, ease: 'Sine.easeIn', onComplete: gone });
   }
 
   // ---- The dot of color --------------------------------------------------------
