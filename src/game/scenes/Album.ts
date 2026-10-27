@@ -49,6 +49,8 @@ export class Album extends Phaser.Scene implements E2EUi {
   private tab: AlbumTabId = 'prendas';
   private hang: string | null = null;
   private ready = false;
+  /** The book has finished unfolding (its scaleX goes from 0 to 1): until then every tab is on the same point of the screen. */
+  private bookOpen = false;
   private coverOpening = false;
   private leaving = false;
   private turning = false;
@@ -97,6 +99,7 @@ export class Album extends Phaser.Scene implements E2EUi {
     this.tab = resolveTab(data?.tab);
     this.hang = typeof data?.hang === 'string' ? data.hang : null;
     this.ready = false;
+    this.bookOpen = false;
     this.coverOpening = false;
     this.leaving = false;
     this.turning = false;
@@ -190,10 +193,10 @@ export class Album extends Phaser.Scene implements E2EUi {
     this.coverOpening = false;
     if (this.leaving) return;
     if (profileOf(this).reduced) {
-      this.tweens.add({ targets: this.book, alpha: 1, duration: OPEN_MS });
+      this.tweens.add({ targets: this.book, alpha: 1, duration: OPEN_MS, onComplete: () => { this.bookOpen = true; } });
     } else {
       this.book.setAlpha(1).setScale(0, 1);
-      this.tweens.add({ targets: this.book, scaleX: 1, duration: OPEN_MS, ease: 'Sine.easeOut' });
+      this.tweens.add({ targets: this.book, scaleX: 1, duration: OPEN_MS, ease: 'Sine.easeOut', onComplete: () => { this.bookOpen = true; } });
     }
     this.tweens.add({ targets: this.footer, alpha: 1, duration: 300 });
     this.ready = true;
@@ -338,7 +341,7 @@ export class Album extends Phaser.Scene implements E2EUi {
     const points: UiState['points'] = {};
     for (const [id, pos] of Object.entries(this.tabs?.getTabPositions() ?? {})) points[`tab-${id}`] = pos;
     return {
-      ready: this.ready && !this.leaving && !this.turning,
+      ready: this.ready && this.bookOpen && !this.leaving && !this.turning,
       buttons: { back: this.back.getCenter(), prev: this.prev.getCenter(), next: this.next.getCenter() },
       points,
       info: {

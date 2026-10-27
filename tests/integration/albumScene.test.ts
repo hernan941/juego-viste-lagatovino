@@ -260,6 +260,8 @@ describe('Album scene (F17.2)', () => {
       album.create();
       return album;
     };
+    /** The opening of the book is a tween: it is over when its callback has run. */
+    const openBook = (album: FakeScene) => { for (const r of album.tweens.records) (r.config.onComplete as (() => void) | undefined)?.(); };
     const seenNow = (album: FakeScene) => (album.registry.get(RegistryKeys.Progress) as ReturnType<typeof emptyProgress>).albumSeen;
     const everything = () => progressOf({
       owned: catalog.clothes.filter((c) => !c.starter && !c.secret).map((c) => c.id),
@@ -276,8 +278,18 @@ describe('Album scene (F17.2)', () => {
       expect(album.getE2EUi().ready).toBe(false);
       expect(album.getE2EUi().info.cover).toBe(true);
       run(album);
-      expect(album.getE2EUi().ready).toBe(true);
       expect(album.getE2EUi().info.cover).toBe(false);
+      openBook(album);
+      expect(album.getE2EUi().ready).toBe(true);
+    });
+
+    it('reports ready only once the book has finished opening: while it unfolds (scaleX from 0) every tab sits on the same point (bug: getTabPositions)', () => {
+      const album = withProgress(emptyProgress(0));
+      run(album);
+      expect(album.getE2EUi().info.cover).toBe(false);
+      expect(album.getE2EUi().ready).toBe(false);
+      openBook(album);
+      expect(album.getE2EUi().ready).toBe(true);
     });
 
     it('a tap on the cover opens it at once, and only once', () => {
@@ -287,6 +299,7 @@ describe('Album scene (F17.2)', () => {
       expect(h.covers[0]!.opened).toBe(true);
       run(album);
       expect(h.covers).toHaveLength(1);
+      openBook(album);
       expect(album.getE2EUi().ready).toBe(true);
     });
 
