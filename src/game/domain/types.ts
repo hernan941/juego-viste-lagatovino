@@ -314,6 +314,12 @@ export interface RatingResult {
 /** How many slots changed against recent looks, capped: 0 = repeat, 1 = near, 2 = new. */
 export type Novelty = 0 | 1 | 2;
 
+/** The clue of the judge with 3-4 stars: points missing for the next star and, if known, a loved tag the look left out. */
+export interface NextHint {
+  missing: number;
+  love?: string;
+}
+
 /** Things the ceremony replays after the progress was applied (ADR 0017). */
 export type ProgressEvent =
   /** `novelty`: how new the look was (0 repeat, 1 near, 2 new); the ceremony explains the small payouts. */

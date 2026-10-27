@@ -9,6 +9,7 @@ import type { Expression } from '../domain/expressions';
 import { getLayers } from '../domain/outfit';
 import { flourishFor } from '../domain/pose';
 import { emptyProgress } from '../domain/progress';
+import { nextHint } from '../domain/nextHint';
 import { photoArgs, rateLook, runwayLines, type RunwayLook } from '../domain/runway';
 import type { AnchorsDef, ProgressEvent, Progress, RatingResult } from '../domain/types';
 import type { E2EUi, UiState } from '../e2eHook';
@@ -195,7 +196,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
     this.hud.hold();
     this.showHint();
     const ceremony = new Ceremony(this, plan, {
-      cat: this.cat, catName: this.look.catName, judge: this.catalog.brand.judge, comboName, tags: this.catalog.tags,
+      cat: this.cat, catName: this.look.catName, judge: this.catalog.brand.judge, comboName, tags: this.catalog.tags, hint: this.hintFor(rating),
       layout: { ...LAYOUT, wallet: this.hud.getJarPoint() },
       onCredit: (credit) => this.hud.adjust(credit),
       onStep: (step: CeremonyStep) => {
@@ -210,6 +211,14 @@ export class Showcase extends Phaser.Scene implements E2EUi {
       this.hud.release(wallet);
       this.openExits(true);
     });
+  }
+
+  /** With 3 or 4 stars Kofi says what the next star needs, and a taste the player knows and did not use. */
+  private hintFor(rating: RatingResult) {
+    const cat = this.catalog.cats.find((c) => c.id === this.look.catId);
+    const progress = this.registry.get(RegistryKeys.Progress) as Progress | undefined;
+    if (!cat) return null;
+    return nextHint(rating, cat, progress?.tastesFound[cat.id] ?? [], this.look.outfit, this.catalog.clothes, this.catalog.economy);
   }
 
   /** "Clic para seguir" / "Toca para seguir": breathes at the foot of the cat while the ceremony runs. */

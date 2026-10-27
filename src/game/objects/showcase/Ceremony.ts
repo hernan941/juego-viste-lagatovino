@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { Fonts, GAME_WIDTH, Ink, SfxKeys, TextureKeys } from '../../constants';
 import { SKIP_FACTOR, skip, type CeremonyPlan, type CeremonyStep } from '../../domain/ceremony';
 import { judgeLines, noveltyNote } from '../../domain/copy';
-import type { CharacterDef, Point, TagNames } from '../../domain/types';
+import type { CharacterDef, NextHint, Point, TagNames } from '../../domain/types';
 import { getAudio } from '../../plugins/AudioPlugin';
 import { profileOf } from '../../systems/motion';
 import type { Cat } from '../Cat';
@@ -49,6 +49,8 @@ export interface CeremonyTargets {
   layout?: Partial<CeremonyLayout>;
   /** Turns a combo id into its name for the card. */
   comboName?: (id: string) => string;
+  /** The clue for 3-4 stars (what is missing for the next one), from `nextHint`. */
+  hint?: NextHint | null;
   /** The readable tags (tags.json) for the card and the notes. */
   tags?: TagNames;
   /** A button landed: `credit` buttons to add to the counter, `total` landed so far. */
@@ -282,7 +284,7 @@ export class Ceremony {
       this.judge?.hop();
     }
     if (reaction.expression === 'amor') cat.heartbeat();
-    this.judge?.say(lines.say({ catName, stars: this.plan.stars, bare: this.plan.bare, novelty: this.plan.novelty }));
+    this.judge?.say(lines.say({ catName, stars: this.plan.stars, bare: this.plan.bare, novelty: this.plan.novelty, hint: this.targets.hint, tags: this.targets.tags }));
     if (reaction.confetti) this.confetti(p.count(36));
   }
 

@@ -125,6 +125,13 @@ describe('Ceremony', () => {
     expect(texts).toContain('Propina +2');
   });
 
+  it('with 4 stars Kofi gives a clue to reach 5 (A4)', () => {
+    const { scene, plan, ceremony } = setup(4, 'full', { hint: { missing: 2, love: 'estrellas' }, tags: { estrellas: { label: 'estrellas', love: 'las estrellas', style: '' } } });
+    void ceremony.play();
+    scene.advance(plan.totalMs);
+    expect(scene.made.texts.some((t) => String(t.text).includes('Te faltaron 2 puntitos… ¿y si pruebas con las estrellas?'))).toBe(true);
+  });
+
   it('a tap skips x3 and every button still counts', async () => {
     const { scene, credits, plan, ceremony } = setup();
     const done = settled(ceremony.play());
