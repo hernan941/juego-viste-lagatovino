@@ -60,6 +60,8 @@ export class Cat extends Phaser.GameObjects.Container {
   private expression: Expression = 'normal';
   private held = false;
   private blinkTimer?: Phaser.Time.TimerEvent;
+  /** The timer of the open eyes (or of the next blink of a double blink). */
+  private blinkStep?: Phaser.Time.TimerEvent;
   private idleLookTimer?: Phaser.Time.TimerEvent;
   private idleLookBack?: Phaser.Time.TimerEvent;
   private wagTimer?: Phaser.Time.TimerEvent;
@@ -324,9 +326,11 @@ export class Cat extends Phaser.GameObjects.Container {
   private blink(times: number): void {
     if (this.expression !== 'normal' || this.held) return;
     this.face.setTexture(faceKey('parpadeo'));
-    this.scene.time.delayedCall(120, () => {
+    // Kept, so that a cat destroyed in the middle of a blink (a page of the album turned) does not touch its dead face.
+    this.blinkStep?.remove();
+    this.blinkStep = this.scene.time.delayedCall(120, () => {
       if (this.expression === 'normal' && !this.held) this.face.setTexture(faceKey('normal'));
-      if (times > 1) this.scene.time.delayedCall(140, () => this.blink(times - 1));
+      if (times > 1) this.blinkStep = this.scene.time.delayedCall(140, () => this.blink(times - 1));
     });
   }
 
@@ -781,6 +785,7 @@ export class Cat extends Phaser.GameObjects.Container {
   destroy(fromScene?: boolean): void {
     this.scene?.registry?.events.off(`changedata-${RegistryKeys.ReducedMotion}`, this.startIdle, this);
     this.blinkTimer?.remove();
+    this.blinkStep?.remove();
     this.idleLookTimer?.remove();
     this.idleLookBack?.remove();
     this.wagTimer?.remove();

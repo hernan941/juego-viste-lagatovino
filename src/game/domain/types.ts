@@ -88,6 +88,8 @@ export interface ComboDef {
   requires: ComboRequirement[];
   reaction: string;
   rewardItemId: string;
+  /** What the album whispers about this secret while it is not won ("algo galáctico…"). */
+  hint?: string;
 }
 
 /** Equipped item ids by slot. At most one item per slot (ADR 0003). */

@@ -18,6 +18,8 @@ export interface AlbumPageContext {
 export interface AlbumPage {
   readonly view: Phaser.GameObjects.Container;
   destroy(): void;
+  /** What the page shows right now, for the e2e hook (ids and states); optional. */
+  info?(): Record<string, unknown>;
 }
 
 export type AlbumPageFactory = (scene: Phaser.Scene, tab: AlbumTabId, ctx: AlbumPageContext) => AlbumPage;

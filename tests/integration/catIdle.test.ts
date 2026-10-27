@@ -93,6 +93,16 @@ describe('Cat idle extras (F9): a glance aside, a spontaneous tail wag and the p
     for (const t of timers) expect(t.remove).toHaveBeenCalled();
   });
 
+  it('removes the timers of a blink in progress on destroy, so no face is touched once it is gone (bug seen in the album)', () => {
+    const { scene, timers } = fakeScene();
+    const cat = new Cat(scene as never, 0, 0, def, anchors as never, 512);
+    timers[0].fn(); // the blink fires: it closes the eyes and waits 120 ms to open them
+    const reopen = timers.find((t) => t.delay === 120)!;
+    expect(reopen).toBeDefined();
+    cat.destroy();
+    expect(reopen.remove).toHaveBeenCalled();
+  });
+
   it('the spontaneous wag is a soft 6 degree flick that ends where the sway starts, and it schedules the next one', () => {
     const { scene, timers, chains } = fakeScene();
     new Cat(scene as never, 0, 0, def, anchors as never, 512);

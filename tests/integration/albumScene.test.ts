@@ -7,7 +7,7 @@ const h = vi.hoisted(() => ({
   transitionIn: vi.fn(),
   buttons: [] as { label: string; emit(ev: string): void; destroyed: boolean }[],
   tabs: [] as { selectedId: string | null; emit(ev: string, ...a: unknown[]): void; destroyed: boolean; selected: string[] }[],
-  pages: [] as { tab: string; destroyed: boolean }[],
+  pages: [] as { tab: string; destroyed: boolean; info?: () => unknown }[],
   bubbles: [] as { text: string; destroyed: boolean }[],
 }));
 
@@ -179,6 +179,13 @@ describe('Album scene (F17.2)', () => {
     album.create();
     expect(album.getE2EUi().info).toMatchObject({ tab: 'prendas', from: 'Title', turns: 0 });
     expect(album.getE2EUi().ready).toBe(false);
+  });
+
+  it('adds what the page shows to the e2e info, when the page can say it', () => {
+    const album = open();
+    expect(album.getE2EUi().info.page).toBeNull();
+    h.pages[0]!.info = () => ({ shown: [{ id: 'a', state: 'got' }] });
+    expect(album.getE2EUi().info.page).toEqual({ shown: [{ id: 'a', state: 'got' }] });
   });
 
   it('reports the percent and the tally of the page for the e2e hook', () => {
