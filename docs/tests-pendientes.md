@@ -293,3 +293,22 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
 - Movimiento reducido: la caja y la lectura funcionan sin temblor, rotación ni vuelo (la cruz solo se desvanece).
 - `perf.spec`: abrir y cerrar la caja varias veces no deja objetos ni tweens colgados.
 - Falta el tipo de `dressUp.checkout` en `e2eHook.ts` (el estado de los controladores llega sin tipar).
+
+## F17.5 y F17.6: portada, hitos, sets y botón del cuaderno
+### E2E pendientes
+- `album.spec`:
+  - la portada aparece primero, y `ready` pasa a verdadero tras unos 1,2 s o un toque;
+  - el porcentaje de la portada coincide con `completion` y dice "X de 7" sets;
+  - los sellos de hitos salen en orden y `albumSeen` queda con `milestone:N`;
+  - al pasar de página, las entradas quedan vistas;
+  - salir por la portada no marca nada como visto.
+- Sets (generados desde `sets.json`):
+  - completar un set da las notas `setCompleted` y `unlock`;
+  - las notas no se repiten en una segunda calificación;
+  - la pieza queda desbloqueada en el modo foto.
+- Desde DressUp: abrir el álbum y volver conserva la pestaña, el scroll y el outfit (también en la pestaña Tintes). Hay que revisar `news` en `dressUp.album`.
+- Desde el Showcase: abrir el álbum y volver no repite la ceremonia y deja el monedero igual.
+- `@mobile`: tocar el botón del cuaderno en DressUp y en el Showcase.
+- `perf.spec`: un ciclo del álbum (portada y sello) sin fugas.
+- `motion.spec`: con movimiento reducido, la portada y el sello solo hacen fundido.
+- **Ojo**: abrir el álbum ahora espera unos 1,2 s por la portada. Los e2e existentes con `jump('Album')` siguen funcionando, pero más lentos.
