@@ -411,7 +411,7 @@ Una escena propia solo se justificaría con más contenido (por ejemplo, decorar
 | Fuente | Cuánto | Cuántas veces | Total posible |
 |---|---|---|---|
 | Botones iniciales | 100 | 1 | 100 |
-| Calificar un look **nuevo** | 1★ 5 · 2★ 10 · 3★ 18 · 4★ 28 · 5★ 40 | ilimitado (con novedad) | — |
+| Calificar un look **nuevo** | 1★ 3 · 2★ 5 · 3★ 8 · 4★ 10 · 5★ 14 | ilimitado (con novedad) | — |
 | Look casi igual a uno reciente (1 cambio) | 50 % de lo anterior | ilimitado | — |
 | Look repetido (0 cambios) | propina de 2 | ilimitado | — |
 | Primer 3★ con un gato | +15 | 12 | 180 |
@@ -445,10 +445,10 @@ Supuesto: una sesión dura unos 15 minutos y se califican unos 6 looks.
 | 5–8 | Menos descubrimientos y más 5★; se juntan para las prendas de lujo (combo realeza = 330) | ~2100 |
 | 9–10 | Últimas compras, gustos difíciles y combos que faltan | **≈ 100 %** |
 
-`balance.test.ts` (S3) fija este ritmo: el jugador modelo debe llegar al 50 % de lo comprable entre las sesiones 3 y 5, y al 100 % en ≤ 12.
+`balance.test.ts` (S3) fija este ritmo: el jugador modelo debe llegar al 50 % de lo comprable entre las sesiones 3 y 5, y al 100 % entre las sesiones 8 y 11 (F21.1).
 
 ### Cómo se evita el grind aburrido
-- **El 90 % del dinero sale de descubrir cosas** (gustos, récords y combos), no de repetir: 2320 de los 2350 que se pueden gastar. Repetir un look paga una propina.
+- **El 90 % del dinero que se puede ganar una sola vez sale de descubrir cosas** (gustos, récords y combos): 2320 de los 2350 que se pueden gastar. El flujo real que mide `balance.test.ts` es ≥ 70 %. Repetir un look paga una propina.
 - **Probar es gratis**: el jugador siempre puede jugar con todo; los botones son para quedarse con lo que le gustó.
 - Cambiar de gato **resetea la motivación**: 12 gatos con gustos distintos son 12 rompecabezas.
 - Nada se pierde, no hay castigo, no hay energía, ni tiempos de espera, ni regalos diarios (sin FOMO).

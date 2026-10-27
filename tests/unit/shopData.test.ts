@@ -37,7 +37,7 @@ describe('economy.json (F11.9)', () => {
   it('has the numbers of the design (section 4)', () => {
     expect(economy.startWallet).toBe(100);
     expect(economy.prices).toEqual({ basica: 40, linda: 70, lujo: 110, dye: 50 });
-    expect(economy.payout).toEqual({ byStars: { 1: 5, 2: 10, 3: 18, 4: 28, 5: 40 }, nearFactor: 0.5, tip: 2 });
+    expect(economy.payout).toEqual({ byStars: { 1: 3, 2: 5, 3: 8, 4: 10, 5: 14 }, nearFactor: 0.5, tip: 2 });
     expect(economy.milestones).toEqual({ threeStars: 15, fourStars: 25, fiveStars: 50 });
     expect(economy.novelty.window).toBe(3);
     expect(economy.discoveryBonus).toBe(15);
