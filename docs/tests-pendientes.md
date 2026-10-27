@@ -339,3 +339,14 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
 9. Recargar conserva `dyesOwned`.
 10. `@mobile`: tocar la etiqueta con el dedo.
 11. Sin errores de consola.
+
+## F20.3: Title con "Mi álbum"
+### E2E pendientes
+- Con progreso (`grant` y `jump('Title')`):
+  - existe `buttons.album`;
+  - abre el álbum con `from='Title'`, y Volver regresa al Title;
+  - el texto coincide con "Mi álbum · {pct}%".
+- En un juego nuevo (`reset()`), `buttons.album` no existe.
+- "Iniciar" lleva a CatSelect, con y sin progreso.
+- `@mobile`: el gato del centro no tapa "Mi álbum".
+- Sin errores de consola.
