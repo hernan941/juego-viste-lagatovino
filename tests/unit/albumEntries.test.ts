@@ -231,14 +231,15 @@ describe('hangerHooks (F19.5)', () => {
     expect(hooks.filter((h) => h.side === 'left')).toHaveLength(6);
     expect(hooks.map((h) => h.side).slice(0, 4)).toEqual(['left', 'left', 'right', 'right']);
   });
-  it('follows the hooks of the art (x = 120 + 240 col, y = 58 + 170 row) at the scale of the board', () => {
+  it('follows the hooks of the art (x = hook.x + stepX col, y = hook.y + stepY row) at the scale of the board', () => {
     const s = HANGER.scale;
+    const { hook } = HANGER;
     const left = -(HANGER.art.width / 2) * s;
     const top = HANGER.centerY - (HANGER.art.height / 2) * s;
-    expect(hooks[0]!.x).toBeCloseTo(left + 120 * s);
-    expect(hooks[5]!.x).toBeCloseTo(left + 360 * s);
-    expect(hooks[5]!.y).toBeCloseTo(top + (58 + 170) * s);
-    expect(hooks[11]!.x).toBeCloseTo(left + 840 * s);
+    expect(hooks[0]!.x).toBeCloseTo(left + hook.x * s);
+    expect(hooks[5]!.x).toBeCloseTo(left + (hook.x + hook.stepX) * s);
+    expect(hooks[5]!.y).toBeCloseTo(top + (hook.y + hook.stepY) * s);
+    expect(hooks[11]!.x).toBeCloseTo(left + (hook.x + 3 * hook.stepX) * s);
   });
   it('gives the position inside its own half too', () => {
     for (const h of hooks) expect(h.localX).toBeCloseTo(h.x - HALF[h.side].center);
@@ -246,7 +247,31 @@ describe('hangerHooks (F19.5)', () => {
   it('fits the page area, with the whole board inside it', () => {
     const s = HANGER.scale;
     expect(HANGER.centerY + (HANGER.art.height / 2) * s).toBeLessThanOrEqual(HALF.height / 2);
+    expect(HANGER.centerY - (HANGER.art.height / 2) * s).toBeGreaterThanOrEqual(-HALF.height / 2);
     expect((HANGER.art.width / 2) * s).toBeLessThanOrEqual(450);
+  });
+  it('keeps the board under the title and the rings of the spine: its top is at least 12 px under the header line (K5)', () => {
+    const top = HANGER.centerY - (HANGER.art.height / 2) * HANGER.scale;
+    // The header line of a page is at y = -212 of the half; the board starts below its text.
+    expect(top).toBeGreaterThanOrEqual(-212 + 12 + 14);
+  });
+  it('hangs each keychain from the tip of its hook: the ring sits where the hook curves (K5)', () => {
+    const s = HANGER.scale;
+    for (const h of hooks) {
+      expect(h.tip.x).toBeCloseTo(h.x);
+      expect(h.tip.y).toBeCloseTo(h.y + HANGER.hookTip * s);
+      expect(h.tip.y).toBeGreaterThan(h.y);
+    }
+  });
+  it('fits, in every row, the hook, the keychain and the name of the cat inside the board and above the next hook (K5)', () => {
+    const s = HANGER.scale;
+    // The name must end above the border of the cork, not just inside the art.
+    const bottom = HANGER.centerY - (HANGER.art.height / 2) * s + HANGER.corkBottom * s;
+    const content = (h: { tip: { y: number } }) => h.tip.y + HANGER.cell.fitHeight + HANGER.cell.nameGap + HANGER.cell.nameHeight;
+    for (const h of hooks) expect(content(h)).toBeLessThanOrEqual(bottom - 6);
+    expect(HANGER.corkBottom).toBeLessThan(HANGER.art.height - 10);
+    // The name of a row ends before the circle of the hook of the next row (which starts about 9 art px above its origin).
+    for (let i = 0; i + HANGER.columns < hooks.length; i++) expect(content(hooks[i]!)).toBeLessThanOrEqual(hooks[i + HANGER.columns]!.y - 9 * 1.15 * s);
   });
 });
 

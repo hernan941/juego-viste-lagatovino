@@ -10,17 +10,19 @@ import { getAudio } from '../../plugins/AudioPlugin';
 import { profileOf } from '../../systems/motion';
 import { Keychain, keychainData } from '../keychain/Keychain';
 import type { AlbumPageContext } from './AlbumPage';
-import { PAGE_AREA } from './AlbumPage';
 import { BookPage, entryContext } from './BookPage';
 import { makeTappable } from './makeTappable';
 import { sketchImage } from './pencil';
 
-/** A hook's cell: its center is this far under the hook, and the keychain hangs from the hook inside it. */
-const CELL = { width: 130, height: 128, hookOffset: 56 };
-/** Where a thumbnail fits (px of the cell), counted from the hook down. */
-const FIT = { x: 0, y: 0, width: 126, height: 100 };
-const SKETCH = 84;
-const CAPTION_Y = 56;
+/** What a hook holds (HANGER.cell): the box a thumbnail fits, counted from the tip of the hook down, and the line of the name under it. */
+const FIT = { x: 0, y: 0, width: HANGER.cell.fitWidth, height: HANGER.cell.fitHeight };
+/** The cell is centered on its box: the thumbnail hangs from the top of it (the tip of the hook) and the name sits at the bottom. */
+const BOX = HANGER.cell.fitHeight + HANGER.cell.nameGap + HANGER.cell.nameHeight;
+const CELL = { width: 130, height: BOX + 4 };
+const SKETCH = HANGER.cell.fitHeight - 6;
+const CAPTION_Y = BOX / 2 - HANGER.cell.nameHeight / 2;
+/** The veil of the big view covers the whole sheet (1120 x 620 shown at 0.9, so 1008 x 558), not only the useful area of the page. */
+const VEIL = { width: 996, height: 548 };
 /** The keychain in front: where it hangs from, and the box it fits in. */
 const BIG = { hang: { x: 130, y: -196 }, fit: { x: 0, y: 0, width: 360, height: 400 } };
 const DRAG_MIN = 6;
@@ -74,7 +76,7 @@ export class HangerPage extends BookPage {
     hangerHooks(this.entries.length).forEach((hook) => {
       const entry = this.entries[hook.index]!;
       const cell = this.buildHook(entry);
-      cell.setPosition(hook.localX, hook.y + CELL.hookOffset);
+      cell.setPosition(hook.localX, hook.tip.y + BOX / 2);
       this.place(hook.side, entry.id, cell, entry.isNew, { x: CELL.width / 2 - 14, y: -CELL.height / 2 + 12 });
     });
     this.popIn(this.cellList());
@@ -104,7 +106,7 @@ export class HangerPage extends BookPage {
     const scene = this.scene;
     const hung = entry.recipe !== null;
     const parts: Phaser.GameObjects.GameObject[] = [];
-    const rest = { x: 0, y: -CELL.hookOffset, scale: 1 };
+    const rest = { x: 0, y: -BOX / 2, scale: 1 };
     let keychain: Keychain | null = null;
     if (entry.recipe) {
       keychain = new Keychain(scene, rest.x, rest.y, entry.recipe, keychainData(this.ctx.catalog, this.anchors), { px: 256, deferred: true, cache: true });
@@ -115,11 +117,11 @@ export class HangerPage extends BookPage {
       parts.push(keychain);
     } else {
       // An empty hook: the cat in pencil, a little under the hook.
-      parts.push(sketchImage(scene, entry.def.texture, SKETCH).setPosition(0, -CELL.hookOffset + 10 + SKETCH / 2));
+      parts.push(sketchImage(scene, entry.def.texture, SKETCH).setPosition(0, -BOX / 2 + 4 + SKETCH / 2));
     }
     parts.push(
       scene.add
-        .text(0, CAPTION_Y, entry.name, { fontFamily: Fonts.Voice, fontStyle: 'bold', fontSize: '22px', color: hung ? Ink.tinta : Ink.lineaLapiz, padding: { x: 2, y: 4 } })
+        .text(0, CAPTION_Y, entry.name, { fontFamily: Fonts.Voice, fontStyle: 'bold', fontSize: '19px', color: hung ? Ink.tinta : Ink.lineaLapiz, padding: { x: 2, y: 4 } })
         .setOrigin(0.5),
     );
     const face = scene.add.container(0, 0, parts);
@@ -168,8 +170,8 @@ export class HangerPage extends BookPage {
     getAudio(scene).play(SfxKeys.Paper);
 
     const sheet = scene.add.graphics();
-    sheet.fillStyle(PAPER, 0.96).fillRoundedRect(-PAGE_AREA.width / 2, -PAGE_AREA.height / 2, PAGE_AREA.width, PAGE_AREA.height, 26);
-    const scrim = scene.add.zone(0, 0, PAGE_AREA.width, PAGE_AREA.height).setInteractive({ useHandCursor: true });
+    sheet.fillStyle(PAPER, 0.96).fillRoundedRect(-VEIL.width / 2, -VEIL.height / 2, VEIL.width, VEIL.height, 26);
+    const scrim = scene.add.zone(0, 0, VEIL.width, VEIL.height).setInteractive({ useHandCursor: true });
     const keychain = new Keychain(scene, BIG.hang.x, BIG.hang.y, entry.recipe, keychainData(this.ctx.catalog, this.anchors), { px: 512 });
     const scale = fitKeychain(BIG.fit, keychain.layout, keychain.layout.hang);
     keychain.setScale(scale);

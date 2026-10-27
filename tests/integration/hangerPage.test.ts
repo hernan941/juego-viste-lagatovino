@@ -44,10 +44,11 @@ import economy from '../../src/game/data/economy.json';
 import { ObjectEvents, RegistryKeys, SfxKeys } from '../../src/game/constants';
 import type { GameData } from '../../src/game/data/schema';
 import { completion } from '../../src/game/domain/album';
-import { HALF, hangerHooks } from '../../src/game/domain/albumEntries';
+import { HALF, HANGER, hangerHooks } from '../../src/game/domain/albumEntries';
 import { emptyProgress } from '../../src/game/domain/progress';
 import type { CatDef, KeychainRecipe, Progress } from '../../src/game/domain/types';
 import type { AlbumPageContext } from '../../src/game/objects/album/AlbumPage';
+import { PAGE_AREA } from '../../src/game/objects/album/AlbumPage';
 import { PAGE_FACTORIES, createPage } from '../../src/game/objects/album/pages';
 import { TallyPage } from '../../src/game/objects/album/TallyPage';
 import { makeFakeScene } from './helpers/kitScene';
@@ -117,6 +118,18 @@ describe('the hanger page: registration and layout', () => {
       expect(min).toBeGreaterThanOrEqual(HALF.left.min);
       expect(max).toBeLessThanOrEqual(HALF.right.max);
     }
+  });
+
+  it('hangs each keychain from the tip of its hook (K5): the cell sits at the tip and the thumbnail at the middle of the cell, not on the hole of the hook', () => {
+    const { page } = make(progressWith(0, 5));
+    for (const i of [0, 5]) {
+      const hook = hangerHooks(12)[i]!;
+      const box = HANGER.cell.fitHeight + HANGER.cell.nameGap + HANGER.cell.nameHeight;
+      // The cell is centered on its box (a tap lands anywhere in it); the thumbnail hangs from the top of that box, the tip of the hook.
+      expect(page.cellOf(idOf(i))!.y - box / 2).toBeCloseTo(hook.tip.y);
+    }
+    const box = HANGER.cell.fitHeight + HANGER.cell.nameGap + HANGER.cell.nameHeight;
+    for (const k of kc()) expect(k.y).toBeCloseTo(-box / 2);
   });
 
   it('draws the cork board first, so the halves are above it', () => {
@@ -194,6 +207,19 @@ describe('touching a keychain', () => {
     expect(page.info().big).toBe(catList[0]!.id);
     expect(page.bigView()).not.toBeNull();
     expect(big[0]!.swings.length).toBeGreaterThan(0);
+  });
+
+  it('the veil of the big view covers the whole sheet, not only the useful area, so no name of the board shows around it (K5)', () => {
+    const { page } = make(progressWith(0));
+    tap(page.cellOf(idOf(0))!);
+    tap(page.cellOf(idOf(0))!);
+    const veil = page.bigView()!.scrim as unknown as { width: number; height: number };
+    // The sheet of the notebook is 1120 x 620 shown at 0.9: the veil is more than the useful area (the board and the names are in it) and
+    // does not go past the sheet.
+    expect(veil.width).toBeGreaterThan(PAGE_AREA.width);
+    expect(veil.height).toBeGreaterThan(PAGE_AREA.height);
+    expect(veil.width).toBeLessThanOrEqual(1120 * 0.9);
+    expect(veil.height).toBeLessThanOrEqual(620 * 0.9);
   });
 
   it('a tap outside the big keychain puts it back: it is destroyed and the thumbnail is still there', () => {

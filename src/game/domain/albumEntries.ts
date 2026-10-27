@@ -219,15 +219,24 @@ export function keychainEntries(ctx: EntryContext): KeychainEntry[] {
   });
 }
 
-/** The cork board of the hanger on the open sheet (art `hanger-board.svg`, 960 x 540): a scale and where its middle sits on the page. */
+/**
+ * The cork board of the hanger on the open sheet (art `hanger-board.svg`, 960 x 540): a scale and where its middle sits on the page.
+ * It fits the useful area under the title line, with three rows of hook, keychain and name inside it (K5).
+ */
 export const HANGER = {
-  scale: 0.78,
+  scale: 0.76,
   art: { width: 960, height: 540 },
   /** Y of the middle of the board in the page: the margin above it is for the title. */
-  centerY: 28,
+  centerY: 20,
   columns: 4,
-  /** Hooks of the art: x = 120 + 240 * column, y = 58 + 170 * row. */
-  hook: { x: 120, y: 58, stepX: 240, stepY: 170 },
+  /** Hooks of the art: x = 120 + 240 * column, y = 40 + 152 * row. */
+  hook: { x: 120, y: 40, stepX: 240, stepY: 152 },
+  /** Y of the art where the cork ends (its border is under that): nothing that hangs goes past it. */
+  corkBottom: 506,
+  /** Px of the art from the origin of a hook to where its ring hangs (the bend of the hook). */
+  hookTip: 27,
+  /** What hangs from a hook, in px of the page: the box a keychain fits, and the line of its name under it. */
+  cell: { fitWidth: 126, fitHeight: 60, nameGap: 6, nameHeight: 18 },
 } as const;
 
 export interface HangerHook {
@@ -235,13 +244,15 @@ export interface HangerHook {
   /** In the coordinates of the page (its middle is 0, 0) and of its own half. */
   x: number;
   y: number;
+  /** Where the ring of the keychain hangs: the bend of the hook. */
+  tip: { x: number; y: number };
   side: 'left' | 'right';
   localX: number;
 }
 
 /** Where each hook is: the board spans the spine, so the first two columns belong to the left half and the other two to the right one. */
 export function hangerHooks(count: number): HangerHook[] {
-  const { scale, art, centerY, columns, hook } = HANGER;
+  const { scale, art, centerY, columns, hook, hookTip } = HANGER;
   const left = -(art.width / 2) * scale;
   const top = centerY - (art.height / 2) * scale;
   return Array.from({ length: count }, (_, index) => {
@@ -250,7 +261,7 @@ export function hangerHooks(count: number): HangerHook[] {
     const x = left + (hook.x + hook.stepX * col) * scale;
     const y = top + (hook.y + hook.stepY * row) * scale;
     const side = col < columns / 2 ? 'left' : 'right';
-    return { index, x, y, side, localX: x - HALF[side].center };
+    return { index, x, y, tip: { x, y: y + hookTip * scale }, side, localX: x - HALF[side].center };
   });
 }
 
