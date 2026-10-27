@@ -9,7 +9,7 @@ vi.mock('../../src/game/objects/PurchaseSheet', () => ({
     handlers: Record<string, () => void> = {};
     closed = false;
     destroyed = false;
-    constructor(_scene: unknown, public item: { id: string }, public price: number) { made.sheets.push(this); }
+    constructor(_scene: unknown, public item: { id: string; name: string; icon: string }, public price: number) { made.sheets.push(this); }
     on(e: string, fn: () => void) { this.handlers[e] = fn; return this; }
     emit(e: string) { this.handlers[e]?.(); }
     close(done?: () => void) { this.closed = true; done?.(); }
@@ -39,10 +39,14 @@ import clothes from '../../src/game/data/clothes.json';
 import economy from '../../src/game/data/economy.json';
 import { DressUpEvents, ObjectEvents, RegistryKeys, SfxKeys } from '../../src/game/constants';
 import { emptyProgress } from '../../src/game/domain/progress';
-import type { ClothingDef, EconomyRules, Progress } from '../../src/game/domain/types';
+import dyesJson from '../../src/game/data/dyes.json';
+import type { ClothingDef, DyeDef, EconomyRules, Progress } from '../../src/game/domain/types';
 import { controllerFactories } from '../../src/game/objects/dressup/controllers';
 import { PurchaseController } from '../../src/game/objects/dressup/PurchaseController';
 
+const dyes = dyesJson as unknown as DyeDef[];
+const lila = dyes.find((d) => d.id === 'lila')!;
+const rosa = dyes.find((d) => d.starter)!;
 const rules = economy as unknown as EconomyRules;
 const items = clothes as unknown as ClothingDef[];
 const priced = items.find((c) => c.tier === 'basica')!;
@@ -87,7 +91,7 @@ function setup({ wallet = 100, worn = false, dragging = false, leaving = false }
   const grid = { getCellPositions: () => ({ [priced.id]: { x: 900, y: 200 }, [fancy.id]: { x: 900, y: 300 } }), getCell: () => cell };
   const hearts = { explode: (n: number) => calls.push(`hearts:${n}`) };
   const ctx = {
-    scene, catalog: { cats: [], clothes: items, combos: [], economy: rules }, cat, grid, hearts, sparkles: hearts, hud: { add: () => {} },
+    scene, catalog: { cats: [], clothes: items, combos: [], dyes, economy: rules }, cat, grid, hearts, sparkles: hearts, hud: { add: () => {} },
     getOutfit: () => (worn ? { [priced.slot]: priced.id } : {}), isDragging: () => dragging, isLeaving: () => leaving,
   } as never;
   const controller = new PurchaseController();
@@ -95,7 +99,8 @@ function setup({ wallet = 100, worn = false, dragging = false, leaving = false }
   const press = (item: ClothingDef) => events.emit(DressUpEvents.PriceTagPressed, item);
   const sheet = () => made.sheets[made.sheets.length - 1] as { emit(e: string): void; closed: boolean; destroyed: boolean; item: ClothingDef; price: number };
   const run = () => { for (const t of delayed.filter((d) => !d.removed)) { t.removed = true; t.fn(); } };
-  return { controller, events, press, sheet, sounds, calls, emitted, writes, run, delayed, progress: () => progress };
+  const pressDye = (dye: DyeDef) => events.emit(DressUpEvents.DyeTagPressed, { dye, at: { x: 120, y: 330 }, scale: 0.4 });
+  return { controller, events, press, pressDye, sheet, sounds, calls, emitted, writes, run, delayed, progress: () => progress };
 }
 
 describe('PurchaseController (F13.5)', () => {
@@ -255,5 +260,97 @@ describe('PurchaseController (F13.5)', () => {
     t.press(priced);
     t.controller.destroy();
     expect(t.sheet().destroyed).toBe(true);
+  });
+
+  describe('bottles of dye (F16.5)', () => {
+    it('touching the tag of a bottle opens the same sheet with the bottle and its price', () => {
+      const t = setup();
+      t.pressDye(lila);
+      expect(made.sheets).toHaveLength(1);
+      expect(t.sheet().price).toBe(50);
+      expect(t.sheet().item).toMatchObject({ id: 'lila', name: 'Tinte Lila', icon: 'ui-dye-lila' });
+    });
+
+    it('the starter bottle, one already owned, a drag or leaving open nothing', () => {
+      const t = setup();
+      t.pressDye(rosa);
+      expect(made.sheets).toHaveLength(0);
+      setup({ dragging: true }).pressDye(lila);
+      setup({ leaving: true }).pressDye(lila);
+      expect(made.sheets).toHaveLength(0);
+    });
+
+    it('a second touch while a sheet is open (garment or bottle) does not open another', () => {
+      const t = setup();
+      t.press(priced);
+      t.pressDye(lila);
+      expect(made.sheets).toHaveLength(1);
+    });
+
+    it('[Todavía no] changes nothing', () => {
+      const t = setup();
+      t.pressDye(lila);
+      t.sheet().emit(ObjectEvents.SheetCancel);
+      expect(t.writes).toHaveLength(0);
+      expect(t.sheet().closed).toBe(true);
+    });
+
+    it('[Llevar] pays at once: wallet down, bottle owned, buttons fly from the purse to the tag', () => {
+      const t = setup({ wallet: 100 });
+      t.pressDye(lila);
+      t.sheet().emit(ObjectEvents.SheetConfirm);
+      expect(t.progress().wallet).toBe(50);
+      expect(t.progress().dyesOwned).toEqual(['lila']);
+      expect(t.progress().owned).toEqual([]);
+      const flight = t.emitted.find((e) => e.event === DressUpEvents.WalletFlight);
+      expect(flight?.args[0]).toMatchObject({ direction: 'out', coins: 50, at: { x: 120, y: 330 } });
+    });
+
+    it('announces the bottle (DyesBought) and not as a garment', () => {
+      const t = setup({ wallet: 100 });
+      t.pressDye(lila);
+      t.sheet().emit(ObjectEvents.SheetConfirm);
+      expect(t.emitted.filter((e) => e.event === DressUpEvents.DyesBought).map((e) => e.args[0])).toEqual([['lila']]);
+      expect(t.emitted.some((e) => e.event === DressUpEvents.ItemsBought)).toBe(false);
+      expect(t.controller.e2eState().boughtDyes).toEqual(['lila']);
+    });
+
+    it('the scissors cut the tag where it hangs, with its scale', () => {
+      const t = setup();
+      t.pressDye(lila);
+      t.sheet().emit(ObjectEvents.SheetConfirm);
+      expect((made.cuts[0] as { options: Record<string, unknown> }).options).toMatchObject({ x: 120, y: 330, scale: 0.4, price: 50 });
+    });
+
+    it('after the cut: register, amor face, "¡Es mío!" and sparkles at the tag', () => {
+      const t = setup();
+      t.pressDye(lila);
+      t.sheet().emit(ObjectEvents.SheetConfirm);
+      t.run();
+      expect(t.sounds).toContain(SfxKeys.Register);
+      expect(t.calls).toContain('face:amor');
+      expect(made.said).toContain('¡Es mío!');
+      expect(t.calls).not.toContain('celebrate');
+    });
+
+    it('not enough: the purse shakes, the seller says what is missing and nothing changes', () => {
+      const t = setup({ wallet: 20 });
+      t.pressDye(lila);
+      t.sheet().emit(ObjectEvents.SheetConfirm);
+      expect(t.writes).toHaveLength(0);
+      expect(t.emitted.some((e) => e.event === DressUpEvents.WalletShake)).toBe(true);
+      expect(made.said.some((s) => s.includes('30'))).toBe(true);
+    });
+
+    it('a double tap on [Llevar] charges once; destroy removes the DyeTagPressed listener', () => {
+      const t = setup({ wallet: 200 });
+      t.pressDye(lila);
+      const sheet = t.sheet();
+      sheet.emit(ObjectEvents.SheetConfirm);
+      sheet.emit(ObjectEvents.SheetConfirm);
+      expect(t.progress().wallet).toBe(150);
+      t.controller.destroy();
+      expect(t.events.count()).toBe(0);
+    });
   });
 });

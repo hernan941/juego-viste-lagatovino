@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buyItem } from '../../src/game/domain/purchase';
+import { buyDye, buyItem } from '../../src/game/domain/purchase';
 import { emptyProgress } from '../../src/game/domain/progress';
 import type { ClothingDef, EconomyRules } from '../../src/game/domain/types';
 import economy from '../../src/game/data/economy.json';
@@ -40,5 +40,31 @@ describe('buyItem (F13.5)', () => {
 
   it('a starter or secret item (no tier) has nothing to pay', () => {
     expect(buyItem(emptyProgress(100), item('free', { starter: true }), rules)).toEqual({ ok: false, reason: 'nothing-to-pay' });
+  });
+});
+
+describe('buyDye (F16.5)', () => {
+  const lila = { id: 'lila', name: 'Lila', hex: '#D9CDF3' };
+  const rosa = { id: 'rosa', name: 'Rosa', hex: '#F6BFD0', starter: true };
+
+  it('pays the price of a bottle, adds it to dyesOwned and leaves the input alone', () => {
+    const before = { ...emptyProgress(100), wallet: 120 };
+    const result = buyDye(before, lila, rules);
+    expect(result).toMatchObject({ ok: true, price: 50 });
+    if (!result.ok) return;
+    expect(result.progress.wallet).toBe(70);
+    expect(result.progress.dyesOwned).toEqual(['lila']);
+    expect(before.dyesOwned).toEqual([]);
+  });
+
+  it('short: nothing changes and it says how much is missing', () => {
+    expect(buyDye({ ...emptyProgress(0), wallet: 20 }, lila, rules)).toEqual({ ok: false, reason: 'short', missing: 30 });
+  });
+
+  it('the starter bottle and a bottle already owned have nothing to pay', () => {
+    expect(buyDye({ ...emptyProgress(0), wallet: 99 }, rosa, rules)).toEqual({ ok: false, reason: 'nothing-to-pay' });
+    const first = buyDye({ ...emptyProgress(0), wallet: 99 }, lila, rules);
+    if (!first.ok) throw new Error('should pay');
+    expect(buyDye(first.progress, lila, rules)).toEqual({ ok: false, reason: 'nothing-to-pay' });
   });
 });

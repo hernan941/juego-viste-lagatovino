@@ -4,11 +4,12 @@
 // the progress, like the rest of the controllers (ADR 0019).
 import type Phaser from 'phaser';
 import { DressUpEvents, ObjectEvents, RegistryKeys, SfxKeys } from '../../constants';
+import { dyeKey } from '../../data/assets';
 import { shopLines } from '../../domain/copy';
 import { unpaidPrice } from '../../domain/economy';
-import { buyItem } from '../../domain/purchase';
+import { buyDye, buyItem, unpaidDyePrice } from '../../domain/purchase';
 import { anchorForSlot } from '../../domain/slots';
-import type { ClothingDef, EconomyRules, Point, Progress } from '../../domain/types';
+import type { ClothingDef, DyeDef, EconomyRules, Point, Progress } from '../../domain/types';
 import { getAudio } from '../../plugins/AudioPlugin';
 import { profileOf } from '../../systems/motion';
 import { SpeechBubble } from '../kit/SpeechBubble';
@@ -29,6 +30,13 @@ const REGISTER_MS = 520;
 const BUSY_MS = 1100;
 const BUBBLE_MS = 1500;
 
+/** "They touched the tag of this bottle": where it hangs now (game px) and how big it is drawn (DressUpEvents.DyeTagPressed). */
+export interface DyeTagRequest {
+  dye: DyeDef;
+  at: Point;
+  scale: number;
+}
+
 export class PurchaseController implements DressUpController {
   readonly key = 'purchase';
   private ctx!: DressUpContext;
@@ -41,15 +49,18 @@ export class PurchaseController implements DressUpController {
   private timers: Phaser.Time.TimerEvent[] = [];
   /** Items bought in this visit, newest last (for the e2e hook). */
   private bought: string[] = [];
+  private boughtDyes: string[] = [];
 
   attach(ctx: DressUpContext): void {
     this.ctx = ctx;
     this.rules = (ctx.catalog as unknown as WithEconomy).economy;
     ctx.scene.events.on(DressUpEvents.PriceTagPressed, this.onTagPressed, this);
+    ctx.scene.events.on(DressUpEvents.DyeTagPressed, this.onDyeTagPressed, this);
   }
 
   destroy(): void {
     this.ctx.scene.events.off(DressUpEvents.PriceTagPressed, this.onTagPressed, this);
+    this.ctx.scene.events.off(DressUpEvents.DyeTagPressed, this.onDyeTagPressed, this);
     for (const t of this.timers) t.remove();
     this.timers = [];
     for (const cut of [...this.cuts]) cut.cancel();
@@ -60,13 +71,14 @@ export class PurchaseController implements DressUpController {
     this.bubble = null;
   }
 
-  e2eState(): { open: boolean; busy: boolean; price: number | null; buttons: { take: Point; notYet: Point } | null; bought: string[] } {
+  e2eState(): { open: boolean; busy: boolean; price: number | null; buttons: { take: Point; notYet: Point } | null; bought: string[]; boughtDyes: string[] } {
     return {
       open: this.sheet !== null,
       busy: this.busy,
       price: this.sheet?.price ?? null,
       buttons: this.sheet && !this.sheet.isClosing ? this.sheet.getButtonPoints() : null,
       bought: [...this.bought],
+      boughtDyes: [...this.boughtDyes],
     };
   }
 
@@ -90,6 +102,17 @@ export class PurchaseController implements DressUpController {
     sheet.on(ObjectEvents.SheetConfirm, () => this.confirm(sheet, item));
   }
 
+  private onDyeTagPressed(request: DyeTagRequest): void {
+    if (this.busy || this.sheet || this.ctx.isLeaving() || this.ctx.isDragging()) return;
+    const { dye } = request;
+    const price = unpaidDyePrice(dye, this.progress().dyesOwned, this.rules);
+    if (price <= 0) return;
+    const sheet = new PurchaseSheet(this.ctx.scene, { id: dye.id, name: shopLines.dyeRow(dye.name), icon: dyeKey(dye.id) }, price);
+    this.sheet = sheet;
+    sheet.on(ObjectEvents.SheetCancel, () => this.dismiss(sheet));
+    sheet.on(ObjectEvents.SheetConfirm, () => this.confirmDye(sheet, request));
+  }
+
   private dismiss(sheet: PurchaseSheet): void {
     if (this.sheet !== sheet) return;
     this.sheet = null;
@@ -105,10 +128,7 @@ export class PurchaseController implements DressUpController {
     const { scene } = this.ctx;
     const result = buyItem(this.progress(), item, this.rules);
     if (!result.ok) {
-      if (result.reason === 'short') {
-        scene.events.emit(DressUpEvents.WalletShake);
-        this.say(shopLines.notEnough(result.missing), WALLET_POSITION.x - 30, WALLET_POSITION.y + 150);
-      }
+      if (result.reason === 'short') this.notEnough(result.missing);
       return;
     }
     this.busy = true;
@@ -126,8 +146,35 @@ export class PurchaseController implements DressUpController {
     this.later(BUSY_MS, () => { this.busy = false; });
   }
 
+  /** The same payment for a bottle: the buttons and the scissors go to its tag, and the bottle (not the cell) is what celebrates. */
+  private confirmDye(sheet: PurchaseSheet, { dye, at, scale }: DyeTagRequest): void {
+    if (this.sheet !== sheet || this.busy) return;
+    this.dismiss(sheet);
+    const { scene } = this.ctx;
+    const result = buyDye(this.progress(), dye, this.rules);
+    if (!result.ok) {
+      if (result.reason === 'short') this.notEnough(result.missing);
+      return;
+    }
+    this.busy = true;
+    this.boughtDyes.push(dye.id);
+    const flight: WalletFlightRequest = { direction: 'out', at, coins: result.price };
+    scene.events.emit(DressUpEvents.WalletFlight, flight);
+    scene.registry.set(RegistryKeys.Progress, result.progress);
+    scene.events.emit(DressUpEvents.DyesBought, [dye.id]);
+    const cut: TagCut = new TagCut(scene, { ...at, scale, price: result.price, onDone: () => this.cuts.delete(cut) });
+    this.cuts.add(cut);
+    this.later(REGISTER_MS, () => this.celebrate(null, at));
+    this.later(BUSY_MS, () => { this.busy = false; });
+  }
+
+  private notEnough(missing: number): void {
+    this.ctx.scene.events.emit(DressUpEvents.WalletShake);
+    this.say(shopLines.notEnough(missing), WALLET_POSITION.x - 30, WALLET_POSITION.y + 150);
+  }
+
   /** The register rings, the cat is happy and says it is its own, and the cell of the grid sparkles. */
-  private celebrate(item: ClothingDef, at: Point): void {
+  private celebrate(item: ClothingDef | null, at: Point): void {
     const { scene, cat, hearts, grid } = this.ctx;
     const p = profileOf(scene);
     const head = cat.getAnchorWorld('head');
@@ -135,7 +182,7 @@ export class PurchaseController implements DressUpController {
     cat.playFaces({ expression: 'amor', ms: 1200 });
     hearts.explode(p.count(3), head.x, head.y - 40);
     this.ctx.sparkles.explode(p.count(8), at.x, at.y);
-    grid.getCell(item.id)?.celebrate();
+    if (item) grid.getCell(item.id)?.celebrate();
     // To the side of the face: straight up the bubble would cover the name sign.
     this.say(shopLines.mine, head.x + 195, head.y + 10);
   }

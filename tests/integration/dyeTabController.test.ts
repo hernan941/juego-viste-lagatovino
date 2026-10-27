@@ -38,6 +38,7 @@ import { controllerFactories } from '../../src/game/objects/dressup/controllers'
 import type { DressUpContext } from '../../src/game/objects/dressup/DressUpController';
 import { DYE_TAB_ID, DyeTabController } from '../../src/game/objects/dressup/DyeTabController';
 import * as sweepModule from '../../src/game/objects/DyeSweep';
+import type { DyeTagRequest } from '../../src/game/objects/dressup/PurchaseController';
 import { emptyProgress } from '../../src/game/domain/progress';
 import * as bubbleModule from '../../src/game/objects/kit/SpeechBubble';
 import { makeFakeScene } from './helpers/kitScene';
@@ -88,7 +89,6 @@ function setup(over: { itemDye?: ItemDye; outfit?: Record<string, string>; itemA
   scene.plugins = { get: (k: string) => (k === 'DyePlugin' ? dyeService : audio) } as never;
   const add = scene.add as Record<string, (...a: unknown[]) => unknown>;
   add.particles = () => ({ explode: () => calls.push('splash'), setDepth() { return this; }, destroy: () => {} });
-  add.zone = () => ({ setSize() { return this; } });
 
   // Seven tabs of 54 px with 10 px between them are 438 px wide, wider than the 404 px panel: the row starts at x 20.
   const tabs = Object.assign(new Emitter(), {
@@ -111,7 +111,7 @@ function setup(over: { itemDye?: ItemDye; outfit?: Record<string, string>; itemA
   };
   const hud = (add.container as (...a: unknown[]) => unknown)(0, 0, []);
   const ctx = {
-    scene, tabs, grid, layersPanel, cat, hud, catalog: { cats: [{ id: 'naranja', prefs: { favoriteDye: over.favoriteDye ?? 'rosa' } }], clothes, combos: [], dyes, economy: { discoveryBonus: 15 } }, getOutfit: () => over.outfit ?? {},
+    scene, tabs, grid, layersPanel, cat, hud, catalog: { cats: [{ id: 'naranja', prefs: { favoriteDye: over.favoriteDye ?? 'rosa' } }], clothes, combos: [], dyes, economy: { discoveryBonus: 15, prices: { basica: 40, linda: 70, lujo: 110, dye: 50 } } }, getOutfit: () => over.outfit ?? {},
     isDragging: () => over.dragging ?? false, isLeaving: () => false, catId: 'naranja',
   } as unknown as DressUpContext;
   const controller = new DyeTabController();
@@ -592,5 +592,134 @@ describe('DyeTabController: the dot of color (F16.4)', () => {
     controller.destroy();
     expect(removeCellDecorator).toHaveBeenCalled();
     expect(removeRowDecorator).toHaveBeenCalled();
+  });
+});
+
+describe('DyeTabController: buying bottles (F16.5)', () => {
+  type Tagged = FakeJar & { price: number };
+  const tagged = (controller: DyeTabController) => jarsOf(controller).filter((j) => (j as Tagged).price > 0).map((j) => j.dye.id).sort();
+  const boughtDyes = (ids: string[]) => ({ ...emptyProgress(0), dyesOwned: ids });
+  const wornTags = (controller: DyeTabController) => (controller.e2eState() as unknown as { wornTags: Record<string, string> }).wornTags;
+  const pressed = (events: Emitter) => {
+    const heard: DyeTagRequest[] = [];
+    events.on(DressUpEvents.DyeTagPressed, (r) => heard.push(r as DyeTagRequest));
+    return heard;
+  };
+
+  it('a bottle that is not yours hangs a tag with its price; the starter, the water and the bought ones do not', () => {
+    const { openTab, controller, store } = setup();
+    store.set(RegistryKeys.Progress, boughtDyes(['sol']));
+    openTab();
+    expect(tagged(controller)).toEqual(dyes.filter((d) => !d.starter && d.id !== 'sol').map((d) => d.id).sort());
+    expect((jarsOf(controller).find((j) => j.dye.id === 'sol') as Tagged).price).toBe(0);
+    expect((jarsOf(controller).find((j) => j.dye.id === 'agua') as Tagged).price).toBe(0);
+  });
+
+  it('touching a bottle with a tag asks to buy it, from where the tag hangs', () => {
+    const { openTab, controller, events } = setup();
+    const heard = pressed(events);
+    openTab();
+    const jar = jarsOf(controller).find((j) => j.dye.id === 'lila')!;
+    jar.emit(ObjectEvents.JarClick, jar);
+    expect(heard).toHaveLength(1);
+    expect(heard[0].dye.id).toBe('lila');
+    expect(heard[0].scale).toBeGreaterThan(0);
+    expect(heard[0].at.x).toBeGreaterThan(jar.x);
+  });
+
+  it('touching a bottle that is yours (or the water) buys nothing', () => {
+    const { openTab, controller, events } = setup();
+    const heard = pressed(events);
+    openTab();
+    for (const id of ['rosa', 'agua']) {
+      const jar = jarsOf(controller).find((j) => j.dye.id === id)!;
+      jar.emit(ObjectEvents.JarClick, jar);
+    }
+    expect(heard).toHaveLength(0);
+  });
+
+  it('paying a bottle takes its tag off and leaves the others', () => {
+    const { openTab, controller, store, events } = setup();
+    openTab();
+    expect(tagged(controller)).toContain('lila');
+    store.set(RegistryKeys.Progress, boughtDyes(['lila']));
+    events.emit(DressUpEvents.DyesBought, ['lila']);
+    expect(tagged(controller)).not.toContain('lila');
+    expect(tagged(controller)).toContain('sol');
+  });
+
+  it('the tab can open after the purchase: the bought bottle never gets a tag', () => {
+    const { openTab, controller, store } = setup();
+    store.set(RegistryKeys.Progress, boughtDyes(['lila']));
+    openTab();
+    expect(tagged(controller)).not.toContain('lila');
+  });
+
+  it('a garment dyed with a bottle that is not yours wears a tag with the price', async () => {
+    const { openTab, controller } = setup({ outfit: { sweater: sweater.id } });
+    openTab();
+    drag(controller, 'lila').drop();
+    await flush();
+    expect(wornTags(controller)).toEqual({ [sweater.id]: 'lila' });
+  });
+
+  it('a bottle that is yours, the starter and the water leave no tag on the garment', async () => {
+    const { openTab, controller, store } = setup({ outfit: { sweater: sweater.id } });
+    store.set(RegistryKeys.Progress, boughtDyes(['lila']));
+    openTab();
+    drag(controller, 'lila').drop();
+    await flush();
+    drag(controller, 'rosa').drop();
+    await flush();
+    expect(wornTags(controller)).toEqual({});
+  });
+
+  it('water takes the tag off', async () => {
+    const { openTab, controller } = setup({ outfit: { sweater: sweater.id } });
+    openTab();
+    drag(controller, 'lila').drop();
+    await flush();
+    drag(controller, 'agua').drop();
+    await flush();
+    expect(wornTags(controller)).toEqual({});
+  });
+
+  it('taking the garment off the cat takes its tag off', () => {
+    const outfit: Record<string, string> = { sweater: sweater.id };
+    const { controller, events } = setup({ outfit, itemDye: { [sweater.id]: 'frambuesa' } });
+    expect(wornTags(controller)).toEqual({ [sweater.id]: 'frambuesa' });
+    delete outfit.sweater;
+    events.emit(DressUpEvents.OutfitChanged, outfit, 'remove');
+    expect(wornTags(controller)).toEqual({});
+  });
+
+  it('a dye that came with the session (not yours) shows its tag on arrival', () => {
+    const { controller } = setup({ outfit: { sweater: sweater.id }, itemDye: { [sweater.id]: 'frambuesa' } });
+    expect(wornTags(controller)).toEqual({ [sweater.id]: 'frambuesa' });
+  });
+
+  it('touching the tag on the garment asks to buy that bottle, from the tag', () => {
+    const { controller, events } = setup({ outfit: { sweater: sweater.id }, itemDye: { [sweater.id]: 'frambuesa' } });
+    const heard = pressed(events);
+    const entry = (controller as unknown as { wornTags: Map<string, { tag: { emit(e: string, ...a: unknown[]): void } }> }).wornTags.get(sweater.id)!;
+    entry.tag.emit(ObjectEvents.PriceTagPress, entry.tag);
+    expect(heard).toHaveLength(1);
+    expect(heard[0].dye.id).toBe('frambuesa');
+    expect(heard[0].at.x).toBeGreaterThan(0);
+  });
+
+  it('paying the bottle at the till (the progress changes) clears the tag of the garment too', () => {
+    const { controller, store, events } = setup({ outfit: { sweater: sweater.id }, itemDye: { [sweater.id]: 'frambuesa' } });
+    store.set(RegistryKeys.Progress, boughtDyes(['frambuesa']));
+    events.emit(DressUpEvents.DyesBought, ['frambuesa']);
+    expect(wornTags(controller)).toEqual({});
+  });
+
+  it('destroy takes every listener away', () => {
+    const { controller, events, regEvents, openTab } = setup({ outfit: { sweater: sweater.id }, itemDye: { [sweater.id]: 'frambuesa' } });
+    openTab();
+    controller.destroy();
+    expect(events.count()).toBe(0);
+    expect(regEvents.count()).toBe(0);
   });
 });

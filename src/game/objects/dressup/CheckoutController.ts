@@ -188,6 +188,7 @@ export class CheckoutController implements DressUpController {
     scene.events.emit(DressUpEvents.WalletFlight, flight);
     scene.registry.set(RegistryKeys.Progress, paid);
     scene.events.emit(DressUpEvents.ItemsBought, plan.cart.items.map((l) => l.id));
+    if (plan.cart.dyes.length > 0) scene.events.emit(DressUpEvents.DyesBought, plan.cart.dyes.map((l) => l.id));
     this.close(sheet);
     this.later(REGISTER_MS, () => this.celebrate(garment));
     this.later(PAID_GO_MS, () => this.go());
