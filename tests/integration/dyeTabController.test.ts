@@ -109,16 +109,18 @@ function setup(over: { itemDye?: ItemDye; outfit?: Record<string, string>; itemA
     squash: rec('squash'), shake: rec('shake'), lookAtBelly: rec('lookAtBelly'), playFaces: rec('playFaces'), getItemImage: () => (over.noImage ? null : {}),
     getAnchorWorld: () => ({ x: 700, y: 300 }), getDropZoneRect: () => ({ x: 500, y: 100, width: 400, height: 500 }),
   };
+  const setTip = vi.fn();
+  const pulseTip = vi.fn();
   const hud = (add.container as (...a: unknown[]) => unknown)(0, 0, []);
   const ctx = {
     scene, tabs, grid, layersPanel, cat, hud, catalog: { cats: [{ id: 'naranja', prefs: { favoriteDye: over.favoriteDye ?? 'rosa' } }], clothes, combos: [], dyes, economy: { discoveryBonus: 15, prices: { basica: 40, linda: 70, lujo: 110, dye: 50 } } }, getOutfit: () => over.outfit ?? {},
-    isDragging: () => over.dragging ?? false, isLeaving: () => false, catId: 'naranja',
+    isDragging: () => over.dragging ?? false, isLeaving: () => false, catId: 'naranja', setTip, pulseTip,
   } as unknown as DressUpContext;
   const controller = new DyeTabController();
   controller.attach(ctx);
   const state = () => controller.e2eState() as { open: boolean; jars: Record<string, { x: number; y: number }>; dragging: boolean; target: string | null; last: string | null; applied: Record<string, string> };
   const openTab = () => { tabs.selectedId = DYE_TAB_ID; tabs.emit(ObjectEvents.TabSelect, DYE_TAB_ID); };
-  return { cellDecorators, rowDecorators, removeCellDecorator, removeRowDecorator, scene, events, regEvents, store, tabs, grid, cat, catCalls, controller, state, openTab, sounds, calls, dyeService, setAt: (i: ClothingDef | null) => { at = i; } };
+  return { setTip, pulseTip, cellDecorators, rowDecorators, removeCellDecorator, removeRowDecorator, scene, events, regEvents, store, tabs, grid, cat, catCalls, controller, state, openTab, sounds, calls, dyeService, setAt: (i: ClothingDef | null) => { at = i; } };
 }
 
 /** The jars the controller made (they are Containers of the fake Phaser, found through the hud and the scene). */
@@ -186,6 +188,26 @@ describe('DyeTabController: the tab (F16.3)', () => {
     events.emit('update', 0, 16);
     expect(state().open).toBe(false);
     expect(scene).toBeDefined();
+  });
+
+  it('has one tip only: the scene one says how to dye while the tab is open, and gets back its own when it closes (T2)', () => {
+    const { openTab, tabs, setTip, scene } = setup();
+    const before = (scene as unknown as { made: { texts: { text: string }[] } }).made.texts.length;
+    openTab();
+    expect(setTip).toHaveBeenLastCalledWith('Arrastra el frasco a un sweater');
+    // The tab draws no tip text of its own.
+    expect((scene as unknown as { made: { texts: { text: string }[] } }).made.texts.slice(before).some((t) => /Arrastra/.test(t.text))).toBe(false);
+    tabs.selectedId = 'sweater';
+    tabs.emit(ObjectEvents.TabSelect, 'sweater');
+    expect(setTip).toHaveBeenLastCalledWith(null);
+  });
+
+  it('a tap on a bottle that is bought pulses the scene tip (T2)', () => {
+    const { openTab, controller, pulseTip } = setup();
+    openTab();
+    const jar = jarsOf(controller).find((j) => j.dye.id === 'rosa')!;
+    jar.emit(ObjectEvents.JarClick, jar);
+    expect(pulseTip).toHaveBeenCalledTimes(1);
   });
 
   it('opening twice does not stack bottles', () => {
@@ -624,7 +646,7 @@ describe('DyeTabController: buying bottles (F16.5)', () => {
     expect(heard).toHaveLength(1);
     expect(heard[0].dye.id).toBe('lila');
     expect(heard[0].scale).toBeGreaterThan(0);
-    expect(heard[0].at.x).toBeGreaterThan(jar.x);
+    expect(heard[0].at.x).toBeLessThan(jar.x);
   });
 
   it('touching a bottle that is yours (or the water) buys nothing', () => {

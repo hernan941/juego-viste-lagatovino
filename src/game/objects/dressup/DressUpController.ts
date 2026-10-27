@@ -46,6 +46,10 @@ export interface DressUpContext {
   removeItem(item: ClothingDef): void;
   /** Selects the tab of the category (silently) and fills the grid with its items. */
   showCategory(category: Category): void;
+  /** Replaces the tip at the foot of the card (fades 140 ms); `null` brings back the scene's own. A tab that says its own thing uses this instead of a second text. */
+  setTip(text: string | null): void;
+  /** The tip pulses (a tap on something that is only dragged). */
+  pulseTip(): void;
   /** Data that `beforeLeave` adds to what the scene sends to the next one (`go(scene, action, data)`). */
   leaveData: Record<string, unknown>;
 }

@@ -44,6 +44,8 @@ import { profileOf } from '../systems/motion';
 import { applyLift, dragThreshold, isDragPointer } from '../systems/touch';
 import { enterKind, transitionIn } from '../systems/transitions';
 
+/** The tip at the foot of the card (a tab can replace it while it is open). */
+const DEFAULT_TIP = 'Arrastra la ropa al gatito';
 const CAT_X = 700;
 const CAT_FEET_Y = 612;
 /** Forgiving margin around the cat's drop zone and magnet radius, in game px (ADR 0008). */
@@ -154,7 +156,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.tabs.on(ObjectEvents.TabSelect, (id: string) => this.categories.includes(id as Category) && this.showCategory(id as Category));
     // The hint is handwriting in pencil, at the foot of the card.
     this.hint = this.add
-      .text(PANEL.x + PANEL.width / 2, PANEL.y + PANEL.height - 28, 'Arrastra la ropa al gatito', { fontFamily: Fonts.Voice, fontStyle: '700', fontSize: '26px', color: Ink.mutedTexto, padding: { x: 4, y: 8 } })
+      .text(PANEL.x + PANEL.width / 2, PANEL.y + PANEL.height - 28, DEFAULT_TIP, { fontFamily: Fonts.Voice, fontStyle: '700', fontSize: '26px', color: Ink.mutedTexto, padding: { x: 4, y: 8 } })
       .setOrigin(0.5).setAlpha(0.8);
 
     // Right panel: layers.
@@ -185,7 +187,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
       scene: this, catalog: this.catalog, anchors: this.anchors, cat: this.cat, grid: this.grid, tabs: this.tabs, layersPanel: this.layersPanel,
       hud: this.hud, hearts: this.hearts, sparkles: this.sparkles, sign: this.sign, rainbow: this.rainbow, catId: this.catId, catName: this.catName,
       getOutfit: () => this.outfit, isDragging: () => this.drag !== null, isLeaving: () => this.leaving, boundsOf: (item) => this.bounds.of(item),
-      removeItem: (item) => this.removeItem(item),
+      removeItem: (item) => this.removeItem(item), setTip: (text) => this.setTip(text), pulseTip: () => pulse(this, this.hint),
       showCategory: (category) => { this.tabs.select(category, true); this.showCategory(category); }, leaveData: this.leaveData,
     });
     this.restoreView();
@@ -385,6 +387,20 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.fx.fadePreview(d);
     this.cat.release();
     this.fx.returnGhost(d, this.grid);
+  }
+
+  /** The one tip of the card: a tab can say its own thing (the dyes), `null` brings back "drag the clothes"; the text crossfades in 140 ms. */
+  private setTip(text: string | null) {
+    const next = text ?? DEFAULT_TIP;
+    if (this.hint.text === next) return;
+    this.tweens.killTweensOf(this.hint);
+    this.tweens.chain({
+      targets: this.hint,
+      tweens: [
+        { alpha: 0, duration: 70, onComplete: () => this.hint.setText(next) },
+        { alpha: 0.8, duration: 70 },
+      ],
+    });
   }
 
   /** A click on a cell answers with a pulse of the hint: dragging is the only way to wear things (ADR 0008). */

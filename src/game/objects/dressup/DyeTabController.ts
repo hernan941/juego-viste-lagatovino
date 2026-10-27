@@ -8,6 +8,7 @@ import { dyeKey, WATER_ID } from '../../data/assets';
 import { dyeLines, shopLines } from '../../domain/copy';
 import { applyDye, resolveDyeDrop, type DyeDropResult } from '../../domain/dyeDrop';
 import { WATER_DYE } from '../../domain/dye';
+import { shelfCenters } from '../../domain/jarShelf';
 import { isInsideDropZone } from '../../domain/dropZone';
 import { anchorForSlot } from '../../domain/slots';
 import { tiltToward } from '../../domain/tilt';
@@ -37,7 +38,7 @@ import type { DyeTagRequest } from './PurchaseController';
 export const DYE_TAB_ID = 'tintes';
 
 /** The panel of bottles sits where the grid is (the same viewport as the scene's GRID). */
-const PANEL = { x: 62, y: 164, columns: 4, step: 90, rowStep: 140, firstRow: 50, tipY: 440 } as const;
+const PANEL = { x: 62, y: 164 } as const;
 /** The widest the row of tabs may be: the left panel is 404 px wide and the seven tabs do not fit at their size. */
 const TABS_MAX_WIDTH = 392;
 /** Forgiving margin around the cat's drop zone, the same as the garments (game px). */
@@ -82,7 +83,6 @@ export class DyeTabController implements DressUpController {
   private open = false;
   private jars: DyeJar[] = [];
   private panel: Phaser.GameObjects.Container | null = null;
-  private tip: Phaser.GameObjects.Text | null = null;
   private drag: JarDrag | null = null;
   /** Items whose dye is on the cat now, and the texture held for each. */
   private applied = new Map<string, { dyeId: string; key: string }>();
@@ -209,14 +209,13 @@ export class DyeTabController implements DressUpController {
     // The cells of the wardrobe leave (they fade); the bottles take their place.
     grid.setItems([]);
     const panel = scene.add.container(PANEL.x, PANEL.y);
-    const tipText = scene.add.text(PANEL.step * 2 - 10, PANEL.tipY, dyeLines.tip, { fontFamily: Fonts.Voice, fontStyle: 'bold', fontSize: '24px', color: Ink.mutedTexto, align: 'center', wordWrap: { width: 330 } }).setOrigin(0.5);
-    panel.add(tipText);
-    this.tip = tipText;
+    // The scene owns the only tip of the card: it says how to dye while the tab is open.
+    this.ctx.setTip(dyeLines.tip);
     this.panel = panel;
     const bottles: DyeDef[] = [...(catalog as unknown as WithDyes).dyes, { id: WATER_ID, name: 'Agua', hex: '#FFFFFF' }];
-    const left = (356 - (PANEL.columns * 80 + (PANEL.columns - 1) * 10)) / 2 + 40;
+    const centers = shelfCenters(bottles.length);
     this.jars = bottles.map((dye, i) => {
-      const jar = new DyeJar(scene, left + (i % PANEL.columns) * PANEL.step, PANEL.firstRow + Math.floor(i / PANEL.columns) * PANEL.rowStep, dye);
+      const jar = new DyeJar(scene, centers[i].x, centers[i].y, dye);
       jar.on(ObjectEvents.JarDragStart, this.onJarStart, this);
       jar.on(ObjectEvents.JarDrag, this.onJarMove, this);
       jar.on(ObjectEvents.JarDragEnd, this.onJarEnd, this);
@@ -236,7 +235,7 @@ export class DyeTabController implements DressUpController {
     const panel = this.panel;
     const jars = this.jars;
     this.panel = null;
-    this.tip = null;
+    this.ctx.setTip(null);
     this.jars = [];
     if (!panel) return;
     // The bottles do not vanish: they fade as the wardrobe cells pop in.
@@ -263,12 +262,7 @@ export class DyeTabController implements DressUpController {
       return;
     }
     // A tap on a bottle does not dye: the tip pulses and says how (equipping is by dragging, ADR 0008).
-    const tip = this.tip;
-    if (!tip) return;
-    const { scene } = this.ctx;
-    scene.tweens.killTweensOf(tip);
-    tip.setScale(1);
-    scene.tweens.add({ targets: tip, scale: 1.12, duration: 110, yoyo: true, ease: 'Sine.easeOut' });
+    this.ctx.pulseTip();
   }
 
   // ---- Dragging a bottle -------------------------------------------------------
