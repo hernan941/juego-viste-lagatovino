@@ -8,14 +8,14 @@ interface FakeTransformation {
   keychain: { layout: { width: number; height: number; hang: { x: number; y: number } } };
   finish(): void;
 }
-interface FakeCard { ops: { kind: string; texture?: string; text?: string }[]; rose: boolean; sunk: boolean; tappable: boolean; destroyed: boolean; emit(ev: string): void }
+interface FakeCard { ops: { kind: string; texture?: string; text?: string }[]; flew: boolean; rose: boolean; sunk: boolean; tappable: boolean; destroyed: boolean; emit(ev: string): void }
 
 const h = vi.hoisted(() => ({
   go: vi.fn(),
   transitionIn: vi.fn(),
   composePhoto: vi.fn(async (...args: unknown[]) => (args.length >= 0 ? 'data:image/png;base64,AAAA' : '')),
   savePhoto: vi.fn(async () => 'downloaded'),
-  buttons: [] as { label: string; emit(ev: string): void; destroyed: boolean }[],
+  buttons: [] as { label: string; emit(ev: string): void; destroyed: boolean; visible: boolean }[],
   cats: [] as { outfit: string[]; held: string[]; textures: Record<string, string>; destroyed: boolean }[],
   bubbles: [] as { text: string; destroyed: boolean }[],
   trays: [] as { kinds: string[]; selected: Record<string, string | null>; emit(ev: string, ...a: unknown[]): void; destroyed: boolean }[],
@@ -24,6 +24,7 @@ const h = vi.hoisted(() => ({
   transformations: [] as FakeTransformation[],
   cards: [] as FakeCard[],
   composePackage: vi.fn(async (...args: unknown[]) => (args.length >= 0 ? 'data:image/png;base64,PKG' : '')),
+  sheets: [] as { options: { catName: string; before: number; now: number; replaceByDefault: boolean }; closed: boolean; destroyed: boolean; emit(ev: string, ...a: unknown[]): void }[],
   stickers: [] as { id: string; at: { x: number; y: number }; emit(ev: string, ...a: unknown[]): void; calls: string[]; destroyed: boolean }[],
 }));
 
@@ -47,12 +48,13 @@ vi.mock('../../src/game/objects/keychain/PackageCard', async () => {
   const { Emitter } = await import('./helpers/sceneFake');
   return {
     PackageCard: class extends Emitter {
-      rose = false; sunk = false; tappable = false; destroyed = false; hangPoint = { x: 640, y: 80 };
+      rose = false; flew = false; sunk = false; tappable = false; destroyed = false; hangPoint = { x: 640, y: 80 };
       constructor(_s: unknown, _x: number, _y: number, public ops: FakeCard['ops']) { super(); h.cards.push(this as never); }
       setDepth() { return this; }
       rise() { this.rose = true; return Promise.resolve(); }
       sink() { this.sunk = true; return Promise.resolve(); }
       enableTap() { this.tappable = true; }
+      flyThumb() { this.flew = true; return Promise.resolve(); }
       destroy() { this.destroyed = true; }
     },
   };
@@ -92,6 +94,21 @@ vi.mock('../../src/game/objects/Button', async () => {
       constructor(_s: unknown, x: number, y: number, public label: string) { super(); this.x = x; this.y = y; h.buttons.push(this as never); }
       setDepth() { return this; }
       getCenter() { return { x: this.x, y: this.y }; }
+      setVisible(v: boolean) { this.visible = v; return this; }
+      setAlpha() { return this; }
+      setScale() { return this; }
+      visible = true;
+      destroy() { this.destroyed = true; }
+    },
+  };
+});
+vi.mock('../../src/game/objects/keychain/ReplaceSheet', async () => {
+  const { Emitter } = await import('./helpers/sceneFake');
+  return {
+    ReplaceSheet: class extends Emitter {
+      closed = false; destroyed = false;
+      constructor(_s: unknown, public options: { catName: string; before: number; now: number; replaceByDefault: boolean }) { super(); h.sheets.push(this as never); }
+      close(done?: () => void) { this.closed = true; done?.(); }
       destroy() { this.destroyed = true; }
     },
   };
@@ -191,7 +208,7 @@ beforeEach(() => {
   vi.stubGlobal('navigator', {});
   for (const m of [h.go, h.transitionIn, h.composePhoto, h.composePackage, h.savePhoto]) m.mockClear();
   h.failTransform = false;
-  for (const list of [h.transformations, h.cards, h.buttons, h.cats, h.bubbles, h.trays, h.tabs, h.stickers]) list.length = 0;
+  for (const list of [h.transformations, h.cards, h.buttons, h.cats, h.bubbles, h.trays, h.tabs, h.stickers, h.sheets]) list.length = 0;
 });
 
 describe('PhotoMode scene (F18.2)', () => {
@@ -605,7 +622,8 @@ describe('PhotoMode: Guardar turns the cat into a keychain (F19.3)', () => {
     expect(h.composePhoto).not.toHaveBeenCalled();
     await vi.waitFor(() => expect(phaseOf(scene)).toBe('ready'));
     expect(info(scene)).toMatchObject({ photos: 1, lastPhoto: photoFileName('Luna') });
-    expect(h.bubbles.map((b) => b.text)).toEqual(['¡Luna ya es llavero! Quedó precioso']);
+    // The ready title says it (a persistent line over the buttons), so no bubble covers it.
+    expect(h.bubbles).toHaveLength(0);
     expect(card.tappable).toBe(true);
   });
 
@@ -664,5 +682,112 @@ describe('PhotoMode: Guardar turns the cat into a keychain (F19.3)', () => {
     await Promise.resolve();
     expect(h.cards).toHaveLength(0);
     expect(h.savePhoto).not.toHaveBeenCalled();
+  });
+});
+
+// ---- F19.4: the packaging, [Colgarlo] and the hanging of the recipe ----
+const finishSave = async (scene: Scene) => {
+  save();
+  h.transformations[0]!.finish();
+  await vi.waitFor(() => expect(phaseOf(scene)).toBe('ready'));
+};
+const progressOf = (scene: Scene) => scene.registry.get(RegistryKeys.Progress) as import('../../src/game/domain/types').Progress;
+const rating = (stars: number) => ({ rating: { points: 90, stars, breakdown: [] } });
+const catId = catalog.cats[0]!.id;
+const oldRecipe = (stars: 1 | 2 | 3 | 4 | 5) => ({
+  catId, catName: 'Luna', outfit: {}, itemDye: {}, pose: 'pose-sentadito', stars, photo: { background: 'bg-cuadriculado', frame: 'frame-polaroid', stickers: [] }, createdAt: '2026-01-01T00:00:00.000Z',
+});
+
+describe('PhotoMode: the keychain is ready (F19.4)', () => {
+  it('shows "¡Tu llavero está listo!" with [Colgarlo] once the packaging is saved, and sends the thumbnail flying', async () => {
+    const scene = open();
+    expect(h.buttons.find((b) => b.label === 'Colgarlo')).toBeUndefined();
+    await finishSave(scene);
+    expect(button('Colgarlo')).toBeDefined();
+    expect(button('Guardar').visible).toBe(false);
+    expect(scene.made.some((m) => m.kind === 'text' && (m.args as unknown[])[2] === '¡Tu llavero está listo!')).toBe(true);
+    expect(h.cards[0]!.flew).toBe(true);
+  });
+
+  it('[Colgarlo] with no keychain on that hook hangs the recipe and goes to the hanger with the hang to fly', async () => {
+    const scene = open(rating(4));
+    await finishSave(scene);
+    button('Colgarlo').emit(ObjectEvents.ButtonClick);
+    expect(progressOf(scene).keychains[catId]).toMatchObject({ catId, catName: 'Luna', stars: 4 });
+    expect(h.sheets).toHaveLength(0);
+    expect(h.go).toHaveBeenCalledWith(scene, 'hang', { from: 'DressUp', tab: 'colgador', hang: catId });
+  });
+
+  it('presses [Colgarlo] only once', async () => {
+    const scene = open();
+    await finishSave(scene);
+    button('Colgarlo').emit(ObjectEvents.ButtonClick);
+    button('Colgarlo').emit(ObjectEvents.ButtonClick);
+    expect(h.go).toHaveBeenCalledTimes(1);
+  });
+
+  it('asks before replacing, showing both ratings and keeping the one with more stars as the highlighted answer', async () => {
+    const scene = open(rating(2), undefined, { ...emptyProgress(0), keychains: { [catId]: oldRecipe(4) } });
+    await finishSave(scene);
+    button('Colgarlo').emit(ObjectEvents.ButtonClick);
+    expect(h.go).not.toHaveBeenCalled();
+    expect(h.sheets[0]!.options).toEqual({ catName: 'Luna', before: 4, now: 2, replaceByDefault: false });
+    expect(progressOf(scene).keychains[catId]!.stars).toBe(4);
+  });
+
+  it('with the same stars the new one is the highlighted answer', async () => {
+    const scene = open(rating(4), undefined, { ...emptyProgress(0), keychains: { [catId]: oldRecipe(4) } });
+    await finishSave(scene);
+    button('Colgarlo').emit(ObjectEvents.ButtonClick);
+    expect(h.sheets[0]!.options.replaceByDefault).toBe(true);
+  });
+
+  it('[Cambiarlo] replaces the keychain and goes to the hanger to fly it', async () => {
+    const scene = open(rating(2), undefined, { ...emptyProgress(0), keychains: { [catId]: oldRecipe(4) } });
+    await finishSave(scene);
+    button('Colgarlo').emit(ObjectEvents.ButtonClick);
+    h.sheets[0]!.emit(ObjectEvents.SheetConfirm);
+    expect(progressOf(scene).keychains[catId]!.stars).toBe(2);
+    expect(h.go).toHaveBeenCalledWith(scene, 'hang', { from: 'DressUp', tab: 'colgador', hang: catId });
+  });
+
+  it('[Dejar el anterior] keeps the old keychain and opens the hanger without flying anything', async () => {
+    const scene = open(rating(5), undefined, { ...emptyProgress(0), keychains: { [catId]: oldRecipe(3) } });
+    await finishSave(scene);
+    button('Colgarlo').emit(ObjectEvents.ButtonClick);
+    h.sheets[0]!.emit(ObjectEvents.SheetKeep);
+    expect(progressOf(scene).keychains[catId]!.stars).toBe(3);
+    expect(h.go).toHaveBeenCalledWith(scene, 'hang', { from: 'DressUp', tab: 'colgador' });
+  });
+
+  it('a tap outside the question closes it and nothing is hung; [Colgarlo] asks again', async () => {
+    const scene = open(rating(5), undefined, { ...emptyProgress(0), keychains: { [catId]: oldRecipe(3) } });
+    await finishSave(scene);
+    button('Colgarlo').emit(ObjectEvents.ButtonClick);
+    h.sheets[0]!.emit(ObjectEvents.SheetCancel);
+    expect(h.sheets[0]!.closed).toBe(true);
+    expect(h.go).not.toHaveBeenCalled();
+    button('Colgarlo').emit(ObjectEvents.ButtonClick);
+    expect(h.sheets).toHaveLength(2);
+  });
+
+  it('putting the packaging away takes [Colgarlo] away and brings [Guardar] back', async () => {
+    const scene = open();
+    await finishSave(scene);
+    const hangButton = button('Colgarlo');
+    h.cards[0]!.emit(ObjectEvents.PackageTap);
+    await vi.waitFor(() => expect(h.cards[0]!.destroyed).toBe(true));
+    expect(hangButton.destroyed).toBe(true);
+    expect(button('Guardar').visible).toBe(true);
+  });
+
+  it('shutdown destroys the question and [Colgarlo]', async () => {
+    const scene = open(rating(5), undefined, { ...emptyProgress(0), keychains: { [catId]: oldRecipe(3) } });
+    await finishSave(scene);
+    const hangButton = button('Colgarlo');
+    hangButton.emit(ObjectEvents.ButtonClick);
+    scene.events.emit('shutdown');
+    expect(h.sheets[0]!.destroyed).toBe(true);
+    expect(hangButton.destroyed).toBe(true);
   });
 });

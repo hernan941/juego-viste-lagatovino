@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   PENDULUM_REST,
+  PUSH_MAX_ANGLE,
+  pushAngle,
+  pushStrength,
   borderCopiesFor,
   borderOffsets,
   defaultReplace,
@@ -312,5 +315,22 @@ describe('packagingLayout', () => {
     expect(big.name.y).toBeCloseTo(small.name.y * 2);
     expect(l.window.x).toBeCloseTo(small.window.x + frame.x);
     expect(l.window.y).toBeCloseTo(small.window.y + frame.y);
+  });
+});
+
+describe('pushAngle and pushStrength (F19.5: dragging a keychain to swing it)', () => {
+  it('the angle follows the drag, with its sign, and is held at the limit', () => {
+    expect(pushAngle(0)).toBe(0);
+    expect(pushAngle(50)).toBeGreaterThan(0);
+    expect(pushAngle(-50)).toBeLessThan(0);
+    expect(pushAngle(-50)).toBeCloseTo(-pushAngle(50), 9);
+    expect(pushAngle(10_000)).toBe(PUSH_MAX_ANGLE);
+    expect(pushAngle(-10_000)).toBe(-PUSH_MAX_ANGLE);
+  });
+  it('the strength of the swing is the angle over the limit, from -1 to 1', () => {
+    expect(pushStrength(PUSH_MAX_ANGLE)).toBe(1);
+    expect(pushStrength(-PUSH_MAX_ANGLE / 2)).toBeCloseTo(-0.5, 9);
+    expect(pushStrength(0)).toBe(0);
+    expect(pushStrength(99)).toBe(1);
   });
 });

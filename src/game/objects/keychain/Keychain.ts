@@ -307,17 +307,17 @@ export class Keychain extends Phaser.GameObjects.Container {
   // ---- Swinging ------------------------------------------------------------
 
   /**
-   * Swings like a damped pendulum from the ring (+-14 degrees, or +-3 and shorter with reduced motion; `strength` 0..1 scales it).
+   * Swings like a damped pendulum from the ring (+-14 degrees, or +-3 and shorter with reduced motion; `strength` -1..1 scales it, and its sign is the side it starts on).
    * The angle depends only on the time since the start, never on the frame rate. A new swing replaces the one that is going.
    */
   swing(strength = 1): void {
     this.stopSwing();
     const base = profileOf(this.scene).swing;
-    const params: PendulumParams = { ...base, amp: base.amp * Math.max(0, Math.min(1, strength)) };
+    const params: PendulumParams = { ...base, amp: base.amp * Math.max(-1, Math.min(1, strength)) };
     const duration = pendulumDuration(params);
     if (!(duration > 0) || !Number.isFinite(duration)) return;
     let last = pendulum(0, params);
-    let rising = false;
+    let rising = params.amp < 0;
     this.swingTween = this.scene.tweens.addCounter({
       from: 0,
       to: duration,
@@ -327,7 +327,7 @@ export class Keychain extends Phaser.GameObjects.Container {
         const angle = pendulum(t, params);
         // The swing reaches one end when the angle stops growing in one direction: the porcelain "tink".
         const nowRising = angle > last;
-        if (nowRising !== rising && t > 0) this.emit(ObjectEvents.KeychainTink, Math.min(1, Math.abs(last) / params.amp));
+        if (nowRising !== rising && t > 0) this.emit(ObjectEvents.KeychainTink, Math.min(1, Math.abs(last) / Math.abs(params.amp)));
         rising = nowRising;
         last = angle;
         this.setAngle(angle);

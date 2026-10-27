@@ -3,9 +3,9 @@ import { albumLines } from '../../src/game/domain/copy';
 import { ALBUM_TABS, pageTally, resolveTab, swipeDirection, turnTo } from '../../src/game/domain/albumPages';
 
 describe('album tabs', () => {
-  it('has the five tabs of the design in order, and the hanger waits for F19.5', () => {
+  it('has the five tabs of the design in order, all of them open (the hanger came with F19.5)', () => {
     expect(ALBUM_TABS.map((t) => t.id)).toEqual(['prendas', 'gatos', 'looks', 'tintes', 'colgador']);
-    expect(ALBUM_TABS.filter((t) => !t.enabled).map((t) => t.id)).toEqual(['colgador']);
+    expect(ALBUM_TABS.filter((t) => !t.enabled)).toEqual([]);
   });
 
   it('every tab names its icon after the loaded album art', () => {
@@ -17,8 +17,11 @@ describe('resolveTab', () => {
   it('keeps an enabled tab', () => {
     expect(resolveTab('tintes')).toBe('tintes');
   });
-  it('falls back to the first tab when it is missing, unknown or disabled', () => {
-    for (const bad of [undefined, null, 3, 'nope', 'colgador']) expect(resolveTab(bad)).toBe('prendas');
+  it('opens the hanger when asked for it', () => {
+    expect(resolveTab('colgador')).toBe('colgador');
+  });
+  it('falls back to the first tab when it is missing or unknown', () => {
+    for (const bad of [undefined, null, 3, 'nope']) expect(resolveTab(bad)).toBe('prendas');
   });
 });
 
@@ -27,9 +30,10 @@ describe('turnTo', () => {
     expect(turnTo('prendas', 1)).toBe('gatos');
     expect(turnTo('gatos', -1)).toBe('prendas');
   });
-  it('stays at the ends, and skips the disabled tab', () => {
+  it('stays at the ends, and the hanger is the last page', () => {
     expect(turnTo('prendas', -1)).toBe('prendas');
-    expect(turnTo('tintes', 1)).toBe('tintes');
+    expect(turnTo('tintes', 1)).toBe('colgador');
+    expect(turnTo('colgador', 1)).toBe('colgador');
   });
 });
 

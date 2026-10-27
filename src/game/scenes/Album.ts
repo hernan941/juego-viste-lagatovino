@@ -114,7 +114,7 @@ export class Album extends Phaser.Scene implements E2EUi {
   create() {
     this.catalog = this.registry.get(RegistryKeys.Catalog) as GameData;
     this.progress = (this.registry.get(RegistryKeys.Progress) as Progress | undefined) ?? emptyProgress(0);
-    this.pageContext = { catalog: this.catalog, progress: this.progress, completion: completion(this.progress, this.catalog) };
+    this.pageContext = { catalog: this.catalog, progress: this.progress, completion: completion(this.progress, this.catalog), hang: this.hang };
 
     new PaperBackground(this).setDepth(-1);
     // The notebook: the open sheet, the current page and the tabs hanging on the top edge. It all falls and straightens up as one.
@@ -197,6 +197,8 @@ export class Album extends Phaser.Scene implements E2EUi {
     }
     this.tweens.add({ targets: this.footer, alpha: 1, duration: 300 });
     this.ready = true;
+    // A page with something to show for this visit (the hanger flies the keychain that was just hung) does it now that it is seen.
+    void this.page?.reveal?.();
     this.stamps = pendingMilestones(this.latest(), this.catalog);
     // Written down at once: leaving in the middle of the celebration does not repeat it.
     this.save(markSeen(this.latest(), this.stamps.map(seenIdOf.milestone)));
@@ -284,7 +286,7 @@ export class Album extends Phaser.Scene implements E2EUi {
     });
   }
 
-  /** The hanger is off until F19.5: a little bubble says so and goes away. */
+  /** A tab that is off (none is since F19.5): a little bubble says so and goes away. */
   private sayLocked() {
     this.bubble?.destroy();
     this.bubble = new SpeechBubble(this, GAME_WIDTH / 2 + 300, 150, albumLines.hangerSoon).setDepth(30);

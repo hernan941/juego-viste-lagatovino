@@ -12,7 +12,7 @@ export interface AlbumTab {
   icon: string;
   /** Brand color of the index tab (an `Ink` token). */
   color: 'sol' | 'rosa' | 'cielo' | 'lila' | 'durazno';
-  /** The hanger (the keychains of S8) stays off until F19.5. */
+  /** A tab that is off wobbles when pressed (none is, since the hanger of F19.5). */
   enabled: boolean;
 }
 
@@ -21,7 +21,7 @@ export const ALBUM_TABS: readonly AlbumTab[] = [
   { id: 'gatos', label: 'Gatos', icon: 'ui-album-tab-gatos', color: 'rosa', enabled: true },
   { id: 'looks', label: 'Looks especiales', icon: 'ui-album-tab-looks', color: 'cielo', enabled: true },
   { id: 'tintes', label: 'Tintes', icon: 'ui-album-tab-tintes', color: 'lila', enabled: true },
-  { id: 'colgador', label: 'Colgador', icon: 'ui-album-tab-colgador', color: 'durazno', enabled: false },
+  { id: 'colgador', label: 'Colgador', icon: 'ui-album-tab-colgador', color: 'durazno', enabled: true },
 ];
 
 /** A drag of this many game px or more turns the page. */

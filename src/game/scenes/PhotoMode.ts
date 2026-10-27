@@ -3,7 +3,7 @@ import { Fonts, GAME_HEIGHT, GAME_WIDTH, Ink, KeychainTextures, MEOW_KEYS, Objec
 import type { GameData } from '../data/schema';
 import { photoUnlocks, type PhotoUnlocks } from '../domain/album';
 import { keychainLines, photoLines, withBrand } from '../domain/copy';
-import { keychainRecipe } from '../domain/keychain';
+import { defaultReplace, hangKeychain, keychainRecipe, needsConfirm } from '../domain/keychain';
 import { packageOps } from '../domain/keychainPackage';
 import { catPose } from '../domain/catPose';
 import type { Expression } from '../domain/expressions';
@@ -14,6 +14,7 @@ import { initialPieces, photoFileName, resolveLook, stickerLimit, type PhotoLook
 import {
   PHOTO_SIZE, canPick, composition, pieceStates, placeSticker, removeSticker, stickerAngle, type PhotoComposition,
 } from '../domain/photoComposition';
+import { hangArgs } from '../domain/flow';
 import { emptyProgress } from '../domain/progress';
 import type { AnchorsDef, ItemDye, KeychainRecipe, PhotoPiece, PhotoPose, PlacedSticker, Point, Progress, Rect, Stars } from '../domain/types';
 import type { E2EUi, UiState } from '../e2eHook';
@@ -29,6 +30,7 @@ import { composePackage, composePhoto } from '../objects/photo';
 import { keychainData } from '../objects/keychain/Keychain';
 import { KeychainTransformation } from '../objects/keychain/KeychainTransformation';
 import { PackageCard } from '../objects/keychain/PackageCard';
+import { ReplaceSheet } from '../objects/keychain/ReplaceSheet';
 import { PhotoTray, type TrayKind } from '../objects/photomode/PhotoTray';
 import { Sticker } from '../objects/photomode/Sticker';
 import { tabIconKey } from '../objects/tabIcons';
@@ -116,6 +118,12 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
   private transformation: KeychainTransformation | null = null;
   private card: PackageCard | null = null;
   private keychainPhase: string | null = null;
+  /** The recipe of the keychain that was made (what [Colgarlo] hangs), the button and the title of the ready state, and the question. */
+  private madeRecipe: KeychainRecipe | null = null;
+  private hangButton: Button | null = null;
+  private readyTitle: Phaser.GameObjects.Text | null = null;
+  private replaceSheet: ReplaceSheet | null = null;
+  private hanging = false;
   private skippable = false;
   private putting = false;
   private closed = false;
@@ -140,6 +148,11 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     this.transformation = null;
     this.card = null;
     this.keychainPhase = null;
+    this.madeRecipe = null;
+    this.hangButton = null;
+    this.readyTitle = null;
+    this.replaceSheet = null;
+    this.hanging = false;
     this.skippable = false;
     this.putting = false;
     this.closed = false;
@@ -541,8 +554,10 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     this.photoBusy = true;
     getAudio(this).play(SfxKeys.Shutter);
     const audio = getAudio(this);
+    const recipe = this.recipe();
+    this.madeRecipe = recipe;
     const transformation = new KeychainTransformation(this, {
-      cat: this.cat, recipe: this.recipe(), data: keychainData(this.catalog, this.anchors), depth: DEPTH.keychain,
+      cat: this.cat, recipe, data: keychainData(this.catalog, this.anchors), depth: DEPTH.keychain,
       play: (key, volume) => audio.play(key, volume === undefined ? undefined : { volume }),
       onPhase: (phase) => { this.keychainPhase = phase; },
     });
@@ -590,7 +605,62 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     this.keychainPhase = 'ready';
     card.enableTap();
     card.on(ObjectEvents.PackageTap, () => void this.putAway());
-    this.toast(keychainLines.saved(this.look.catName));
+    this.showReady(card);
+  }
+
+  /** "¡Tu llavero está listo!": [Colgarlo] takes the place of [Guardar] (the other button stays: [Seguir vistiendo]), and the print flies to it. */
+  private showReady(card: PackageCard) {
+    const p = profileOf(this);
+    this.save.setVisible(false);
+    // The sticker count sits where the title goes, and it means nothing while the packaging is up.
+    this.count.setVisible(false);
+    this.readyTitle = this.add
+      .text(1090, 462, keychainLines.ready, { fontFamily: Fonts.Voice, fontStyle: 'bold', fontSize: '34px', color: Ink.tinta, align: 'center', wordWrap: { width: 250 }, padding: { x: 4, y: 8 } })
+      .setOrigin(0.5).setDepth(DEPTH.buttons).setAlpha(0);
+    this.hangButton = new Button(this, 1090, 560, keychainLines.hang, { pill: 'primary', width: 260, height: 76, fontSize: 36 }).setDepth(DEPTH.buttons).setAlpha(0);
+    this.hangButton.on(ObjectEvents.ButtonClick, () => this.hangIt());
+    this.tweens.add({ targets: this.readyTitle, alpha: 1, duration: 260 });
+    this.tweens.add({ targets: this.hangButton, alpha: 1, duration: 260, delay: 120 });
+    if (!p.reduced) {
+      this.readyTitle.setAngle(-3);
+      this.tweens.add({ targets: this.readyTitle, angle: 0, duration: 320, ease: p.ease('Back.easeOut') });
+    }
+    void card.flyThumb({ x: 1090, y: 560 });
+  }
+
+  /** [Colgarlo]: if that cat already has a keychain the player is asked; otherwise it is hung at once. */
+  private hangIt() {
+    const recipe = this.madeRecipe;
+    if (!recipe || this.hanging || this.leaving || this.replaceSheet) return;
+    const collection = this.latestProgress().keychains;
+    if (!needsConfirm(collection, recipe)) return this.finishHang(recipe, undefined);
+    const before = collection[recipe.catId]!;
+    const sheet = new ReplaceSheet(this, { catName: recipe.catName, before: before.stars, now: recipe.stars, replaceByDefault: defaultReplace(before, recipe) });
+    this.replaceSheet = sheet;
+    const close = (then?: () => void) => {
+      if (this.replaceSheet !== sheet) return;
+      this.replaceSheet = null;
+      sheet.close(then);
+    };
+    sheet.on(ObjectEvents.SheetConfirm, () => close(() => this.finishHang(recipe, true)));
+    sheet.on(ObjectEvents.SheetKeep, () => close(() => this.finishHang(recipe, false)));
+    sheet.on(ObjectEvents.SheetCancel, () => close());
+  }
+
+  private latestProgress(): Progress {
+    return (this.registry.get(RegistryKeys.Progress) as Progress | undefined) ?? emptyProgress(0);
+  }
+
+  /** Writes the recipe on its hook (or keeps the old one) and goes to the hanger; it flies there only when it was hung. */
+  private finishHang(recipe: KeychainRecipe, confirm: boolean | undefined) {
+    if (this.hanging || this.leaving || this.closed) return;
+    this.hanging = true;
+    const progress = this.latestProgress();
+    const result = hangKeychain(progress.keychains, recipe, confirm);
+    const hung = result.replaced || result.isFirst;
+    if (hung) this.registry.set(RegistryKeys.Progress, { ...progress, keychains: result.collection });
+    this.leaving = true;
+    go(this, 'hang', hangArgs(recipe.catId, hung));
   }
 
   /** A tap on the card: it goes down with the keychain, and the cat pops back where it was, in its pose. */
@@ -604,6 +674,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     if (this.closed) return;
     card.destroy();
     this.card = null;
+    this.hideReady();
     transformation.restoreCat();
     transformation.destroy();
     this.transformation = null;
@@ -612,6 +683,19 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     this.cat.squash();
     this.putting = false;
     this.photoBusy = false;
+  }
+
+  /** Takes [Colgarlo], its title and the question away and brings [Guardar] back. */
+  private hideReady() {
+    this.replaceSheet?.destroy();
+    this.replaceSheet = null;
+    this.hangButton?.destroy();
+    this.hangButton = null;
+    this.readyTitle?.destroy();
+    this.readyTitle = null;
+    this.madeRecipe = null;
+    this.count.setVisible(true);
+    this.save.setVisible(true);
   }
 
   /** The way out when the keychain cannot be made: the composition of the table as a PNG, with the flash. The cat does not change. */
@@ -677,6 +761,12 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     this.input.off('pointerup', this.onUp);
     this.input.off('pointerdown', this.onTap);
     this.closed = true;
+    this.replaceSheet?.destroy();
+    this.replaceSheet = null;
+    this.hangButton?.destroy();
+    this.hangButton = null;
+    this.readyTitle?.destroy();
+    this.readyTitle = null;
     this.card?.destroy();
     this.card = null;
     this.transformation?.destroy();

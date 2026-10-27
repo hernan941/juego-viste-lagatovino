@@ -55,12 +55,12 @@ const imageCalls = (scene: FakeScene, key: string): string[] =>
   (scene.made.images as { key: string; calls: string[] }[]).filter((i) => i.key === key).flatMap((i) => i.calls);
 
 describe('registration', () => {
-  it('has a page of its own for the four tabs but the hanger', () => {
+  it('has a page of its own for the five tabs (the hanger is tested in hangerPage.test.ts)', () => {
     for (const tab of ['prendas', 'gatos', 'looks', 'tintes'] as const) {
       expect(PAGE_FACTORIES[tab]).toBeTypeOf('function');
       expect(make(tab).page).not.toBeInstanceOf(TallyPage);
     }
-    expect(PAGE_FACTORIES.colgador).toBeUndefined();
+    expect(PAGE_FACTORIES.colgador).toBeTypeOf('function');
   });
 });
 
