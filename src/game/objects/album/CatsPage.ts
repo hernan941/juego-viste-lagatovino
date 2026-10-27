@@ -34,7 +34,7 @@ export class CatsPage extends BookPage {
     super(scene, tab);
     this.anchors = scene.registry.get(RegistryKeys.Anchors) as AnchorsDef;
     this.entries = catEntries(entryContext(ctx));
-    this.heading(albumLines.tally(pageTally('gatos', ctx.completion.sections)));
+    this.heading(albumLines.tastesTally(pageTally('gatos', ctx.completion.sections)));
     (['left', 'right'] as const).forEach((side, s) => {
       const part = this.entries.slice(s * PER_HALF, (s + 1) * PER_HALF);
       gridPositions(part.length, COLUMNS, CELL.w, CELL.h).forEach((at, i) => {

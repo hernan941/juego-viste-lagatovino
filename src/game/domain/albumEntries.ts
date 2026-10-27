@@ -260,6 +260,8 @@ export interface SetPiece {
   label: string;
   /** Icon texture of an item (or of the prize of a combo); none for a dye. */
   icon: string | null;
+  /** Art worn on the cat, for the pencil shape of a piece that is not yours yet. */
+  texture: string | null;
   /** Color of a dye; none for the rest. */
   hex: string | null;
   got: boolean;
@@ -292,15 +294,16 @@ function setPieces(set: SetDef, ctx: EntryContext, got: ReadonlySet<string>): Se
   return [
     ...items.map((id): SetPiece => {
       const item = clothes.find((c) => c.id === id);
-      return { id, label: item?.name ?? id, icon: item?.icon ?? null, hex: null, got: got.has(`item:${id}`) };
+      return { id, label: item?.name ?? id, icon: item?.icon ?? null, texture: item?.texture ?? null, hex: null, got: got.has(`item:${id}`) };
     }),
     ...dyeIds.map((id): SetPiece => {
       const dye = dyes.find((d) => d.id === id);
-      return { id, label: dye?.name ?? id, icon: null, hex: dye?.hex ?? null, got: got.has(`dye:${id}`) };
+      return { id, label: dye?.name ?? id, icon: null, texture: null, hex: dye?.hex ?? null, got: got.has(`dye:${id}`) };
     }),
     ...comboIds.map((id): SetPiece => {
       const combo = combos.find((c) => c.id === id);
-      return { id, label: combo?.name ?? id, icon: clothes.find((c) => c.id === combo?.rewardItemId)?.icon ?? null, hex: null, got: got.has(`combo:${id}`) };
+      const prize = clothes.find((c) => c.id === combo?.rewardItemId);
+      return { id, label: combo?.name ?? id, icon: prize?.icon ?? null, texture: prize?.texture ?? null, hex: null, got: got.has(`combo:${id}`) };
     }),
   ];
 }

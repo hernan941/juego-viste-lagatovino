@@ -289,6 +289,20 @@ describe('DyeTabController: letting go (F16.3)', () => {
     expect(catCalls.squash).toBeDefined();
   });
 
+  it('the bottle goes back to its cell with a pop once it has emptied over the garment (T7)', async () => {
+    const { openTab, controller, scene } = setup({ outfit: { sweater: sweater.id } });
+    openTab();
+    const { jar, drop } = drag(controller, 'rosa');
+    const pop = vi.fn();
+    (jar as unknown as { receivePop: () => void }).receivePop = pop;
+    drop();
+    await flush();
+    expect(pop).not.toHaveBeenCalled();
+    const flight = scene.tweens.records.find((r) => r.config.duration === 160 && r.config.alpha === 0)!;
+    (flight.config.onComplete as () => void)();
+    expect(pop).toHaveBeenCalledTimes(1);
+  });
+
   it('the dye of another bottle replaces the first and the old texture is released', async () => {
     const { openTab, controller, store, dyeService } = setup({ outfit: { sweater: sweater.id } });
     openTab();

@@ -14,6 +14,8 @@ export const albumLines = {
   /** The secondary button of the Title. */
   titleButton: (pct: number): string => `Mi álbum · ${pct}%`, // Fonts.Title: accents allowed
   tally: (t: Tally): string => `${t.got} de ${t.total}`,
+  /** The count of the cats page: it counts tastes (not cats). */
+  tastesTally: (t: Tally): string => `${t.got} de ${t.total} gustos`,
   coverTitle: 'Mi álbum', // Fonts.Title: accents allowed
   coverPercent: (pct: number): string => `Llevas el ${pct} %`,
   coverSets: (done: number, total: number): string => `Sets: ${done} de ${total}`,
@@ -36,14 +38,14 @@ export const albumLines = {
   /** Spanish words for what the entry card says about an item. */
   itemGot: 'Ya es tuya',
   itemFree: 'Viene con el gato',
-  itemSketch: (price: number): string => `Cuesta ${price} botones`,
+  itemSketch: (price: number): string => `Cuesta ${price} botones. En el probador es gratis`,
   dyeGot: 'Ya es tuyo',
-  dyeSketch: (price: number): string => `Cuesta ${price} botones`,
+  dyeSketch: (price: number): string => `Cuesta ${price} botones. En el probador es gratis`,
   pieces: 'Piezas',
   /** The sets sheet (L1): the prize of a set in the photo mode, and what the card of a set says. */
   setPrize: (kind: 'background' | 'frame' | 'sticker', name: string): string => `→ ${{ background: 'fondo', frame: 'marco', sticker: 'sticker' }[kind]} ${name}`,
   setNoPrize: 'Para presumir',
-  setDone: '¡Set completo!',
+  setDone: 'Set completo',
   setMissing: (names: readonly string[]): string => `Te faltan: ${names.length > 4 ? `${names.slice(0, 4).join(', ')}…` : names.join(', ')}`,
   setCount: (got: number, total: number): string => `${got} de ${total}`,
   setsTitle: 'Sets',

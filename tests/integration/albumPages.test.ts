@@ -296,7 +296,8 @@ describe('CombosPage: the sheet of sets (L1)', () => {
     page.pager!.nextPage();
     const icon = (id: string) => (clothes as ClothingDef[]).find((c) => c.id === id)!.icon;
     expect(imageCalls(scene, icon(owned))).not.toContain('setTint');
-    expect(imageCalls(scene, icon(abrigo.requires.items[4]!))).toContain('setTint');
+    const missing = (clothes as ClothingDef[]).find((c) => c.id === abrigo.requires.items[4])!;
+    expect(imageCalls(scene, missing.texture)).toContain('setTint');
   });
 
   it('a complete set carries the seal', () => {

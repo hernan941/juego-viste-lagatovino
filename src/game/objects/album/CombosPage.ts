@@ -47,7 +47,7 @@ export class CombosPage extends BookPage {
     this.entries = comboEntries(entries);
     this.sets = setEntries(entries);
     this.looksTally = albumLines.tally(pageTally('looks', ctx.completion.sections));
-    this.setsTally = albumLines.coverSets(this.sets.filter((e) => e.done).length, this.sets.length);
+    this.setsTally = albumLines.tally({ got: this.sets.filter((e) => e.done).length, total: this.sets.length });
     this.heading(this.looksTally);
     this.pager = new Pager(scene, 0, PAGER_Y, (sheet) => this.show(sheet, true));
     this.right.add(this.pager);
@@ -96,7 +96,7 @@ export class CombosPage extends BookPage {
         const cell = this.scene.add.container(0, 0, [face]);
         makeTappable(cell, face, SET_CELL.w, SET_CELL.h, () => this.openCard(`set:${entry.id}`, setCardSpec(entry)));
         cell.setPosition(at.x, GRID_TOP + at.y);
-        this.place(side, `set:${entry.id}`, cell, entry.isNew, { x: SET_CELL.w / 2 - 14, y: -SET_CELL.h / 2 + 8 });
+        this.place(side, `set:${entry.id}`, cell, entry.isNew, { x: -SET_CELL.w / 2 + 14, y: -SET_CELL.h / 2 + 8 });
       });
     });
   }

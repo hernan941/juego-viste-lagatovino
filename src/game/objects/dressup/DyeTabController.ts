@@ -364,7 +364,11 @@ export class DyeTabController implements DressUpController {
     const { scene, cat } = this.ctx;
     const anchor = cat.getAnchorWorld(anchorForSlot(item.slot));
     // The bottle empties over the item: it flies to it, shrinking, and fades.
-    this.fly(d, anchor, { scale: 0.5, alpha: 0 }, 160, 'Quad.easeIn', () => d.ghost.destroy());
+    // Then it is back in its cell with a little pop: the bottle is not used up (T7).
+    this.fly(d, anchor, { scale: 0.5, alpha: 0 }, 160, 'Quad.easeIn', () => {
+      d.ghost.destroy();
+      if (d.jar.active !== false) d.jar.receivePop();
+    });
     d.jar.setLifted(false);
     getDye(scene).ensure(item.id, d.dye.id).then(
       () => this.land(d.dye, item, anchor),

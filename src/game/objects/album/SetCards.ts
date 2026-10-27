@@ -3,13 +3,13 @@ import { Fonts, Ink, colorToNumber } from '../../constants';
 import type { SetEntry } from '../../domain/albumEntries';
 import { albumLines } from '../../domain/copy/album';
 import type { EntryCardSpec } from './EntryCard';
-import { fitImage, sketchImage } from './pencil';
+import { fitImage, silhouetteImage } from './pencil';
 
 /** A card of the sets sheet: a loose card on the half of the sheet (cell and box, game px). */
 export const SET_CELL = { w: 380, h: 104 };
 const BOX = { w: 366, h: 92 };
 const MINI = 36;
-const DOT = 11;
+const DOT = 10;
 const PRIZE = 46;
 const PIECES_Y = 24;
 
@@ -28,9 +28,9 @@ function pieceView(scene: Phaser.Scene, piece: SetEntry['pieces'][number], x: nu
     else dot.lineStyle(2.5, colorToNumber(Ink.lineaLapiz), 0.7).strokeCircle(0, 0, DOT);
     return dot.setPosition(x, PIECES_Y);
   }
-  const key = piece.icon ?? '';
-  const image = piece.got ? fitImage(scene.add.image(0, 0, key), MINI) : sketchImage(scene, key, MINI, 0.5);
-  return image.setPosition(x, PIECES_Y);
+  if (piece.got) return fitImage(scene.add.image(0, 0, piece.icon ?? ''), MINI).setPosition(x, PIECES_Y);
+  // Missing: the pencil shape of the garment (the icon has a card behind it and would fill as a square).
+  return silhouetteImage(scene, piece.texture ?? piece.icon ?? '', MINI, 0.5).setPosition(x, PIECES_Y);
 }
 
 /**
@@ -45,10 +45,12 @@ export function buildSetCard(scene: Phaser.Scene, entry: SetEntry): Phaser.GameO
   const parts: Phaser.GameObjects.GameObject[] = [frame];
   const left = -BOX.w / 2 + 16;
   const pad = { padding: { x: 2, y: 6 } };
-  parts.push(scene.add.text(left, -18, entry.name, { fontFamily: Fonts.Title, fontSize: '26px', color: Ink.tinta, ...pad }).setOrigin(0, 0.5));
-  parts.push(scene.add.text(94, -18, albumLines.setCount(entry.gotCount, entry.total), { fontFamily: Fonts.Voice, fontSize: '24px', color: entry.done ? Ink.tinta : Ink.lapiz, ...pad }).setOrigin(1, 0.5));
+  const name = scene.add.text(left, -18, entry.name, { fontFamily: Fonts.Title, fontSize: '24px', color: Ink.tinta, ...pad }).setOrigin(0, 0.5);
+  // The count follows the name, so a long name never runs into it.
+  const count = scene.add.text(left + name.width + 8, -17, albumLines.setCount(entry.gotCount, entry.total), { fontFamily: Fonts.Voice, fontSize: '20px', color: entry.done ? Ink.tinta : Ink.lapiz, ...pad }).setOrigin(0, 0.5);
+  parts.push(name, count);
   // The pieces: a row as long as the set asks (a dye is a small dot).
-  const step = entry.pieces[0]?.hex ? DOT * 2 + 5 : MINI + 6;
+  const step = entry.pieces[0]?.hex ? DOT * 2 + 3 : MINI + 6;
   const first = entry.pieces[0]?.hex ? left + DOT : left + MINI / 2;
   entry.pieces.forEach((piece, i) => parts.push(pieceView(scene, piece, first + i * step)));
   // The prize, on the right: a little picture and its name (a set with no prize only says it is for showing off).
