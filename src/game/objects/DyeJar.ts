@@ -1,18 +1,15 @@
 import Phaser from 'phaser';
 import { Fonts, Ink, ObjectEvents } from '../constants';
 import { dyeKey } from '../data/assets';
+import { JAR_H, JAR_LABEL_Y, JAR_NAME_FONT, JAR_TAG_SPOT, JAR_W } from '../domain/jarShelf';
 import type { DyeDef, Point } from '../domain/types';
 import { profileOf } from '../systems/motion';
 import { hoverSfx } from './hoverSfx';
 import { PriceTag } from './PriceTag';
 import { addHover, hitRect, type ScaleTo } from './ui';
 
-/** The bottle in its cell: the art is 128 x 176, drawn at the height of a wardrobe cell (104). */
-export const JAR_W = 76;
-export const JAR_H = 104;
-const LABEL_Y = JAR_H / 2 + 20;
-/** The price tag of a bottle that is not bought: from the top right corner of the cell, like the tags of the garments (cell px from its center). */
-export const JAR_TAG = { x: 30, y: -66, scale: 0.4 } as const;
+/** The price tag of a bottle that is not bought: it hangs from the neck, to the left (cell px from its center, see domain/jarShelf). */
+export const JAR_TAG = JAR_TAG_SPOT;
 
 /**
  * A dye bottle in the dye tab: draggable, with its name under it. Emits JarDragStart / JarDrag / JarDragEnd (jar, pointer)
@@ -33,7 +30,7 @@ export class DyeJar extends Phaser.GameObjects.Container {
     super(scene, x, y);
     this.dye = dye;
     this.bottle = scene.add.image(0, 0, dyeKey(dye.id)).setDisplaySize(JAR_W, JAR_H);
-    const label = scene.add.text(0, LABEL_Y, dye.name, { fontFamily: Fonts.Voice, fontStyle: 'bold', fontSize: '22px', color: Ink.tinta }).setOrigin(0.5);
+    const label = scene.add.text(0, JAR_LABEL_Y, dye.name, { fontFamily: Fonts.Voice, fontStyle: 'bold', fontSize: `${JAR_NAME_FONT}px`, color: Ink.tinta }).setOrigin(0.5);
     this.view = scene.add.container(0, 0, [this.bottle, label]);
     this.add(this.view);
 
