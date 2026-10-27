@@ -19,6 +19,12 @@ describe('the judge lines per case (F15.6)', () => {
   it('what he says at the verdict: a bare cat gets "¿Y la ropa?" whatever the stars (A2)', () => {
     expect(judge.say({ catName: 'Mau', stars: 1, bare: true })).toBe(judge.bare());
   });
+  it('what he says at the verdict: a repeated look is called out, a near one too, and a bare cat comes first (A3)', () => {
+    expect(judge.say({ catName: 'Mau', stars: 5, novelty: 0 })).toBe(judge.repeated());
+    expect(judge.say({ catName: 'Mau', stars: 5, novelty: 1 })).toBe(judge.nearSame());
+    expect(judge.say({ catName: 'Mau', stars: 4, novelty: 2 })).toBe(judge.verdict('Mau', 4));
+    expect(judge.say({ catName: 'Mau', stars: 1, bare: true, novelty: 0 })).toBe(judge.bare());
+  });
   it('what he says at the verdict: otherwise the line of the stars', () => {
     expect(judge.say({ catName: 'Mau', stars: 5 })).toBe(judge.verdict('Mau', 5));
   });

@@ -163,7 +163,7 @@ describe('applyRating (F13.2)', () => {
   it('pays the new look, records the stars and the signature, in a stable order', () => {
     const { progress, events } = applyRating(start(), result(4), eco, look('sweater:a'));
     expect(events).toEqual([
-      { type: 'coins', amount: 28 },
+      { type: 'coins', amount: 28, novelty: 2 },
       { type: 'milestone', stars: 3, amount: 15 },
       { type: 'milestone', stars: 4, amount: 25 },
     ]);
@@ -175,13 +175,13 @@ describe('applyRating (F13.2)', () => {
   it('pays only a tip for the same look rated twice and no milestone again', () => {
     const first = applyRating(start(), result(3), eco, look('sweater:a')).progress;
     const second = applyRating(first, result(3), eco, look('sweater:a'));
-    expect(second.events).toEqual([{ type: 'coins', amount: 2 }]);
+    expect(second.events).toEqual([{ type: 'coins', amount: 2, novelty: 0 }]);
     expect(second.progress.wallet).toBe(first.wallet + 2);
   });
 
   it('pays a fraction when only one slot changed', () => {
     const first = applyRating(start(), result(2), eco, look('sweater:a|head:b')).progress;
-    expect(applyRating(first, result(2), eco, look('sweater:a|head:c')).events).toEqual([{ type: 'coins', amount: 5 }]);
+    expect(applyRating(first, result(2), eco, look('sweater:a|head:c')).events).toEqual([{ type: 'coins', amount: 5, novelty: 1 }]);
   });
 
   it('keeps the best stars and only the last signatures', () => {

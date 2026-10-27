@@ -1,5 +1,5 @@
 // Pure TS. The words of the runway card and of the event notes (F15.3). The judge's own lines live in judge.ts.
-import type { BreakdownLine, ProgressEvent, TagNames } from '../types';
+import type { BreakdownLine, Novelty, ProgressEvent, TagNames } from '../types';
 import { tagLove, tagStyle } from './tags';
 
 /** "+3" or "−3" (real minus sign); 0 stays "0". */
@@ -23,6 +23,13 @@ export function ratingLineText(line: BreakdownLine, comboName: (id: string) => s
     case 'bare': return 'Al natural';
     case 'plain': return 'Sin combinar';
   }
+}
+
+/** Why the payout is small: a repeated look pays a tip, a near one pays half. A new look needs no explanation. */
+export function noveltyNote(novelty: Novelty, amount: number): string | undefined {
+  if (novelty === 0) return `Propina +${amount}`;
+  if (novelty === 1) return `Casi igual +${amount}`;
+  return undefined;
 }
 
 export interface EventNote {

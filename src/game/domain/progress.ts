@@ -169,7 +169,8 @@ export function applyRating(progress: Progress, result: RatingResult, rules: Eco
   const { catId, signature } = look;
   const history = progress.ratedLooks[catId] ?? [];
   const best = progress.bestStars[catId];
-  const events: ProgressEvent[] = [{ type: 'coins', amount: payout(result.stars, novelty(signature, history, rules), rules) }];
+  const fresh = novelty(signature, history, rules);
+  const events: ProgressEvent[] = [{ type: 'coins', amount: payout(result.stars, fresh, rules), novelty: fresh }];
   for (const m of milestoneBonus(best, result.stars, rules)) events.push({ type: 'milestone', stars: m.stars, amount: m.amount });
   const earned = events.reduce((sum, e) => sum + ('amount' in e ? e.amount : 0), 0);
   return {

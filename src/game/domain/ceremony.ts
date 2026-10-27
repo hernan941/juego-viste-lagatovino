@@ -1,7 +1,7 @@
 // Pure TS, no Phaser (ADR 0010, 0017). The timeline of the runway ceremony (docs/design/segunda-etapa.md, S1):
 // order, times and the "skip x3", so scenes only play the steps. Times are in ms from the start of the ceremony.
 import type { Expression } from './expressions';
-import type { BreakdownLine, ProgressEvent, RatingResult } from './types';
+import type { BreakdownLine, Novelty, ProgressEvent, RatingResult } from './types';
 
 export const JUDGE_ENTER_MS = 420;
 export const LINE_GAP_MS = 260;
@@ -47,6 +47,8 @@ export interface CeremonyPlan {
   stars: number;
   /** The look has no clothes at all (the card only has the "Al natural" placeholder). */
   bare: boolean;
+  /** How new the look was (from the `coins` event): 0 repeat, 1 near, 2 new. */
+  novelty: Novelty;
   steps: CeremonyStep[];
   /** Coins the buttons add up to: the sum of the amounts of the progress events. Never lost by `skip`. */
   coins: number;
@@ -72,6 +74,12 @@ export function catReaction(stars: number): CatReaction {
 /** Coins paid by the events (every progress event with an amount). */
 export function eventCoins(events: readonly ProgressEvent[]): number {
   return events.reduce((sum, e) => sum + ('amount' in e ? e.amount : 0), 0);
+}
+
+/** The novelty the `coins` event reports; a new look when there is no such event. */
+export function noveltyOf(events: readonly ProgressEvent[]): Novelty {
+  for (const e of events) if (e.type === 'coins') return e.novelty ?? 2;
+  return 2;
 }
 
 /** How many buttons fly for a payout. */
@@ -126,7 +134,7 @@ export function ceremonyPlan(
   notes.forEach((event, index) => steps.push({ kind: 'note', index, event, at: stampsEnd + index * gap, ms: NOTE_MS }));
 
   steps.sort((a, b) => a.at - b.at);
-  return { profile, stars: result.stars, bare: result.breakdown[0]?.kind === 'bare', steps, coins, totalMs: endOf(steps) };
+  return { profile, stars: result.stars, bare: result.breakdown[0]?.kind === 'bare', novelty: noveltyOf(events), steps, coins, totalMs: endOf(steps) };
 }
 
 /**

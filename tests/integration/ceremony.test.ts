@@ -113,6 +113,18 @@ describe('Ceremony', () => {
     expect(texts.some((t) => t.includes('¿Y la ropa?'))).toBe(true);
   });
 
+  it('a repeated look pays a tip and says why: Kofi asks to be surprised and a "Propina +2" note rises (A3)', () => {
+    const scene = makeCeremonyScene(false);
+    const cat = { hold: vi.fn(), release: vi.fn(), hop: vi.fn(), heartbeat: vi.fn() };
+    const plan = ceremonyPlan(result(4), [{ type: 'coins', amount: 2, novelty: 0 }], 'full');
+    const ceremony = new Ceremony(scene as never, plan, { cat: cat as never, catName: 'Mau', judge: { name: 'Kofi', texture: 'char-judge' } });
+    void ceremony.play();
+    scene.advance(plan.totalMs);
+    const texts = scene.made.texts.map((t) => String(t.text));
+    expect(texts.some((t) => t.includes('sorpréndeme'))).toBe(true);
+    expect(texts).toContain('Propina +2');
+  });
+
   it('a tap skips x3 and every button still counts', async () => {
     const { scene, credits, plan, ceremony } = setup();
     const done = settled(ceremony.play());

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { eventNote, formatPoints, ratingLineText } from '../../src/game/domain/copy';
+import { eventNote, formatPoints, noveltyNote, ratingLineText } from '../../src/game/domain/copy';
 import tags from '../../src/game/data/tags.json';
 import type { TagNames } from '../../src/game/domain/types';
 import type { CeremonyEvent } from '../../src/game/domain/ceremony';
@@ -34,6 +34,14 @@ describe('ratingLineText (F15.3)', () => {
   });
   it('does not break without a ref', () => {
     expect(ratingLineText({ kind: 'style', points: 1 })).not.toContain('undefined');
+  });
+});
+
+describe('noveltyNote (A3)', () => {
+  it('explains the small payout of a repeated or near look, and says nothing for a new one', () => {
+    expect(noveltyNote(0, 2)).toBe('Propina +2');
+    expect(noveltyNote(1, 7)).toBe('Casi igual +7');
+    expect(noveltyNote(2, 20)).toBeUndefined();
   });
 });
 

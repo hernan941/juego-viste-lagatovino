@@ -311,9 +311,13 @@ export interface RatingResult {
   breakdown: BreakdownLine[];
 }
 
+/** How many slots changed against recent looks, capped: 0 = repeat, 1 = near, 2 = new. */
+export type Novelty = 0 | 1 | 2;
+
 /** Things the ceremony replays after the progress was applied (ADR 0017). */
 export type ProgressEvent =
-  | { type: 'coins'; amount: number }
+  /** `novelty`: how new the look was (0 repeat, 1 near, 2 new); the ceremony explains the small payouts. */
+  | { type: 'coins'; amount: number; novelty?: Novelty }
   | { type: 'milestone'; stars: 3 | 4 | 5; amount: number }
   | { type: 'tasteFound'; taste: TasteKey; amount: number }
   | { type: 'comboFirst'; comboId: string; amount: number }

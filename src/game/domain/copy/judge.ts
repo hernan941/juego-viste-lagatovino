@@ -1,6 +1,6 @@
 // Pure TS. The judge of the runway; his name comes from brand.json.
 // The @ is only for generic phrases ("tu gat@"): when he talks to a given cat he uses neutral words, never a guess of gender.
-import type { CharacterDef } from '../types';
+import type { CharacterDef, Novelty } from '../types';
 import { fillTemplate } from './template';
 
 /** What the judge reacts to at the verdict. */
@@ -9,6 +9,8 @@ export interface VerdictCase {
   stars: number;
   /** No clothes at all. */
   bare?: boolean;
+  /** 0 repeated look, 1 near, 2 (or none) new. */
+  novelty?: Novelty;
 }
 
 export function judgeLines(judge: CharacterDef) {
@@ -33,6 +35,11 @@ export function judgeLines(judge: CharacterDef) {
   return {
     ...lines,
     /** The one thing he says when the stars land: the case that matters most wins. */
-    say: ({ catName, stars, bare }: VerdictCase): string => (bare ? lines.bare() : lines.verdict(catName, stars)),
+    say: ({ catName, stars, bare, novelty = 2 }: VerdictCase): string => {
+      if (bare) return lines.bare();
+      if (novelty === 0) return lines.repeated();
+      if (novelty === 1) return lines.nearSame();
+      return lines.verdict(catName, stars);
+    },
   };
 }

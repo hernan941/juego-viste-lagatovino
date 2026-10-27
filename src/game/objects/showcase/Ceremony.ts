@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
-import { GAME_WIDTH, SfxKeys, TextureKeys } from '../../constants';
+import { Fonts, GAME_WIDTH, Ink, SfxKeys, TextureKeys } from '../../constants';
 import { SKIP_FACTOR, skip, type CeremonyPlan, type CeremonyStep } from '../../domain/ceremony';
-import { judgeLines } from '../../domain/copy';
+import { judgeLines, noveltyNote } from '../../domain/copy';
 import type { CharacterDef, Point, TagNames } from '../../domain/types';
 import { getAudio } from '../../plugins/AudioPlugin';
 import { profileOf } from '../../systems/motion';
@@ -96,6 +96,7 @@ export class Ceremony {
   private stamps?: StarStamps;
   private notes?: EventNotes;
   private flight?: ButtonFlight;
+  private labels: Phaser.GameObjects.Text[] = [];
   private readonly emitters: Phaser.GameObjects.Particles.ParticleEmitter[] = [];
 
   constructor(
@@ -157,6 +158,11 @@ export class Ceremony {
     this.scene.events?.off(Phaser.Scenes.Events.SHUTDOWN, this.onShutdown);
     for (const e of this.emitters) e.destroy();
     this.emitters.length = 0;
+    for (const l of this.labels) {
+      this.scene.tweens?.killTweensOf(l);
+      l.destroy();
+    }
+    this.labels = [];
     for (const o of [this.judge, this.card, this.stamps, this.notes, this.flight]) o?.destroy();
     this.resolve?.();
   }
@@ -225,6 +231,7 @@ export class Ceremony {
         this.react(step.reaction);
         break;
       case 'coin':
+        if (step.index === 0) this.noveltyLabel();
         this.flight?.fly(
           { index: step.index, from: L.buttonsFrom, to: L.wallet, ms: step.ms, credit: step.credit, fly: step.fly },
           (credit) => {
@@ -237,6 +244,25 @@ export class Ceremony {
         this.notes?.addNote(step.index, step.event, step.ms);
         break;
     }
+  }
+
+  /** "Propina +2" / "Casi igual +5": a repeated look pays little, and the player is told why. */
+  private noveltyLabel(): void {
+    const text = noveltyNote(this.plan.novelty, this.plan.coins);
+    if (!text) return;
+    const scene = this.scene;
+    const p = profileOf(scene);
+    const at = this.layout.buttonsFrom;
+    const label = scene.add
+      .text(at.x, at.y - 40, text, { fontFamily: Fonts.Title, fontSize: '30px', color: Ink.lapiz, padding: { x: 4, y: 8 } })
+      .setOrigin(0.5)
+      .setDepth(this.depth + 3)
+      .setAlpha(0);
+    this.labels.push(label);
+    const done = () => { this.labels = this.labels.filter((l) => l !== label); label.destroy(); };
+    scene.tweens.add({ targets: label, alpha: 1, y: at.y - (p.reduced ? 40 : 90), duration: 300 / this.speed, ease: p.ease('Back.easeOut'), hold: 900 / this.speed, onComplete: () => {
+      scene.tweens.add({ targets: label, alpha: 0, duration: 300 / this.speed, onComplete: done });
+    } });
   }
 
   /** The cat shows its stars: face, joy, purr, and confetti for five. The judge answers. */
@@ -256,7 +282,7 @@ export class Ceremony {
       this.judge?.hop();
     }
     if (reaction.expression === 'amor') cat.heartbeat();
-    this.judge?.say(lines.say({ catName, stars: this.plan.stars, bare: this.plan.bare }));
+    this.judge?.say(lines.say({ catName, stars: this.plan.stars, bare: this.plan.bare, novelty: this.plan.novelty }));
     if (reaction.confetti) this.confetti(p.count(36));
   }
 
