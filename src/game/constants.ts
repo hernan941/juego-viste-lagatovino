@@ -123,10 +123,14 @@ export const ObjectEvents = {
   LayerHover: 'layer-hover',
   /** PriceTag: (tag) the player pressed and released the tag */
   PriceTagPress: 'price-tag-press',
-  /** PurchaseSheet: [Llevar] was pressed */
+  /** PurchaseSheet: [Llevar] was pressed; CheckoutSheet: [Llevar todo] was pressed and the wallet reaches */
   SheetConfirm: 'sheet-confirm',
   /** PurchaseSheet: [Todavia no] or a tap outside; CatSheet: a tap outside */
   SheetCancel: 'sheet-cancel',
+  /** CheckoutSheet: [Llevar todo] was pressed but the wallet is short */
+  SheetShort: 'sheet-short',
+  /** CheckoutSheet: [Sacarme lo que no tengo] was pressed */
+  SheetLeaveOut: 'sheet-leave-out',
   /** NameSign: (sign) the player touched the sign (the cat sheet opens) */
   SignPress: 'sign-press',
   /** Keychain: the flattened texture is ready and showing */
@@ -171,6 +175,8 @@ export const DressUpEvents = {
   WalletShake: 'wallet-shake',
   /** (item: ClothingDef, dyeId: string) a dye bottle was dropped on a worn item and the color is on it (water included) */
   ItemDyed: 'item-dyed',
+  /** (ids: string[]) items were just paid (a purchase or the till at Ready): a combo that waited for them can give its box */
+  ItemsBought: 'items-bought',
 } as const;
 
 export const RegistryKeys = {
@@ -189,6 +195,8 @@ export const RegistryKeys = {
   Progress: 'progress',
   /** Last RatingResult, so Showcase and PhotoMode can recover it (ADR 0019). */
   LastRating: 'lastRating',
+  /** Id of the cat whose look was last read on arrival (F14.5): only a different cat reads the look it finds. */
+  ReadCat: 'readCat',
 } as const;
 
 /** Textures generated in code (particles). */

@@ -14,6 +14,13 @@ export const shopLines = {
   take: 'Llevar',
   notYet: 'Todavía no',
   tryFree:'Pruébatelo nomás, no cuesta nada',
+  /** The seller's till at Ready (F13.6). */
+  checkoutTitle: 'La caja',
+  takeAll: 'Llevar todo',
+  leaveOut: 'Sacarme lo que no tengo',
+  keepTrying: 'Seguir probando',
+  dyeRow: (name: string): string => `Tinte ${name}`,
+  total: (total: number): string => `Total · ${total} botones`,
 };
 
 /** The seller talks in first person; her name comes from brand.json. */
@@ -22,6 +29,8 @@ export function sellerLines(seller: CharacterDef) {
   return {
     greeting: (): string => fillTemplate('¡Pasa nomás! Soy {seller}, yo te ayudo', vars),
     checkout: (total: number): string => fillTemplate(`Son ${total} botones. Si te tinca, te lo llevas`, vars),
+    /** A combo that has a piece not paid yet: a hook to sell, never a scolding. */
+    comboHook: (): string => '¡Uy, eso parece un look especial! Si te lo llevas, hay regalito',
     thanks: (): string => fillTemplate('¡Gracias por pasar! Vuelve cuando quieras, dice {seller}', vars),
   };
 }

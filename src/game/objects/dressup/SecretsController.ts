@@ -1,21 +1,27 @@
 // The secrets of the fitting room (F8, moved from DressUp in F11.14): combo reactions, the gift box with its bow, the prize
 // that flies to its cell, the "¡Casi...!" hint, the counter and the golden twinkle on the secret garments that are worn.
 import Phaser from 'phaser';
-import { DressUpEvents, ObjectEvents, SfxKeys } from '../../constants';
+import { DressUpEvents, ObjectEvents, RegistryKeys, SfxKeys } from '../../constants';
+import { comboFate, combosDue } from '../../domain/checkout';
 import { almostCombos, almostHint, newlyCompleted } from '../../domain/combos';
+import { sellerLines } from '../../domain/copy';
 import { GiftReveal } from '../../domain/giftReveal';
 import { getLayers } from '../../domain/outfit';
-import type { ClothingDef, ComboDef, EconomyRules, Outfit, Point } from '../../domain/types';
+import type { BrandDef, ClothingDef, ComboDef, EconomyRules, Outfit, Point, Progress } from '../../domain/types';
 import { getAudio } from '../../plugins/AudioPlugin';
 import { getSave } from '../../plugins/SavePlugin';
 import { profileOf } from '../../systems/motion';
 import { opaqueBounds } from '../alphaMap';
+import { SpeechBubble } from '../kit/SpeechBubble';
 import { playComboReaction, playShortReaction, showBubble, type ComboFxContext } from '../comboFx';
 import { GiftBox } from '../GiftBox';
 import { SecretCounter } from '../SecretCounter';
 import { payDiscovery } from './awards';
 import type { DressUpContext, DressUpController, OutfitCause } from './DressUpController';
 import { GHOST_HOME_SIZE } from './layout';
+
+/** The seller's line about a gift that waits for payment stays long enough to read. */
+const HOOK_MS = 2400;
 
 export class SecretsController implements DressUpController {
   readonly key = 'secrets';
@@ -34,6 +40,8 @@ export class SecretsController implements DressUpController {
   private current: Outfit = {};
   private lookTimer?: Phaser.Time.TimerEvent;
   private twinkle?: Phaser.Time.TimerEvent;
+  private hook: SpeechBubble | null = null;
+  private hookTimer?: Phaser.Time.TimerEvent;
   private removeDecorator: (() => void) | null = null;
   /** Reactions played in this visit, newest last (for the e2e hook). */
   private reactionLog: string[] = [];
@@ -56,6 +64,7 @@ export class SecretsController implements DressUpController {
     scene.events.on(DressUpEvents.OutfitChanged, this.onOutfit, this);
     scene.events.on(DressUpEvents.ItemDropped, this.onDropped, this);
     scene.events.on(DressUpEvents.ItemRemoved, this.updateAlmost, this);
+    scene.events.on(DressUpEvents.ItemsBought, this.onBought, this);
   }
 
   destroy(): void {
@@ -63,6 +72,10 @@ export class SecretsController implements DressUpController {
     scene.events.off(DressUpEvents.OutfitChanged, this.onOutfit, this);
     scene.events.off(DressUpEvents.ItemDropped, this.onDropped, this);
     scene.events.off(DressUpEvents.ItemRemoved, this.updateAlmost, this);
+    scene.events.off(DressUpEvents.ItemsBought, this.onBought, this);
+    this.hookTimer?.remove();
+    this.hook?.destroy();
+    this.hook = null;
     this.removeDecorator?.();
     this.twinkle?.remove();
     this.lookTimer?.remove();
@@ -147,12 +160,19 @@ export class SecretsController implements DressUpController {
     }
   }
 
-  /** A combo was completed: its own reaction, and a gift if the prize is still locked. */
+  /** A combo was completed: its own reaction, and a gift if the prize is still locked and every piece is the player's. */
   private onCombo(combo: ComboDef): void {
     const { scene } = this.ctx;
     this.reactionLog.push(combo.reaction);
-    if (this.unlocked.includes(combo.id) || this.gifts.some((g) => g.id === combo.id) || this.gift?.comboId === combo.id) {
+    const fate = comboFate(combo, { won: this.isDone(combo.id), outfit: this.ctx.getOutfit(), owned: this.owned(), ctx: this.pieces() });
+    if (fate === 'repeat') {
       playShortReaction(this.fx(), combo);
+      return;
+    }
+    // A piece is for sale: the combo sounds, the seller sells the gift, and the box waits until every piece is the player's.
+    if (fate === 'hook') {
+      playShortReaction(this.fx(), combo);
+      this.sellerHook();
       return;
     }
     playComboReaction(this.fx(), combo);
@@ -162,6 +182,57 @@ export class SecretsController implements DressUpController {
       this.giftsComing--;
       this.nextGift();
     });
+  }
+
+  private isDone(comboId: string): boolean {
+    return this.unlocked.includes(comboId) || this.gifts.some((g) => g.id === comboId) || this.gift?.comboId === comboId;
+  }
+
+  private owned(): string[] {
+    return (this.ctx.scene.registry.get(RegistryKeys.Progress) as Progress | undefined)?.owned ?? [];
+  }
+
+  private pieces(): { catalog: ClothingDef[]; rules: EconomyRules } {
+    const { catalog } = this.ctx;
+    return { catalog: catalog.clothes, rules: (catalog as unknown as { economy: EconomyRules }).economy };
+  }
+
+  /** "Uy, eso parece un look especial...": the seller says it from the side of the cat, and the line fades by itself. */
+  private sellerHook(): void {
+    const { scene, cat, catalog } = this.ctx;
+    const seller = (catalog as unknown as { brand?: Pick<BrandDef, 'seller'> }).brand?.seller;
+    if (!seller) return;
+    const head = cat.getAnchorWorld('head');
+    this.hookTimer?.remove();
+    this.hook?.destroy();
+    const bubble = new SpeechBubble(scene, head.x + 200, head.y + 120, sellerLines(seller).comboHook(), { maxWidth: 360 }).setDepth(4100);
+    this.hook = bubble;
+    this.hookTimer = scene.time.delayedCall(HOOK_MS, () => {
+      scene.tweens.add({
+        targets: bubble, alpha: 0, duration: 250,
+        onComplete: () => {
+          bubble.destroy();
+          if (this.hook === bubble) this.hook = null;
+        },
+      });
+    });
+  }
+
+  /**
+   * Something was just paid (a purchase, or the till at Ready): a combo that waited for its piece can give its box now. At the
+   * till the player is already leaving, so the prize goes to the wardrobe quietly with the other gifts (the Showcase tells them).
+   */
+  private onBought(): void {
+    const { catalog } = this.ctx;
+    const doneIds = [...this.unlocked, ...this.gifts.map((g) => g.id), ...(this.gift ? [this.gift.comboId] : [])];
+    const due = combosDue(this.ctx.getOutfit(), catalog.combos, doneIds, this.owned(), this.pieces());
+    if (this.ctx.isLeaving()) {
+      if (due.length === 0) return;
+      this.gifts.push(...due);
+      this.beforeLeave();
+      return;
+    }
+    for (const combo of due) this.onCombo(combo);
   }
 
   /** Brings the next gift box, one at a time. */

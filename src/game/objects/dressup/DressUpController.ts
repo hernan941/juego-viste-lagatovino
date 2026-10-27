@@ -42,6 +42,8 @@ export interface DressUpContext {
   isLeaving(): boolean;
   /** Bounding box of the visible pixels of an item texture (cached), in texture px. */
   boundsOf(item: ClothingDef): Rect | null;
+  /** Takes a worn item off the cat as if the player had removed it (sound, reaction, layers panel, `item-removed`). Does nothing if it is not worn. */
+  removeItem(item: ClothingDef): void;
   /** Selects the tab of the category (silently) and fills the grid with its items. */
   showCategory(category: Category): void;
   /** Data that `beforeLeave` adds to what the scene sends to the next one (`go(scene, action, data)`). */

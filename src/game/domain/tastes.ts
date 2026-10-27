@@ -1,5 +1,7 @@
 // Pure TS, no Phaser (ADR 0010, 0017). The five hidden tastes of a cat and the reaction to a dropped item.
-import type { CatDef, ClothingDef, ComboDef, TasteKey } from './types';
+import { SLOT_ORDER } from './slots';
+import { staggerDelays } from './stagger';
+import type { CatDef, ClothingDef, ComboDef, ItemDye, Outfit, TasteKey } from './types';
 
 /** Tags that are plumbing, not style: they never match a taste (same as economy.json -> scoring.ignoredTags). */
 export const TECHNICAL_TAGS: readonly string[] = ['secreto', 'mece'];
@@ -82,4 +84,46 @@ export function discoverTaste(
   const known = found[catId] ?? [];
   if (known.includes(key)) return { found, isNew: false };
   return { found: { ...found, [catId]: [...known, key] }, isNew: true };
+}
+
+/** What a cat thinks of one worn item when it looks at the whole look (F14.5). */
+export interface OutfitRead {
+  item: ClothingDef;
+  reaction: TasteReaction;
+  /** When the reaction starts, in ms from the beginning of the chain (the same step as the pop of the layers). */
+  delay: number;
+}
+
+/**
+ * A cat that arrives with a look on reads it piece by piece: one reaction per worn item, in slot order, `stepMs` apart.
+ * Combos are not read here (they have their own reaction, and the box only comes with a drop).
+ */
+export function readOutfit(
+  outfit: Outfit,
+  itemDye: ItemDye,
+  cat: CatDef,
+  catalog: readonly ClothingDef[],
+  stepMs = 80,
+): OutfitRead[] {
+  const byId = new Map(catalog.map((c) => [c.id, c]));
+  const worn = SLOT_ORDER.flatMap((slot) => {
+    const item = byId.get(outfit[slot] ?? '');
+    return item ? [item] : [];
+  });
+  const delays = staggerDelays(worn.length, stepMs);
+  return worn.map((item, i) => ({ item, reaction: tasteReaction(item, itemDye[item.id], cat), delay: delays[i] }));
+}
+
+/**
+ * How the cat feels about the whole look once it has read it, for the face it ends with: the favorite wins; otherwise the side
+ * (love and color against dislike) with more reactions, a tie going to the happy one. Null when nothing moved it.
+ */
+export function readingFeel(reads: readonly Pick<OutfitRead['reaction'], 'kind'>[]): 'favorite' | 'love' | 'color' | 'dislike' | null {
+  const count = (kind: TasteKind) => reads.filter((r) => r.kind === kind).length;
+  if (count('favorite') > 0) return 'favorite';
+  const happy = count('love') + count('color');
+  const sad = count('dislike');
+  if (happy === 0 && sad === 0) return null;
+  if (sad > happy) return 'dislike';
+  return count('love') > 0 ? 'love' : 'color';
 }
