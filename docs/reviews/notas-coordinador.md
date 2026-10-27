@@ -62,3 +62,8 @@ Resultados del jugador modelo con el `economy.json` actual, con 5 semillas:
 - **Recomendación**: bajar `byStars` a algo como 1:3, 2:6, 3:10, 4:17, 5:24 (variante A) o 1:3, 2:5, 3:9, 4:14, 5:20 (variante B). Así el 100 % cae hacia las sesiones 7–10 y el 50 % sigue en rango, sin subir precios.
 - El objetivo del 90 % "por descubrir" puede leerse como el potencial único (2320 de 2350) o como el flujo real. Lo decide el GD.
 - Para evitar acumular sin gastar, una idea: cuando un gato ya tiene 5★ y todos sus gustos, sus looks nuevos pagan solo propina.
+
+## F21.1: balance aplicado (falta que lo confirme el GD)
+- `payout.byStars` pasa a {1:3, 2:5, 3:8, 4:10, 5:14}. Los números que propuso el GD ({3,6,10,14,20}) no cumplían en todas las semillas.
+- Resultado: 50 % en las sesiones 3–4, 100 % en las sesiones 10–11 y entre 70 y 73 % del flujo saliendo de descubrir (con poco margen en dos semillas).
+- **Riesgo de sensación**: que 5★ pague solo 14 botones puede sentirse mezquino al lado de los +15 de un gusto o los +40 de un combo. El GD debe confirmarlo en la revisión final, jugando.
