@@ -195,7 +195,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
     this.hud.hold();
     this.showHint();
     const ceremony = new Ceremony(this, plan, {
-      cat: this.cat, catName: this.look.catName, judge: this.catalog.brand.judge, comboName,
+      cat: this.cat, catName: this.look.catName, judge: this.catalog.brand.judge, comboName, tags: this.catalog.tags,
       layout: { ...LAYOUT, wallet: this.hud.getJarPoint() },
       onCredit: (credit) => this.hud.adjust(credit),
       onStep: (step: CeremonyStep) => {

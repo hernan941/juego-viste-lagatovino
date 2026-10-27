@@ -482,6 +482,7 @@ describe('validatePhoto (F11.10)', () => {
   });
 });
 
+const tag = () => ({ label: 'x', love: 'x', style: 'x' });
 const brand = (over: Record<string, unknown> = {}) => ({
   judge: { name: 'Gato supervisor', texture: 'char-judge' },
   seller: { name: 'La vendedora' },
@@ -515,13 +516,13 @@ describe('validateGameData (F11.10)', () => {
     cats: [tasteCat()], clothes: [cloth({ starter: true, tags: ['lana', 'tierno'] }), cloth({ id: 'face-gafas', slot: 'face', category: 'face', starter: true, tags: ['gala'] }), secret],
     combos: [combo({ requires: [{ itemId: 'sweater-rayas' }, { itemId: 'face-gafas' }] })],
     economy: economy(), dyes: [dye(), dye({ id: 'cielo', name: 'Cielo', hex: '#CFE0F3', starter: undefined })],
-    sets: [set()], photo: photo(), brand: brand(), textures: new Set(['char-judge']),
+    sets: [set()], photo: photo(), brand: brand(), tags: { lana: tag(), tierno: tag(), gala: tag() }, textures: new Set(['char-judge']),
   });
 
   it('accepts a coherent data set and returns every file', () => {
     const r = validateGameData(raw() as never);
     expect(r.ok ? [] : r.errors).toEqual([]);
-    if (r.ok) expect(Object.keys(r.value).sort()).toEqual(['brand', 'cats', 'clothes', 'combos', 'dyes', 'economy', 'photo', 'sets']);
+    if (r.ok) expect(Object.keys(r.value).sort()).toEqual(['brand', 'cats', 'clothes', 'combos', 'dyes', 'economy', 'photo', 'sets', 'tags']);
   });
 
   it('gathers the errors of every file', () => {
@@ -529,6 +530,10 @@ describe('validateGameData (F11.10)', () => {
     const r = validateGameData(bad as never);
     expect(errorsOf(r)).toContain('economy.startWallet');
     expect(errorsOf(r)).toContain('brand.signature');
+  });
+
+  it('fails when a tag in use has no readable name', () => {
+    expect(errorsOf(validateGameData({ ...raw(), tags: {} } as never))).toContain('tags.lana: falta el nombre');
   });
 
   it('assertGameData throws a CatalogError and returns the data otherwise', () => {

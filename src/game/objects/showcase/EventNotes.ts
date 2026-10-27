@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { Fonts, Ink, SfxKeys, TextureKeys } from '../../constants';
 import { eventNote } from '../../domain/copy';
 import type { CeremonyEvent } from '../../domain/ceremony';
+import type { TagNames } from '../../domain/types';
 import { stableTilt } from '../../domain/stableTilt';
 import { getAudio } from '../../plugins/AudioPlugin';
 import { profileOf } from '../../systems/motion';
@@ -14,6 +15,8 @@ export interface EventNotesOptions {
   gap?: number;
   /** Width the row may take. */
   maxWidth?: number;
+  /** The readable tags (tags.json). */
+  tags?: TagNames;
 }
 
 const NOTE_SCALE = 0.62;
@@ -29,11 +32,13 @@ export class EventNotes extends Phaser.GameObjects.Container {
   private readonly bag: TweenBag;
   private readonly noteCount: number;
   private readonly step: number;
+  private readonly tags?: TagNames;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, { count, gap = 150, maxWidth = 760 }: EventNotesOptions) {
+  constructor(scene: Phaser.Scene, x: number, y: number, { count, gap = 150, maxWidth = 760, tags }: EventNotesOptions) {
     super(scene, x, y);
     this.bag = new TweenBag(scene);
     this.noteCount = count;
+    this.tags = tags;
     this.step = count > 1 ? Math.min(gap, maxWidth / (count - 1)) : gap;
     scene.add.existing(this);
   }
@@ -46,7 +51,7 @@ export class EventNotes extends Phaser.GameObjects.Container {
   addNote(index: number, event: CeremonyEvent, ms: number): void {
     const scene = this.scene;
     const p = profileOf(scene);
-    const note = eventNote(event);
+    const note = eventNote(event, this.tags);
     const tilt = stableTilt(`note-${index}-${event.type}`);
     const holder = scene.add.container(this.slotX(index) - this.x, 0);
     const paper = scene.add.image(0, 0, TextureKeys.NotePolaroid).setScale(NOTE_SCALE);

@@ -3,10 +3,11 @@
 // player is leaving. It reads the progress as it is when it opens, so a discovery that just landed is already in it.
 import { ObjectEvents, RegistryKeys, SfxKeys } from '../../constants';
 import { catSheetEntries, catSheetHint, type NameLookup, type SheetEntry } from '../../domain/catSheet';
-import type { DyeDef, Point, Progress } from '../../domain/types';
+import type { Point, Progress } from '../../domain/types';
 import { getAudio } from '../../plugins/AudioPlugin';
 import { CatSheet } from '../CatSheet';
 import type { DressUpContext, DressUpController } from './DressUpController';
+import { nameLookup } from './nameLookup';
 
 export class CatSheetController implements DressUpController {
   readonly key = 'catsheet';
@@ -45,12 +46,7 @@ export class CatSheetController implements DressUpController {
   }
 
   private names(): NameLookup {
-    const { catalog } = this.ctx;
-    const dyes = (catalog as unknown as { dyes?: DyeDef[] }).dyes ?? [];
-    return {
-      item: (id) => catalog.clothes.find((c) => c.id === id)?.name ?? id,
-      dye: (id) => dyes.find((d) => d.id === id)?.name ?? id,
-    };
+    return nameLookup(this.ctx);
   }
 
   private open(): void {

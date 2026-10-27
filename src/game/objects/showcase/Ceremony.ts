@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { GAME_WIDTH, SfxKeys, TextureKeys } from '../../constants';
 import { SKIP_FACTOR, skip, type CeremonyPlan, type CeremonyStep } from '../../domain/ceremony';
 import { judgeLines } from '../../domain/copy';
-import type { CharacterDef, Point } from '../../domain/types';
+import type { CharacterDef, Point, TagNames } from '../../domain/types';
 import { getAudio } from '../../plugins/AudioPlugin';
 import { profileOf } from '../../systems/motion';
 import type { Cat } from '../Cat';
@@ -49,6 +49,8 @@ export interface CeremonyTargets {
   layout?: Partial<CeremonyLayout>;
   /** Turns a combo id into its name for the card. */
   comboName?: (id: string) => string;
+  /** The readable tags (tags.json) for the card and the notes. */
+  tags?: TagNames;
   /** A button landed: `credit` buttons to add to the counter, `total` landed so far. */
   onCredit?: (credit: number, total: number) => void;
   /** A step of the plan starts (the e2e hook reads it as `ceremonyStep`). */
@@ -125,7 +127,7 @@ export class Ceremony {
     const noteCount = this.plan.steps.filter((s) => s.kind === 'note').length;
     if (noteCount > 0) {
       const at = this.layout.notesAt;
-      this.notes = new EventNotes(scene, at.x, at.y, { count: noteCount, maxWidth: this.layout.notesWidth });
+      this.notes = new EventNotes(scene, at.x, at.y, { count: noteCount, maxWidth: this.layout.notesWidth, tags: this.targets.tags });
       this.notes.setDepth(this.depth + 3);
     }
     this.schedule(0);
@@ -205,7 +207,7 @@ export class Ceremony {
         judge.setDepth(this.depth + 2);
         this.judge = this.fast(judge);
         judge.enter(step.ms, step.slide, () => { if (!this.destroyed) judge.say(judgeLines(this.targets.judge).intro()); });
-        const card = new RatingCard(scene, L.cardAt.x, L.cardAt.y, { comboName: this.targets.comboName });
+        const card = new RatingCard(scene, L.cardAt.x, L.cardAt.y, { comboName: this.targets.comboName, tags: this.targets.tags });
         card.setDepth(this.depth);
         this.card = this.fast(card);
         const stamps = new StarStamps(scene, L.cardAt.x, L.cardAt.y + 138, { total: 5 });
@@ -254,7 +256,7 @@ export class Ceremony {
       this.judge?.hop();
     }
     if (reaction.expression === 'amor') cat.heartbeat();
-    this.judge?.say(reaction.comfort ? lines.comfort() : lines.verdict(catName, this.plan.stars));
+    this.judge?.say(reaction.comfort ? lines.comfort(catName) : lines.verdict(catName, this.plan.stars));
     if (reaction.confetti) this.confetti(p.count(36));
   }
 

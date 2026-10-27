@@ -9,11 +9,13 @@ import type { CatDef, ClothingDef, DyeDef } from '../../src/game/domain/types';
 const catDefs = cats as unknown as CatDef[];
 const names: NameLookup = {
   item: (id) => (clothes as unknown as ClothingDef[]).find((c) => c.id === id)?.name ?? id,
+  tag: (id) => ({ clasico: 'clásico' } as Record<string, string>)[id] ?? id,
   dye: (id) => (dyes as unknown as DyeDef[]).find((d) => d.id === id)?.name ?? id,
 };
 const cat = catDefs.find((c) => c.id === 'naranja')!;
 
 describe('tasteChip (F14.3)', () => {
+  it('shows the readable name of the tag, not its id', () => expect(tasteChip('love:clasico', names).label).toBe('clásico'));
   it('love: a heart and the tag', () => expect(tasteChip('love:estrellas', names)).toEqual({ kind: 'love', glyph: '♥', label: 'estrellas' }));
   it('dislike: a cross and the tag', () => expect(tasteChip('dislike:frutal', names)).toEqual({ kind: 'dislike', glyph: '✕', label: 'frutal' }));
   it('favorite: a star and the name of the item', () => {

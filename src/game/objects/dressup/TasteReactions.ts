@@ -18,6 +18,7 @@ import { SpeechBubble } from '../kit/SpeechBubble';
 import { TasteChip } from '../TasteChip';
 import type { DressUpContext, DressUpController } from './DressUpController';
 import { payDiscovery } from './awards';
+import { nameLookup } from './nameLookup';
 
 /** What the catalog of the registry carries besides the clothes (GameData, ADR 0017). */
 interface WithRules {
@@ -202,12 +203,7 @@ export class TasteReactions implements DressUpController {
   }
 
   private names(): NameLookup {
-    const { catalog } = this.ctx;
-    const dyes = (catalog as unknown as WithRules).dyes ?? [];
-    return {
-      item: (id) => catalog.clothes.find((c) => c.id === id)?.name ?? id,
-      dye: (id) => dyes.find((d) => d.id === id)?.name ?? id,
-    };
+    return nameLookup(this.ctx);
   }
 
   /** The first time (per cat) a taste shows: a chip comes out of the cat and flies to the name sign, where it pays. */

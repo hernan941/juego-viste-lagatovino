@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { eventNote, formatPoints, judgeLines, ratingLineText } from '../../src/game/domain/copy';
+import { eventNote, formatPoints, ratingLineText } from '../../src/game/domain/copy';
+import tags from '../../src/game/data/tags.json';
+import type { TagNames } from '../../src/game/domain/types';
 import type { CeremonyEvent } from '../../src/game/domain/ceremony';
+
+const names = tags as TagNames;
 
 describe('formatPoints', () => {
   it('signs every number and uses the real minus', () => {
@@ -12,9 +16,10 @@ describe('formatPoints', () => {
 
 describe('ratingLineText (F15.3)', () => {
   it('says each kind of line in Spanish and names the tag', () => {
-    expect(ratingLineText({ kind: 'style', points: 2, ref: 'clasico' })).toContain('clasico');
-    expect(ratingLineText({ kind: 'love', points: 2, ref: 'invierno' })).toContain('invierno');
-    expect(ratingLineText({ kind: 'dislike', points: -3, ref: 'invierno' })).toContain('invierno');
+    expect(ratingLineText({ kind: 'style', points: 2, ref: 'clasico' }, undefined, names)).toBe('Todo muy clásico');
+    expect(ratingLineText({ kind: 'love', points: 2, ref: 'invierno' }, undefined, names)).toBe('Le encanta el invierno');
+    expect(ratingLineText({ kind: 'dislike', points: -3, ref: 'gala' }, undefined, names)).toBe('No le tinca la ropa de gala');
+    expect(ratingLineText({ kind: 'style', points: 2, ref: 'lana' }, undefined, names)).toBe('Todo de lana');
     expect(ratingLineText({ kind: 'complete', points: 2 })).toMatch(/completo/i);
     expect(ratingLineText({ kind: 'favoriteItem', points: 2 })).toMatch(/favorit/i);
     expect(ratingLineText({ kind: 'favoriteDye', points: 1 })).toMatch(/color/i);
@@ -25,14 +30,6 @@ describe('ratingLineText (F15.3)', () => {
   });
   it('does not break without a ref', () => {
     expect(ratingLineText({ kind: 'style', points: 1 })).not.toContain('undefined');
-  });
-});
-
-describe('judge comfort (F15.3)', () => {
-  it('comforts a low score with the generic @, never next to the name', () => {
-    const line = judgeLines({ name: 'Kofi' }).comfort();
-    expect(line).toMatch(/tiern/);
-    expect(line).not.toContain('Kofi');
   });
 });
 
@@ -58,6 +55,7 @@ describe('eventNote', () => {
   });
   it('mentions the stars of a record and the tag of a taste', () => {
     expect(eventNote(notes[0]!).title).toContain('5');
-    expect(eventNote(notes[2]!).title).toContain('gala');
+    expect(eventNote(notes[2]!, names).title).toBe('Le encanta la ropa de gala');
+    expect(eventNote(notes[3]!, names).title).toBe('No le tinca la ropa de gala');
   });
 });

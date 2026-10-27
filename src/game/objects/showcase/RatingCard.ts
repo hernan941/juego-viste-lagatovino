@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { Fonts, Ink, SfxKeys, TextureKeys } from '../../constants';
 import { formatPoints, ratingLineText } from '../../domain/copy';
-import type { BreakdownLine } from '../../domain/types';
+import type { BreakdownLine, TagNames } from '../../domain/types';
 import { getAudio } from '../../plugins/AudioPlugin';
 import { profileOf } from '../../systems/motion';
 import { TweenBag } from './TweenBag';
@@ -9,6 +9,8 @@ import { TweenBag } from './TweenBag';
 export interface RatingCardOptions {
   /** Turns a combo id into its name for the line "Combo ...". */
   comboName?: (id: string) => string;
+  /** The readable tags (tags.json). */
+  tags?: TagNames;
   /** Pops in when created (default). */
   animate?: boolean;
 }
@@ -28,11 +30,13 @@ const TIC_RATE_STEP = 0.07;
 export class RatingCard extends Phaser.GameObjects.Container {
   private readonly bag: TweenBag;
   private readonly comboName?: (id: string) => string;
+  private readonly tags?: TagNames;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, { comboName, animate = true }: RatingCardOptions = {}) {
+  constructor(scene: Phaser.Scene, x: number, y: number, { comboName, tags, animate = true }: RatingCardOptions = {}) {
     super(scene, x, y);
     this.bag = new TweenBag(scene);
     this.comboName = comboName;
+    this.tags = tags;
     this.add(scene.add.image(0, 0, TextureKeys.PaperCard));
     this.setSize(420, 392);
     this.setAngle(1.5);
@@ -57,7 +61,7 @@ export class RatingCard extends Phaser.GameObjects.Container {
     const color = negative ? Ink.mutedTexto : Ink.tinta;
     const row = scene.add.container(0, CARD_ROWS_TOP + index * CARD_ROW_GAP);
     const spark = scene.add.text(-182, 0, '✦', { fontFamily: Fonts.Title, fontSize: '26px', color: negative ? Ink.mutedTexto : Ink.sol }).setOrigin(0.5);
-    const label = scene.add.text(LABEL_X, 0, ratingLineText(line, this.comboName), { fontFamily: Fonts.Voice, fontSize: '26px', color }).setOrigin(0, 0.5);
+    const label = scene.add.text(LABEL_X, 0, ratingLineText(line, this.comboName, this.tags), { fontFamily: Fonts.Voice, fontSize: '26px', color }).setOrigin(0, 0.5);
     const points = scene.add.text(POINTS_X, 0, formatPoints(line.points), { fontFamily: Fonts.Title, fontSize: '34px', color }).setOrigin(1, 0.5);
     row.add([spark, label]);
     if (negative) {

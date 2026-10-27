@@ -6,6 +6,7 @@ import catsJson from '../data/cats.json';
 import clothesJson from '../data/clothes.json';
 import combosJson from '../data/combos.json';
 import brandJson from '../data/brand.json';
+import tagsJson from '../data/tags.json';
 import dyesJson from '../data/dyes.json';
 import economyJson from '../data/economy.json';
 import photoJson from '../data/photo.json';
@@ -121,7 +122,7 @@ export class Preloader extends Scene {
 
   preload() {
     // Fail early on bad data (ADR 0010), then load exactly what the catalog lists.
-    const raw = { cats: catsJson, clothes: clothesJson, combos: combosJson, economy: economyJson, dyes: dyesJson, sets: setsJson, photo: photoJson, brand: brandJson };
+    const raw = { cats: catsJson, clothes: clothesJson, combos: combosJson, economy: economyJson, dyes: dyesJson, sets: setsJson, photo: photoJson, brand: brandJson, tags: tagsJson };
     const catalog = assertGameData(raw);
     // The manifest is derived from the same JSON; the characters of brand.json must be in it.
     const manifest = buildManifest(catalog.cats, catalog.clothes, catalog);

@@ -140,6 +140,14 @@ export interface CharacterDef {
   texture?: string;
 }
 
+/** The readable forms of a tag (tags.json): the chip, "Le encanta ..." and the "Todo ..." line of the judge's card. */
+export interface TagName {
+  label: string;
+  love: string;
+  style: string;
+}
+export type TagNames = Record<string, TagName>;
+
 export interface BrandDef {
   judge: CharacterDef;
   seller: CharacterDef;

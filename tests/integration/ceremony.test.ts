@@ -97,7 +97,7 @@ describe('Ceremony', () => {
     scene.advance(plan.totalMs);
     expect(cat.hold).toHaveBeenCalledWith('parpadeo');
     expect(cat.hop).not.toHaveBeenCalled();
-    expect(scene.made.texts.some((t) => String(t.text).includes('tiern'))).toBe(true);
+    expect(scene.made.texts.some((t) => String(t.text).includes('adorable'))).toBe(true);
   });
 
   it('a tap skips x3 and every button still counts', async () => {

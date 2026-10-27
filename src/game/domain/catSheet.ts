@@ -14,6 +14,8 @@ export interface ChipText {
 
 /** Names of the things a taste points to, from the catalog (the domain does not know the JSON). */
 export interface NameLookup {
+  /** The readable name of a tag (tags.json `label`). */
+  tag(id: string): string;
   item(id: string): string;
   dye(id: string): string;
 }
@@ -31,7 +33,7 @@ export function tasteChip(key: TasteKey, names: NameLookup, cat?: CatDef): ChipT
   if (kind === 'favorite') return { kind, glyph: GLYPHS.favorite, label: names.item(cat?.prefs?.favoriteItem ?? '') };
   if (kind === 'color') return { kind, glyph: GLYPHS.color, label: names.dye(cat?.prefs?.favoriteDye ?? '') };
   const k: ChipKind = kind === 'dislike' ? 'dislike' : 'love';
-  return { kind: k, glyph: GLYPHS[k], label: tag };
+  return { kind: k, glyph: GLYPHS[k], label: names.tag(tag) };
 }
 
 /** The five tastes of a cat in sheet order (loves, dislike, favorite, color), each marked found or not. */

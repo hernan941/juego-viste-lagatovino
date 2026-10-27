@@ -34,6 +34,7 @@ import dyes from '../../src/game/data/dyes.json';
 import sets from '../../src/game/data/sets.json';
 import photo from '../../src/game/data/photo.json';
 import brand from '../../src/game/data/brand.json';
+import tags from '../../src/game/data/tags.json';
 import { albumArgs } from '../../src/game/domain/flow';
 import { gotEntries } from '../../src/game/domain/album';
 import { emptyProgress } from '../../src/game/domain/progress';
@@ -41,7 +42,7 @@ import { AlbumButtonController, ALBUM_BUTTON_AT } from '../../src/game/objects/d
 import { controllerFactories } from '../../src/game/objects/dressup/controllers';
 import type { DressUpContext } from '../../src/game/objects/dressup/DressUpController';
 
-const catalog = assertGameData({ cats, clothes, combos, economy, dyes, sets, photo, brand });
+const catalog = assertGameData({ cats, clothes, combos, economy, dyes, sets, photo, brand, tags });
 
 function setup(progress = emptyProgress(0), over: { dragging?: boolean; leaving?: boolean } = {}) {
   const scene = { registry: new Map<string, unknown>(), key: SceneKeys.DressUp } as unknown as DressUpContext['scene'] & { registry: Map<string, unknown> };
