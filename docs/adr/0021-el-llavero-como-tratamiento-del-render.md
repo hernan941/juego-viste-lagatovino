@@ -13,7 +13,7 @@ El remate de la segunda etapa (S8) es que, al guardar en el modo foto, el gato v
 No se dibujan gatos llavero. Se parte del **render del look** que ya produce la foto (el gato congelado con `Cat.freezeForPhoto(pose)` capturado en un `RenderTexture`, con las prendas y sus tintes, ADR 0018) y se le aplica, en este orden:
 1. **Borde de porcelana**: se precalcula **una silueta** del render en un `DynamicTexture` (Phaser 4 no tiene `setTintFill`: se usa `setTint(color).setTintMode(Phaser.TintModes.FILL)`) y se estampa N veces con `stamp()`, desplazada en círculo (`borderOffsets(count, radius)`, radio de `photo.json → keychain`). Son **dos anillos**: abajo uno en `tinta`, un poco más ancho, para la línea exterior, y encima uno en `crema`. **Sin anillo interior**. Copias por anillo: **12 a 512 px y 8 en las miniaturas de 256 px**. El borde es ~2/3 del costo del armado, así que es lo primero que se recorta si hace falta.
 2. **"Pintado a mano"**: un filtro ColorMatrix de Phaser 4 (`filters.internal.addColorMatrix()`) con **−15 a −20 % de saturación** (−10 % casi no se nota) y un poco más cálido. El valor exacto vive en `photo.json → keychain`.
-3. **Barniz** por el método **ERASE** (no con el filtro Mask): `inv` = un `DynamicTexture` lleno de blanco al que se le borra el look (`fill(blanco)` + `erase(look)`); se dibuja la textura de brillo (SVG de `art/ui/keychain/`) en una copia y se le borra `inv` (`varnishCopy.erase(inv)`), así queda recortada a la silueta. Se descarta `filters.internal.addMask` porque **no recorta con `render.maxTextures: 1`** (el modo de test con SwiftShader); ERASE recorta igual en los dos modos y cuesta lo mismo, así el e2e ve lo mismo que producción.
+3. **Barniz** por el método **ERASE** (no con el filtro Mask): `inv` = un `DynamicTexture` lleno de blanco al que se le borra el look (`fill(blanco)` + `erase(look)`); se dibuja la textura de brillo (SVG de `art/ui/keychain/`) en una copia y se le borra `inv` (`varnishCopy.erase(inv)`), así queda recortada a la silueta. Se descarta `filters.internal.addMask` porque **no recorta con `render.maxTextures: 1`** (el modo de test con SwiftShader; ver ADR 0022); ERASE recorta igual en los dos modos y cuesta lo mismo, así el e2e ve lo mismo que producción.
 4. **Herrajes**: armellita, argolla (plata o dorada) y dije ✦, como imágenes SVG de `art/ui/keychain/` puestas sobre el ancla `head` del render.
 
 Al terminar, el resultado se **aplana** en una sola textura (`keychain~<catId>~<hash de la receta>`) y se descartan las copias, la silueta e `inv`. Los filtros funcionan al dibujar dentro de un `DynamicTexture`, así que todo se hornea en esa textura. **Aplanar es obligatorio**: la versión viva (unos 30 hijos con filtros) balanceándose corre a 4–5 fps, y la aplanada no cuesta nada sobre la línea base al balancearse. Animar un llavero es mover una sola imagen.
@@ -87,3 +87,32 @@ El espigón F12.9 (`scenes/dev/PorcelainLab.ts`, solo en desarrollo) confirmó e
 - El `Keychain` depende de la API de `Cat` para vestir al instante (F11.15).
 - Memoria de GPU acotada: ~1,4 MB del grande más ~3,6 MB de las 12 miniaturas mientras Album está abierta.
 - Riesgos: el rendimiento en un celular real de gama baja sigue sin medir (seguimiento en F21); el tope de 24 texturas teñidas puede quedarse corto si los 12 llaveros usan tintes distintos (las texturas usadas solo para aplanar se liberan después del aplanado, así que no cuentan como "en uso"); el PNG del empaque es más grande que la foto de F7 y en el celular pasa por el menú de compartir (F10).
+
+## Enmienda (2026-10-26): notas de la implementación (F19)
+No cambia la decisión. Registra dónde la implementación se apartó del texto y qué queda por resolver en F19.3.
+
+### Desaturación: el valor canónico va en `photo.json`
+- §1.2 pide que el ColorMatrix tome sus valores de `photo.json → keychain`. Hoy son constantes en `domain/keychain.ts`:
+  - `PORCELAIN_SATURATION = 0.82` (−18 %, dentro del rango de −15 a −20 %);
+  - `PORCELAIN_WARMTH = 0.03`.
+  
+  `objects/keychain/porcelain.ts` las usa con `porcelainMatrix(saturation, warmth)`, que es pura y tiene test.
+- **El valor canónico es el de `photo.json → keychain`**, validado por `schema.ts`, como dice §1.2. Las constantes son provisorias. Al moverlas (previsto en F19.3), `porcelainMatrix` no cambia: solo recibe los valores desde el catálogo. Hasta entonces, cualquier ajuste se hace en `domain/keychain.ts`, y al migrar se copia el valor tal cual.
+
+### Posición de la armellita (lógica nueva)
+- §1.4 decía "sobre el ancla `head` del render". La implementación **mide** la parte alta de la cabeza con lo que se lleva puesto, para que un gorro alto suba la armellita:
+  - `objects/keychain/lookTop.ts → headTop(scene, cat, items)` toma el píxel visible más alto del gato y de cada prenda **en la banda central** del lienzo (columnas del 44 al 56 %, para que no cuenten las orejas pero sí un pompón fino). Usa el mapa de alfa de las texturas (`alphaMapOf` y `topOfColumns` de `domain/imageBounds.ts`). Si no puede medir nada, usa `y = 70` en el lienzo de 512;
+  - el punto se transforma con la pose de la foto con `poseTransform(pose, point)` (`domain/keychain.ts`, pura) y la pose de `catPose(id)` (`domain/catPose.ts`);
+  - los herrajes se ubican con `HARDWARE_ART` y el layout de `domain/keychain.ts`.
+- La lectura del alfa es de render. La banda, la transformación y el layout son puros (ADR 0012).
+- Riesgo: si una prenda deja la banda central vacía (por ejemplo, algo con un hueco en el medio), la armellita baja a la cabeza del gato, lo cual es aceptable. Si queda alguna pose con mucha rotación, el punto transformado puede salirse un poco del contorno. Se revisa con las capturas de F19.
+
+### Franja del barniz: pendiente para F19.3
+- §1 pedía que la franja que cruza la pieza fuera una textura pre-horneada movida con un tween. **No se puede así**: el recorte a la silueta (ERASE) se hornea en una textura, así que la franja ya recortada no puede desplazarse dentro de la silueta. Si se mueve la imagen, se mueve también el recorte.
+- Hoy el barniz es solo de brillos fijos recortados (`clipToSilhouette`, en `objects/keychain/porcelain.ts`) y no hay franja animada.
+- La solución se decide en F19.3, sin filtros vivos por frame (§3: cero tratamientos vivos fuera del armado). Hay tres opciones:
+  - hornear unos pocos fotogramas de la franja, cada uno recortado, y alternarlos durante la animación;
+  - mover una franja sin recortar con una máscara de geometría simple que se parezca a la silueta;
+  - dejar el barniz fijo con un destello breve, como en movimiento reducido.
+  
+  Sea cual sea, la decisión se agrega a este ADR como enmienda.

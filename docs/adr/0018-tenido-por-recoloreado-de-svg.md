@@ -41,3 +41,22 @@ Los tintes (S4, ADR 0015) cambian el color de una prenda puesta arrastrando un f
 - Los sweaters actuales hay que retocarlos una vez: marcas `data-dye` y la sombra al 15 % de negro (S7b).
 - El render de la foto y del llavero (ADR 0021) usa la misma textura teñida, sin código aparte.
 - Riesgos: un SVG con un gradiente o un `<use>` que herede el color no se recolorea bien (regla de arte: rellenos planos y explícitos en lo teñible); el primer teñido en un celular lento puede tardar algunos frames (se mide en el espigón de S4; si pasa de ~100 ms, plan B); las texturas teñidas viven en la GPU, de ahí el tope de 24.
+
+## Enmienda (2026-10-26): lo que fijó la implementación de la pestaña Tintes
+Esta sección no cambia la decisión. Documenta el contrato que implementó `objects/dressup/DyeTabController.ts` (un controlador del ADR 0019).
+
+**Evento de escena**: `DressUpEvents.ItemDyed` (`'item-dyed'`, en `constants.ts`), con los argumentos `(item: ClothingDef, dyeId: string)`. Se emite cuando la textura teñida ya está lista y el color quedó guardado en `RegistryKeys.ItemDye`, después del splash. Lo escucha `TasteReactions` (gustos de color). Se suma a la tabla de eventos de la enmienda del ADR 0019.
+
+**API nueva de `Cat`** (`objects/Cat.ts`):
+- `itemAt(point: Point): ClothingDef | null`: devuelve la prenda puesta cuyos píxeles visibles están bajo un punto en coordenadas de juego. Si varias se superponen, gana la de delante (por `zIndex` del slot). Lee el mapa de alfa de la textura que se muestra, así que también encuentra la copia teñida. Si no hay ninguna, devuelve `null`.
+- `highlightItem(itemId: string | null): void`: enciende el halo suave de la prenda que el frasco tiene debajo (el mismo halo que el hover) y apaga el de la anterior. Con `null`, lo apaga. Es necesario porque en el celular el dedo tapa la prenda.
+- Las dos son de render. La regla de qué pasa al soltar (teñir, agua o rebote) está en el helper puro `resolveDyeDrop` (`domain/dyeDrop.ts`), no en el controlador (ADR 0012).
+
+**Medición y mitigación**:
+- El primer teñido medido en headless con SwiftShader y `render.maxTextures: 1` (el peor caso, ADR 0022) tardó **entre 420 y 560 ms**, contra el umbral de unos 100 ms de las Consecuencias.
+- Para que no se note, el teñido **se pide al tomar el frasco**, sin esperar a soltarlo:
+  - al levantarlo se precalientan (`DyePlugin.ensure`) todas las prendas teñibles puestas con ese color;
+  - al pasar sobre una prenda, se pide la de esa prenda.
+  
+  Al soltar, la textura casi siempre está lista. Un fallo en el precalentado se ignora; solo se informa al soltar (el frasco vuelve a su celda).
+- **Pendiente para F21**: medir el primer teñido con una GPU real, en PC y en un celular de gama baja. Si con el precalentado se sigue notando la espera o pasa de unos 100 ms, se activa el **plan B** (pregenerar las variantes en el build con la misma clave `texture~dye`). El seguimiento está en `docs/tests-pendientes.md`.

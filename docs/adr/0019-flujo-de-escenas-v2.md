@@ -120,3 +120,21 @@ Lo que un controlador puede usar. Los objetos son los de la escena: un controlad
 ### Riesgos
 - `leaveData` es un objeto de la instancia de la escena y **no se reinicia en `init()`**. Hoy no hay fuga porque `SecretsController` escribe `gifted` en cada salida, pero un controlador que escriba una clave solo a veces la arrastraría a la visita siguiente. Mientras no se reinicie en `init()`, todo controlador que use `leaveData` debe escribir siempre sus claves.
 - El orden de `controllers.ts` importa (attach, `beforeLeave` y destroy). Es un archivo caliente cuando varias features se integran en paralelo; el orden entre features lo fija `docs/roadmap.md`.
+
+## Enmienda (2026-10-26): vuelta al Showcase y composición del modo foto
+No cambia lo anterior. Concreta dos puntos que fijó la implementación.
+
+### `Showcase` con `{ replay: false }`
+- `backStep` (`domain/flow.ts`) agrega `replay: false` a `fromData` solo cuando `from` es `Showcase`.
+- `Showcase.init(data)` lee `replay`. Solo un `false` explícito lo apaga; sin el dato, la escena califica como siempre.
+- Con `replay: false`, la escena **no vuelve a calificar ni a pagar**: no llama a `rateLook`, no escribe `RegistryKeys.Progress` ni `RegistryKeys.LastRating` y no corre la ceremonia. Muestra el mismo gato con la calificación de `RegistryKeys.LastRating` y abre las salidas directo. El monedero muestra el saldo actual.
+- Motivo: el progreso se aplica al abrir la pasarela (ADR 0017). Si se recalificara al volver del álbum, el mismo look pagaría dos veces.
+- Tests:
+  - unit en `tests/unit/flow.test.ts`: `backStep` agrega `replay: false` al volver al Showcase;
+  - integración en `tests/integration/showcaseScene.test.ts`: con `replay: false` no califica, no paga y no repite la ceremonia.
+  
+  El estado de test del Showcase expone `replay`.
+
+### `PhotoMode.getComposition()`
+- `PhotoMode` expone `getComposition(): PhotoComposition`, que devuelve lo que está "sobre la mesa": fondo, marco y stickers con su posición y ángulo. El tipo y el saneo (`composition(state)`) están en `domain/photoComposition.ts` (TS puro).
+- Es la única fuente para la foto guardada, para la receta del llavero (`KeychainRecipe.photo`, ADR 0021) y para el estado de test. Ni el llavero ni el hook leen los objetos de la escena.
