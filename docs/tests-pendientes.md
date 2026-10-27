@@ -382,3 +382,18 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
 - `motion.spec`: con movimiento reducido el vuelo es un fundido y el balanceo es de ±3°.
 - `@mobile`: tocar un llavero del colgador, y [Colgarlo] con el dedo.
 - **Ojo**: `AlbumTabs.getTabPositions()` devuelve el mismo punto (640, 52,6) para las cinco pestañas. Para cambiar de pestaña en un e2e, usar `buttons.next` o las coordenadas reales de la imagen (la pestaña Colgador está en x ≈ 1008, y ≈ 55) hasta que se corrija.
+
+## Ajustes del Hito B: tintes, sets y Title
+### E2E pendientes
+- El estante de Tintes no se solapa, a 1280 y en el celular horizontal (en el celular todavía no se verificó).
+- En Tintes:
+  - el consejo único cambia al abrir y al cerrar la pestaña;
+  - tocar un frasco ya comprado lo hace pulsar;
+  - después de teñir, el frasco vuelve a su celda.
+- `price-tags`: regenerar las capturas con el hilo nuevo de la etiqueta.
+- `album.spec`:
+  - la hoja 2 de Looks muestra 7 sets (4 + 3), con "n de m" y el premio;
+  - tocar un set abre su ficha;
+  - un set completo muestra el sello;
+  - las fichas de prenda y frasco dicen "Del set…".
+- Title con progreso: "Iniciar" y "Mi álbum" no se solapan y los dos siguen clicables.
