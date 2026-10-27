@@ -15,6 +15,8 @@ import clothes from '../../src/game/data/clothes.json';
 import combos from '../../src/game/data/combos.json';
 import dyes from '../../src/game/data/dyes.json';
 import economy from '../../src/game/data/economy.json';
+import photoJson from '../../src/game/data/photo.json';
+import setsJson from '../../src/game/data/sets.json';
 import { Ink, colorToNumber } from '../../src/game/constants';
 import type { GameData } from '../../src/game/data/schema';
 import { completion } from '../../src/game/domain/album';
@@ -250,5 +252,78 @@ describe('CombosPage', () => {
     const { page } = make('looks');
     tap(page.cellOf('navidad')!);
     expect(page.info().card).toBe('navidad');
+  });
+});
+
+describe('CombosPage: the sheet of sets (L1)', () => {
+  const withSets = { ...catalog, sets: setsJson, photo: photoJson } as unknown as GameData;
+  const makeSets = (progress: Progress = fresh(), scene: FakeScene = makeFakeScene(), tab: 'looks' | 'prendas' | 'tintes' = 'looks') => {
+    const ctx: AlbumPageContext = { catalog: withSets, progress, completion: completion(progress, withSets) };
+    return { scene, page: createPage(scene as never, tab, ctx) as unknown as Page };
+  };
+  const abrigo = { requires: { items: setsJson.find((x) => x.id === 'abriguito')!.requires.items as string[] } };
+
+  it('has a second sheet with a pager, and the first is still the looks', () => {
+    const { page } = makeSets();
+    expect(page.info()).toMatchObject({ page: 0, pages: 2 });
+    expect(page.info().shown).toHaveLength(6);
+  });
+
+  it('the second sheet shows the 7 sets, four on the left and three on the right', () => {
+    const { page } = makeSets();
+    page.pager!.nextPage();
+    expect(page.info()).toMatchObject({ page: 1, pages: 2 });
+    expect(page.info().shown.map((x) => x.id)).toEqual(setsJson.map((x) => `set:${x.id}`));
+    expect(onHalf(page, 'left')).toBe(4);
+    expect(onHalf(page, 'right')).toBe(3);
+    page.pager!.nextPage();
+    expect(page.info().page).toBe(1);
+  });
+
+  it('says how many pieces are yours and what the prize is', () => {
+    const { page, scene } = makeSets({ ...fresh(), owned: abrigo.requires.items.slice(0, 3) });
+    page.pager!.nextPage();
+    const texts = scene.made.texts.map((t) => t.text);
+    expect(texts).toContain('3 de 5');
+    expect(texts).toContain('→ fondo Vichy celeste');
+    expect(page.info().shown.find((x) => x.id === 'set:abriguito')!.state).toBe('missing');
+  });
+
+  it('draws the pieces that are yours in color and the ones that are not in pencil', () => {
+    const owned = abrigo.requires.items[0]!;
+    const scene = makeFakeScene();
+    const { page } = makeSets({ ...fresh(), owned: [owned] }, scene);
+    page.pager!.nextPage();
+    const icon = (id: string) => (clothes as ClothingDef[]).find((c) => c.id === id)!.icon;
+    expect(imageCalls(scene, icon(owned))).not.toContain('setTint');
+    expect(imageCalls(scene, icon(abrigo.requires.items[4]!))).toContain('setTint');
+  });
+
+  it('a complete set carries the seal', () => {
+    const { page, scene } = makeSets({ ...fresh(), owned: abrigo.requires.items });
+    page.pager!.nextPage();
+    expect(page.info().shown.find((x) => x.id === 'set:abriguito')!.state).toBe('done');
+    expect(scene.made.texts.some((t) => t.text === '★')).toBe(true);
+  });
+
+  it('opens the card of a set on tap, and it names what is missing', () => {
+    const { page, scene } = makeSets();
+    page.pager!.nextPage();
+    tap(page.cellOf('set:abriguito')!);
+    expect(page.info().card).toBe('set:abriguito');
+    expect(scene.made.texts.some((t) => String(t.text).startsWith('Te faltan: '))).toBe(true);
+  });
+
+  it('the card of a garment says which set it belongs to', () => {
+    const { page, scene } = makeSets({ ...fresh(), owned: [abrigo.requires.items[0]!] }, makeFakeScene(), 'prendas');
+    if (!page.cellOf(abrigo.requires.items[0]!)) page.pager!.nextPage();
+    tap(page.cellOf(abrigo.requires.items[0]!)!);
+    expect(scene.made.texts.some((t) => String(t.text).startsWith('Del set Abriguito · ') && String(t.text).endsWith(' de 5'))).toBe(true);
+  });
+
+  it('the card of a bottle says which set it belongs to', () => {
+    const { page, scene } = makeSets(fresh(), makeFakeScene(), 'tintes');
+    tap(page.cellOf('cielo')!);
+    expect(scene.made.texts.some((t) => String(t.text).startsWith('Del set La paleta · '))).toBe(true);
   });
 });

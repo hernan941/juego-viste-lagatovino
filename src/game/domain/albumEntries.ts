@@ -1,10 +1,10 @@
 // Pure TS, no Phaser (ADR 0010, 0019). What each page of the album shows: the state of every entry, derived from the progress,
 // and the numbers of the layout (two halves of the open sheet with the spine free in the middle).
-import { gotEntries, tasteKeys, type AlbumCatalogs } from './album';
+import { completedSets, gotEntries, seenIdOf, tasteKeys, type AlbumCatalogs } from './album';
 import { WATER_DYE } from './dye';
 import { dyePrice, priceOf } from './economy';
 import { albumLines } from './copy/album';
-import type { CatDef, ClothingDef, EconomyRules, KeychainRecipe, Progress, Stars } from './types';
+import type { CatDef, ClothingDef, EconomyRules, KeychainRecipe, Progress, SetDef, Stars } from './types';
 
 /** The notebook is open: each page lives in one half of the sheet, and the rings of the spine run down the middle (x = 0). */
 export const HALF = {
@@ -252,4 +252,94 @@ export function hangerHooks(count: number): HangerHook[] {
     const side = col < columns / 2 ? 'left' : 'right';
     return { index, x, y, side, localX: x - HALF[side].center };
   });
+}
+
+export interface SetPiece {
+  /** Item id, dye id or combo id. */
+  id: string;
+  label: string;
+  /** Icon texture of an item (or of the prize of a combo); none for a dye. */
+  icon: string | null;
+  /** Color of a dye; none for the rest. */
+  hex: string | null;
+  got: boolean;
+}
+
+export interface SetReward {
+  id: string;
+  name: string;
+  /** Texture of the prize in photo.json (a background, a frame or a sticker). */
+  texture: string;
+  kind: 'background' | 'frame' | 'sticker';
+}
+
+export interface SetEntry {
+  id: string;
+  name: string;
+  pieces: SetPiece[];
+  gotCount: number;
+  /** Pieces asked; for the keychains it is the count asked and `pieces` stays empty. */
+  total: number;
+  rewards: SetReward[];
+  done: boolean;
+  isNew: boolean;
+}
+
+/** The pieces a set asks for: its items, then its dyes, then its combos (the keychains are only a count). */
+function setPieces(set: SetDef, ctx: EntryContext, got: ReadonlySet<string>): SetPiece[] {
+  const { clothes, dyes, combos } = ctx.catalog;
+  const { items = [], dyes: dyeIds = [], combos: comboIds = [] } = set.requires;
+  return [
+    ...items.map((id): SetPiece => {
+      const item = clothes.find((c) => c.id === id);
+      return { id, label: item?.name ?? id, icon: item?.icon ?? null, hex: null, got: got.has(`item:${id}`) };
+    }),
+    ...dyeIds.map((id): SetPiece => {
+      const dye = dyes.find((d) => d.id === id);
+      return { id, label: dye?.name ?? id, icon: null, hex: dye?.hex ?? null, got: got.has(`dye:${id}`) };
+    }),
+    ...comboIds.map((id): SetPiece => {
+      const combo = combos.find((c) => c.id === id);
+      return { id, label: combo?.name ?? id, icon: clothes.find((c) => c.id === combo?.rewardItemId)?.icon ?? null, hex: null, got: got.has(`combo:${id}`) };
+    }),
+  ];
+}
+
+function setRewards(set: SetDef, ctx: EntryContext): SetReward[] {
+  const { backgrounds, frames, stickers } = ctx.catalog.photo;
+  const kinds = [['background', backgrounds], ['frame', frames], ['sticker', stickers]] as const;
+  return set.reward.flatMap((id) => {
+    for (const [kind, list] of kinds) {
+      const piece = list.find((p) => p.id === id);
+      if (piece) return [{ id, name: piece.name, texture: piece.texture, kind }];
+    }
+    return [];
+  });
+}
+
+/** The sets of sets.json: the pieces (yours in color, the rest in pencil), how many are there and the prize of the photo mode. */
+export function setEntries(ctx: EntryContext): SetEntry[] {
+  const { got, seen } = sets(ctx);
+  const done = new Set(completedSets(ctx.progress, ctx.catalog));
+  return ctx.catalog.sets.map((set) => {
+    const pieces = setPieces(set, ctx, got);
+    const keychains = set.requires.keychains;
+    const keys = keychains ? Object.values(ctx.progress.keychains).filter((k) => k.stars >= keychains.minStars).length : 0;
+    const gotCount = pieces.filter((p) => p.got).length + (keychains ? Math.min(keys, keychains.count) : 0);
+    return {
+      id: set.id, name: set.name, pieces, gotCount, total: pieces.length + (keychains?.count ?? 0), rewards: setRewards(set, ctx),
+      done: done.has(set.id), isNew: done.has(set.id) && !seen.has(seenIdOf.set(set.id)),
+    };
+  });
+}
+
+/** The sets a garment or a bottle belongs to, with the pieces got: "Del set Abriguito · 3 de 5" on its card. */
+export function setMembership(ctx: EntryContext, kind: 'item' | 'dye', id: string): { id: string; name: string; got: number; total: number }[] {
+  const { got } = sets(ctx);
+  return ctx.catalog.sets
+    .filter((set) => (kind === 'item' ? set.requires.items : set.requires.dyes)?.includes(id))
+    .map((set) => {
+      const pieces = setPieces(set, ctx, got);
+      return { id: set.id, name: set.name, got: pieces.filter((p) => p.got).length, total: pieces.length };
+    });
 }

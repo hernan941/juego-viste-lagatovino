@@ -36,6 +36,7 @@ export abstract class BookPage extends Phaser.GameObjects.Container implements A
   protected readonly cells = new Map<string, Phaser.GameObjects.Container>();
   private readonly sides = new Map<string, HalfSide>();
   private marks: NewMark[] = [];
+  private tallyText: Phaser.GameObjects.Text | null = null;
   /** Everything `place` put on the halves (cells and sparkles), so a page can swap its entries. */
   private placed: Phaser.GameObjects.Container[] = [];
   private card: { id: string; view: Phaser.GameObjects.Container; scrim: Phaser.GameObjects.Zone } | null = null;
@@ -82,10 +83,16 @@ export abstract class BookPage extends Phaser.GameObjects.Container implements A
   protected heading(tally: string): void {
     const title = ALBUM_TABS.find((t) => t.id === this.tab)?.label ?? '';
     const style = { padding: { x: 2, y: 8 } };
+    this.tallyText = this.scene.add.text(HALF.width / 2 - 6, HEADER_Y + 4, tally, { fontFamily: Fonts.Voice, fontSize: '30px', color: Ink.lapiz, ...style }).setOrigin(1, 0.5);
     this.left.add([
       this.scene.add.text(-HALF.width / 2 + 6, HEADER_Y, title, { fontFamily: Fonts.Title, fontSize: '42px', color: Ink.tinta, ...style }).setOrigin(0, 0.5),
-      this.scene.add.text(HALF.width / 2 - 6, HEADER_Y + 4, tally, { fontFamily: Fonts.Voice, fontSize: '30px', color: Ink.lapiz, ...style }).setOrigin(1, 0.5),
+      this.tallyText,
     ]);
+  }
+
+  /** Changes the count at the right of the title (a page with two sheets counts something else on each). */
+  protected setTally(tally: string): void {
+    this.tallyText?.setText(tally);
   }
 
   /** Puts a cell on its half and remembers it by id; a new entry gets its sparkle on the corner. */

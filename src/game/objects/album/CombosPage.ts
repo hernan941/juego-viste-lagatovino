@@ -1,20 +1,25 @@
 import Phaser from 'phaser';
 import { Fonts, Ink, colorToNumber } from '../../constants';
-import { comboEntries, gridPositions, type ComboEntry } from '../../domain/albumEntries';
+import { comboEntries, gridPositions, setEntries, type ComboEntry, type SetEntry } from '../../domain/albumEntries';
 import { pageTally } from '../../domain/albumPages';
 import { albumLines } from '../../domain/copy/album';
 import type { AlbumPageContext } from './AlbumPage';
 import { BookPage, GRID_TOP, entryContext } from './BookPage';
 import type { EntryCardSpec } from './EntryCard';
+import { Pager } from './Pager';
 import { dashedRect, fitImage, silhouetteImage } from './pencil';
+import { SET_CELL, buildSetCard, setCardSpec } from './SetCards';
 import { makeTappable } from './makeTappable';
 
-const CELL = { w: 380, h: 132 };
-const BOX = { w: 366, h: 118 };
+const CELL = { w: 380, h: 120 };
+const BOX = { w: 366, h: 108 };
 const PRIZE = 78;
 const PIECE = 46;
 /** Three looks on each half. */
 const PER_HALF = 3;
+/** The sheet of sets (L1) holds four cards on the left and three on the right, and the pager sits under the right ones. */
+const SETS_LEFT = 4;
+const PAGER_Y = 212;
 
 /** The washi of a hole: two translucent `sol` strips on its top corners. */
 function washi(g: Phaser.GameObjects.Graphics, x: number, angle: number): void {
@@ -23,16 +28,55 @@ function washi(g: Phaser.GameObjects.Graphics, x: number, angle: number): void {
 }
 
 /**
- * Looks especiales (F17.4): a hole with washi for each of the 6 combos. While it is not won it is a dashed pencil rectangle with
+ * Looks especiales (F17.4): two sheets. The first has a hole with washi for each of the 6 combos; the second (L1) has the sets,
+ * each with its pieces and its prize in the photo mode (the pager shows only when there are sets).
+ * While it is not won it is a dashed pencil rectangle with
  * the silhouette of its prize and a whisper; once won, a white card with its name, the icons of its pieces and the prize in color.
  */
 export class CombosPage extends BookPage {
   private readonly entries: ComboEntry[];
+  private readonly sets: SetEntry[];
+  private readonly looksTally: string;
+  private readonly setsTally: string;
+  private sheet = 0;
+  private readonly pager: Pager;
 
   constructor(scene: Phaser.Scene, tab: string, ctx: AlbumPageContext) {
     super(scene, tab);
-    this.entries = comboEntries(entryContext(ctx));
-    this.heading(albumLines.tally(pageTally('looks', ctx.completion.sections)));
+    const entries = entryContext(ctx);
+    this.entries = comboEntries(entries);
+    this.sets = setEntries(entries);
+    this.looksTally = albumLines.tally(pageTally('looks', ctx.completion.sections));
+    this.setsTally = albumLines.coverSets(this.sets.filter((e) => e.done).length, this.sets.length);
+    this.heading(this.looksTally);
+    this.pager = new Pager(scene, 0, PAGER_Y, (sheet) => this.show(sheet, true));
+    this.right.add(this.pager);
+    this.show(0, false);
+  }
+
+  protected shown(): { id: string; state: string }[] {
+    if (this.sheet === 1) return this.sets.map((e) => ({ id: `set:${e.id}`, state: e.done ? 'done' : 'missing' }));
+    return this.entries.map((e) => ({ id: e.id, state: e.state }));
+  }
+
+  protected extra(): { page: number; pages: number } {
+    return { page: this.sheet, pages: this.sets.length > 0 ? 2 : 1 };
+  }
+
+  /** Draws sheet `sheet` (0 the looks, 1 the sets): the cells of the other one go away. */
+  private show(sheet: number, turned: boolean): void {
+    this.clearCells();
+    this.sheet = sheet;
+    this.setTally(sheet === 1 ? this.setsTally : this.looksTally);
+    this.pager.set(sheet, 2);
+    this.pager.setVisible(this.sets.length > 0);
+    if (sheet === 1) this.showSets();
+    else this.showLooks();
+    this.popIn(this.cellList());
+    if (turned) this.scene.tweens.add({ targets: this.pager, alpha: { from: 0.6, to: 1 }, duration: 160 });
+  }
+
+  private showLooks(): void {
     (['left', 'right'] as const).forEach((side, s) => {
       const part = this.entries.slice(s * PER_HALF, (s + 1) * PER_HALF);
       gridPositions(part.length, 1, CELL.w, CELL.h).forEach((at, i) => {
@@ -41,11 +85,25 @@ export class CombosPage extends BookPage {
         this.place(side, part[i]!.id, cell, part[i]!.isNew, { x: BOX.w / 2 - 8, y: -BOX.h / 2 + 6 });
       });
     });
-    this.popIn(this.cellList());
   }
 
-  protected shown(): { id: string; state: string }[] {
-    return this.entries.map((e) => ({ id: e.id, state: e.state }));
+  private showSets(): void {
+    (['left', 'right'] as const).forEach((side, s) => {
+      const part = s === 0 ? this.sets.slice(0, SETS_LEFT) : this.sets.slice(SETS_LEFT);
+      gridPositions(part.length, 1, SET_CELL.w, SET_CELL.h).forEach((at, i) => {
+        const entry = part[i]!;
+        const face = buildSetCard(this.scene, entry);
+        const cell = this.scene.add.container(0, 0, [face]);
+        makeTappable(cell, face, SET_CELL.w, SET_CELL.h, () => this.openCard(`set:${entry.id}`, setCardSpec(entry)));
+        cell.setPosition(at.x, GRID_TOP + at.y);
+        this.place(side, `set:${entry.id}`, cell, entry.isNew, { x: SET_CELL.w / 2 - 14, y: -SET_CELL.h / 2 + 8 });
+      });
+    });
+  }
+
+  destroy(fromScene?: boolean): void {
+    this.scene?.tweens?.killTweensOf(this.pager);
+    super.destroy(fromScene);
   }
 
   private buildCell(entry: ComboEntry): Phaser.GameObjects.Container {

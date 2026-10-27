@@ -40,6 +40,15 @@ export const albumLines = {
   dyeGot: 'Ya es tuyo',
   dyeSketch: (price: number): string => `Cuesta ${price} botones`,
   pieces: 'Piezas',
+  /** The sets sheet (L1): the prize of a set in the photo mode, and what the card of a set says. */
+  setPrize: (kind: 'background' | 'frame' | 'sticker', name: string): string => `→ ${{ background: 'fondo', frame: 'marco', sticker: 'sticker' }[kind]} ${name}`,
+  setNoPrize: 'Para presumir',
+  setDone: '¡Set completo!',
+  setMissing: (names: readonly string[]): string => `Te faltan: ${names.length > 4 ? `${names.slice(0, 4).join(', ')}…` : names.join(', ')}`,
+  setCount: (got: number, total: number): string => `${got} de ${total}`,
+  setsTitle: 'Sets',
+  /** On the card of a garment or a bottle: the set it is part of. */
+  itemSet: (name: string, got: number, total: number): string => `Del set ${name} · ${got} de ${total}`,
   tasteLine: (glyph: string, label: string): string => `${glyph} ${label}`,
   close: 'Toca para cerrar',
 };

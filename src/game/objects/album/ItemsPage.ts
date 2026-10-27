@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { Fonts, Ink, colorToNumber } from '../../constants';
-import { gridPositions, itemEntries, paginate, type ItemEntry } from '../../domain/albumEntries';
+import { gridPositions, itemEntries, paginate, setMembership, type EntryContext, type ItemEntry } from '../../domain/albumEntries';
 import { albumLines } from '../../domain/copy/album';
 import { pageTally } from '../../domain/albumPages';
 import type { AlbumPageContext } from './AlbumPage';
@@ -29,10 +29,12 @@ export class ItemsPage extends BookPage {
   private pageIndex = 0;
   private pages = 1;
   private readonly pager: Pager;
+  private readonly entryCtx: EntryContext;
 
   constructor(scene: Phaser.Scene, tab: string, ctx: AlbumPageContext) {
     super(scene, tab);
-    this.entries = itemEntries(entryContext(ctx));
+    this.entryCtx = entryContext(ctx);
+    this.entries = itemEntries(this.entryCtx);
     this.heading(albumLines.tally(pageTally('prendas', ctx.completion.sections)));
     this.pager = new Pager(scene, 0, PAGER_Y, (page) => this.show(page, true));
     this.right.add(this.pager);
@@ -99,6 +101,13 @@ export class ItemsPage extends BookPage {
   }
 
   private cardOf(entry: ItemEntry): EntryCardSpec {
+    const spec = this.baseCard(entry);
+    // L1: a garment that is part of a set says which one and how far along it is.
+    for (const set of setMembership(this.entryCtx, 'item', entry.id)) spec.lines.push({ text: albumLines.itemSet(set.name, set.got, set.total) });
+    return spec;
+  }
+
+  private baseCard(entry: ItemEntry): EntryCardSpec {
     if (entry.state === 'secret') {
       return { title: albumLines.hidden, art: { key: entry.icon, shape: entry.texture, look: 'silhouette' }, lines: [{ text: entry.hint ?? albumLines.secretHint, pencil: true }] };
     }

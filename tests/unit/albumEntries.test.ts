@@ -4,10 +4,12 @@ import cats from '../../src/game/data/cats.json';
 import clothes from '../../src/game/data/clothes.json';
 import combos from '../../src/game/data/combos.json';
 import dyes from '../../src/game/data/dyes.json';
+import photoJson from '../../src/game/data/photo.json';
+import setsJson from '../../src/game/data/sets.json';
 import economy from '../../src/game/data/economy.json';
 import { gotEntries, type AlbumCatalogs } from '../../src/game/domain/album';
 import {
-  HALF, HANGER, catEntries, comboEntries, dyeEntries, gridPositions, hangerHooks, itemEntries, keychainEntries, paginate, tasteGlyph,
+  HALF, HANGER, catEntries, comboEntries, dyeEntries, gridPositions, hangerHooks, itemEntries, keychainEntries, paginate, setEntries, setMembership, tasteGlyph,
   type EntryContext,
 } from '../../src/game/domain/albumEntries';
 import type { CatDef, ClothingDef, ComboDef, DyeDef, EconomyRules, KeychainRecipe, PhotoCatalog, Progress, SetDef } from '../../src/game/domain/types';
@@ -245,5 +247,60 @@ describe('hangerHooks (F19.5)', () => {
     const s = HANGER.scale;
     expect(HANGER.centerY + (HANGER.art.height / 2) * s).toBeLessThanOrEqual(HALF.height / 2);
     expect((HANGER.art.width / 2) * s).toBeLessThanOrEqual(450);
+
+describe('setEntries (L1): the sets of the album', () => {
+  const withSets: EntryContext = { ...ctx(empty()), catalog: { ...catalogs, sets: setsJson as SetDef[], photo: photoJson as unknown as PhotoCatalog } };
+  const of = (p: Progress) => setEntries({ ...withSets, progress: p, seen: p.albumSeen });
+  const abrigo = setsJson.find((s) => s.id === 'abriguito')!;
+
+  it('lists the 7 sets of sets.json in order, each with its reward named from photo.json', () => {
+    const list = of(empty());
+    expect(list.map((e) => e.id)).toEqual(setsJson.map((s) => s.id));
+    expect(list.find((e) => e.id === 'abriguito')!.rewards).toEqual([{ id: 'bg-vichy', name: 'Vichy celeste', texture: 'photo-bg-vichy', kind: 'background' }]);
+    expect(list.find((e) => e.id === 'colgador-dorado')!.rewards).toEqual([]);
+  });
+
+  it('counts the pieces that are yours: "3 de 5", and the set is done only with all of them', () => {
+    const three = abrigo.requires.items!.slice(0, 3);
+    const entry = of({ ...empty(), owned: three }).find((e) => e.id === 'abriguito')!;
+    const real = entry.pieces.filter((p) => p.got).length;
+    expect(entry.total).toBe(5);
+    expect(entry.pieces).toHaveLength(5);
+    expect(entry.pieces.map((p) => p.id)).toEqual(abrigo.requires.items);
+    expect(entry.gotCount).toBe(real);
+    expect(real).toBeGreaterThanOrEqual(3);
+    expect(entry.done).toBe(false);
+    const all = of({ ...empty(), owned: abrigo.requires.items! }).find((e) => e.id === 'abriguito')!;
+    expect(all).toMatchObject({ gotCount: 5, done: true });
+  });
+
+  it('a piece that is an item carries its icon; a dye carries its color; a combo carries its name', () => {
+    const list = of(empty());
+    expect(list.find((e) => e.id === 'abriguito')!.pieces[0]).toMatchObject({ icon: expect.any(String), hex: null });
+    expect(list.find((e) => e.id === 'la-paleta')!.pieces[0]).toMatchObject({ icon: null, hex: expect.stringMatching(/^#/) });
+    expect(list.find((e) => e.id === 'todos-los-secretos')!.pieces).toHaveLength(6);
+    expect(list.find((e) => e.id === 'fresas-y-flores')!.total).toBe(4);
+  });
+
+  it('the hanger set has no pieces, only a count of keychains with enough stars', () => {
+    const entry = of({ ...empty(), keychains: { azul: { stars: 4 }, negro: { stars: 2 } } as never }).find((e) => e.id === 'colgador-dorado')!;
+    expect(entry.pieces).toEqual([]);
+    expect(entry).toMatchObject({ total: 12, gotCount: 1, done: false });
+  });
+});
+
+describe('setMembership (L1): which sets a garment or a bottle belongs to', () => {
+  const withSets: EntryContext = { ...ctx(empty()), catalog: { ...catalogs, sets: setsJson as SetDef[], photo: photoJson as unknown as PhotoCatalog } };
+
+  it('names the set with the pieces got out of all', () => {
+    const m = setMembership(withSets, 'item', 'paws-mitones');
+    expect(m).toEqual([{ id: 'abriguito', name: 'Abriguito', got: expect.any(Number), total: 5 }]);
+    const dye = setMembership(withSets, 'dye', 'rosa');
+    expect(dye[0]).toMatchObject({ id: 'la-paleta', total: 10 });
+    expect(dye[0]!.got).toBeGreaterThanOrEqual(1);
+  });
+
+  it('is empty for what belongs to no set', () => {
+    expect(setMembership(withSets, 'item', 'no-existe')).toEqual([]);
   });
 });
