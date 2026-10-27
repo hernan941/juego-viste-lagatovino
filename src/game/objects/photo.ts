@@ -4,10 +4,12 @@ import Phaser from 'phaser';
 import { FONT_FAMILY, Fonts, Ink, Palette, TextureKeys } from '../constants';
 import { photoLayout } from '../domain/photo';
 import { PHOTO_SIZE } from '../domain/photoComposition';
+import { CARD_SIZE } from '../domain/keychainPackage';
 import type { SheetOp } from '../domain/photoSheet';
 import type { AnchorsDef } from '../domain/types';
 import type { Expression } from '../domain/expressions';
 import type { Cat } from './Cat';
+import type { Keychain } from './keychain/Keychain';
 import { hex } from './ui';
 
 export const PHOTO_LOGO = 'Viste Lagato';
@@ -106,14 +108,23 @@ export interface SheetPlace {
   scale: number;
 }
 
+/** What the operations that are not plain images and texts need from the scene. */
+export interface SheetExtras {
+  /** The live cat for a 'cat' op, drawn with this face. */
+  cat?: Cat;
+  expression?: Expression;
+  /** Draws the keychain of a 'keychain' op: it hangs from (x, y) in the render and one px of its texture is `k` render px. */
+  keychain?: (x: number, y: number, k: number) => void;
+}
+
 /**
  * Runs the operations of the sheet into `rt`. Images go 1:1 (or to the height asked), the texts are made at their final size (never
  * scaled up, so they stay sharp) and the cat is captured with its pose and face (`expression`) at rest. Every helper object made here
  * is pushed to `temp` for the caller to destroy; the returned function lets the cat go back to what it was doing.
  */
 export function drawSheetOps(
-  scene: Phaser.Scene, rt: Phaser.GameObjects.RenderTexture, ops: readonly SheetOp[], at: SheetPlace,
-  cat: Cat | null, expression: Expression, temp: Phaser.GameObjects.GameObject[],
+  scene: Phaser.Scene, rt: Phaser.GameObjects.RenderTexture | Phaser.Textures.DynamicTexture, ops: readonly SheetOp[], at: SheetPlace,
+  extras: SheetExtras, temp: Phaser.GameObjects.GameObject[],
 ): () => void {
   let release: () => void = () => undefined;
   for (const op of ops) {
@@ -122,7 +133,7 @@ export function drawSheetOps(
     if (op.kind === 'image') {
       const img = new Phaser.GameObjects.Image(scene, x, y, op.texture);
       temp.push(img);
-      const k = (op.height !== undefined ? op.height / img.height : op.width !== undefined ? op.width / img.width : 1) * at.scale;
+      const k = (op.height !== undefined ? op.height / img.height : op.width !== undefined ? op.width / img.width : (op.scale ?? 1)) * at.scale;
       img.setScale(k).setAngle(op.angle ?? 0).setAlpha(op.alpha ?? 1);
       rt.draw(img);
     } else if (op.kind === 'text') {
@@ -134,10 +145,13 @@ export function drawSheetOps(
       const room = op.maxWidth * at.scale;
       if (text.width > room) text.setScale(room / text.width);
       rt.draw(text);
-    } else if (cat) {
+    } else if (op.kind === 'cat') {
+      if (!extras.cat) continue;
       const k = (op.size / 512) * at.scale;
-      release = cat.freezeForPhoto(expression);
-      rt.capture(cat, { x, y, scaleX: k, scaleY: k });
+      release = extras.cat.freezeForPhoto(extras.expression ?? 'normal');
+      rt.capture(extras.cat, { x, y, scaleX: k, scaleY: k });
+    } else {
+      extras.keychain?.(x, y, op.scale * at.scale);
     }
   }
   return release;
@@ -161,8 +175,20 @@ export function composePhoto(scene: Phaser.Scene, cat: Cat, ops: readonly SheetO
   const height = PHOTO_SIZE.height * scale;
   const rt = scene.make.renderTexture({ x: 0, y: 0, width, height }, false);
   const temp: Phaser.GameObjects.GameObject[] = [];
-  const release = drawSheetOps(scene, rt, ops, { x: width / 2, y: height / 2, scale }, cat, expression, temp);
+  const release = drawSheetOps(scene, rt, ops, { x: width / 2, y: height / 2, scale }, { cat, expression }, temp);
   rt.render();
   release();
+  return renderToPng(rt, temp);
+}
+
+/** The PNG of the packaging (S8): the kraft card at twice its size (1080 x 1350) with the keychain hanging from its hole. */
+export function composePackage(scene: Phaser.Scene, ops: readonly SheetOp[], keychain: Keychain): Promise<string> {
+  const scale = 2;
+  const width = CARD_SIZE.width * scale;
+  const height = CARD_SIZE.height * scale;
+  const rt = scene.make.renderTexture({ x: 0, y: 0, width, height }, false);
+  const temp: Phaser.GameObjects.GameObject[] = [];
+  drawSheetOps(scene, rt, ops, { x: width / 2, y: height / 2, scale }, { keychain: (x, y, k) => keychain.drawInto(rt, x, y, k, temp) }, temp);
+  rt.render();
   return renderToPng(rt, temp);
 }

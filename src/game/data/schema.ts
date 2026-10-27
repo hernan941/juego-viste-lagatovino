@@ -390,6 +390,8 @@ function checkKeychain(k: unknown, errors: string[]): void {
   if (!(isNum(k.borderRadius) && k.borderRadius > 0)) errors.push(`${p}.borderRadius: debe ser un número mayor que 0`);
   if (!(typeof k.borderColor === 'string' && HEX.test(k.borderColor))) errors.push(`${p}.borderColor: "${String(k.borderColor)}" debe ser un color #RRGGBB`);
   if (!(isNum(k.varnishAlpha) && k.varnishAlpha >= 0 && k.varnishAlpha <= 1)) errors.push(`${p}.varnishAlpha: debe estar entre 0 y 1`);
+  if (!(isNum(k.saturation) && k.saturation >= 0.75 && k.saturation <= 0.9)) errors.push(`${p}.saturation: debe estar entre 0,75 y 0,9`);
+  if (!(isNum(k.warmth) && k.warmth >= 0 && k.warmth <= 0.1)) errors.push(`${p}.warmth: debe estar entre 0 y 0,1`);
 }
 
 /** Checks photo.json against sets.json: unlocks, unique ids, textures per section, starters, rewards and keychain rules. */

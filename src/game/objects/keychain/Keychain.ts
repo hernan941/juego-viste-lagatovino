@@ -9,12 +9,14 @@ import { catPose } from '../../domain/catPose';
 import {
   INK_LINE_PX,
   borderCopiesFor,
+  hardwareParts,
   keychainLayout,
   pendulum,
   pendulumDuration,
   poseTransform,
   recipeKey,
   ringFor,
+  type HardwarePartId,
   type KeychainLayout,
   type PendulumParams,
 } from '../../domain/keychain';
@@ -24,7 +26,7 @@ import { FrameQueue } from '../../systems/frameQueue';
 import { profileOf } from '../../systems/motion';
 import { Cat } from '../Cat';
 import { headTop } from './lookTop';
-import { bakePorcelain } from './porcelain';
+import { PART_TEXTURE, bakePorcelain } from './porcelain';
 
 /** Everything a keychain needs to be drawn from its recipe. */
 export interface KeychainData {
@@ -44,6 +46,11 @@ export interface KeychainOptions {
   px?: 256 | 512;
   /** Thumbnails wait their turn in the queue (one per frame) and show a pencil silhouette; a big one is built at once. */
   deferred?: boolean;
+  /**
+   * false: the texture has no hardware (its key ends in `~bare`) and `hardwareImages()` makes the pieces live, so the
+   * transformation of the photo mode can put them on one by one. Default true (the hanger and the thumbnails).
+   */
+  hardware?: boolean;
   /** Keep the texture until the scene shuts down (the thumbnails of the hanger). Otherwise it goes away with the last keychain that shows it. */
   cache?: boolean;
 }
@@ -91,8 +98,11 @@ export class Keychain extends Phaser.GameObjects.Container {
   /** Where everything goes in the texture; `layout.hang` is the pivot of the swing and the origin of this container. */
   readonly layout: KeychainLayout;
   private readonly catalog: KeychainData;
+  /** True when the hardware is part of the flattened texture. */
+  readonly hasHardware: boolean;
   private readonly cache: boolean;
   private readonly deferred: boolean;
+  private parts: Partial<Record<HardwarePartId, Phaser.GameObjects.Image>> = {};
   private readonly def: CatDef;
   private readonly items: ClothingDef[];
   private pencil?: Phaser.GameObjects.Image;
@@ -115,7 +125,8 @@ export class Keychain extends Phaser.GameObjects.Container {
     this.px = options.px ?? 512;
     this.deferred = options.deferred ?? this.px < 512;
     this.cache = options.cache ?? this.px < 512;
-    this.textureKey = recipeKey(recipe, this.px);
+    this.hasHardware = options.hardware ?? true;
+    this.textureKey = recipeKey(recipe, this.px) + (this.hasHardware ? '' : '~bare');
     this.items = Object.values(recipe.outfit)
       .map((id) => data.clothes.find((c) => c.id === id))
       .filter((c): c is ClothingDef => c !== undefined);
@@ -145,6 +156,21 @@ export class Keychain extends Phaser.GameObjects.Container {
   /** The point of the container where it hangs (its origin), in the texture. */
   get hangPoint(): Point {
     return this.layout.hang;
+  }
+
+  /**
+   * The live pieces of the hardware (hidden, in place, children of this container so they swing with it), made the first time. Empty
+   * when the hardware is baked into the texture.
+   */
+  hardwareImages(): Partial<Record<HardwarePartId, Phaser.GameObjects.Image>> {
+    if (this.hasHardware || Object.keys(this.parts).length > 0 || this.gone) return this.parts;
+    for (const part of hardwareParts(this.layout, ringFor(this.recipe.stars, this.catalog.rules))) {
+      const img = this.scene.add.image(part.x - this.layout.hang.x, part.y - this.layout.hang.y, PART_TEXTURE[part.part]);
+      img.setOrigin(part.origin.x, part.origin.y).setScale(part.scale).setAngle(part.angle).setVisible(false);
+      this.add(img);
+      this.parts[part.part] = img;
+    }
+    return this.parts;
   }
 
   // ---- Building ------------------------------------------------------------
@@ -221,8 +247,9 @@ export class Keychain extends Phaser.GameObjects.Container {
       look.render();
       bakePorcelain(scene, {
         key: this.textureKey, lookKey, px, layout, ring: ringFor(this.recipe.stars, data.rules),
-        copies: borderCopiesFor(px), borderPx: data.rules.borderRadius * k, inkPx: INK_LINE_PX * k,
+        hardware: this.hasHardware, copies: borderCopiesFor(px), borderPx: data.rules.borderRadius * k, inkPx: INK_LINE_PX * k,
         cream: colorToNumber(data.rules.borderColor), ink: colorToNumber(Ink.tinta), varnishAlpha: data.rules.varnishAlpha,
+        saturation: data.rules.saturation, warmth: data.rules.warmth,
       });
       state.keys.add(this.textureKey);
     } finally {
@@ -257,6 +284,24 @@ export class Keychain extends Phaser.GameObjects.Container {
     }
     this.isReady = true;
     this.emit(ObjectEvents.KeychainReady, this);
+  }
+
+  /**
+   * Draws this keychain into a render texture, hanging from (x, y) with one texture px = `k` render px: the flattened texture and,
+   * when the hardware is not baked into it, the pieces in their places. The helper images go to `temp` for the caller to destroy.
+   */
+  drawInto(rt: Phaser.GameObjects.RenderTexture, x: number, y: number, k: number, temp: Phaser.GameObjects.GameObject[]): void {
+    const { hang } = this.layout;
+    const put = (img: Phaser.GameObjects.Image) => {
+      temp.push(img);
+      rt.draw(img);
+    };
+    put(new Phaser.GameObjects.Image(this.scene, x - hang.x * k, y - hang.y * k, this.textureKey).setOrigin(0, 0).setScale(k));
+    if (this.hasHardware) return;
+    for (const part of hardwareParts(this.layout, ringFor(this.recipe.stars, this.catalog.rules))) {
+      const img = new Phaser.GameObjects.Image(this.scene, x + (part.x - hang.x) * k, y + (part.y - hang.y) * k, PART_TEXTURE[part.part]);
+      put(img.setOrigin(part.origin.x, part.origin.y).setScale(part.scale * k).setAngle(part.angle));
+    }
   }
 
   // ---- Swinging ------------------------------------------------------------

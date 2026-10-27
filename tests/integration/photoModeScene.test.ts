@@ -2,6 +2,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('phaser', async () => (await import('./helpers/sceneFake')).phaserSceneMock);
 
+interface FakeTransformation {
+  options: { recipe: Record<string, unknown> & { photo: Record<string, unknown> }; onPhase(p: string): void; play(k: string, v?: number): void };
+  skips: number; destroyed: boolean; restored: boolean; hung: { at: { x: number; y: number }; scale: number } | null; faded: boolean;
+  keychain: { layout: { width: number; height: number; hang: { x: number; y: number } } };
+  finish(): void;
+}
+interface FakeCard { ops: { kind: string; texture?: string; text?: string }[]; rose: boolean; sunk: boolean; tappable: boolean; destroyed: boolean; emit(ev: string): void }
+
 const h = vi.hoisted(() => ({
   go: vi.fn(),
   transitionIn: vi.fn(),
@@ -12,9 +20,43 @@ const h = vi.hoisted(() => ({
   bubbles: [] as { text: string; destroyed: boolean }[],
   trays: [] as { kinds: string[]; selected: Record<string, string | null>; emit(ev: string, ...a: unknown[]): void; destroyed: boolean }[],
   tabs: [] as { emit(ev: string, ...a: unknown[]): void; destroyed: boolean }[],
+  failTransform: false,
+  transformations: [] as FakeTransformation[],
+  cards: [] as FakeCard[],
+  composePackage: vi.fn(async (...args: unknown[]) => (args.length >= 0 ? 'data:image/png;base64,PKG' : '')),
   stickers: [] as { id: string; at: { x: number; y: number }; emit(ev: string, ...a: unknown[]): void; calls: string[]; destroyed: boolean }[],
 }));
 
+vi.mock('../../src/game/objects/keychain/Keychain', () => ({ keychainData: () => ({}) }));
+vi.mock('../../src/game/objects/keychain/KeychainTransformation', () => ({
+  KeychainTransformation: class {
+    skips = 0; destroyed = false; restored = false; faded = false; hung: { at: { x: number; y: number }; scale: number } | null = null;
+    keychain = { layout: { width: 560, height: 640, hang: { x: 280, y: 30 } } };
+    private resolveRun: (() => void) | null = null;
+    constructor(_scene: unknown, public options: FakeTransformation['options']) { h.transformations.push(this as never); }
+    run() { return new Promise<void>((resolve, reject) => { if (h.failTransform) reject(new Error('no keychain')); this.resolveRun = resolve; }); }
+    finish() { this.resolveRun?.(); }
+    skip() { this.skips++; this.finish(); }
+    hangOn(at: { x: number; y: number }, scale: number) { this.hung = { at, scale }; return Promise.resolve(); }
+    fadeOut() { this.faded = true; return Promise.resolve(); }
+    restoreCat() { this.restored = true; }
+    destroy() { this.destroyed = true; }
+  },
+}));
+vi.mock('../../src/game/objects/keychain/PackageCard', async () => {
+  const { Emitter } = await import('./helpers/sceneFake');
+  return {
+    PackageCard: class extends Emitter {
+      rose = false; sunk = false; tappable = false; destroyed = false; hangPoint = { x: 640, y: 80 };
+      constructor(_s: unknown, _x: number, _y: number, public ops: FakeCard['ops']) { super(); h.cards.push(this as never); }
+      setDepth() { return this; }
+      rise() { this.rose = true; return Promise.resolve(); }
+      sink() { this.sunk = true; return Promise.resolve(); }
+      enableTap() { this.tappable = true; }
+      destroy() { this.destroyed = true; }
+    },
+  };
+});
 vi.mock('../../src/game/plugins/DyePlugin', () => ({ getDye: () => ({ ensure: async (_i: string, d: string) => `dyed-${d}` }) }));
 vi.mock('../../src/game/systems/navigate', () => ({ go: (...a: unknown[]) => h.go(...a) }));
 vi.mock('../../src/game/systems/transitions', () => ({
@@ -22,7 +64,7 @@ vi.mock('../../src/game/systems/transitions', () => ({
   transitionIn: (...a: unknown[]) => h.transitionIn(...a),
 }));
 vi.mock('../../src/game/systems/download', () => ({ savePhoto: (...a: unknown[]) => h.savePhoto(...(a as [])) }));
-vi.mock('../../src/game/objects/photo', () => ({ composePhoto: (...a: unknown[]) => h.composePhoto(...a) }));
+vi.mock('../../src/game/objects/photo', () => ({ composePhoto: (...a: unknown[]) => h.composePhoto(...a), composePackage: (...a: unknown[]) => h.composePackage(...a) }));
 vi.mock('../../src/game/objects/ui', () => ({ touchEnv: () => ({ touch: false, scale: 1 }) }));
 vi.mock('../../src/game/plugins/AudioPlugin', () => ({ getAudio: (s: { plugins: { get(k: string): unknown } }) => s.plugins.get('audio') }));
 vi.mock('../../src/game/objects/Cat', () => ({
@@ -146,8 +188,9 @@ const run = (scene: FakeScene) => { for (const d of [...scene.time.delayed]) d.f
 beforeEach(() => {
   vi.stubGlobal('document', { createElement: () => ({}), body: {} });
   vi.stubGlobal('navigator', {});
-  for (const m of [h.go, h.transitionIn, h.composePhoto, h.savePhoto]) m.mockClear();
-  for (const list of [h.buttons, h.cats, h.bubbles, h.trays, h.tabs, h.stickers]) list.length = 0;
+  for (const m of [h.go, h.transitionIn, h.composePhoto, h.composePackage, h.savePhoto]) m.mockClear();
+  h.failTransform = false;
+  for (const list of [h.transformations, h.cards, h.buttons, h.cats, h.bubbles, h.trays, h.tabs, h.stickers]) list.length = 0;
 });
 
 describe('PhotoMode scene (F18.2)', () => {
@@ -184,7 +227,8 @@ describe('PhotoMode scene (F18.2)', () => {
     expect(info).toMatchObject({ background: 'bg-cuadriculado', frame: 'frame-polaroid', pose: 'pose-sentadito', stars: 5, catName: 'Luna' });
   });
 
-  it('Guardar takes the photo of the cat, saves it with the cat name and says it is ready', async () => {
+  it('when the keychain cannot be made, Guardar saves the plain photo of the cat, with the cat name and says it is ready', async () => {
+    h.failTransform = true;
     const scene = open();
     button('Guardar').emit(ObjectEvents.ButtonClick);
     expect(scene.played).toContain('sfx-shutter');
@@ -197,7 +241,8 @@ describe('PhotoMode scene (F18.2)', () => {
     expect(h.bubbles.map((b) => b.text)).toEqual(['¡Foto lista!']);
   });
 
-  it('Guardar saves the composition of the table (pieces, stickers, name and stars), not the card of the Showcase', async () => {
+  it('the plain photo is the composition of the table (pieces, stickers, name and stars), not the card of the Showcase', async () => {
+    h.failTransform = true;
     const scene = open({ rating: { points: 90, stars: 4, breakdown: [] } });
     button('Guardar').emit(ObjectEvents.ButtonClick);
     run(scene);
@@ -210,7 +255,8 @@ describe('PhotoMode scene (F18.2)', () => {
     expect(expression).toBe('normal');
   });
 
-  it('the cat keeps the pose that was chosen: Guardar does not make it hold other eyes (it used to stay in love)', async () => {
+  it('the plain photo keeps the cat in the pose that was chosen: Guardar does not make it hold other eyes (it used to stay in love)', async () => {
+    h.failTransform = true;
     const scene = open();
     button('Guardar').emit(ObjectEvents.ButtonClick);
     run(scene);
@@ -218,7 +264,8 @@ describe('PhotoMode scene (F18.2)', () => {
     expect(h.cats[0]!.held).toEqual([]);
   });
 
-  it('ignores a second Guardar while the first is going', async () => {
+  it('ignores a second Guardar while the first is going (plain photo)', async () => {
+    h.failTransform = true;
     const scene = open();
     button('Guardar').emit(ObjectEvents.ButtonClick);
     button('Guardar').emit(ObjectEvents.ButtonClick);
@@ -238,11 +285,11 @@ describe('PhotoMode scene (F18.2)', () => {
   it('init resets the state of a previous visit', async () => {
     const scene = open();
     button('Guardar').emit(ObjectEvents.ButtonClick);
-    run(scene);
+    h.transformations[0]!.finish();
     await vi.waitFor(() => expect(scene.getE2EUi().info.photos).toBe(1));
     scene.init();
     scene.create();
-    expect(scene.getE2EUi().info).toMatchObject({ photos: 0, lastPhoto: null, photoBusy: false });
+    expect(scene.getE2EUi().info).toMatchObject({ photos: 0, lastPhoto: null, photoBusy: false, keychainPhase: null });
   });
 
   it('cleans everything on shutdown', () => {
@@ -487,5 +534,134 @@ describe('PhotoMode stickers (F18.4)', () => {
     scene.init();
     scene.create();
     expect(scene.getComposition().stickers).toHaveLength(0);
+  });
+});
+
+
+// ---- F19.3: the transformation into a keychain ----
+const save = () => button('Guardar').emit(ObjectEvents.ButtonClick);
+const phaseOf = (s: Scene) => info(s).keychainPhase;
+
+describe('PhotoMode: Guardar turns the cat into a keychain (F19.3)', () => {
+  it('starts the transformation with the recipe of what is on the table, and plays the shutter', () => {
+    const scene = open({ rating: { points: 90, stars: 4, breakdown: [] } });
+    save();
+    expect(scene.played).toContain('sfx-shutter');
+    expect(h.transformations).toHaveLength(1);
+    expect(h.transformations[0]!.options.recipe).toMatchObject({
+      catId: catalog.cats[0]!.id, catName: 'Luna', outfit: { sweater: sweater.id }, pose: 'pose-sentadito', stars: 4,
+      photo: { background: 'bg-cuadriculado', frame: 'frame-polaroid', stickers: [] },
+    });
+    expect(info(scene).photoBusy).toBe(true);
+    expect(h.composePhoto).not.toHaveBeenCalled();
+  });
+
+  it('keeps the dyes of the worn items in the recipe and leaves the rest out', () => {
+    const scene = new PhotoMode() as unknown as Scene;
+    scene.registry.set(RegistryKeys.Catalog, catalog);
+    scene.registry.set(RegistryKeys.Anchors, anchors);
+    scene.registry.set(RegistryKeys.Progress, emptyProgress(0));
+    scene.registry.set('catId', catalog.cats[0]!.id);
+    scene.registry.set('catName', 'Luna');
+    scene.registry.set('outfit', { sweater: sweater.id });
+    scene.registry.set('itemDye', { [sweater.id]: 'rosa', 'not-worn': 'lila' });
+    scene.init();
+    scene.create();
+    save();
+    expect(h.transformations[0]!.options.recipe.itemDye).toEqual({ [sweater.id]: 'rosa' });
+  });
+
+  it('without a rating the keychain is the plain 1 star one', () => {
+    open();
+    save();
+    expect(h.transformations[0]!.options.recipe.stars).toBe(1);
+  });
+
+  it('reports the phases as they go by, in the hook', () => {
+    const scene = open();
+    expect(phaseOf(scene)).toBeNull();
+    save();
+    const t = h.transformations[0]!;
+    for (const phase of ['oven', 'turn', 'varnish', 'hardware', 'swing', 'package']) {
+      t.options.onPhase(phase);
+      expect(phaseOf(scene)).toBe(phase);
+    }
+  });
+
+  it('after the transformation hangs the keychain on a card, saves the PNG of the packaging and says it is ready', async () => {
+    const scene = open({ rating: { points: 90, stars: 5, breakdown: [] } });
+    save();
+    h.transformations[0]!.finish();
+    await vi.waitFor(() => expect(h.savePhoto).toHaveBeenCalledTimes(1));
+    expect(h.savePhoto.mock.calls[0]).toEqual([expect.objectContaining({ touch: false }), 'data:image/png;base64,PKG', photoFileName('Luna')]);
+    const card = h.cards[0]!;
+    expect(card.rose).toBe(true);
+    expect(card.ops.some((o) => o.texture === 'ui-keychain-package-card')).toBe(true);
+    expect(card.ops.find((o) => o.kind === 'text' && o.text === 'Luna')).toBeDefined();
+    expect(card.ops.some((o) => o.kind === 'keychain')).toBe(true);
+    expect(h.transformations[0]!.hung).toMatchObject({ at: { x: 640, y: 80 } });
+    expect(h.composePackage).toHaveBeenCalledTimes(1);
+    expect(h.composePhoto).not.toHaveBeenCalled();
+    await vi.waitFor(() => expect(phaseOf(scene)).toBe('ready'));
+    expect(info(scene)).toMatchObject({ photos: 1, lastPhoto: photoFileName('Luna') });
+    expect(h.bubbles.map((b) => b.text)).toEqual(['¡Luna ya es llavero! Quedó precioso']);
+    expect(card.tappable).toBe(true);
+  });
+
+  it('a tap while it runs skips to the end, but not the very first moment (the same tap that pressed the button)', () => {
+    const scene = open();
+    save();
+    const t = h.transformations[0]!;
+    scene.input.emit('pointerdown');
+    expect(t.skips).toBe(0);
+    run(scene);
+    scene.input.emit('pointerdown');
+    expect(t.skips).toBe(1);
+  });
+
+  it('a tap on the packaging puts it away: the cat comes back, the hook is cleared and Guardar works again', async () => {
+    const scene = open();
+    save();
+    h.transformations[0]!.finish();
+    await vi.waitFor(() => expect(phaseOf(scene)).toBe('ready'));
+    h.cards[0]!.emit(ObjectEvents.PackageTap);
+    await vi.waitFor(() => expect(h.cards[0]!.destroyed).toBe(true));
+    expect(h.cards[0]!.sunk).toBe(true);
+    expect(h.transformations[0]).toMatchObject({ destroyed: true, restored: true, faded: true });
+    expect(phaseOf(scene)).toBeNull();
+    expect(info(scene).photoBusy).toBe(false);
+    save();
+    expect(h.transformations).toHaveLength(2);
+  });
+
+  it('ignores a second Guardar while the transformation goes', () => {
+    open();
+    save();
+    save();
+    expect(h.transformations).toHaveLength(1);
+  });
+
+  it('leaving in the middle destroys the transformation and its card and leaves no tweens or timers', async () => {
+    const scene = open();
+    save();
+    h.transformations[0]!.finish();
+    await vi.waitFor(() => expect(h.cards).toHaveLength(1));
+    scene.events.emit('shutdown');
+    expect(h.transformations[0]!.destroyed).toBe(true);
+    expect(h.cards[0]!.destroyed).toBe(true);
+    expect(scene.activeTweens).toHaveLength(0);
+    expect(scene.time.delayed).toHaveLength(0);
+    expect(scene.input.count('pointerdown')).toBe(0);
+  });
+
+  it('does not hang a card or save anything when the scene was left before it ended', async () => {
+    const scene = open();
+    save();
+    scene.events.emit('shutdown');
+    h.transformations[0]!.finish();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(h.cards).toHaveLength(0);
+    expect(h.savePhoto).not.toHaveBeenCalled();
   });
 });

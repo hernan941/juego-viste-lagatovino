@@ -27,9 +27,13 @@ const POSES: Record<CatPoseId, CatPose> = {
   dormilon: { id: 'dormilon', angle: 0, lift: 0, scaleX: 1.03, scaleY: 0.97, shadow: 1, expression: 'parpadeo' },
 };
 
-/** The pose with that id, or null when there is none. */
+/** Ids of the poses in photo.json carry this prefix ("pose-coqueto"); the poses of the cat do not. */
+const CATALOG_PREFIX = 'pose-';
+
+/** The pose with that id (with or without the prefix of the catalog), or null when there is none. */
 export function catPose(id: string): CatPose | null {
-  return (CAT_POSE_IDS as readonly string[]).includes(id) ? POSES[id as CatPoseId] : null;
+  const key = id.startsWith(CATALOG_PREFIX) ? id.slice(CATALOG_PREFIX.length) : id;
+  return (CAT_POSE_IDS as readonly string[]).includes(key) ? POSES[key as CatPoseId] : null;
 }
 
 /** Degrees of the "no" shake of the head. */

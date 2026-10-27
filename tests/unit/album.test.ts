@@ -51,7 +51,7 @@ const photo: PhotoCatalog = {
   frames: [piece('polaroid', 'starter'), piece('kofi', { albumPct: 100 }), piece('dorado', { set: 'gala' })],
   stickers: [piece('estrella', 'starter'), piece('kofi', { set: 'michi' }), piece('pescadito', { firstFiveStar: true })],
   poses: [piece('sentadito', 'starter'), piece('dormilon', { albumPct: 75 })],
-  keychain: { goldFrom: 4, charmFrom: 5, borderCopies: 12, borderRadius: 14, borderColor: '#FFF7EC', varnishAlpha: 0.5 },
+  keychain: { goldFrom: 4, charmFrom: 5, borderCopies: 12, borderRadius: 14, borderColor: '#FFF7EC', varnishAlpha: 0.5, saturation: 0.82, warmth: 0.03 },
 };
 const sets: SetDef[] = [
   { id: 'abriguito', name: 'Abriguito', requires: { items: ['item4', 'item5'] }, reward: ['vichy'] },

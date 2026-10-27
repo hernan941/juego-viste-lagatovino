@@ -22,9 +22,11 @@ export const SLEEPY_POSE = 'pose-dormilon';
 export const STAR_COUNT = 5;
 
 export type SheetOp =
-  | { kind: 'image'; texture: string; x: number; y: number; width?: number; height?: number; angle?: number; alpha?: number }
+  | { kind: 'image'; texture: string; x: number; y: number; width?: number; height?: number; scale?: number; angle?: number; alpha?: number }
   | { kind: 'text'; text: string; x: number; y: number; fontSize: number; maxWidth: number; angle?: number }
-  | { kind: 'cat'; x: number; y: number; size: number };
+  | { kind: 'cat'; x: number; y: number; size: number }
+  /** The keychain of the packaging, hanging from (x, y) at `scale` (the scene knows its texture and hardware). */
+  | { kind: 'keychain'; x: number; y: number; scale: number };
 
 export interface StarSlot {
   x: number;
@@ -47,21 +49,37 @@ export interface SheetInput {
   signature: string;
 }
 
-/** The operations, back to front: background, frame, name, the cat, the stickers, the "zzz", the stars and the signature. */
-export function sheetOps({ photo, composition, catName, stars, signature }: SheetInput): SheetOp[] {
+type PieceList = readonly Pick<PhotoPiece, 'id' | 'texture'>[];
+const pieceOf = (list: PieceList, id: string | null) => list.find((p) => p.id === id);
+
+/** The background and the frame of the sheet (the art goes 1:1 around the middle). */
+export function paperOps({ photo, composition }: Pick<SheetInput, 'photo' | 'composition'>): SheetOp[] {
   const ops: SheetOp[] = [];
-  const piece = (list: readonly Pick<PhotoPiece, 'id' | 'texture'>[], id: string | null) => list.find((p) => p.id === id);
-  const bg = piece(photo.backgrounds, composition.background);
+  const bg = pieceOf(photo.backgrounds, composition.background);
   if (bg) ops.push({ kind: 'image', texture: bg.texture, x: 0, y: 0 });
-  const frame = piece(photo.frames, composition.frame);
+  const frame = pieceOf(photo.frames, composition.frame);
   if (frame) ops.push({ kind: 'image', texture: frame.texture, x: 0, y: 0 });
+  return ops;
+}
+
+/** The stickers of the composition, in z order, as the table has them (one that is not in the catalog is skipped). */
+export function stickerOps({ photo, composition }: Pick<SheetInput, 'photo' | 'composition'>): SheetOp[] {
+  const ops: SheetOp[] = [];
+  for (const s of composition.stickers) {
+    const art = pieceOf(photo.stickers, s.id);
+    if (art) ops.push({ kind: 'image', texture: art.texture, x: s.x, y: s.y, height: STICKER_SIZE, angle: s.angle });
+  }
+  return ops;
+}
+
+/** The operations, back to front: background, frame, name, the cat, the stickers, the "zzz", the stars and the signature. */
+export function sheetOps(input: SheetInput): SheetOp[] {
+  const { composition, catName, stars, signature } = input;
+  const ops: SheetOp[] = paperOps(input);
   const { name, cat } = SHEET_LAYOUT;
   ops.push({ kind: 'text', text: catName, x: name.x, y: name.y, fontSize: name.fontSize, maxWidth: name.maxWidth });
   ops.push({ kind: 'cat', x: cat.x, y: cat.feetY, size: cat.size });
-  for (const s of composition.stickers) {
-    const art = piece(photo.stickers, s.id);
-    if (art) ops.push({ kind: 'image', texture: art.texture, x: s.x, y: s.y, height: STICKER_SIZE, angle: s.angle });
-  }
+  ops.push(...stickerOps(input));
   if (composition.pose === SLEEPY_POSE) {
     const { zzz } = SHEET_LAYOUT;
     ops.push({ kind: 'image', texture: zzz.texture, x: zzz.x, y: zzz.y, height: zzz.size });

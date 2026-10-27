@@ -13,7 +13,7 @@ vi.mock('phaser', async () => {
   };
 });
 
-interface Baked { key: string; copies: number; px: number; ring: { metal: string; charm: boolean }; layout: { width: number } }
+interface Baked { key: string; hardware: boolean; copies: number; px: number; ring: { metal: string; charm: boolean }; layout: { width: number } }
 const { baked, cats, dye, FakeCat } = vi.hoisted(() => {
   const baked: Baked[] = [];
   const cats: FakeCat[] = [];
@@ -44,7 +44,8 @@ const { baked, cats, dye, FakeCat } = vi.hoisted(() => {
   return { baked, cats, dye, FakeCat };
 });
 
-vi.mock('../../src/game/objects/keychain/porcelain', () => ({
+vi.mock('../../src/game/objects/keychain/porcelain', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../src/game/objects/keychain/porcelain')>()),
   bakePorcelain: (scene: { textureKeys: Set<string> }, p: Baked) => {
     baked.push(p);
     scene.textureKeys.add(p.key);
@@ -55,7 +56,7 @@ vi.mock('../../src/game/objects/Cat', () => ({ Cat: FakeCat }));
 vi.mock('../../src/game/plugins/DyePlugin', () => ({ getDye: () => dye }));
 
 import anchors from '../../src/game/data/anchors.json';
-import { ObjectEvents } from '../../src/game/constants';
+import { KeychainTextures, ObjectEvents } from '../../src/game/constants';
 import { pendulum, pendulumDuration, recipeKey } from '../../src/game/domain/keychain';
 import type { KeychainRecipe, Stars } from '../../src/game/domain/types';
 import { Keychain, type KeychainData } from '../../src/game/objects/keychain/Keychain';
@@ -128,7 +129,7 @@ const clothes = [
 ];
 const data = {
   cats: catDefs, clothes, anchors,
-  rules: { goldFrom: 4, charmFrom: 5, borderCopies: 12, borderRadius: 14, borderColor: '#FFFCF5', varnishAlpha: 0.5 },
+  rules: { goldFrom: 4, charmFrom: 5, borderCopies: 12, borderRadius: 14, borderColor: '#FFFCF5', varnishAlpha: 0.5, saturation: 0.82, warmth: 0.03 },
 } as unknown as KeychainData;
 
 const recipe = (extra: Partial<KeychainRecipe> = {}, stars: Stars = 3): KeychainRecipe => ({
@@ -142,6 +143,36 @@ beforeEach(() => {
   baked.length = 0;
   cats.length = 0;
   dye.ensured.length = 0; dye.retained.length = 0; dye.released.length = 0; dye.failFor.clear();
+});
+
+describe('Keychain without the hardware baked in (F19.3: the pieces are live, for the transformation)', () => {
+  it('bakes a bare texture of its own and keeps the hardware out of it', async () => {
+    const scene = new FakeScene();
+    const k = make(scene, recipe(), { hardware: false });
+    await k.whenReady();
+    expect(k.hasHardware).toBe(false);
+    expect(k.textureKey).toBe(`${recipeKey(recipe(), 512)}~bare`);
+    expect(baked[0]).toMatchObject({ key: k.textureKey, hardware: false });
+  });
+
+  it('makes the live pieces of the ring of its stars, hidden and in place, once', async () => {
+    const scene = new FakeScene();
+    const k = make(scene, recipe({}, 5), { hardware: false });
+    await k.whenReady();
+    const parts = k.hardwareImages();
+    expect(Object.keys(parts)).toEqual(['chain', 'charm', 'eyelet', 'ring-gold']);
+    expect(parts.eyelet).toBe(k.hardwareImages().eyelet);
+    expect(scene.images.filter((i) => [KeychainTextures.Eyelet, KeychainTextures.RingGold, KeychainTextures.Chain, KeychainTextures.Charm].includes(i.key as never))).toHaveLength(4);
+  });
+
+  it('has no live pieces when the hardware is baked in', async () => {
+    const scene = new FakeScene();
+    const k = make(scene, recipe());
+    await k.whenReady();
+    expect(k.hasHardware).toBe(true);
+    expect(k.hardwareImages()).toEqual({});
+    expect(baked[0]).toMatchObject({ hardware: true });
+  });
 });
 
 describe('Keychain: the big one (512 px)', () => {

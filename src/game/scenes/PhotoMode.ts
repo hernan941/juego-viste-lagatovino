@@ -1,8 +1,10 @@
 import Phaser from 'phaser';
-import { Fonts, GAME_HEIGHT, GAME_WIDTH, Ink, MEOW_KEYS, ObjectEvents, RegistryKeys, SceneKeys, SfxKeys, TextureKeys } from '../constants';
+import { Fonts, GAME_HEIGHT, GAME_WIDTH, Ink, KeychainTextures, MEOW_KEYS, ObjectEvents, RegistryKeys, SceneKeys, SfxKeys, TextureKeys } from '../constants';
 import type { GameData } from '../data/schema';
 import { photoUnlocks, type PhotoUnlocks } from '../domain/album';
-import { photoLines } from '../domain/copy';
+import { keychainLines, photoLines, withBrand } from '../domain/copy';
+import { keychainRecipe } from '../domain/keychain';
+import { packageOps } from '../domain/keychainPackage';
 import { catPose } from '../domain/catPose';
 import type { Expression } from '../domain/expressions';
 import { sheetOps, SHEET_LAYOUT, starRow, type SheetOp } from '../domain/photoSheet';
@@ -13,7 +15,7 @@ import {
   PHOTO_SIZE, canPick, composition, pieceStates, placeSticker, removeSticker, stickerAngle, type PhotoComposition,
 } from '../domain/photoComposition';
 import { emptyProgress } from '../domain/progress';
-import type { AnchorsDef, ItemDye, PhotoPiece, PhotoPose, PlacedSticker, Point, Progress, Rect } from '../domain/types';
+import type { AnchorsDef, ItemDye, KeychainRecipe, PhotoPiece, PhotoPose, PlacedSticker, Point, Progress, Rect, Stars } from '../domain/types';
 import type { E2EUi, UiState } from '../e2eHook';
 import { Button } from '../objects/Button';
 import { Cat } from '../objects/Cat';
@@ -23,7 +25,10 @@ import { Tabs, type TabDef } from '../objects/Tabs';
 import { Card } from '../objects/kit/Card';
 import { PaperBackground } from '../objects/kit/PaperBackground';
 import { SpeechBubble } from '../objects/kit/SpeechBubble';
-import { composePhoto } from '../objects/photo';
+import { composePackage, composePhoto } from '../objects/photo';
+import { keychainData } from '../objects/keychain/Keychain';
+import { KeychainTransformation } from '../objects/keychain/KeychainTransformation';
+import { PackageCard } from '../objects/keychain/PackageCard';
 import { PhotoTray, type TrayKind } from '../objects/photomode/PhotoTray';
 import { Sticker } from '../objects/photomode/Sticker';
 import { tabIconKey } from '../objects/tabIcons';
@@ -48,7 +53,9 @@ const PANEL: Rect = { x: 25, y: 150, width: 330, height: 510 };
 const TRAY_ORIGIN: Point = { x: 46, y: 215 };
 const JAR = { x: 1090, y: 330, width: 122, height: 150 };
 const JAR_ZONE: Rect = { x: JAR.x - JAR.width / 2, y: JAR.y - JAR.height / 2, width: JAR.width, height: JAR.height };
-const DEPTH = { sheet: 2, cat: 3, placed: 4, panel: 5, tray: 6, buttons: 20, held: 40 };
+const DEPTH = { sheet: 2, cat: 3, placed: 4, panel: 5, tray: 6, card: 7, keychain: 8, buttons: 20, held: 40 };
+/** A tap skips the transformation only after this long: the same tap that pressed Guardar must not skip it. */
+const SKIP_AFTER_MS = 350;
 const KINDS: readonly TrayKind[] = ['backgrounds', 'frames', 'poses', 'stickers'];
 const TAB_COLORS = { backgrounds: 'cielo', frames: 'rosa', poses: 'lila', stickers: 'sol' } as const;
 
@@ -106,6 +113,12 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
   private ready = false;
   private leaving = false;
   private photoBusy = false;
+  private transformation: KeychainTransformation | null = null;
+  private card: PackageCard | null = null;
+  private keychainPhase: string | null = null;
+  private skippable = false;
+  private putting = false;
+  private closed = false;
   private photos = 0;
   private lastPhoto: string | null = null;
   private readonly toastLog: string[] = [];
@@ -124,6 +137,12 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     this.ready = false;
     this.leaving = false;
     this.photoBusy = false;
+    this.transformation = null;
+    this.card = null;
+    this.keychainPhase = null;
+    this.skippable = false;
+    this.putting = false;
+    this.closed = false;
     this.photos = 0;
     this.lastPhoto = null;
     this.bubble = null;
@@ -171,6 +190,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
 
     this.input.on('pointermove', this.onMove);
     this.input.on('pointerup', this.onUp);
+    this.input.on('pointerdown', this.onTap);
     this.time.delayedCall(450, () => {
       this.ready = true;
       getAudio(this).playRandom(MEOW_KEYS);
@@ -498,26 +518,128 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     return (this.pose ?? '').slice(POSE_PREFIX.length);
   }
 
-  /** [Guardar]: shutter, a soft flash, the composition of the table is saved as a PNG and a bubble says so. The cat does not change. */
+  /** The pieces chosen on the table, as the recipe of the keychain keeps them (an empty id when nothing was unlocked). */
+  private recipe(): KeychainRecipe {
+    const { stickers } = this.getComposition();
+    const worn = this.cat.wornIds;
+    const itemDye = Object.fromEntries(Object.entries(this.itemDye).filter(([id]) => worn.includes(id)));
+    return keychainRecipe(
+      { catId: this.look.catId ?? '', catName: this.look.catName, outfit: this.look.outfit, itemDye, pose: this.pose ?? '' },
+      { background: this.background ?? '', frame: this.frame ?? '', stickers },
+      (this.look.rating?.stars ?? 1) as Stars,
+      new Date(),
+    );
+  }
+
+  /**
+   * [Guardar] (S6 and S8): the shutter, and the cat turns into a porcelain keychain (about 2.2 s; a tap skips it). Then the kraft
+   * card comes up, the keychain hangs from it and the PNG of that packaging is saved. A tap on the card puts everything away and the
+   * cat is back as it was. If the keychain cannot be made, the plain photo of the table is saved instead.
+   */
   private async snap() {
     if (this.photoBusy || this.leaving) return;
     this.photoBusy = true;
     getAudio(this).play(SfxKeys.Shutter);
-    this.flash();
-    // Let the flash start before the (short) work of drawing the picture.
-    await new Promise<void>((resolve) => this.time.delayedCall(140, resolve));
-    if (!this.scene.isActive()) return;
-    const url = await composePhoto(this, this.cat, this.sheetOps(), this.poseExpression());
-    if (!this.scene.isActive()) return;
+    const audio = getAudio(this);
+    const transformation = new KeychainTransformation(this, {
+      cat: this.cat, recipe: this.recipe(), data: keychainData(this.catalog, this.anchors), depth: DEPTH.keychain,
+      play: (key, volume) => audio.play(key, volume === undefined ? undefined : { volume }),
+      onPhase: (phase) => { this.keychainPhase = phase; },
+    });
+    this.transformation = transformation;
+    this.skippable = false;
+    this.time.delayedCall(SKIP_AFTER_MS, () => { this.skippable = true; });
+    try {
+      await transformation.run();
+    } catch (error) {
+      console.warn('The keychain could not be made; saving the plain photo.', error);
+      if (!this.closed) await this.savePlainPhoto(transformation);
+      return;
+    }
+    if (this.closed || this.transformation !== transformation) return;
+    await this.hangPackage(transformation);
+  }
+
+  /** The kraft card rises, the keychain flies to its hole, and the PNG of the packaging is saved. */
+  private async hangPackage(transformation: KeychainTransformation) {
+    const keychain = transformation.keychain;
+    if (!keychain) return;
+    const { layout } = keychain;
+    const { brand } = this.catalog;
+    const ops = packageOps({
+      photo: this.catalog.photo, composition: this.getComposition(), catName: this.look.catName, stars: this.look.rating?.stars ?? null,
+      brand: { shopSign: withBrand(brand).shopSign, signature: photoLines.signature(brand) },
+      cardTexture: KeychainTextures.PackageCard, keychain: { width: layout.width, height: layout.height, hang: layout.hang },
+    });
+    const card = new PackageCard(this, SHEET.x, SHEET.y, ops).setDepth(DEPTH.card);
+    this.card = card;
+    getAudio(this).play(SfxKeys.Paper);
+    const place = ops.find((o) => o.kind === 'keychain');
+    const rising = card.rise();
+    const hanging = place?.kind === 'keychain' ? transformation.hangOn(card.hangPoint, place.scale) : Promise.resolve();
+    // The PNG is drawn while the card comes up (the keychain is already built, so it is only the drawing).
+    const url = await composePackage(this, ops, keychain);
+    await Promise.all([rising, hanging]);
+    if (this.closed || this.card !== card) return;
     const file = photoFileName(this.look.catName);
     // A computer downloads the PNG; a phone opens the share sheet (ADR 0014).
-    await savePhoto<HTMLAnchorElement>({ doc: { createElement: () => document.createElement('a'), body: document.body }, nav: navigator, touch: touchEnv().touch }, url, file);
-    if (!this.scene.isActive()) return;
+    await this.download(url, file);
+    if (this.closed || this.card !== card) return;
+    this.photos++;
+    this.lastPhoto = file;
+    this.keychainPhase = 'ready';
+    card.enableTap();
+    card.on(ObjectEvents.PackageTap, () => void this.putAway());
+    this.toast(keychainLines.saved(this.look.catName));
+  }
+
+  /** A tap on the card: it goes down with the keychain, and the cat pops back where it was, in its pose. */
+  private async putAway() {
+    const card = this.card;
+    const transformation = this.transformation;
+    if (!card || !transformation || this.putting) return;
+    this.putting = true;
+    getAudio(this).play(SfxKeys.Paper);
+    await Promise.all([card.sink(), transformation.fadeOut()]);
+    if (this.closed) return;
+    card.destroy();
+    this.card = null;
+    transformation.restoreCat();
+    transformation.destroy();
+    this.transformation = null;
+    this.keychainPhase = null;
+    this.cat.appear();
+    this.cat.squash();
+    this.putting = false;
+    this.photoBusy = false;
+  }
+
+  /** The way out when the keychain cannot be made: the composition of the table as a PNG, with the flash. The cat does not change. */
+  private async savePlainPhoto(transformation: KeychainTransformation) {
+    transformation.restoreCat();
+    transformation.destroy();
+    this.transformation = null;
+    this.keychainPhase = null;
+    this.flash();
+    const url = await composePhoto(this, this.cat, this.sheetOps(), this.poseExpression());
+    if (this.closed) return;
+    const file = photoFileName(this.look.catName);
+    await this.download(url, file);
+    if (this.closed) return;
     this.photos++;
     this.lastPhoto = file;
     this.photoBusy = false;
     this.toast(photoLines.saved);
   }
+
+  private download(url: string, file: string) {
+    return savePhoto<HTMLAnchorElement>({ doc: { createElement: () => document.createElement('a'), body: document.body }, nav: navigator, touch: touchEnv().touch }, url, file);
+  }
+
+  /** A tap while the transformation runs jumps to its end (not in the first moment: it could be the tap that pressed Guardar twice). */
+  private readonly onTap = () => {
+    if (this.skippable && this.transformation && !this.transformation.done) this.transformation.skip();
+  };
 
   /** A camera flash: white that fades in fast and out softly (a soft cream fade with reduced motion). */
   private flash() {
@@ -553,6 +675,12 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
   private cleanUp() {
     this.input.off('pointermove', this.onMove);
     this.input.off('pointerup', this.onUp);
+    this.input.off('pointerdown', this.onTap);
+    this.closed = true;
+    this.card?.destroy();
+    this.card = null;
+    this.transformation?.destroy();
+    this.transformation = null;
     this.time.removeAllEvents();
     this.tweens.killAll();
     this.bubble?.destroy();
@@ -591,7 +719,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
         background: this.background, frame: this.frame, pose: this.pose,
         tab: this.kind, unlocked, composition: this.getComposition(),
         stickerCount: this.stickerData.length, stickerLimit: stickerLimit(this.stickerData.length).max, holding: this.held !== null,
-        photos: this.photos, lastPhoto: this.lastPhoto, photoBusy: this.photoBusy, toasts: [...this.toastLog],
+        photos: this.photos, lastPhoto: this.lastPhoto, photoBusy: this.photoBusy, keychainPhase: this.keychainPhase, toasts: [...this.toastLog],
       },
     };
   }

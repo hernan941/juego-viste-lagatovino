@@ -4,14 +4,22 @@
 import Phaser from 'phaser';
 import { KeychainTextures } from '../../constants';
 import {
-  HARDWARE_ART,
-  PORCELAIN_SATURATION,
-  PORCELAIN_WARMTH,
   borderOffsets,
+  hardwareParts,
   porcelainMatrix,
+  type HardwarePartId,
   type KeychainLayout,
   type Ring,
 } from '../../domain/keychain';
+
+/** The texture of each piece of hardware. */
+export const PART_TEXTURE: Record<HardwarePartId, string> = {
+  chain: KeychainTextures.Chain,
+  charm: KeychainTextures.Charm,
+  eyelet: KeychainTextures.Eyelet,
+  'ring-silver': KeychainTextures.RingSilver,
+  'ring-gold': KeychainTextures.RingGold,
+};
 
 export interface PorcelainParams {
   /** Key of the flattened result. */
@@ -21,6 +29,8 @@ export interface PorcelainParams {
   px: number;
   layout: KeychainLayout;
   ring: Ring;
+  /** False leaves the hardware out: the transformation of the photo mode puts it on live, piece by piece. */
+  hardware: boolean;
   /** Copies per ring of the border and the widths of the cream border and of the ink line outside it, in texture px. */
   copies: number;
   borderPx: number;
@@ -28,6 +38,9 @@ export interface PorcelainParams {
   cream: number;
   ink: number;
   varnishAlpha: number;
+  /** The "hand painted" ColorMatrix (photo.json -> keychain). */
+  saturation: number;
+  warmth: number;
 }
 
 /** An Image that is not on the display list: it only exists to be drawn into a texture. */
@@ -108,7 +121,7 @@ export function bakePorcelain(scene: Phaser.Scene, p: PorcelainParams): Phaser.T
     // The look, a little desaturated and warmer, like hand painted (the border is not touched).
     const look = image(p.lookKey, cx, cy);
     look.enableFilters();
-    look.filters?.internal.addColorMatrix().colorMatrix.set(porcelainMatrix(PORCELAIN_SATURATION, PORCELAIN_WARMTH));
+    look.filters?.internal.addColorMatrix().colorMatrix.set(porcelainMatrix(p.saturation, p.warmth));
     comp.draw(look);
 
     // The varnish: soft white shines, clipped to the silhouette.
@@ -118,13 +131,11 @@ export function bakePorcelain(scene: Phaser.Scene, p: PorcelainParams): Phaser.T
     comp.draw(image(varnishKey, cx, cy));
 
     // Hardware: the chain and charm (5 stars) go behind the ring, the eyelet screws into the head and the ring hangs from it.
-    const { eyelet, chain, charm } = HARDWARE_ART;
-    if (l.chain && l.charm) {
-      comp.draw(image(KeychainTextures.Chain, l.chain.x, l.chain.y).setOrigin(chain.top.x / chain.width, chain.top.y / chain.height).setScale(l.chain.scale).setAngle(l.chain.angle));
-      comp.draw(image(KeychainTextures.Charm, l.charm.x, l.charm.y).setOrigin(charm.eye.x / charm.width, charm.eye.y / charm.height).setScale(l.charm.scale));
+    if (p.hardware) {
+      for (const part of hardwareParts(l, p.ring)) {
+        comp.draw(image(PART_TEXTURE[part.part], part.x, part.y).setOrigin(part.origin.x, part.origin.y).setScale(part.scale).setAngle(part.angle));
+      }
     }
-    comp.draw(image(KeychainTextures.Eyelet, l.eyelet.x, l.eyelet.y).setOrigin(eyelet.root.x / eyelet.width, eyelet.root.y / eyelet.height).setScale(l.eyelet.scale));
-    comp.draw(image(p.ring.metal === 'gold' ? KeychainTextures.RingGold : KeychainTextures.RingSilver, l.ring.x, l.ring.y).setScale(l.ring.scale));
     comp.render();
     return comp;
   } catch (error) {
