@@ -254,3 +254,20 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
 - El paginador de Prendas muestra 2 hojas (30 y 20 entradas). Tocar una entrada abre su ficha y tocarla otra vez la cierra.
 - Movimiento reducido en las 4 páginas.
 - `perf.spec`: cambiar entre las 4 páginas sin fugas (sobre todo Gatos, con 12 `Cat`).
+
+## F16.4: barrido de color y reacciones
+### E2E pendientes (`dye.spec.ts`, F16.6)
+1. Al soltar un frasco, `dyes.sweeping` incluye la prenda y después queda vacío. `applied` y `itemDye` persisten tras recargar.
+2. Con el color favorito:
+   - `tastes.last === 'color'`;
+   - el monedero sube 15;
+   - `tastesFound[cat]` incluye `'color'`;
+   - repetir el mismo color no vuelve a pagar.
+3. Un frasco que no es el favorito no paga.
+4. `agua` vuelve a la textura original y quita el puntito.
+5. Puntito de color:
+   - aparece en la celda y en la fila del panel de capas de cada prenda teñida;
+   - nunca en las prendas no teñibles.
+6. En movimiento reducido el tinte se aplica sin máscara y `settled` pasa a verdadero.
+7. `@mobile`: arrastrar un frasco con el dedo, y el barrido termina.
+8. Sin errores de consola.
