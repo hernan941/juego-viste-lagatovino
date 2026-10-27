@@ -312,3 +312,16 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
 - `perf.spec`: un ciclo del álbum (portada y sello) sin fugas.
 - `motion.spec`: con movimiento reducido, la portada y el sello solo hacen fundido.
 - **Ojo**: abrir el álbum ahora espera unos 1,2 s por la portada. Los e2e existentes con `jump('Album')` siguen funcionando, pero más lentos.
+
+## F18.5 y F19.3: foto compuesta y transformación en llavero
+### E2E pendientes
+- `photomode.spec`: la descarga se llama `viste-lagato-<nombre>.png`, mide 1080×1350 y tiene los colores del empaque, no los de la tarjeta del MVP.
+- `keychain.spec`:
+  - `keychainPhase` pasa en orden por `oven`, `turn`, `varnish`, `hardware`, `swing`, `package` y `ready`;
+  - un toque salta la secuencia y las fases siguen en orden;
+  - en movimiento reducido son `turn`, `hardware`, `swing`, `package` y `ready` en unos 1 s, sin flash;
+  - un toque en la tarjeta la guarda, el gato vuelve en su pose y Guardar funciona otra vez;
+  - salir a mitad de la secuencia no deja tweens, timers ni texturas (`perf`).
+- Argolla según las estrellas: dorada desde 4★ y con dije en 5★. Se comprueba con píxeles del PNG.
+- Para cada gato de `cats.json`, nada del look queda fuera del borde crema (píxeles).
+- `@mobile`: Guardar con el dedo abre el menú de compartir con el PNG del empaque.
