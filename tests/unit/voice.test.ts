@@ -64,3 +64,9 @@ describe('the @ rule', () => {
     for (const t of texts()) expect(t.replace(/gat@/g, '')).not.toMatch(/[\p{L}]@|@[\p{L}]/u);
   });
 });
+
+describe("album button of the Title", () => {
+  it("writes the name and the percentage", () => {
+    expect(albumLines.titleButton(37)).toBe("Mi álbum · 37%");
+  });
+});
