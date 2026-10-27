@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { Fonts, GAME_WIDTH, Ink, MEOW_KEYS, ObjectEvents, RegistryKeys, SceneKeys, TextureKeys } from '../constants';
+import { Fonts, GAME_WIDTH, Ink, MEOW_KEYS, ObjectEvents, RegistryKeys, SceneKeys, TextureKeys, colorToNumber } from '../constants';
 import type { GameData } from '../data/schema';
 import { catReaction, ceremonyPlan, type CeremonyStep } from '../domain/ceremony';
 import { showcaseTitle } from '../domain/copy';
@@ -16,17 +16,19 @@ import { Cat } from '../objects/Cat';
 import { FullscreenButton } from '../objects/FullscreenButton';
 import { MotionButton } from '../objects/MotionButton';
 import { MuteButton } from '../objects/MuteButton';
-import { SecretCounter } from '../objects/SecretCounter';
 import { WalletHud } from '../objects/WalletHud';
 import { appear } from '../objects/kit/appear';
-import { drawRoom } from '../objects/room';
+import { PaperBackground } from '../objects/kit/PaperBackground';
+import { drawRunwayBackdrop } from '../objects/showcase/runwayBackdrop';
+import { SecretsTag } from '../objects/showcase/SecretsTag';
 import { Ceremony } from '../objects/showcase/Ceremony';
-import { hex, touchEnv } from '../objects/ui';
+import { touchEnv } from '../objects/ui';
 import { getAudio } from '../plugins/AudioPlugin';
 import { getSave } from '../plugins/SavePlugin';
 import { go } from '../systems/navigate';
 import { readSession } from '../systems/sessionStore';
 import { profileOf } from '../systems/motion';
+import { EXIT_CENTERS, JUDGE_CARD_AT, EXIT_HEIGHT, EXIT_WIDTHS, EXIT_Y } from '../systems/runwayLayout';
 import { enterKind, transitionIn } from '../systems/transitions';
 
 /** The cat stands on the left of the mirror; the judge, his card and the notes take the rest of the runway. */
@@ -35,11 +37,8 @@ const CAT_FEET_Y = 616;
 const CAT_SIZE = 440;
 /** How often the cat does a little flourish once the verdict is in. */
 const FLOURISH_MS = 1700;
-/** The exits, in a row under the cat (the judge stands on the right). */
-const EXIT_Y = 650;
-const EXITS = { photo: 185, keep: 480, change: 775 } as const;
 /** Where the ceremony puts things in this scene (the card sits below the purse, the notes above the cat). */
-const LAYOUT = { judgeAt: { x: 1060, y: 745 }, cardAt: { x: 930, y: 252 }, notesAt: { x: 475, y: 108 }, notesWidth: 420, buttonsFrom: { x: 1060, y: 690 }, confettiAt: { x: 380, y: -10 } };
+const LAYOUT = { judgeAt: { x: 1060, y: 745 }, cardAt: JUDGE_CARD_AT, notesAt: { x: 475, y: 108 }, notesWidth: 420, buttonsFrom: { x: 1060, y: 690 }, confettiAt: { x: 380, y: -10 } };
 /** The purse sits over the middle of the runway, clear of the judge's card. */
 const WALLET_AT = { x: 896, y: 28 };
 
@@ -64,7 +63,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
   private mute!: MuteButton;
   private motion!: MotionButton;
   private fullscreen: FullscreenButton | null = null;
-  private counter!: SecretCounter;
+  private counter!: SecretsTag;
   private hearts!: Phaser.GameObjects.Particles.ParticleEmitter;
   private pose: Expression = 'feliz';
   private title = '';
@@ -123,10 +122,12 @@ export class Showcase extends Phaser.Scene implements E2EUi {
       this.rating = (this.registry.get(RegistryKeys.LastRating) as RatingResult | undefined) ?? null;
     }
 
-    drawRoom(this, CAT_X, CAT_FEET_Y);
-    // A warm glow behind the cat that breathes.
+    // A notebook page: grid paper, a pencil spotlight and the taped strip of the runway (clear of the exits and the judge's card).
+    new PaperBackground(this).setDepth(-10);
+    drawRunwayBackdrop(this, CAT_X, CAT_FEET_Y)?.setDepth(-5);
+    // A highlighter-yellow glow behind the cat that breathes.
     const glow = this.add.graphics().setDepth(1);
-    glow.fillStyle(hex('mantequilla'), 0.5).fillEllipse(CAT_X, 380, 400, 500);
+    glow.fillStyle(colorToNumber(Ink.sol), 0.2).fillEllipse(CAT_X, 380, 400, 500);
     if (profileOf(this).loops) this.tweens.add({ targets: glow, alpha: { from: 0.45, to: 1 }, duration: 1100, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
 
     this.cat = new Cat(this, CAT_X, CAT_FEET_Y, def, anchors, CAT_SIZE).setDepth(5);
@@ -154,7 +155,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
     this.motion = new MotionButton(this, GAME_WIDTH - 128, 56).setDepth(50);
     this.fullscreen = FullscreenButton.create(this, GAME_WIDTH - 200, 56);
     this.fullscreen?.setDepth(50);
-    this.counter = new SecretCounter(this, 140, 50).setDepth(50);
+    this.counter = new SecretsTag(this, 140, 50).setDepth(50);
     // A prize that was delivered quietly: the counter shows the old number and pops to the new one with the toast.
     const won = getSave(this).secrets.length;
     this.counter.setCount(Math.max(0, won - this.gifted.length), catalog.combos.length);
@@ -163,7 +164,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
       getAudio(this).playRandom(MEOW_KEYS);
       if (this.gifted.length > 0) {
         this.time.delayedCall(700, () => {
-          this.toast('¡Te guardé tu regalito!', 'mantequilla');
+          this.toast('¡Te guardé tu regalito!', 'sol');
           this.counter.setCount(won, catalog.combos.length, true);
         });
       }
@@ -226,14 +227,14 @@ export class Showcase extends Phaser.Scene implements E2EUi {
       this.tweens.add({ targets: hint, alpha: 0, duration: 200, onComplete: () => hint.destroy() });
     }
     const make = (x: number, label: string, pill: 'primary' | 'secondary', width: number, onClick: () => void) => {
-      const button = new Button(this, x, EXIT_Y, label, { pill, width, height: 76, fontSize: 30 }).setDepth(20);
+      const button = new Button(this, x, EXIT_Y, label, { pill, width, height: EXIT_HEIGHT, fontSize: 30 }).setDepth(20);
       button.on(ObjectEvents.ButtonClick, onClick);
       appear(this, button, { pop: true });
       return button;
     };
-    this.photo = make(EXITS.photo, runwayLines.photo, 'primary', 250, () => this.leave('photo'));
-    this.keep = make(EXITS.keep, runwayLines.keepDressing, 'secondary', 300, () => this.leave('keepDressing'));
-    this.change = make(EXITS.change, runwayLines.change, 'secondary', 250, () => this.leave('change'));
+    this.photo = make(EXIT_CENTERS.photo, runwayLines.photo, 'primary', EXIT_WIDTHS.photo, () => this.leave('photo'));
+    this.keep = make(EXIT_CENTERS.keep, runwayLines.keepDressing, 'secondary', EXIT_WIDTHS.keep, () => this.leave('keepDressing'));
+    this.change = make(EXIT_CENTERS.change, runwayLines.change, 'secondary', EXIT_WIDTHS.change, () => this.leave('change'));
     const stars = this.rating?.stars ?? 3;
     if (!celebrated) {
       // Back from the album: the cat wears the face of its verdict at once.
@@ -256,15 +257,15 @@ export class Showcase extends Phaser.Scene implements E2EUi {
   }
 
   /** A small bubble that floats up from the foot of the runway and away (never over the belly). */
-  private toast(text: string, tone: 'menta' | 'mantequilla' = 'menta') {
+  private toast(text: string, tone: 'lila' | 'sol' = 'lila') {
     this.toastLog.push(text);
     const label = this.add
       .text(0, 0, text, { fontFamily: Fonts.Title, fontSize: '30px', color: Ink.tinta, padding: { x: 4, y: 8 } })
       .setOrigin(0.5);
     const g = this.add.graphics();
     const w = label.width + 56;
-    g.fillStyle(hex(tone), 1).fillRoundedRect(-w / 2, -26, w, 56, 28);
-    g.lineStyle(3, hex('rosa200'), 1).strokeRoundedRect(-w / 2, -26, w, 56, 28);
+    g.fillStyle(colorToNumber(Ink[tone]), 1).fillRoundedRect(-w / 2, -26, w, 56, 28);
+    g.lineStyle(3, colorToNumber(Ink.tinta), 1).strokeRoundedRect(-w / 2, -26, w, 56, 28);
     const bubble = this.add.container(CAT_X + 330, 560, [g, label]).setDepth(60).setScale(0).setAlpha(0);
     this.tweens.chain({
       targets: bubble,
