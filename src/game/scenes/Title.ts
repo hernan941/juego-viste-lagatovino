@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { Fonts, GAME_HEIGHT, GAME_WIDTH, Ink, MEOW_KEYS, ObjectEvents, RegistryKeys, SceneKeys, SfxKeys, TextureKeys, colorToNumber } from '../constants';
 import type { GameData } from '../data/schema';
-import { completion, hasAlbumProgress } from '../domain/album';
+import { albumHasNews, completion, hasAlbumProgress } from '../domain/album';
 import { albumLines } from '../domain/copy';
 import { albumArgs } from '../domain/flow';
 import { emptyProgress } from '../domain/progress';
@@ -26,12 +26,12 @@ const LOGO_Y = 190;
 const PEEK = [
   { catIndex: 0, x: 215, scale: 330, rise: 120 },
   { catIndex: 5, x: 1065, scale: 330, rise: 120 },
-  { catIndex: 2, x: 640, scale: 300, rise: 34 },
+  { catIndex: 2, x: 640, scale: 300, rise: 200 },
 ];
 /** Y of the feet of a peeking cat when it is hidden and when it has popped up. */
 const HIDDEN_DY = 330;
 const HILL_TOP = 600;
-const ALBUM_Y = 470;
+const ALBUM_Y = 472;
 
 /** Title: the notebook cover. Grid paper, the bouncing logo, kittens peeking from behind a drawn hill, "Iniciar" and, once there is progress, "Mi álbum" with its percentage. */
 export class Title extends Phaser.Scene implements E2EUi {
@@ -60,9 +60,9 @@ export class Title extends Phaser.Scene implements E2EUi {
     const anchors = this.registry.get(RegistryKeys.Anchors) as AnchorsDef;
     this.cameras.main.setBackgroundColor(Ink.cremaPapel);
     new PaperBackground(this).setDepth(-10);
-    addInkSun(this, 1130, 92).setDepth(-5);
+    addInkSun(this, 112, 104).setDepth(-5);
     addInkClouds(this, [
-      { x: 150, y: 96, scale: 0.8, speed: 14 }, { x: 900, y: 300, scale: 0.55, speed: 9 }, { x: 1200, y: 360, scale: 0.6, speed: 11 },
+      { x: 1060, y: 230, scale: 0.8, speed: 14 }, { x: 900, y: 300, scale: 0.55, speed: 9 }, { x: 1200, y: 360, scale: 0.6, speed: 11 },
     ]).forEach((c) => c.setDepth(-4));
     this.drawHill();
 
@@ -141,7 +141,7 @@ export class Title extends Phaser.Scene implements E2EUi {
     const p = profileOf(this);
     const letters = [...LOGO].map((ch) =>
       this.add
-        .text(0, 0, ch, { fontFamily: Fonts.Title, fontSize: '150px', color: Ink.tinta, fontStyle: '900', padding: { x: 6, y: 18 } })
+        .text(0, 0, ch, { fontFamily: Fonts.Title, fontSize: '132px', color: Ink.tinta, fontStyle: '900', padding: { x: 6, y: 18 } })
         .setOrigin(0.5)
         .setDepth(20),
     );
@@ -183,7 +183,7 @@ export class Title extends Phaser.Scene implements E2EUi {
 
   private createStart() {
     const cx = GAME_WIDTH / 2;
-    const cy = 348;
+    const cy = 374;
     const halo = this.add.graphics().setDepth(19);
     halo.fillStyle(ink('sol'), 0.55).fillRoundedRect(-170, -56, 340, 112, 56).setPosition(cx, cy).setAlpha(0);
     this.start = new Button(this, cx, cy, 'Iniciar', { pill: 'primary', width: 300, height: 94, fontSize: 56 }).setDepth(30).setScale(0);
@@ -217,6 +217,11 @@ export class Title extends Phaser.Scene implements E2EUi {
     const button = new Button(this, GAME_WIDTH / 2, ALBUM_Y, label, { pill: 'secondary', width: 330, height: 74, fontSize: 36 }).setDepth(30).setScale(0);
     this.album = button;
     button.input!.enabled = false;
+    // The same ✦ as the notebook stamp: something new inside.
+    if (albumHasNews(progress, catalog)) {
+      const spark = this.add.image(GAME_WIDTH / 2 + 150, ALBUM_Y - 30, TextureKeys.InkSparkle).setDepth(31).setAlpha(0);
+      this.tweens.add({ targets: spark, alpha: 1, delay: 2200, duration: 300 });
+    }
     this.time.delayedCall(1800, () => {
       this.tweens.add({
         targets: button, scale: 1, duration: 400, ease: profileOf(this).ease('Back.easeOut'),

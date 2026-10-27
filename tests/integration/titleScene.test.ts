@@ -8,7 +8,7 @@ vi.mock('phaser', async () => {
 
 const h = vi.hoisted(() => ({
   go: vi.fn(),
-  buttons: [] as { label: string; options: { pill?: string }; emit(ev: string): void; destroyed: boolean }[],
+  buttons: [] as { x: number; y: number; label: string; options: { pill?: string }; emit(ev: string): void; destroyed: boolean }[],
 }));
 
 vi.mock('../../src/game/systems/navigate', () => ({ go: (...a: unknown[]) => h.go(...a) }));
@@ -40,7 +40,7 @@ vi.mock('../../src/game/objects/MotionButton', () => ({ MotionButton: class { se
 vi.mock('../../src/game/objects/FullscreenButton', () => ({ FullscreenButton: { create: () => null } }));
 
 import { Title } from '../../src/game/scenes/Title';
-import { ObjectEvents, RegistryKeys, SceneKeys } from '../../src/game/constants';
+import { ObjectEvents, RegistryKeys, SceneKeys, TextureKeys } from '../../src/game/constants';
 import { emptyProgress } from '../../src/game/domain/progress';
 import { assertGameData } from '../../src/game/data/schema';
 import anchors from '../../src/game/data/anchors.json';
@@ -104,6 +104,12 @@ describe('Title with "Mi álbum" (F20.3)', () => {
     expect(album.options.pill).toBe('secondary');
     expect(scene.getE2EUi().buttons.album).toEqual({ x: album.x, y: album.y });
     expect(scene.getE2EUi().buttons.start).toBeDefined();
+  });
+
+  it('puts a sparkle on the album button while there is something new inside (like the notebook stamp)', () => {
+    const scene = open([bought!]);
+    const sparks = () => scene.made.filter((o) => o.kind === 'image' && (o.args as unknown[])[2] === TextureKeys.InkSparkle);
+    expect(sparks()).toHaveLength(1);
   });
 
   it('opens the album remembering the Title as the origin, and does it once', () => {
