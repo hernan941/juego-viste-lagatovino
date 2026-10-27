@@ -9,6 +9,8 @@ const h = vi.hoisted(() => ({
   tabs: [] as { selectedId: string | null; emit(ev: string, ...a: unknown[]): void; destroyed: boolean; selected: string[] }[],
   pages: [] as { tab: string; destroyed: boolean; info?: () => unknown }[],
   bubbles: [] as { text: string; destroyed: boolean }[],
+  covers: [] as { options: { pct: number; setsDone: number; setsTotal: number }; opened: boolean; destroyed: boolean; openUp(cb: () => void): void; finish(): void }[],
+  stamps: [] as { pct: number; destroyed: boolean; dismissed: boolean; dismiss(): void; callbacks: { onLand?: () => void; onDone?: () => void } }[],
 }));
 
 vi.mock('../../src/game/systems/navigate', () => ({ go: (...a: unknown[]) => h.go(...a) }));
@@ -50,6 +52,29 @@ vi.mock('../../src/game/objects/album/AlbumTabs', async () => {
     },
   };
 });
+vi.mock('../../src/game/objects/album/Cover', () => ({
+  Cover: class {
+    opened = false; destroyed = false; shownPct = 0; private done: (() => void) | null = null;
+    constructor(_s: unknown, _x: number, _y: number, public options: { pct: number; setsDone: number; setsTotal: number }) { h.covers.push(this as never); }
+    setDepth() { return this; }
+    setAngle() { return this; }
+    setAlpha() { return this; }
+    setY() { return this; }
+    openUp(cb: () => void) { this.opened = true; this.done = cb; }
+    finish() { this.done?.(); }
+    destroy() { this.destroyed = true; }
+  },
+}));
+vi.mock('../../src/game/objects/album/MilestoneStamp', () => ({
+  MilestoneStamp: class {
+    destroyed = false; dismissed = false;
+    constructor(_s: unknown, _x: number, _y: number, public pct: number, public callbacks: { onLand?: () => void; onDone?: () => void }) { h.stamps.push(this as never); }
+    setDepth() { return this; }
+    dismiss() { this.dismissed = true; this.callbacks.onDone?.(); }
+    get isGone() { return this.dismissed || this.destroyed; }
+    destroy() { this.destroyed = true; }
+  },
+}));
 vi.mock('../../src/game/objects/album/pages', () => ({
   createPage: (_scene: unknown, tab: string) => {
     const page = { tab, destroyed: false, view: {}, destroy() { page.destroyed = true; } };
@@ -85,12 +110,16 @@ function open(data?: unknown) {
   return album;
 }
 const button = (label: string) => h.buttons.find((b) => b.label === label)!;
-const run = (scene: FakeScene) => { for (const d of [...scene.time.delayed]) d.fn(); };
+/** Lets the intro pass: the timers fire and the cover is lifted away. */
+const run = (scene: FakeScene) => {
+  for (const d of [...scene.time.delayed]) d.fn();
+  for (const c of h.covers) c.finish();
+};
 
 beforeEach(() => {
   h.go.mockClear();
   h.transitionIn.mockClear();
-  for (const list of [h.buttons, h.tabs, h.pages, h.bubbles]) list.length = 0;
+  for (const list of [h.buttons, h.tabs, h.pages, h.bubbles, h.covers, h.stamps]) list.length = 0;
 });
 
 describe('Album scene (F17.2)', () => {
@@ -210,5 +239,103 @@ describe('Album scene (F17.2)', () => {
     expect(album.input.count('pointerup')).toBe(0);
     expect(album.input.keyboard.count('keydown-LEFT')).toBe(0);
     expect(album.time.delayed).toHaveLength(0);
+  });
+
+  describe('the cover, the percentage and the milestones (F17.5)', () => {
+    const progressOf = (extra: Partial<ReturnType<typeof emptyProgress>>) => ({ ...emptyProgress(0), ...extra });
+    const withProgress = (progress: ReturnType<typeof emptyProgress>, data?: unknown) => {
+      const album = new Album() as unknown as FakeScene & { init(d?: unknown): void; create(): void; getE2EUi(): { ready: boolean; info: Record<string, unknown> } };
+      album.registry.set(RegistryKeys.Catalog, catalog);
+      album.registry.set(RegistryKeys.Progress, progress);
+      album.init(data);
+      album.create();
+      return album;
+    };
+    const seenNow = (album: FakeScene) => (album.registry.get(RegistryKeys.Progress) as ReturnType<typeof emptyProgress>).albumSeen;
+    const everything = () => progressOf({
+      owned: catalog.clothes.filter((c) => !c.starter && !c.secret).map((c) => c.id),
+      dyesOwned: catalog.dyes.map((d) => d.id),
+      secrets: catalog.combos.map((c) => c.id),
+      tastesFound: Object.fromEntries(catalog.cats.map((c) => [c.id, ['favorite', 'color', ...(c.prefs?.loves ?? []).map((t) => `love:${t}`), ...(c.prefs?.dislikes ?? []).map((t) => `dislike:${t}`)]])),
+    });
+
+    it('shows the cover with the percentage and the sets, and the book is not ready until it opens', () => {
+      const album = withProgress(progressOf({ dyesOwned: ['cielo'] }));
+      expect(h.covers).toHaveLength(1);
+      expect(h.covers[0]!.options).toMatchObject({ setsDone: 0, setsTotal: 7 });
+      expect(h.covers[0]!.options.pct).toBe((album.getE2EUi().info.pct as number));
+      expect(album.getE2EUi().ready).toBe(false);
+      expect(album.getE2EUi().info.cover).toBe(true);
+      run(album);
+      expect(album.getE2EUi().ready).toBe(true);
+      expect(album.getE2EUi().info.cover).toBe(false);
+    });
+
+    it('a tap on the cover opens it at once, and only once', () => {
+      const album = withProgress(emptyProgress(0));
+      album.input.emit('pointerdown', { x: 600, y: 300 });
+      album.input.emit('pointerup', { x: 600, y: 300 });
+      expect(h.covers[0]!.opened).toBe(true);
+      run(album);
+      expect(h.covers).toHaveLength(1);
+      expect(album.getE2EUi().ready).toBe(true);
+    });
+
+    it('marks as seen what the page showed when the player turns away, and the new entries keep their sparkle meanwhile', () => {
+      const album = withProgress(progressOf({ dyesOwned: ['cielo'] }), { tab: 'tintes' });
+      run(album);
+      expect(seenNow(album)).toEqual([]);
+      button('‹').emit(ObjectEvents.ButtonClick);
+      expect(seenNow(album)).toContain('dye:cielo');
+      expect(seenNow(album).every((id) => id.startsWith('dye:'))).toBe(true);
+    });
+
+    it('marks the page it was on when it closes, but not when it was left over the cover', () => {
+      const first = withProgress(progressOf({ owned: [catalog.clothes.find((c) => !c.starter && !c.secret)!.id] }));
+      run(first);
+      first.events.emit('shutdown');
+      expect(seenNow(first).some((id) => id.startsWith('item:'))).toBe(true);
+      const second = withProgress(progressOf({ owned: [catalog.clothes.find((c) => !c.starter && !c.secret)!.id] }));
+      second.events.emit('shutdown');
+      expect(seenNow(second)).toEqual([]);
+    });
+
+    it('stamps each milestone reached, one after another, and writes them down so they are not repeated', () => {
+      const album = withProgress(everything());
+      expect(h.stamps).toHaveLength(0);
+      run(album);
+      expect(h.stamps.map((s) => s.pct)).toEqual([25]);
+      expect(seenNow(album)).toEqual(expect.arrayContaining(['milestone:25', 'milestone:50', 'milestone:75']));
+      h.stamps[0]!.callbacks.onLand?.();
+      expect(album.played).toEqual(expect.arrayContaining(['sfx-stamp']));
+      h.stamps[0]!.dismiss();
+      for (const d of [...album.time.delayed]) d.fn();
+      expect(h.stamps.map((s) => s.pct)).toEqual([25, 50]);
+      expect(album.getE2EUi().info.stamp).toBe(50);
+    });
+
+    it('does not stamp what was celebrated before', () => {
+      const album = withProgress({ ...everything(), albumSeen: ['milestone:25', 'milestone:50', 'milestone:75', 'milestone:100'] });
+      run(album);
+      expect(h.stamps).toHaveLength(0);
+    });
+
+    it('a tap while a stamp is on sends it off', () => {
+      const album = withProgress(everything());
+      run(album);
+      album.input.emit('pointerdown', { x: 600, y: 300 });
+      album.input.emit('pointerup', { x: 600, y: 300 });
+      expect(h.stamps[0]!.dismissed).toBe(true);
+    });
+
+    it('cleans the stamp and the cover on shutdown', () => {
+      const album = withProgress(everything());
+      album.events.emit('shutdown');
+      expect(h.covers.every((c) => c.destroyed)).toBe(true);
+      const second = withProgress(everything());
+      run(second);
+      second.events.emit('shutdown');
+      expect(h.stamps.every((s) => s.destroyed)).toBe(true);
+    });
   });
 });

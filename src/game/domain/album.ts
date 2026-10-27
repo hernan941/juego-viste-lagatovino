@@ -158,3 +158,46 @@ export function albumMilestones(pct: number, milestones: readonly number[] = ALB
 export function crossedMilestones(prevPct: number, pct: number, milestones: readonly number[] = ALBUM_MILESTONES): number[] {
   return milestones.filter((m) => prevPct < m && pct >= m);
 }
+
+export type AlbumSection = keyof AlbumEntries;
+
+/** `albumSeen` also remembers what the album already announced, in its own namespaces (they never clash with the entries). */
+export const seenIdOf = {
+  set: (setId: string): string => `set:${setId}`,
+  unlock: (kind: keyof PhotoUnlocks, id: string): string => `unlock:${kind}:${id}`,
+  milestone: (pct: number): string => `milestone:${pct}`,
+};
+
+/** Ids got in one section of the album (a page of the notebook). */
+export function gotOfSection(section: AlbumSection, progress: Progress, catalogs: AlbumCatalogs): string[] {
+  return entries(progress, catalogs).got[section];
+}
+
+export interface AlbumNews {
+  /** Ids of the sets complete that were not announced yet. */
+  sets: string[];
+  /** `<kind>:<id>` of the photo pieces unlocked that were not announced yet (the starters are not news). */
+  unlocks: string[];
+}
+
+const PHOTO_KINDS = ['backgrounds', 'frames', 'stickers', 'poses'] as const;
+
+/** What is new in the album since the last time it was announced (derived: nothing but `albumSeen` is stored). */
+export function albumNews(progress: Progress, catalogs: AlbumCatalogs): AlbumNews {
+  const seen = new Set(progress.albumSeen);
+  const sets = completedSets(progress, catalogs).filter((id) => !seen.has(seenIdOf.set(id)));
+  const open = photoUnlocks(progress, catalogs);
+  const unlocks: string[] = [];
+  for (const kind of PHOTO_KINDS) {
+    for (const piece of catalogs.photo[kind]) {
+      if (piece.unlock !== 'starter' && open[kind].has(piece.id) && !seen.has(seenIdOf.unlock(kind, piece.id))) unlocks.push(`${kind}:${piece.id}`);
+    }
+  }
+  return { sets, unlocks };
+}
+
+/** Milestones reached whose celebration did not happen yet. */
+export function pendingMilestones(progress: Progress, catalogs: AlbumCatalogs): number[] {
+  const seen = new Set(progress.albumSeen);
+  return albumMilestones(completion(progress, catalogs).pct).filter((m) => !seen.has(seenIdOf.milestone(m)));
+}
