@@ -18,6 +18,7 @@ const h = vi.hoisted(() => ({
   huds: [] as { calls: string[]; destroyed: boolean }[],
   ceremonies: [] as CeremonyRec[],
   backdrops: [] as unknown[][],
+  notebooks: [] as { x: number; y: number; news: boolean; destroyed: boolean; emit(ev: string): void }[],
 }));
 
 vi.mock('../../src/game/systems/navigate', () => ({ go: (...a: unknown[]) => h.go(...a) }));
@@ -56,6 +57,21 @@ vi.mock('../../src/game/objects/Button', async () => {
     },
   };
 });
+vi.mock('../../src/game/objects/NotebookButton', async () => {
+  const { Emitter } = await import('./helpers/sceneFake');
+  return {
+    NotebookButton: class extends Emitter {
+      destroyed = false;
+      constructor(_s: unknown, public x: number, public y: number, public news: boolean) { super(); h.notebooks.push(this as never); }
+      setDepth() { return this; }
+      setAlpha() { return this; }
+      setScale() { return this; }
+      setNews() {}
+      getCenter() { return { x: this.x, y: this.y }; }
+      destroy() { this.destroyed = true; }
+    },
+  };
+});
 vi.mock('../../src/game/objects/MuteButton', async () => ({ MuteButton: class { setDepth() { return this; } getCenter() { return { x: 0, y: 0 }; } destroy() {} } }));
 vi.mock('../../src/game/objects/MotionButton', async () => ({ MotionButton: class { setDepth() { return this; } getCenter() { return { x: 0, y: 0 }; } destroy() {} } }));
 vi.mock('../../src/game/objects/FullscreenButton', async () => ({ FullscreenButton: { create: () => null } }));
@@ -88,7 +104,8 @@ vi.mock('../../src/game/objects/showcase/Ceremony', () => ({
 
 import { rectsOverlap, runwayStage } from '../../src/game/systems/runwayLayout';
 import { Showcase } from '../../src/game/scenes/Showcase';
-import { ObjectEvents, RegistryKeys } from '../../src/game/constants';
+import { ObjectEvents, RegistryKeys, SceneKeys } from '../../src/game/constants';
+import { albumArgs } from '../../src/game/domain/flow';
 import { emptyProgress } from '../../src/game/domain/progress';
 import { assertGameData } from '../../src/game/data/schema';
 import anchors from '../../src/game/data/anchors.json';
@@ -130,7 +147,7 @@ const progressOf = (scene: Scene) => scene.registry.get(RegistryKeys.Progress) a
 
 beforeEach(() => {
   for (const m of [h.go, h.transitionIn]) m.mockClear();
-  for (const list of [h.buttons, h.cats, h.huds, h.ceremonies, h.backdrops] as unknown[][]) list.length = 0;
+  for (const list of [h.buttons, h.cats, h.huds, h.ceremonies, h.backdrops, h.notebooks] as unknown[][]) list.length = 0;
 });
 
 describe('Showcase as a runway (F15.4)', () => {
@@ -226,6 +243,29 @@ describe('Showcase as a runway (F15.4)', () => {
     await vi.waitFor(() => expect(h.buttons.filter((b) => b.label === 'Seguir vistiendo')).toHaveLength(2));
     button('Seguir vistiendo')!.emit(ObjectEvents.ButtonClick);
     expect(h.go).toHaveBeenCalledWith(again, 'keepDressing');
+  });
+
+  it('the notebook button opens with the exits (not before), shows the news, and opens the album once (F17.6)', async () => {
+    const scene = open();
+    run(scene);
+    expect(h.notebooks).toHaveLength(0);
+    h.ceremonies[0]!.finish();
+    await vi.waitFor(() => expect(h.notebooks).toHaveLength(1));
+    expect(h.notebooks[0]!.news).toBe(true);
+    h.notebooks[0]!.emit(ObjectEvents.NotebookPress);
+    h.notebooks[0]!.emit(ObjectEvents.NotebookPress);
+    expect(h.go).toHaveBeenCalledTimes(1);
+    expect(h.go).toHaveBeenCalledWith(scene, 'album', albumArgs(SceneKeys.Showcase, {}));
+    expect(scene.getE2EUi().buttons.album).toEqual({ x: h.notebooks[0]!.x, y: h.notebooks[0]!.y });
+  });
+
+  it('the notebook button is also there when coming back from the album, and goes away on shutdown', () => {
+    const first = open();
+    const back = open({ replay: false }, { [RegistryKeys.Progress]: progressOf(first), [RegistryKeys.LastRating]: first.registry.get(RegistryKeys.LastRating) });
+    run(back);
+    expect(h.notebooks.length).toBeGreaterThan(0);
+    back.events.emit('shutdown');
+    expect(h.notebooks.every((n) => n.destroyed)).toBe(true);
   });
 
   it('coming back from the album (replay false) does not rate again, pay again or replay the ceremony', () => {

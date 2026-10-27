@@ -46,6 +46,28 @@ describe('rateLook', () => {
   });
 });
 
+describe('rateLook and the album news (F17.5)', () => {
+  const abriguito = catalog.sets.find((s) => s.id === 'abriguito')!;
+  const owned = abriguito.requires.items!.filter((id) => !catalog.clothes.find((c) => c.id === id)?.starter);
+
+  it('tells about a set that got complete, after the coins, and writes it down', () => {
+    const progress = { ...emptyProgress(catalog.economy.startWallet), owned };
+    const r = rateLook(progress, look, catalog);
+    const types = r.events.map((e) => e.type);
+    expect(types).toContain('setCompleted');
+    expect(types).toContain('unlock');
+    expect(types.indexOf('setCompleted')).toBeGreaterThan(types.indexOf('coins'));
+    expect(r.progress.albumSeen).toContain('set:abriguito');
+    const second = rateLook(r.progress, look, catalog);
+    expect(second.events.map((e) => e.type)).not.toContain('setCompleted');
+  });
+  it('has no album events when the catalog has no sets (a small fixture)', () => {
+    const small = { cats: catalog.cats, clothes: catalog.clothes, combos: catalog.combos, economy: catalog.economy };
+    const progress = { ...emptyProgress(catalog.economy.startWallet), owned };
+    expect(rateLook(progress, look, small).events.map((e) => e.type)).not.toContain('setCompleted');
+  });
+});
+
 describe('photoArgs', () => {
   it('hands the look and the rating to the photo mode', () => {
     const rating = { points: 3, stars: 2 as const, breakdown: [] };

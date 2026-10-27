@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SceneKeys } from '../../src/game/constants';
-import { FLOW_ACTIONS, TRANSITION_KINDS, albumArgs, backStep, hangArgs, nextStep, type FlowAction } from '../../src/game/domain/flow';
+import { FLOW_ACTIONS, TRANSITION_KINDS, albumArgs, backStep, dressUpAlbumData, dressUpRestore, hangArgs, nextStep, type FlowAction } from '../../src/game/domain/flow';
 
 describe('scene flow (ADR 0007)', () => {
   it('goes from start to admire without skipping steps', () => {
@@ -102,5 +102,30 @@ describe('album arguments', () => {
 
   it('hangArgs opens the hanger tab and returns to DressUp', () => {
     expect(hangArgs('gato-03')).toEqual({ from: SceneKeys.DressUp, tab: 'colgador', hang: 'gato-03' });
+  });
+});
+
+describe('what DressUp hands to the album and gets back (F17.6)', () => {
+  it('writes the tab and the scroll of the fitting room', () => {
+    expect(dressUpAlbumData('head', 240)).toEqual({ tab: 'head', scroll: 240 });
+    expect(dressUpAlbumData(null, 0)).toEqual({ scroll: 0 });
+  });
+
+  it('reads them back, and a bad value is no value', () => {
+    expect(dressUpRestore({ tab: 'head', scroll: 240 })).toEqual({ tab: 'head', scroll: 240 });
+    expect(dressUpRestore({ tab: 5, scroll: -3 })).toEqual({ tab: null, scroll: 0 });
+    expect(dressUpRestore({ tab: '', scroll: Number.NaN })).toEqual({ tab: null, scroll: 0 });
+    expect(dressUpRestore({ scroll: Infinity })).toEqual({ tab: null, scroll: 0 });
+    expect(dressUpRestore(undefined)).toEqual({ tab: null, scroll: 0 });
+    expect(dressUpRestore('x')).toEqual({ tab: null, scroll: 0 });
+  });
+
+  it('what goes out through the album comes back the same', () => {
+    const out = albumArgs(SceneKeys.DressUp, dressUpAlbumData('neck', 96));
+    expect(dressUpRestore(backStep(out).data)).toEqual({ tab: 'neck', scroll: 96 });
+  });
+
+  it('the Showcase gets back to its runway without playing the ceremony again', () => {
+    expect(backStep(albumArgs(SceneKeys.Showcase, {})).data).toEqual({ replay: false });
   });
 });

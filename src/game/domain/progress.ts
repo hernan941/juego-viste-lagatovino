@@ -1,5 +1,6 @@
 // Pure TS, no Phaser (ADR 0010, ADR 0017). The progress of the player: its empty value, its structural cleaning when a
 // save is read, and its validation against the catalog (`progressFromSave`, like `sessionFromSave`).
+import { albumNews, seenIdOf, type AlbumCatalogs, type PhotoUnlocks } from './album';
 import { milestoneBonus, novelty, payout } from './economy';
 import { discoverTaste } from './tastes';
 import { SLOT_ORDER, type Slot } from './slots';
@@ -202,4 +203,29 @@ export function applyDiscovery(
   if (!isNew) return { progress, events: [] };
   const amount = rules.discoveryBonus;
   return { progress: { ...withWallet(progress, amount), tastesFound: found }, events: [{ type: 'tasteFound', taste: key, amount }] };
+}
+
+/** The ids are remembered in `albumSeen`; the same progress object comes back when there is nothing new to remember. */
+export function markSeen(progress: Progress, ids: readonly string[]): Progress {
+  const next = unique([...progress.albumSeen, ...ids]);
+  return next.length === progress.albumSeen.length ? progress : { ...progress, albumSeen: next };
+}
+
+/**
+ * Sets that just got complete and photo pieces that just unlocked become events (`setCompleted` per set, then one `unlock` with
+ * every new piece) and are written down in `albumSeen` so they are told once (S5, F17.5).
+ */
+export function applyAlbumNews(progress: Progress, catalogs: AlbumCatalogs): Applied {
+  const news = albumNews(progress, catalogs);
+  const events: ProgressEvent[] = news.sets.map((setId) => ({ type: 'setCompleted', setId }));
+  if (news.unlocks.length > 0) events.push({ type: 'unlock', ids: news.unlocks });
+  if (events.length === 0) return { progress, events };
+  const told = [
+    ...news.sets.map(seenIdOf.set),
+    ...news.unlocks.map((id) => {
+      const [kind, ...rest] = id.split(':');
+      return seenIdOf.unlock(kind as keyof PhotoUnlocks, rest.join(':'));
+    }),
+  ];
+  return { progress: markSeen(progress, told), events };
 }

@@ -1,5 +1,5 @@
 // Pure TS, no Phaser (ADR 0010). The notebook of the album: its five tabs, which page comes next and when a drag turns it.
-import type { Tally } from './album';
+import type { AlbumSection, Tally } from './album';
 
 export const ALBUM_TAB_IDS = ['prendas', 'gatos', 'looks', 'tintes', 'colgador'] as const;
 export type AlbumTabId = (typeof ALBUM_TAB_IDS)[number];
@@ -47,9 +47,14 @@ export function swipeDirection(dx: number): 1 | -1 | 0 {
   return dx < 0 ? 1 : -1;
 }
 
-const SECTION_OF: Record<AlbumTabId, 'items' | 'tastes' | 'combos' | 'dyes' | 'keychains'> = {
+const SECTION_OF: Record<AlbumTabId, AlbumSection> = {
   prendas: 'items', gatos: 'tastes', looks: 'combos', tintes: 'dyes', colgador: 'keychains',
 };
+
+/** The section of the album that a tab shows. */
+export function sectionOf(tab: AlbumTabId): AlbumSection {
+  return SECTION_OF[tab];
+}
 
 /** What a page counts: the section of the album completion that it shows. */
 export function pageTally(tab: AlbumTabId, sections: Record<'items' | 'tastes' | 'combos' | 'dyes' | 'keychains', Tally>): Tally {
