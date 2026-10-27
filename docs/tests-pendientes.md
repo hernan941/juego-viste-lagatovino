@@ -227,3 +227,21 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
 - `@cross`: componer y guardar (con F18.5).
 - `perf.spec`: un ciclo con stickers.
 - **Ojo**: si el arrastre empieza sobre stickers solapados, toma el de arriba.
+
+## F13.5, F14.3 y F14.4: compra, descubrir paga y ficha del gato
+### E2E pendientes
+- `shop.spec`:
+  - comprar desde la celda y desde el gato: hoja, [Llevar], `owned` y monedero;
+  - "no alcanza": el monedero no cambia y sale la frase;
+  - [Todavía no] y tocar fuera no compran;
+  - un doble toque en [Llevar] cobra una sola vez;
+  - recargar conserva la compra.
+- `tastes.spec`:
+  - el primer descubrimiento suma 15 y el segundo no;
+  - recargar conserva `tastesFound`;
+  - `@mobile`: tocar el cartel abre la ficha;
+  - con 5 gustos la ficha dice "¡Me conoces!";
+  - la ficha no se abre durante un arrastre.
+- `secrets.spec`: el primer combo paga +40 una sola vez, también si se sale sin abrir la cajita.
+- `@cross`: descubrir, recargar y ver la ficha.
+- Movimiento reducido: la compra y la ficha funcionan sin vuelo ni rotación.
