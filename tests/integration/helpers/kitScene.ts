@@ -100,6 +100,8 @@ export function makeFakeScene(reduced = false): FakeScene {
     text: (_x, _y, text, style) => { const t = textObj({ text, style }); made.texts.push(t as Record<string, unknown>); return t; },
     image: (_x, _y, key) => { const i = chain({ key, width: 100, height: 100 }); made.images.push(i); return i; },
     container: (x, y, children) => new FakeContainer(scene, x as number, y as number).add(children ?? []),
+    rectangle: () => new FakeContainer(scene),
+    zone: () => new FakeContainer(scene),
     existing: (o) => o,
   };
   return scene;

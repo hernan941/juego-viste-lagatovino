@@ -5,7 +5,7 @@ import { DressUpEvents, ObjectEvents, SfxKeys } from '../../constants';
 import { almostCombos, almostHint, newlyCompleted } from '../../domain/combos';
 import { GiftReveal } from '../../domain/giftReveal';
 import { getLayers } from '../../domain/outfit';
-import type { ClothingDef, ComboDef, Outfit } from '../../domain/types';
+import type { ClothingDef, ComboDef, EconomyRules, Outfit, Point } from '../../domain/types';
 import { getAudio } from '../../plugins/AudioPlugin';
 import { getSave } from '../../plugins/SavePlugin';
 import { profileOf } from '../../systems/motion';
@@ -13,6 +13,7 @@ import { opaqueBounds } from '../alphaMap';
 import { playComboReaction, playShortReaction, showBubble, type ComboFxContext } from '../comboFx';
 import { GiftBox } from '../GiftBox';
 import { SecretCounter } from '../SecretCounter';
+import { payDiscovery } from './awards';
 import type { DressUpContext, DressUpController, OutfitCause } from './DressUpController';
 import { GHOST_HOME_SIZE } from './layout';
 
@@ -73,7 +74,8 @@ export class SecretsController implements DressUpController {
   /** A gift that was never opened is not lost: the player earned it, so it goes to the wardrobe quietly (the Showcase tells them). */
   beforeLeave(): void {
     const gifted = [...(this.gift ? [this.gift.comboId] : []), ...this.gifts.map((c) => c.id)];
-    for (const combo of gifted) getSave(this.ctx.scene).unlockSecret(combo);
+    // The bonus of the first time is earned with the combo, opened or not (no flight: the scene is closing).
+    for (const combo of gifted) this.unlockCombo(combo, null);
     this.ctx.leaveData.gifted = gifted;
   }
 
@@ -174,11 +176,21 @@ export class SecretsController implements DressUpController {
     box.on(ObjectEvents.GiftOpened, (_b: GiftBox, prize: Phaser.GameObjects.Image) => this.onGiftOpened(combo, item, prize));
   }
 
+  /** Saves a won combo (at once) and pays the bonus of the first time. `from` is where the buttons fly from; null for none. */
+  private unlockCombo(comboId: string, from: Point | null): void {
+    const { scene, catalog } = this.ctx;
+    const rules = (catalog as unknown as { economy: EconomyRules }).economy;
+    payDiscovery(scene, 'combo', comboId, rules, undefined, from);
+    // Without a progress in the registry (nothing to pay) or already in it, this keeps the save in step.
+    getSave(scene).unlockSecret(comboId);
+  }
+
   /** The prize is out: it is saved at once, but the cell and the counter only react when it lands. */
   private onGiftOpened(combo: ComboDef, item: ClothingDef, prize: Phaser.GameObjects.Image): void {
     const { scene, catalog, grid, sparkles, sign } = this.ctx;
     this.gift = null;
-    getSave(scene).unlockSecret(combo.id);
+    // The first time a combo is won it pays: the buttons fly from the prize to the purse as it comes out of the box.
+    this.unlockCombo(combo.id, { x: prize.x, y: prize.y });
     this.unlocked = getSave(scene).secrets;
     this.reveal.begin(combo.id, item.id);
     this.traceSecrets();

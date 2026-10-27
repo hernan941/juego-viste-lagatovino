@@ -15,14 +15,35 @@ vi.mock('../../src/game/objects/kit/SpeechBubble', () => {
   };
 });
 
+// A stand-in for the chip: it records its flight and lands when the test says so.
+vi.mock('../../src/game/objects/TasteChip', () => {
+  const chips: { text: unknown; target?: unknown; land?: () => void; destroyed: boolean }[] = [];
+  return {
+    chips,
+    TasteChip: class {
+      rec: { text: unknown; target?: unknown; land?: () => void; destroyed: boolean };
+      constructor(_s: unknown, _x: number, _y: number, text: unknown) { this.rec = { text, destroyed: false }; chips.push(this.rec); }
+      setDepth() { return this; }
+      flyTo(target: unknown, onLand: () => void) { this.rec.target = target; this.rec.land = onLand; }
+      destroy() { this.rec.destroyed = true; }
+    },
+  };
+});
+
 import cats from '../../src/game/data/cats.json';
+import economy from '../../src/game/data/economy.json';
 import clothes from '../../src/game/data/clothes.json';
-import { DressUpEvents } from '../../src/game/constants';
-import type { CatDef, ClothingDef } from '../../src/game/domain/types';
+import { DressUpEvents, RegistryKeys } from '../../src/game/constants';
+import { emptyProgress } from '../../src/game/domain/progress';
+import { tasteKeyOf, tasteReaction } from '../../src/game/domain/tastes';
+import type { CatDef, ClothingDef, EconomyRules, Progress } from '../../src/game/domain/types';
 import { TasteReactions } from '../../src/game/objects/dressup/TasteReactions';
 import * as bubbleModule from '../../src/game/objects/kit/SpeechBubble';
+import * as chipModule from '../../src/game/objects/TasteChip';
 
 const said = (bubbleModule as unknown as { made: string[] }).made;
+const chips = (chipModule as unknown as { chips: { text: { glyph: string; label: string }; target?: { x: number; y: number }; land?: () => void; destroyed: boolean }[] }).chips;
+const rules = economy as unknown as EconomyRules;
 const items = clothes as unknown as ClothingDef[];
 const catDefs = cats as unknown as CatDef[];
 const cat = catDefs.find((c) => c.id === 'naranja')!;
@@ -37,7 +58,12 @@ class Emitter {
   count() { return [...this.map.values()].reduce((n, l) => n + l.length, 0); }
 }
 
-function setup({ reduced = false, dye = {} }: { reduced?: boolean; dye?: Record<string, string> } = {}) {
+function setup({ reduced = false, dye = {}, found = [] }: { reduced?: boolean; dye?: Record<string, string>; found?: string[] } = {}) {
+  chips.length = 0;
+  let progress: Progress = { ...emptyProgress(100), tastesFound: found.length ? { naranja: found } : {} };
+  const writes: Progress[] = [];
+  const flights: unknown[] = [];
+  const order: string[] = [];
   const events = new Emitter();
   const sounds: { key: string; rate?: number }[] = [];
   const calls: string[] = [];
@@ -47,7 +73,10 @@ function setup({ reduced = false, dye = {} }: { reduced?: boolean; dye?: Record<
   };
   const scene = {
     events,
-    registry: { get: () => reduced },
+    registry: {
+      get: (k: string) => (k === RegistryKeys.Progress ? progress : reduced),
+      set: (k: string, v: Progress) => { if (k === RegistryKeys.Progress) { progress = v; writes.push(v); order.push('write'); } },
+    },
     plugins: { get: (k: string) => (k === 'AudioPlugin' ? audio : { saved: { itemDye: dye } }) },
     time: { delayedCall: (_ms: number, fn: () => void) => (fn(), { remove: () => {} }) },
     tweens: { add: (cfg: { onComplete?: () => void }) => cfg.onComplete?.() },
@@ -61,16 +90,21 @@ function setup({ reduced = false, dye = {} }: { reduced?: boolean; dye?: Record<
   };
   const hearts = { explode: (n: number) => calls.push(`hearts:${n}`) };
   const ctx = {
-    scene, catalog: { cats: catDefs, clothes: items, combos: [] }, cat: catFake, hearts, sparkles: hearts,
+    scene, catalog: { cats: catDefs, clothes: items, combos: [], economy: rules, dyes: [] }, cat: catFake, hearts, sparkles: hearts, sign: { x: 700, y: 92, setScale() { return this; } },
     hud: { add: () => {} }, catId: 'naranja', getOutfit: () => ({}),
   } as never;
+  const realEmit = events.emit.bind(events);
+  events.emit = (e: string, ...a: unknown[]) => {
+    if (e === DressUpEvents.WalletFlight) { flights.push(a[0]); order.push('flight'); }
+    realEmit(e, ...a);
+  };
   const fx = new TasteReactions();
   fx.attach(ctx);
   const drop = (item: ClothingDef) => {
     events.emit(DressUpEvents.OutfitChanged, { [item.slot]: item.id }, 'drop');
     events.emit(DressUpEvents.ItemDropped, item);
   };
-  return { fx, events, drop, sounds, calls };
+  return { fx, events, drop, sounds, calls, progress: () => progress, writes, flights, order };
 }
 
 const plain = (c: ClothingDef) => !c.tags.includes('secreto');
@@ -161,5 +195,98 @@ describe('TasteReactions: dyeing an item (F16.3)', () => {
     const t = setup();
     t.events.emit(DressUpEvents.ItemDyed, neutral, 'agua');
     expect(t.fx.e2eState().log).toEqual([]);
+  });
+});
+
+describe('TasteReactions: discovering pays (F14.3)', () => {
+  const flights = (t: ReturnType<typeof setup>) => t.flights;
+
+  it('the first time a taste shows, a chip with its glyph and name flies from the cat to the name sign', () => {
+    const t = setup();
+    t.drop(loved);
+    expect(chips).toHaveLength(1);
+    expect(chips[0].text).toMatchObject({ glyph: '♥' });
+    expect(chips[0].target).toEqual({ x: 700, y: 103 });
+    expect(chips[0].destroyed).toBe(false);
+  });
+
+  it('nothing is paid until the chip lands; then the buttons fly in from the sign and the progress is written once', () => {
+    const t = setup();
+    t.drop(loved);
+    expect(t.writes).toHaveLength(0);
+    expect(t.fx.isSettled()).toBe(false);
+    chips[0].land!();
+    expect(t.writes).toHaveLength(1);
+    expect(t.progress().wallet).toBe(100 + rules.discoveryBonus);
+    const key = tasteKeyOf(tasteReaction(loved, undefined, catDefs.find((c) => c.id === 'naranja')!))!;
+    expect(t.progress().tastesFound.naranja).toContain(key);
+    expect(t.flights).toEqual([{ direction: 'in', at: { x: 700, y: 103 }, coins: rules.discoveryBonus }]);
+    expect(t.fx.isSettled()).toBe(true);
+  });
+
+  it('the buttons are asked before the progress changes (the purse holds its number)', () => {
+    const t = setup();
+    t.drop(loved);
+    chips[0].land!();
+    expect(t.order).toEqual(['flight', 'write']);
+  });
+
+  it('the same taste again pays nothing and makes no chip', () => {
+    const t = setup();
+    t.drop(loved);
+    chips[0].land!();
+    t.drop(loved);
+    expect(chips).toHaveLength(1);
+    expect(t.writes).toHaveLength(1);
+  });
+
+  it('a taste already in the save makes no chip', () => {
+    const key = tasteKeyOf(tasteReaction(loved, undefined, catDefs.find((c) => c.id === 'naranja')!))!;
+    const t = setup({ found: [key] });
+    t.drop(loved);
+    expect(chips).toHaveLength(0);
+  });
+
+  it('two quick drops of the same new taste make one chip and one payment', () => {
+    const t = setup();
+    t.drop(loved);
+    t.drop(loved);
+    expect(chips).toHaveLength(1);
+    chips[0].land!();
+    expect(t.progress().wallet).toBe(100 + rules.discoveryBonus);
+  });
+
+  it('a different taste pays on its own: the favorite and the dislike are two more chips', () => {
+    const t = setup();
+    t.drop(loved);
+    t.drop(favorite);
+    t.drop(hated);
+    expect(chips).toHaveLength(3);
+    for (const c of chips) c.land!();
+    expect(t.progress().wallet).toBe(100 + 3 * rules.discoveryBonus);
+  });
+
+  it('a neutral drop discovers nothing', () => {
+    const t = setup();
+    t.drop(neutral);
+    expect(chips).toHaveLength(0);
+    expect(t.fx.isSettled()).toBe(true);
+  });
+
+  it('leaving while a chip is in the air does not lose the discovery: it is written and the chip is destroyed', () => {
+    const t = setup();
+    t.drop(loved);
+    t.fx.destroy();
+    expect(chips[0].destroyed).toBe(true);
+    expect(t.progress().wallet).toBe(100 + rules.discoveryBonus);
+    expect(t.flights).toEqual([]);
+  });
+
+  it('the e2e state lists what was discovered in this visit', () => {
+    const t = setup();
+    t.drop(loved);
+    chips[0].land!();
+    expect(t.fx.e2eState().discovered).toHaveLength(1);
+    expect(flights(t)).toHaveLength(1);
   });
 });
