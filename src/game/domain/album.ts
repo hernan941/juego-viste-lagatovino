@@ -1,6 +1,7 @@
 // Pure TS, no Phaser (ADR 0010, 0017). The album: what is got, which sets are complete and what the photo mode unlocks.
 // Everything is derived from the progress; nothing here is stored (except `albumSeen`, the entries the player already saw).
 import { WATER_DYE } from './dye';
+import { emptyProgress } from './progress';
 import type { CatDef, ClothingDef, ComboDef, DyeDef, PhotoCatalog, PhotoPose, Progress, SetDef } from './types';
 
 /** Percentages of the album that give a reward (25 % sticker pack, 50 % striped background, 75 % pose, 100 % Catalina's note). */
@@ -94,6 +95,11 @@ export function completion(progress: Progress, catalogs: AlbumCatalogs): AlbumCo
   const sections = { items: tally('items'), tastes: tally('tastes'), combos: tally('combos'), dyes: tally('dyes'), keychains: tally('keychains') };
   const sum = Object.values(sections).reduce((acc, s) => ({ got: acc.got + s.got, total: acc.total + s.total }), { got: 0, total: 0 });
   return { ...sum, pct: sum.total === 0 ? 0 : Math.floor((sum.got * 100) / sum.total), sections };
+}
+
+/** True once the player got something beyond what a new game starts with (the Title offers "Mi álbum" only then). */
+export function hasAlbumProgress(progress: Progress, catalogs: AlbumCatalogs): boolean {
+  return completion(progress, catalogs).got > completion(emptyProgress(0), catalogs).got;
 }
 
 function isComplete(set: SetDef, progress: Progress, catalogs: AlbumCatalogs): boolean {

@@ -11,6 +11,8 @@ const MILESTONE_PRIZE: Record<number, string> = {
 
 export const albumLines = {
   percent: (pct: number): string => `Llevas el ${pct}% de tu álbum`,
+  /** The secondary button of the Title. */
+  titleButton: (pct: number): string => `Mi álbum · ${pct}%`,
   tally: (t: Tally): string => `${t.got} de ${t.total}`,
   coverTitle: 'Mi álbum',
   coverPercent: (pct: number): string => `Llevas el ${pct} %`,

@@ -6,6 +6,7 @@ import {
   completion,
   crossedMilestones,
   gotEntries,
+  hasAlbumProgress,
   newlySeen,
   photoUnlocks,
   type AlbumCatalogs,
@@ -285,5 +286,16 @@ describe('albumMilestones', () => {
     expect(crossedMilestones(20, 80)).toEqual([25, 50, 75]);
     expect(crossedMilestones(25, 30)).toEqual([]);
     expect(crossedMilestones(60, 40)).toEqual([]);
+  });
+});
+
+describe("hasAlbumProgress (the Title shows Mi album only past the starters)", () => {
+  it("is false for a new game", () => {
+    expect(hasAlbumProgress(empty(), catalogs)).toBe(false);
+  });
+
+  it("is true after a purchase or a discovery", () => {
+    expect(hasAlbumProgress(withP({ owned: ["item10"] }), catalogs)).toBe(true);
+    expect(hasAlbumProgress(withP({ secrets: ["combo2"] }), catalogs)).toBe(true);
   });
 });

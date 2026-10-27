@@ -1,37 +1,43 @@
 import Phaser from 'phaser';
-import { FONT_FAMILY, GAME_WIDTH, MEOW_KEYS, ObjectEvents, Palette, RegistryKeys, SceneKeys, SfxKeys, TextureKeys } from '../constants';
-import type { Catalog } from '../data/schema';
-import type { AnchorsDef } from '../domain/types';
+import { Fonts, GAME_HEIGHT, GAME_WIDTH, Ink, MEOW_KEYS, ObjectEvents, RegistryKeys, SceneKeys, SfxKeys, TextureKeys, colorToNumber } from '../constants';
+import type { GameData } from '../data/schema';
+import { albumHasNews, completion, hasAlbumProgress } from '../domain/album';
+import { albumLines } from '../domain/copy';
+import { albumArgs } from '../domain/flow';
+import { emptyProgress } from '../domain/progress';
+import type { AnchorsDef, Progress } from '../domain/types';
 import type { E2EUi, UiState } from '../e2eHook';
 import { Button } from '../objects/Button';
 import { Cat } from '../objects/Cat';
 import { MuteButton } from '../objects/MuteButton';
 import { MotionButton } from '../objects/MotionButton';
 import { FullscreenButton } from '../objects/FullscreenButton';
-import { addClouds, addHills, addSky, addSun } from '../objects/scenery';
+import { PaperBackground } from '../objects/kit/PaperBackground';
+import { addInkClouds, addInkSun } from '../objects/streetInk';
 import { Cooldown } from '../domain/cooldown';
-import { hex } from '../objects/ui';
 import { getAudio } from '../plugins/AudioPlugin';
 import { go } from '../systems/navigate';
 import { profileOf } from '../systems/motion';
 import { enterKind, transitionIn } from '../systems/transitions';
 
 const LOGO = 'Viste Lagato';
-const LETTER_COLORS = [Palette.rosa400, Palette.mantequilla, Palette.menta, Palette.lavanda, Palette.rosa200];
+const ink = (token: keyof typeof Ink) => colorToNumber(Ink[token]);
 const LOGO_Y = 190;
 const PEEK = [
   { catIndex: 0, x: 215, scale: 330, rise: 120 },
   { catIndex: 5, x: 1065, scale: 330, rise: 120 },
-  { catIndex: 2, x: 640, scale: 300, rise: 34 },
+  { catIndex: 2, x: 640, scale: 300, rise: 200 },
 ];
 /** Y of the feet of a peeking cat when it is hidden and when it has popped up. */
 const HIDDEN_DY = 330;
 const HILL_TOP = 600;
+const ALBUM_Y = 472;
 
-/** Title: sky with clouds, the bouncing logo, kittens peeking from behind the hills and the "Iniciar" button. */
+/** Title: the notebook cover. Grid paper, the bouncing logo, kittens peeking from behind a drawn hill, "Iniciar" and, once there is progress, "Mi álbum" with its percentage. */
 export class Title extends Phaser.Scene implements E2EUi {
   private enter: ReturnType<typeof enterKind> = null;
   private start!: Button;
+  private album: Button | null = null;
   private mute!: MuteButton;
   private motion!: MotionButton;
   private fullscreen: FullscreenButton | null = null;
@@ -46,18 +52,19 @@ export class Title extends Phaser.Scene implements E2EUi {
     this.enter = enterKind(data);
     this.ready = false;
     this.cats = [];
+    this.album = null;
   }
 
   create() {
-    const catalog = this.registry.get(RegistryKeys.Catalog) as Catalog;
+    const catalog = this.registry.get(RegistryKeys.Catalog) as GameData;
     const anchors = this.registry.get(RegistryKeys.Anchors) as AnchorsDef;
-    addSky(this);
-    addSun(this, 1120, 96);
-    addClouds(this, [
-      { x: 150, y: 90, scale: 0.9, speed: 14 }, { x: 560, y: 250, scale: 0.6, speed: 9 },
-      { x: 880, y: 150, scale: 1.1, speed: 18 }, { x: 1180, y: 330, scale: 0.7, speed: 11 },
-    ]);
-    addHills(this, HILL_TOP);
+    this.cameras.main.setBackgroundColor(Ink.cremaPapel);
+    new PaperBackground(this).setDepth(-10);
+    addInkSun(this, 112, 104).setDepth(-5);
+    addInkClouds(this, [
+      { x: 1060, y: 230, scale: 0.8, speed: 14 }, { x: 900, y: 300, scale: 0.55, speed: 9 }, { x: 1200, y: 360, scale: 0.6, speed: 11 },
+    ]).forEach((c) => c.setDepth(-4));
+    this.drawHill();
 
     // Kittens peek from behind the hill, one after another.
     PEEK.forEach((p, i) => {
@@ -75,8 +82,9 @@ export class Title extends Phaser.Scene implements E2EUi {
       this.makePettable(cat, p.scale);
     });
 
-    this.createLogo();
+    this.createLogo(catalog);
     this.createStart();
+    this.createAlbum(catalog);
     this.mute = new MuteButton(this, GAME_WIDTH - 56, 56).setDepth(50);
     this.motion = new MotionButton(this, GAME_WIDTH - 128, 56).setDepth(50);
     this.fullscreen = FullscreenButton.create(this, GAME_WIDTH - 200, 56);
@@ -84,6 +92,7 @@ export class Title extends Phaser.Scene implements E2EUi {
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.start?.destroy();
+      this.album?.destroy();
       this.mute?.destroy();
       this.motion?.destroy();
       this.fullscreen?.destroy();
@@ -116,19 +125,32 @@ export class Title extends Phaser.Scene implements E2EUi {
     this.tweens.add({ targets: cat, angle: { from: -2, to: 2 }, duration: 1400 + i * 200, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
   }
 
-  /** "Viste Lagato" letter by letter: each one drops in and bounces, then the whole logo waves. */
-  private createLogo() {
+  /** A hill drawn in ink: `durazno` paper with a thick `tinta` edge, and pencil strokes on the grass. */
+  private drawHill() {
+    const g = this.add.graphics().setDepth(1);
+    const edge: Phaser.Math.Vector2[] = [];
+    for (let x = -20; x <= GAME_WIDTH + 20; x += 20) edge.push(new Phaser.Math.Vector2(x, HILL_TOP + Math.sin(x / 150) * 14 + Math.sin(x / 61) * 4));
+    g.fillStyle(ink('durazno'), 1).fillPoints([...edge, new Phaser.Math.Vector2(GAME_WIDTH + 20, GAME_HEIGHT), new Phaser.Math.Vector2(-20, GAME_HEIGHT)], true);
+    g.lineStyle(6, ink('tinta'), 1).strokePoints(edge, false);
+    g.lineStyle(3, ink('lineaLapiz'), 0.8);
+    for (let x = 30; x < GAME_WIDTH; x += 96) g.lineBetween(x, HILL_TOP + 70 + (x % 3) * 12, x + 30, HILL_TOP + 62 + (x % 3) * 12);
+  }
+
+  /** "Viste Lagato" letter by letter: each one drops in and bounces, then the whole logo waves. A `sol` highlighter is drawn under it. */
+  private createLogo(catalog: GameData) {
     const p = profileOf(this);
-    const letters = [...LOGO].map((ch, i) =>
+    const letters = [...LOGO].map((ch) =>
       this.add
-        .text(0, 0, ch, { fontFamily: FONT_FAMILY, fontSize: '132px', color: LETTER_COLORS[i % LETTER_COLORS.length], fontStyle: '700', stroke: Palette.contorno, strokeThickness: 14, padding: { x: 6, y: 14 } })
+        .text(0, 0, ch, { fontFamily: Fonts.Title, fontSize: '132px', color: Ink.tinta, fontStyle: '900', padding: { x: 6, y: 18 } })
         .setOrigin(0.5)
-        .setShadow(0, 9, Palette.rosa600, 0, true, true)
         .setDepth(20),
     );
-    const gap = -6;
-    const widths = letters.map((t, i) => (LOGO[i] === ' ' ? 40 : t.width));
+    const gap = 2;
+    const widths = letters.map((t, i) => (LOGO[i] === ' ' ? 44 : t.width));
     const total = widths.reduce((a, w) => a + w + gap, -gap);
+    const highlight = this.add.graphics().setDepth(19).setAlpha(0);
+    highlight.lineStyle(26, ink('sol'), 0.85).lineBetween(GAME_WIDTH / 2 - total / 2 + 10, LOGO_Y + 62, GAME_WIDTH / 2 + total / 2 - 10, LOGO_Y + 66);
+    this.tweens.add({ targets: highlight, alpha: 1, delay: 1100, duration: 400 });
     let x = GAME_WIDTH / 2 - total / 2;
     letters.forEach((t, i) => {
       const cx = x + widths[i] / 2;
@@ -144,26 +166,27 @@ export class Title extends Phaser.Scene implements E2EUi {
         onComplete: () => p.loops && this.tweens.add({ targets: t, y: LOGO_Y - 9, duration: 900, delay: i * 90, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }),
       });
     });
+    // The shop's sign (brand.json) is the line under the logo, written by hand.
     const sub = this.add
-      .text(GAME_WIDTH / 2, LOGO_Y + 100, '¡Viste a tu gatito favorito!', { fontFamily: FONT_FAMILY, fontSize: '34px', color: Palette.texto, fontStyle: '600', stroke: '#FFFFFF', strokeThickness: 8 })
+      .text(GAME_WIDTH / 2, LOGO_Y + 112, catalog.brand.shopSign, { fontFamily: Fonts.Voice, fontSize: '40px', color: Ink.mutedTexto, fontStyle: '700', padding: { x: 4, y: 10 } })
       .setOrigin(0.5)
       .setAlpha(0)
       .setDepth(20);
-    this.tweens.add({ targets: sub, alpha: 1, y: LOGO_Y + 92, delay: 1500, duration: 400, ease: p.ease('Back.easeOut') });
-    // A few sparkles and hearts around the logo.
+    this.tweens.add({ targets: sub, alpha: 1, y: LOGO_Y + 104, delay: 1500, duration: 400, ease: p.ease('Back.easeOut') });
+    // A few ink sparkles around the logo.
     this.add
-      .particles(GAME_WIDTH / 2, LOGO_Y, TextureKeys.Sparkle, {
-        x: { min: -380, max: 380 }, y: { min: -80, max: 90 }, lifespan: 1400, frequency: p.every(380), scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, speed: 12,
+      .particles(GAME_WIDTH / 2, LOGO_Y, TextureKeys.InkSparkle, {
+        x: { min: -400, max: 400 }, y: { min: -100, max: 90 }, lifespan: 1400, frequency: p.every(380), scale: { start: 0.9, end: 0 }, alpha: { start: 1, end: 0 }, speed: 12,
       })
-      .setDepth(19);
+      .setDepth(21);
   }
 
   private createStart() {
     const cx = GAME_WIDTH / 2;
-    const cy = 348;
+    const cy = 374;
     const halo = this.add.graphics().setDepth(19);
-    halo.fillStyle(hex('rosa200'), 0.8).fillRoundedRect(-170, -56, 340, 112, 56).setPosition(cx, cy).setAlpha(0);
-    this.start = new Button(this, cx, cy, 'Iniciar', { width: 300, height: 94, fontSize: 50 }).setDepth(30).setScale(0);
+    halo.fillStyle(ink('sol'), 0.55).fillRoundedRect(-170, -56, 340, 112, 56).setPosition(cx, cy).setAlpha(0);
+    this.start = new Button(this, cx, cy, 'Iniciar', { pill: 'primary', width: 300, height: 94, fontSize: 56 }).setDepth(30).setScale(0);
     this.start.input!.enabled = false;
     this.time.delayedCall(1500, () => {
       this.tweens.add({
@@ -186,7 +209,33 @@ export class Title extends Phaser.Scene implements E2EUi {
     });
   }
 
+  /** "Mi álbum · 37%": the secondary button, only once the player has something in the album. It pops in after "Iniciar". */
+  private createAlbum(catalog: GameData) {
+    const progress = (this.registry.get(RegistryKeys.Progress) as Progress | undefined) ?? emptyProgress(0);
+    if (!hasAlbumProgress(progress, catalog)) return;
+    const label = albumLines.titleButton(completion(progress, catalog).pct);
+    const button = new Button(this, GAME_WIDTH / 2, ALBUM_Y, label, { pill: 'secondary', width: 330, height: 74, fontSize: 36 }).setDepth(30).setScale(0);
+    this.album = button;
+    button.input!.enabled = false;
+    // The same ✦ as the notebook stamp: something new inside.
+    if (albumHasNews(progress, catalog)) {
+      const spark = this.add.image(GAME_WIDTH / 2 + 150, ALBUM_Y - 30, TextureKeys.InkSparkle).setDepth(31).setAlpha(0);
+      this.tweens.add({ targets: spark, alpha: 1, delay: 2200, duration: 300 });
+    }
+    this.time.delayedCall(1800, () => {
+      this.tweens.add({
+        targets: button, scale: 1, duration: 400, ease: profileOf(this).ease('Back.easeOut'),
+        onComplete: () => { button.input!.enabled = true; },
+      });
+    });
+    button.on(ObjectEvents.ButtonClick, () => {
+      if (!this.ready) return;
+      this.ready = false;
+      this.time.delayedCall(120, () => go(this, 'album', albumArgs(SceneKeys.Title)));
+    });
+  }
+
   getE2EUi(): UiState {
-    return { ready: this.ready, buttons: { start: this.start.getCenter(), mute: this.mute.getCenter(), motion: this.motion.getCenter(), ...(this.fullscreen ? { fullscreen: this.fullscreen.getCenter() } : {}) }, points: {}, info: {} };
+    return { ready: this.ready, buttons: { start: this.start.getCenter(), ...(this.album ? { album: this.album.getCenter() } : {}), mute: this.mute.getCenter(), motion: this.motion.getCenter(), ...(this.fullscreen ? { fullscreen: this.fullscreen.getCenter() } : {}) }, points: {}, info: {} };
   }
 }
