@@ -146,7 +146,7 @@ export interface VisteHook {
   /** The last rating, or null before the first one. */
   readonly lastRating: RatingResult | null;
   readonly keychains: Record<string, KeychainRecipe>;
-  /** Phase of the keychain transformation (F19); null while there is none. */
+  /** Phase of the keychain transformation (F19.3): oven, turn, varnish, hardware, swing, package and ready (the packaging is up); null while there is none. */
   readonly keychainPhase: string | null;
   /** Test-only action: adds items to the bought ones (written at once, like a purchase). */
   grant(ids: string[]): void;
@@ -275,7 +275,9 @@ export function installE2EHook(game: Game, readPerf: PerfReader): void {
       return JSON.parse(JSON.stringify(progress().keychains));
     },
     get keychainPhase(): string | null {
-      return null;
+      // The scene that makes the keychain (PhotoMode) reports its phase in its UI info; null when there is none.
+      const phase = game.scene.getScenes(true).find(isE2EUi)?.getE2EUi().info.keychainPhase;
+      return typeof phase === 'string' ? phase : null;
     },
     grant(ids: string[]): void {
       const p = progress();

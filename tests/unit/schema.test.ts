@@ -421,7 +421,7 @@ const photo = (over: Record<string, unknown> = {}) => ({
   frames: [piece('frame-a', 'frame')],
   stickers: ['a', 'b', 'c', 'd'].map((n) => piece(`sticker-${n}`, 'sticker')),
   poses: [{ id: 'pose-a', name: 'a', unlock: 'starter' }, { id: 'pose-b', name: 'b', unlock: 'starter' }, { id: 'pose-d', name: 'd', unlock: { firstFiveStar: true } }, { id: 'pose-c', name: 'c', unlock: { albumPct: 75 } }],
-  keychain: { goldFrom: 4, charmFrom: 5, borderCopies: 14, borderRadius: 14, borderColor: '#FFFCF5', varnishAlpha: 0.5 },
+  keychain: { goldFrom: 4, charmFrom: 5, borderCopies: 14, borderRadius: 14, borderColor: '#FFFCF5', varnishAlpha: 0.5, saturation: 0.82, warmth: 0.03 },
   ...over,
 });
 const goodSets = [set()] as never;
@@ -474,6 +474,10 @@ describe('validatePhoto (F11.10)', () => {
     expect(k({ borderRadius: 0 })).toContain('photo.keychain.borderRadius: debe ser un número mayor que 0');
     expect(k({ borderColor: 'crema' })).toContain('photo.keychain.borderColor: "crema" debe ser un color #RRGGBB');
     expect(k({ varnishAlpha: 2 })).toContain('photo.keychain.varnishAlpha: debe estar entre 0 y 1');
+    // The "hand painted" look is -15 to -20 % saturation (ADR 0021): -10 % barely shows and -30 % looks gray.
+    expect(k({ saturation: 0.95 })).toContain('photo.keychain.saturation: debe estar entre 0,75 y 0,9');
+    expect(k({ saturation: 'poca' })).toContain('photo.keychain.saturation: debe estar entre 0,75 y 0,9');
+    expect(k({ warmth: 0.5 })).toContain('photo.keychain.warmth: debe estar entre 0 y 0,1');
     expect(errorsOf(validatePhoto(photo({ keychain: null }), goodSets))).toContain('photo.keychain: debe ser un objeto');
   });
 

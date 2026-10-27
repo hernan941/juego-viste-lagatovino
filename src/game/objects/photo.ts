@@ -1,11 +1,15 @@
 // Draws the souvenir photo of the cat (F7): a cute card with the logo, the live cat and its name, rendered
 // off-screen into a RenderTexture and read back as a PNG. The layout comes from domain/photo.ts.
 import Phaser from 'phaser';
-import { FONT_FAMILY, Palette, TextureKeys } from '../constants';
+import { FONT_FAMILY, Fonts, Ink, Palette, TextureKeys } from '../constants';
 import { photoLayout } from '../domain/photo';
+import { PHOTO_SIZE } from '../domain/photoComposition';
+import { CARD_SIZE } from '../domain/keychainPackage';
+import type { SheetOp } from '../domain/photoSheet';
 import type { AnchorsDef } from '../domain/types';
 import type { Expression } from '../domain/expressions';
 import type { Cat } from './Cat';
+import type { Keychain } from './keychain/Keychain';
 import { hex } from './ui';
 
 export const PHOTO_LOGO = 'Viste Lagato';
@@ -93,4 +97,98 @@ export function takePhoto(scene: Phaser.Scene, cat: Cat, anchors: AnchorsDef, ca
       resolve(url);
     }, 'image/png');
   });
+}
+
+// ---- The photo of the scrapbook (F18.5): the composition of the table, drawn from the operations of domain/photoSheet.ts ----
+
+export interface SheetPlace {
+  /** Where the middle of the sheet goes in the render, and how many render px one px of the sheet is. */
+  x: number;
+  y: number;
+  scale: number;
+}
+
+/** What the operations that are not plain images and texts need from the scene. */
+export interface SheetExtras {
+  /** The live cat for a 'cat' op, drawn with this face. */
+  cat?: Cat;
+  expression?: Expression;
+  /** Draws the keychain of a 'keychain' op: it hangs from (x, y) in the render and one px of its texture is `k` render px. */
+  keychain?: (x: number, y: number, k: number) => void;
+}
+
+/**
+ * Runs the operations of the sheet into `rt`. Images go 1:1 (or to the height asked), the texts are made at their final size (never
+ * scaled up, so they stay sharp) and the cat is captured with its pose and face (`expression`) at rest. Every helper object made here
+ * is pushed to `temp` for the caller to destroy; the returned function lets the cat go back to what it was doing.
+ */
+export function drawSheetOps(
+  scene: Phaser.Scene, rt: Phaser.GameObjects.RenderTexture | Phaser.Textures.DynamicTexture, ops: readonly SheetOp[], at: SheetPlace,
+  extras: SheetExtras, temp: Phaser.GameObjects.GameObject[],
+): () => void {
+  let release: () => void = () => undefined;
+  for (const op of ops) {
+    const x = at.x + op.x * at.scale;
+    const y = at.y + op.y * at.scale;
+    if (op.kind === 'image') {
+      const img = new Phaser.GameObjects.Image(scene, x, y, op.texture);
+      temp.push(img);
+      const k = (op.height !== undefined ? op.height / img.height : op.width !== undefined ? op.width / img.width : (op.scale ?? 1)) * at.scale;
+      img.setScale(k).setAngle(op.angle ?? 0).setAlpha(op.alpha ?? 1);
+      rt.draw(img);
+    } else if (op.kind === 'text') {
+      const text = scene.make.text({
+        x, y, text: op.text, add: false,
+        style: { fontFamily: Fonts.Voice, fontSize: `${op.fontSize * at.scale}px`, color: Ink.tinta, padding: { x: 4 * at.scale, y: 8 * at.scale } },
+      }).setOrigin(0.5).setAngle(op.angle ?? 0);
+      temp.push(text);
+      const room = op.maxWidth * at.scale;
+      if (text.width > room) text.setScale(room / text.width);
+      rt.draw(text);
+    } else if (op.kind === 'cat') {
+      if (!extras.cat) continue;
+      const k = (op.size / 512) * at.scale;
+      release = extras.cat.freezeForPhoto(extras.expression ?? 'normal');
+      rt.capture(extras.cat, { x, y, scaleX: k, scaleY: k });
+    } else {
+      extras.keychain?.(x, y, op.scale * at.scale);
+    }
+  }
+  return release;
+}
+
+/** Reads a render texture back as a PNG data URL and destroys it with the helper objects. */
+export function renderToPng(rt: Phaser.GameObjects.RenderTexture, temp: Phaser.GameObjects.GameObject[]): Promise<string> {
+  return new Promise((resolve) => {
+    rt.snapshot((image) => {
+      for (const o of temp) o.destroy();
+      rt.destroy();
+      resolve((image as HTMLImageElement).src);
+    }, 'image/png');
+  });
+}
+
+/** The saved photo of the table: the sheet at twice its size (1080 x 1350), the same 4:5 as the souvenir of the Showcase. */
+export function composePhoto(scene: Phaser.Scene, cat: Cat, ops: readonly SheetOp[], expression: Expression): Promise<string> {
+  const scale = 2;
+  const width = PHOTO_SIZE.width * scale;
+  const height = PHOTO_SIZE.height * scale;
+  const rt = scene.make.renderTexture({ x: 0, y: 0, width, height }, false);
+  const temp: Phaser.GameObjects.GameObject[] = [];
+  const release = drawSheetOps(scene, rt, ops, { x: width / 2, y: height / 2, scale }, { cat, expression }, temp);
+  rt.render();
+  release();
+  return renderToPng(rt, temp);
+}
+
+/** The PNG of the packaging (S8): the kraft card at twice its size (1080 x 1350) with the keychain hanging from its hole. */
+export function composePackage(scene: Phaser.Scene, ops: readonly SheetOp[], keychain: Keychain): Promise<string> {
+  const scale = 2;
+  const width = CARD_SIZE.width * scale;
+  const height = CARD_SIZE.height * scale;
+  const rt = scene.make.renderTexture({ x: 0, y: 0, width, height }, false);
+  const temp: Phaser.GameObjects.GameObject[] = [];
+  drawSheetOps(scene, rt, ops, { x: width / 2, y: height / 2, scale }, { keychain: (x, y, k) => keychain.drawInto(rt, x, y, k, temp) }, temp);
+  rt.render();
+  return renderToPng(rt, temp);
 }

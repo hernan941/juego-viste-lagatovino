@@ -1,9 +1,9 @@
 // F19.2: the pure parts of building a keychain texture (ADR 0021): its cache key, the "hand painted" matrix, where the
 // hardware goes, where a pose moves the head and the swing of each motion profile.
 import { describe, expect, it } from 'vitest';
+import photo from '../../src/game/data/photo.json';
 import { topOfColumns } from '../../src/game/domain/imageBounds';
 import {
-  PORCELAIN_SATURATION,
   hardwareScale,
   keychainLayout,
   pendulumDuration,
@@ -69,7 +69,7 @@ describe('porcelainMatrix', () => {
   });
 
   it('keeps white and gray as they are when it only desaturates (each color row adds up to 1)', () => {
-    const m = porcelainMatrix(PORCELAIN_SATURATION, 0);
+    const m = porcelainMatrix(photo.keychain.saturation, 0);
     for (const row of [0, 5, 10]) expect(m[row] + m[row + 1] + m[row + 2]).toBeCloseTo(1, 9);
   });
 
@@ -80,15 +80,11 @@ describe('porcelainMatrix', () => {
   });
 
   it('has 20 numbers and leaves the alpha alone', () => {
-    const m = porcelainMatrix(PORCELAIN_SATURATION, 0.03);
+    const m = porcelainMatrix(photo.keychain.saturation, 0.03);
     expect(m).toHaveLength(20);
     expect(m.slice(15)).toEqual([0, 0, 0, 1, 0]);
   });
 
-  it('desaturates between 15 and 20 % (ADR 0021)', () => {
-    expect(PORCELAIN_SATURATION).toBeGreaterThanOrEqual(0.8);
-    expect(PORCELAIN_SATURATION).toBeLessThanOrEqual(0.85);
-  });
 });
 
 describe('poseTransform', () => {

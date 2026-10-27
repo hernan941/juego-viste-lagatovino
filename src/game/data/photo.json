@@ -34,5 +34,5 @@
     { "id": "pose-saltito", "name": "Saltito", "unlock": { "firstFiveStar": true } },
     { "id": "pose-dormilon", "name": "Dormilón", "unlock": { "albumPct": 75 } }
   ],
-  "keychain": { "goldFrom": 4, "charmFrom": 5, "borderCopies": 12, "borderRadius": 14, "borderColor": "#FFFCF5", "varnishAlpha": 0.5 }
+  "keychain": { "goldFrom": 4, "charmFrom": 5, "borderCopies": 12, "borderRadius": 14, "borderColor": "#FFFCF5", "varnishAlpha": 0.5, "saturation": 0.82, "warmth": 0.03 }
 }

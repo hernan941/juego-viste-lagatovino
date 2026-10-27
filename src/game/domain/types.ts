@@ -225,6 +225,9 @@ export interface KeychainRules {
   borderRadius: number;
   borderColor: string;
   varnishAlpha: number;
+  /** The "hand painted" colors: 1 = as is; 0.82 is -18 % saturation. And a little warmer: red up and blue down by this much. */
+  saturation: number;
+  warmth: number;
 }
 
 /** A pose is a transformation of the cat (no art of its own), so it has no texture. */

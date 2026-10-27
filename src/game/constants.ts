@@ -141,6 +141,8 @@ export const ObjectEvents = {
   KeychainTink: 'keychain-tink',
   /** Keychain: the swing came to rest */
   KeychainSwingEnd: 'keychain-swing-end',
+  /** PackageCard: the card was tapped (to put it away) */
+  PackageTap: 'package-tap',
   /** DyeJar: (jar, pointer) a dye bottle is being dragged */
   JarDragStart: 'jar-drag-start',
   JarDrag: 'jar-drag',
@@ -240,6 +242,8 @@ export const KeychainTextures = {
   Chain: 'ui-keychain-chain',
   Varnish: 'ui-keychain-varnish',
   VarnishStreak: 'ui-keychain-varnish-streak',
+  /** The kraft card of the packaging (540 x 675, hole at (270, 56)). */
+  PackageCard: 'ui-keychain-package-card',
 } as const;
 
 /** Global plugin keys (GameConfig.plugins.global). */

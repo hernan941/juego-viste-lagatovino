@@ -156,30 +156,29 @@ export interface PackagingLayout {
   tagline: Rect;
 }
 
-/** Proportional layout of the kraft card inside `frame` (any size, any origin). */
+/**
+ * Proportional layout of the kraft card inside `frame` (any size, any origin), measured on the art `package-card.svg` (540 x 675): the
+ * hole is at (270, 56) and the content goes inside the dashed zone (34, 92) to (506, 640), so nothing sits on the hole.
+ */
 export function packagingLayout(frame: Rect): PackagingLayout {
   const { x, y, width: w, height: h } = frame;
   const rect = (fx: number, fy: number, fw: number, fh: number): Rect => ({ x: x + fx * w, y: y + fy * h, width: fw * w, height: fh * h });
-  const window = rect(0.1, 0.18, 0.8, 0.5);
-  const keychain = rect(0.2, 0.21, 0.6, 0.44);
+  const window = rect(0.12, 0.2, 0.76, 0.46);
+  const keychain = rect(0.22, 0.215, 0.56, 0.42);
   return {
-    hole: { x: x + w / 2, y: y + 0.045 * h, radius: 0.022 * w },
-    sign: rect(0.15, 0.09, 0.7, 0.07),
+    hole: { x: x + w / 2, y: y + (56 / 675) * h, radius: (15 / 540) * w },
+    sign: rect(0.15, 0.14, 0.7, 0.05),
     window,
     keychain,
     hang: { x: x + w / 2, y: keychain.y },
-    name: rect(0.1, 0.72, 0.8, 0.08),
-    stars: rect(0.25, 0.81, 0.5, 0.05),
-    tagline: rect(0.15, 0.88, 0.7, 0.06),
+    name: rect(0.1, 0.685, 0.8, 0.075),
+    stars: rect(0.25, 0.765, 0.5, 0.05),
+    tagline: rect(0.15, 0.835, 0.7, 0.065),
   };
 }
 
 // ---- Building the texture (F19.2) ----------------------------------------------------------------------------------
 
-/** Saturation of the "hand painted" look: -18 % (ADR 0021 asks for -15 to -20 %). */
-export const PORCELAIN_SATURATION = 0.82;
-/** A little warmer: red up, blue down. */
-export const PORCELAIN_WARMTH = 0.03;
 /** Width in 512 canvas px of the thin ink line outside the cream border. */
 export const INK_LINE_PX = 3;
 
@@ -326,4 +325,28 @@ export function keychainLayout(px: number, top: Point, ring: Ring, borderRadius:
     charm: charmAt && move(charmAt),
     hang: move(hang),
   };
+}
+
+export type HardwarePartId = 'chain' | 'charm' | 'eyelet' | 'ring-silver' | 'ring-gold';
+
+export interface HardwarePart extends Placed {
+  part: HardwarePartId;
+  /** The pivot of the art, 0..1 (where `x`, `y` are). */
+  origin: Point;
+}
+
+/**
+ * The pieces of hardware of a keychain, back to front, as the layout places them: the chain and charm (5 stars) behind, the eyelet
+ * and the ring on top. The baked texture, the live pieces of the transformation and the PNG of the packaging all use this list.
+ */
+export function hardwareParts(layout: KeychainLayout, ring: Ring): HardwarePart[] {
+  const { eyelet, chain, charm } = HARDWARE_ART;
+  const parts: HardwarePart[] = [];
+  if (layout.chain && layout.charm) {
+    parts.push({ part: 'chain', ...layout.chain, origin: { x: chain.top.x / chain.width, y: chain.top.y / chain.height } });
+    parts.push({ part: 'charm', ...layout.charm, origin: { x: charm.eye.x / charm.width, y: charm.eye.y / charm.height } });
+  }
+  parts.push({ part: 'eyelet', ...layout.eyelet, origin: { x: eyelet.root.x / eyelet.width, y: eyelet.root.y / eyelet.height } });
+  parts.push({ part: ring.metal === 'gold' ? 'ring-gold' : 'ring-silver', ...layout.ring, origin: { x: 0.5, y: 0.5 } });
+  return parts;
 }

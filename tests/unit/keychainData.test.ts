@@ -34,6 +34,14 @@ describe('photo.json keychain rules', () => {
     expect(ringFor(5, rules)).toEqual({ metal: 'gold', charm: true });
   });
 
+  it('keeps the "hand painted" saturation in photo.json (-15 to -20 %, ADR 0021), warmer but not orange', () => {
+    const k = photo.keychain as { saturation: number; warmth: number };
+    expect(k.saturation).toBeGreaterThanOrEqual(0.8);
+    expect(k.saturation).toBeLessThanOrEqual(0.85);
+    expect(k.warmth).toBeGreaterThan(0);
+    expect(k.warmth).toBeLessThanOrEqual(0.1);
+  });
+
   it('matches the ADR 0021 border copies: 12 at 512 px (8 at 256 px comes from borderCopiesFor)', () => {
     expect(rules.borderCopies).toBe(borderCopiesFor(512));
     expect(borderCopiesFor(256)).toBe(8);

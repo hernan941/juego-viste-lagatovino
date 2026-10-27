@@ -2,6 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { CAT_POSE_IDS, HEAD_NO_ANGLE, catPose, headNoSteps, puajShiver } from '../../src/game/domain/catPose';
 import { EXPRESSIONS } from '../../src/game/domain/expressions';
 
+describe('catPose with the id of photo.json (F19.3)', () => {
+  it('takes the "pose-" id of the catalog as the pose without it (a recipe keeps the catalog id)', () => {
+    expect(catPose('pose-coqueto')).toBe(catPose('coqueto'));
+    expect(catPose('pose-coqueto')).not.toBeNull();
+    expect(catPose('pose-nope')).toBeNull();
+  });
+});
+
 describe('catPose (S6: transformations and faces, no new body art)', () => {
   it('has the four poses of the design', () => {
     expect([...CAT_POSE_IDS]).toEqual(['sentadito', 'coqueto', 'saltito', 'dormilon']);

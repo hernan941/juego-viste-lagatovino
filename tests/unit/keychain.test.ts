@@ -283,6 +283,17 @@ describe('packagingLayout', () => {
     for (let i = 1; i < order.length; i++) expect(order[i].y).toBeGreaterThanOrEqual(order[i - 1].y + order[i - 1].height);
   });
 
+  it('matches the art of the card (540 x 675): the hole at (270, 56) and the content inside the dashed zone (34, 92) to (506, 640)', () => {
+    const card = packagingLayout({ x: 0, y: 0, width: 540, height: 675 });
+    expect(card.hole.x).toBeCloseTo(270, 0);
+    expect(card.hole.y).toBeCloseTo(56, 0);
+    expect(card.hole.radius).toBeCloseTo(15, 0);
+    // The sign must not sit on the hole.
+    expect(card.sign.y).toBeGreaterThanOrEqual(card.hole.y + card.hole.radius);
+    const zone: Rect = { x: 34, y: 92, width: 472, height: 548 };
+    for (const r of [card.sign, card.window, card.keychain, card.name, card.stars, card.tagline]) expect(inside(r, zone)).toBe(true);
+  });
+
   it('hangs the keychain inside the window of the picture', () => {
     expect(inside(l.keychain, l.window)).toBe(true);
     expect(l.hang.x).toBe(frame.x + frame.width / 2);
