@@ -33,6 +33,7 @@ describe('lines by feature', () => {
       judgeLines(brand.judge).intro(), sellerLines(brand.seller).greeting(), sellerLines(brand.seller).checkout(120),
       shopLines.priceTag(30), shopLines.notEnough(10), shopLines.bought, tasteLines.love('Luna'), tasteLines.hate('Luna'),
       albumLines.percent(40), photoLines.signature(brand), keychainLines.saved('Luna'),
+      shopLines.mine, shopLines.purchaseTitle, shopLines.purchaseLine('Gorro', 40), tasteLines.sheetTitle('Luna'), tasteLines.count(1, 5), tasteLines.knowsYou(), tasteLines.closeHint(),
     ]);
     expect(all).not.toMatch(/Kofi|Catalina|Cata\b/);
   });
@@ -51,6 +52,7 @@ describe('the @ rule', () => {
   const texts = (): string[] => [
     tasteLines.love(name), tasteLines.hate(name), keychainLines.saved(name), judgeLines(brand.judge).verdict(name, 3),
     photoLines.caption(name), shopLines.notEnough(5), albumLines.percent(10), copy.showcaseTitle(name),
+    tasteLines.sheetTitle(name), tasteLines.count(2, 5), tasteLines.knowsYou(), shopLines.purchaseLine('Gorro', 40), shopLines.mine,
   ];
   it('is never glued to the name of the player', () => {
     for (const t of texts()) expect(t).not.toMatch(/Luna@|@Luna/);

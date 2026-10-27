@@ -61,7 +61,8 @@ export class TasteChip extends Phaser.GameObjects.Container {
     this.add(g);
     const icon = scene.add.graphics();
     const cx = -width / 2 + height / 2;
-    drawGlyph(icon, chip.kind, cx, 0, glyphR, glyphColor, found ? 1 : 0.45);
+    // A hidden taste has the same glyph, washed out (a flat lighter color: a see-through one would show the overlaps).
+    drawGlyph(icon, chip.kind, cx, 0, glyphR, found ? glyphColor : lighten(glyphColor, 0.6), 1);
     this.add(icon);
     const textX = cx + glyphR + 10;
     const room = width / 2 - 18 - textX;
@@ -114,6 +115,12 @@ export class TasteChip extends Phaser.GameObjects.Container {
     this.removeAllListeners();
     super.destroy(fromScene);
   }
+}
+
+/** `color` moved `amount` (0..1) toward white. */
+function lighten(color: number, amount: number): number {
+  const channel = (shift: number) => Math.round(((color >> shift) & 0xff) * (1 - amount) + 255 * amount);
+  return (channel(16) << 16) | (channel(8) << 8) | channel(0);
 }
 
 /** The glyph of a kind, drawn with shapes (no font needed): heart, cross, five-point star and dot. */

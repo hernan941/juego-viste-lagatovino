@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
-import { FONT_FAMILY, Palette } from '../constants';
+import { FONT_FAMILY, ObjectEvents, Palette, SfxKeys } from '../constants';
+import { getAudio } from '../plugins/AudioPlugin';
 import { profileOf } from '../systems/motion';
-import { hex } from './ui';
+import { hex, kitHitRect } from './ui';
 
 const SHOW_MS = 2000;
 
@@ -18,6 +19,8 @@ export class NameSign extends Phaser.GameObjects.Container {
   /** Everything announced so far (for the e2e hook). */
   readonly announced: string[] = [];
   private timer?: Phaser.Time.TimerEvent;
+  private pressed = false;
+  private feedback?: Phaser.Tweens.Tween;
 
   constructor(scene: Phaser.Scene, x: number, y: number, catName: string) {
     super(scene, x, y);
@@ -36,6 +39,40 @@ export class NameSign extends Phaser.GameObjects.Container {
     const p = profileOf(this.scene);
     this.scene.tweens.add({ targets: this, y, duration: 500, delay: 250, ease: p.ease('Back.easeOut') });
     if (p.loops) this.scene.tweens.add({ targets: this, angle: { from: -1.5, to: 1.5 }, duration: 1800, delay: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+  }
+
+  /**
+   * The sign answers touch (the cat sheet opens from it): a hand cursor, a touch area of at least 80 high, a little growth under the
+   * mouse and a press, and `SignPress` when it is pressed and released on it. Reduced motion: only the click answers.
+   */
+  makeInteractive(): void {
+    const art = Math.max(190, this.label.width + 70);
+    this.setSize(art, 54);
+    const area = kitHitRect(art, 54);
+    // The art is centered 11 px under the origin of the container: the area follows it.
+    area.y += 11;
+    this.setInteractive({ hitArea: area, hitAreaCallback: Phaser.Geom.Rectangle.Contains, useHandCursor: true });
+    const scaleTo = (scale: number, duration: number, ease: string) => {
+      this.feedback?.remove();
+      if (profileOf(this.scene).reduced) return;
+      this.feedback = this.scene.tweens.add({ targets: this, scale, duration, ease });
+    };
+    this.on('pointerover', (p: Phaser.Input.Pointer) => !p.wasTouch && scaleTo(1.05, 100, 'Sine.easeOut'));
+    this.on('pointerout', () => {
+      this.pressed = false;
+      scaleTo(1, 100, 'Sine.easeOut');
+    });
+    this.on('pointerdown', () => {
+      this.pressed = true;
+      scaleTo(0.95, 90, 'Sine.easeOut');
+    });
+    this.on('pointerup', () => {
+      scaleTo(1, 150, profileOf(this.scene).ease('Back.easeOut'));
+      if (!this.pressed) return;
+      this.pressed = false;
+      getAudio(this.scene).play(SfxKeys.Click, { volume: 0.7 });
+      this.emit(ObjectEvents.SignPress, this);
+    });
   }
 
   /** What the sign says right now. */

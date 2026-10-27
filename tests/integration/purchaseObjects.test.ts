@@ -13,14 +13,7 @@ import { makeFakeScene, phaserMock, type FakeScene, type TweenRecord } from './h
 const item = (clothes as unknown as ClothingDef[]).find((c) => c.tier === 'linda')!;
 type Fake = InstanceType<(typeof phaserMock)['default']['GameObjects']['Container']>;
 
-/** The kit fake has no rectangle or zone: they are containers that remember their handlers. */
-function sceneWithShapes(reduced = false): FakeScene {
-  const scene = makeFakeScene(reduced);
-  const Container = phaserMock.default.GameObjects.Container;
-  (scene.add as Record<string, unknown>).rectangle = () => new Container(scene);
-  (scene.add as Record<string, unknown>).zone = () => new Container(scene);
-  return scene;
-}
+const sceneWithShapes = makeFakeScene;
 
 /** Runs every tween that was added, in order, as if it had finished (and the ones they add, too). */
 function finishTweens(scene: FakeScene): void {
