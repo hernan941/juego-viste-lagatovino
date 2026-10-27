@@ -24,6 +24,10 @@ describe('ratingLineText (F15.3)', () => {
     expect(ratingLineText({ kind: 'favoriteItem', points: 2 })).toMatch(/favorit/i);
     expect(ratingLineText({ kind: 'favoriteDye', points: 1 })).toMatch(/color/i);
   });
+  it('never leaves the card blank: a bare cat is "Al natural" and a plain look is "Sin combinar"', () => {
+    expect(ratingLineText({ kind: 'bare', points: 0 })).toBe('Al natural');
+    expect(ratingLineText({ kind: 'plain', points: 0 })).toBe('Sin combinar');
+  });
   it('uses the name of the combo when it is given, and the id otherwise', () => {
     expect(ratingLineText({ kind: 'combo', points: 3, ref: 'navidad' }, (id) => `Look ${id}!`)).toContain('Look navidad!');
     expect(ratingLineText({ kind: 'combo', points: 3, ref: 'navidad' })).toContain('navidad');

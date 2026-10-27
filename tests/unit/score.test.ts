@@ -94,8 +94,14 @@ describe('scoreLook, examples of the design (S1)', () => {
 });
 
 describe('scoreLook, rules', () => {
-  it('an empty outfit is 0 points and 1 star, never 0 stars', () => {
-    expect(score({}, grisu)).toEqual({ points: 0, stars: 1, breakdown: [] });
+  it('an empty outfit is 0 points and 1 star, never 0 stars, and the card is not left blank (A2)', () => {
+    expect(score({}, grisu)).toEqual({ points: 0, stars: 1, breakdown: [{ kind: 'bare', points: 0 }] });
+  });
+
+  it('a look with clothes but no points says so, not "al natural" (A2)', () => {
+    const r = score({ sweater: 'stripes', head: 'chef' }, neutral);
+    expect(r.points).toBe(0);
+    expect(r.breakdown).toEqual([{ kind: 'plain', points: 0 }]);
   });
 
   it('stars are at least 1 even with a very negative score', () => {
@@ -185,7 +191,7 @@ describe('scoreLook, rules', () => {
     expect(b.points - a.points).toBe(1);
   });
 
-  it('points is the sum of the breakdown and zero lines are left out', () => {
+  it('points is the sum of the breakdown and zero lines are left out (but for the placeholder of an empty card)', () => {
     for (const who of [neutral, grisu, mandarina]) {
       const r = score(navidadLook, who);
       expect(r.points).toBe(r.breakdown.reduce((s, l) => s + l.points, 0));

@@ -256,7 +256,7 @@ export class Ceremony {
       this.judge?.hop();
     }
     if (reaction.expression === 'amor') cat.heartbeat();
-    this.judge?.say(reaction.comfort ? lines.comfort(catName) : lines.verdict(catName, this.plan.stars));
+    this.judge?.say(lines.say({ catName, stars: this.plan.stars, bare: this.plan.bare }));
     if (reaction.confetti) this.confetti(p.count(36));
   }
 

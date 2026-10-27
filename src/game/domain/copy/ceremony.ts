@@ -20,6 +20,8 @@ export function ratingLineText(line: BreakdownLine, comboName: (id: string) => s
     case 'complete': return 'Look completo';
     case 'combo': return ref ? `Combo ${comboName(ref)}` : 'Combo';
     case 'favoriteDye': return 'Su color favorito';
+    case 'bare': return 'Al natural';
+    case 'plain': return 'Sin combinar';
   }
 }
 

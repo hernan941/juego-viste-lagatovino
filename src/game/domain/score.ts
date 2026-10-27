@@ -115,6 +115,8 @@ export function scoreLook(
     const ref = refs[kind];
     return ref === undefined ? { kind, points: points[kind] } : { kind, points: points[kind], ref };
   });
+  // The card is never blank: a placeholder line (worth 0) says why there is nothing to write.
+  if (breakdown.length === 0) breakdown.push({ kind: worn.length === 0 ? 'bare' : 'plain', points: 0 });
   const total = sum(points);
   return { points: total, stars: starsFor(total, rules), breakdown };
 }

@@ -291,9 +291,15 @@ export type Progress = Required<StoredProgress>;
 
 export type BreakdownKind = 'style' | 'love' | 'dislike' | 'complete' | 'combo' | 'favoriteItem' | 'favoriteDye';
 
+/**
+ * What a line of the card can be: a rule, or a placeholder so the card is never blank: `bare` (no clothes at all) and `plain`
+ * (clothes, but no rule gave or took points). Placeholders are worth 0.
+ */
+export type BreakdownLineKind = BreakdownKind | 'bare' | 'plain';
+
 /** One line of the judge's card. */
 export interface BreakdownLine {
-  kind: BreakdownKind;
+  kind: BreakdownLineKind;
   points: number;
   /** Tag, item or combo id that caused the line. */
   ref?: string;

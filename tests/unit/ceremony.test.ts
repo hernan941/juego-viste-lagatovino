@@ -32,6 +32,15 @@ describe('catReaction', () => {
   });
 });
 
+describe('ceremonyPlan, bare cat (A2)', () => {
+  it('knows the look is bare when the card only has the placeholder', () => {
+    const bare: RatingResult = { points: 0, stars: 1, breakdown: [{ kind: 'bare', points: 0 }] };
+    expect(ceremonyPlan(bare, []).bare).toBe(true);
+    expect(ceremonyPlan(result(1), []).bare).toBe(false);
+    expect(ceremonyPlan({ ...bare, breakdown: [{ kind: 'plain', points: 0 }] }, []).bare).toBe(false);
+  });
+});
+
 describe('eventCoins and buttonCount', () => {
   it('adds the amounts of the events and ignores those without one', () => {
     expect(eventCoins(many)).toBe(40 + 50 + 15 + 15 + 40);

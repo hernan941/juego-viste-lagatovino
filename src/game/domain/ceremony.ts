@@ -45,6 +45,8 @@ export type CeremonyStep =
 export interface CeremonyPlan {
   profile: CeremonyProfile;
   stars: number;
+  /** The look has no clothes at all (the card only has the "Al natural" placeholder). */
+  bare: boolean;
   steps: CeremonyStep[];
   /** Coins the buttons add up to: the sum of the amounts of the progress events. Never lost by `skip`. */
   coins: number;
@@ -124,7 +126,7 @@ export function ceremonyPlan(
   notes.forEach((event, index) => steps.push({ kind: 'note', index, event, at: stampsEnd + index * gap, ms: NOTE_MS }));
 
   steps.sort((a, b) => a.at - b.at);
-  return { profile, stars: result.stars, steps, coins, totalMs: endOf(steps) };
+  return { profile, stars: result.stars, bare: result.breakdown[0]?.kind === 'bare', steps, coins, totalMs: endOf(steps) };
 }
 
 /**

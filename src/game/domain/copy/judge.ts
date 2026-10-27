@@ -3,9 +3,17 @@
 import type { CharacterDef } from '../types';
 import { fillTemplate } from './template';
 
+/** What the judge reacts to at the verdict. */
+export interface VerdictCase {
+  catName: string;
+  stars: number;
+  /** No clothes at all. */
+  bare?: boolean;
+}
+
 export function judgeLines(judge: CharacterDef) {
   const vars = { judge: judge.name };
-  return {
+  const lines = {
     intro: (): string => fillTemplate('{judge} entra con su libreta... a ver qué tal ese look', vars),
     /** 1-2 stars: he is kind. */
     comfort: (catName: string): string => `¡Igual te ves adorable, ${catName}!`,
@@ -21,5 +29,10 @@ export function judgeLines(judge: CharacterDef) {
     nearSame: (): string => 'Mmm, se parece harto al de recién',
     /** No clothes at all. */
     bare: (): string => '¿Y la ropa? ¡Igual te ves adorable!',
+  };
+  return {
+    ...lines,
+    /** The one thing he says when the stars land: the case that matters most wins. */
+    say: ({ catName, stars, bare }: VerdictCase): string => (bare ? lines.bare() : lines.verdict(catName, stars)),
   };
 }

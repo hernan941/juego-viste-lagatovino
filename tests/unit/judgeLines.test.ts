@@ -16,6 +16,12 @@ describe('the judge lines per case (F15.6)', () => {
     expect(judge.nearSame()).toBe('Mmm, se parece harto al de recién');
     expect(judge.bare()).toBe('¿Y la ropa? ¡Igual te ves adorable!');
   });
+  it('what he says at the verdict: a bare cat gets "¿Y la ropa?" whatever the stars (A2)', () => {
+    expect(judge.say({ catName: 'Mau', stars: 1, bare: true })).toBe(judge.bare());
+  });
+  it('what he says at the verdict: otherwise the line of the stars', () => {
+    expect(judge.say({ catName: 'Mau', stars: 5 })).toBe(judge.verdict('Mau', 5));
+  });
   it('never guesses the gender of a cat with the @', () => {
     const all = [1, 2, 3, 4, 5].map((s) => judge.verdict('Mau', s)).concat(judge.repeated(), judge.nearSame(), judge.bare(), judge.comfort('Mau'));
     for (const t of all) expect(t).not.toContain('@');

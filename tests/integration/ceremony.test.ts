@@ -100,6 +100,19 @@ describe('Ceremony', () => {
     expect(scene.made.texts.some((t) => String(t.text).includes('adorable'))).toBe(true);
   });
 
+  it('a cat with no clothes gets a card with "Al natural" and the judge asks for the clothes (A2)', () => {
+    const scene = makeCeremonyScene(false);
+    const bare: RatingResult = { points: 0, stars: 1, breakdown: [{ kind: 'bare', points: 0 }] };
+    const cat = { hold: vi.fn(), release: vi.fn(), hop: vi.fn(), heartbeat: vi.fn() };
+    const plan = ceremonyPlan(bare, [{ type: 'coins', amount: 3 }], 'full');
+    const ceremony = new Ceremony(scene as never, plan, { cat: cat as never, catName: 'Mau', judge: { name: 'Kofi', texture: 'char-judge' } });
+    void ceremony.play();
+    scene.advance(plan.totalMs);
+    const texts = scene.made.texts.map((t) => String(t.text));
+    expect(texts).toContain('Al natural');
+    expect(texts.some((t) => t.includes('¿Y la ropa?'))).toBe(true);
+  });
+
   it('a tap skips x3 and every button still counts', async () => {
     const { scene, credits, plan, ceremony } = setup();
     const done = settled(ceremony.play());
