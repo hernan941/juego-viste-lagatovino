@@ -1,6 +1,6 @@
 // Pure TS, no Phaser (ADR 0010, 0017). All the arithmetic of the shop; every number comes from EconomyRules.
 import { SLOT_ORDER } from './slots';
-import type { ClothingDef, DyeDef, EconomyRules, ItemDye, Outfit, Stars } from './types';
+import type { ClothingDef, DyeDef, EconomyRules, ItemDye, Novelty, Outfit, Stars } from './types';
 
 export interface CartLine {
   id: string;
@@ -24,8 +24,7 @@ export type CheckoutResult =
   | { ok: true; wallet: number; owned: string[]; dyesOwned: string[] }
   | { ok: false; missing: number };
 
-/** How many slots changed against recent looks, capped: 0 = repeat, 1 = near, 2 = new. */
-export type Novelty = 0 | 1 | 2;
+export type { Novelty };
 
 /** Price of an item: by tier; starters and secret items have no tier and are free. */
 export function priceOf(item: ClothingDef, rules: EconomyRules): number {

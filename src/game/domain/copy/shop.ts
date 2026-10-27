@@ -4,7 +4,7 @@ import { fillTemplate } from './template';
 
 export const shopLines = {
   priceTag: (price: number): string => `${price} botones`,
-  notEnough: (missing: number): string => `Te faltan ${missing} botones, ¡ya vas a juntarlos!`,
+  notEnough: (missing: number): string => `¡Uy! Te faltan ${missing}. Califica un par de looks y vuelves`,
   bought: '¡Es tuyo! Buena elección',
   /** What the cat says right after the purchase. */
   mine: '¡Es mío!',
@@ -31,6 +31,6 @@ export function sellerLines(seller: CharacterDef) {
     checkout: (total: number): string => fillTemplate(`Son ${total} botones. Si te tinca, te lo llevas`, vars),
     /** A combo that has a piece not paid yet: a hook to sell, never a scolding. */
     comboHook: (): string => '¡Uy, eso parece un look especial! Si te lo llevas, hay regalito',
-    thanks: (): string => fillTemplate('¡Gracias por pasar! Vuelve cuando quieras, dice {seller}', vars),
+    thanks: (): string => '¡Gracias por pasar! Vuelve cuando quieras',
   };
 }

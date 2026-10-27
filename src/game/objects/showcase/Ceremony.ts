@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
-import { GAME_WIDTH, SfxKeys, TextureKeys } from '../../constants';
+import { Fonts, GAME_WIDTH, Ink, SfxKeys, TextureKeys } from '../../constants';
 import { SKIP_FACTOR, skip, type CeremonyPlan, type CeremonyStep } from '../../domain/ceremony';
-import { judgeLines } from '../../domain/copy';
-import type { CharacterDef, Point } from '../../domain/types';
+import { judgeLines, noveltyNote } from '../../domain/copy';
+import type { CharacterDef, NextHint, Point, TagNames } from '../../domain/types';
 import { getAudio } from '../../plugins/AudioPlugin';
 import { profileOf } from '../../systems/motion';
 import type { Cat } from '../Cat';
@@ -49,6 +49,10 @@ export interface CeremonyTargets {
   layout?: Partial<CeremonyLayout>;
   /** Turns a combo id into its name for the card. */
   comboName?: (id: string) => string;
+  /** The clue for 3-4 stars (what is missing for the next one), from `nextHint`. */
+  hint?: NextHint | null;
+  /** The readable tags (tags.json) for the card and the notes. */
+  tags?: TagNames;
   /** A button landed: `credit` buttons to add to the counter, `total` landed so far. */
   onCredit?: (credit: number, total: number) => void;
   /** A step of the plan starts (the e2e hook reads it as `ceremonyStep`). */
@@ -94,6 +98,7 @@ export class Ceremony {
   private stamps?: StarStamps;
   private notes?: EventNotes;
   private flight?: ButtonFlight;
+  private labels: Phaser.GameObjects.Text[] = [];
   private readonly emitters: Phaser.GameObjects.Particles.ParticleEmitter[] = [];
 
   constructor(
@@ -125,7 +130,7 @@ export class Ceremony {
     const noteCount = this.plan.steps.filter((s) => s.kind === 'note').length;
     if (noteCount > 0) {
       const at = this.layout.notesAt;
-      this.notes = new EventNotes(scene, at.x, at.y, { count: noteCount, maxWidth: this.layout.notesWidth });
+      this.notes = new EventNotes(scene, at.x, at.y, { count: noteCount, maxWidth: this.layout.notesWidth, tags: this.targets.tags });
       this.notes.setDepth(this.depth + 3);
     }
     this.schedule(0);
@@ -155,6 +160,11 @@ export class Ceremony {
     this.scene.events?.off(Phaser.Scenes.Events.SHUTDOWN, this.onShutdown);
     for (const e of this.emitters) e.destroy();
     this.emitters.length = 0;
+    for (const l of this.labels) {
+      this.scene.tweens?.killTweensOf(l);
+      l.destroy();
+    }
+    this.labels = [];
     for (const o of [this.judge, this.card, this.stamps, this.notes, this.flight]) o?.destroy();
     this.resolve?.();
   }
@@ -205,7 +215,7 @@ export class Ceremony {
         judge.setDepth(this.depth + 2);
         this.judge = this.fast(judge);
         judge.enter(step.ms, step.slide, () => { if (!this.destroyed) judge.say(judgeLines(this.targets.judge).intro()); });
-        const card = new RatingCard(scene, L.cardAt.x, L.cardAt.y, { comboName: this.targets.comboName });
+        const card = new RatingCard(scene, L.cardAt.x, L.cardAt.y, { comboName: this.targets.comboName, tags: this.targets.tags });
         card.setDepth(this.depth);
         this.card = this.fast(card);
         const stamps = new StarStamps(scene, L.cardAt.x, L.cardAt.y + 138, { total: 5 });
@@ -223,6 +233,7 @@ export class Ceremony {
         this.react(step.reaction);
         break;
       case 'coin':
+        if (step.index === 0) this.noveltyLabel();
         this.flight?.fly(
           { index: step.index, from: L.buttonsFrom, to: L.wallet, ms: step.ms, credit: step.credit, fly: step.fly },
           (credit) => {
@@ -235,6 +246,26 @@ export class Ceremony {
         this.notes?.addNote(step.index, step.event, step.ms);
         break;
     }
+  }
+
+  /** "Propina +2" / "Casi igual +5": a repeated look pays little, and the player is told why. */
+  private noveltyLabel(): void {
+    const text = noveltyNote(this.plan.novelty, this.plan.coins);
+    if (!text) return;
+    const scene = this.scene;
+    const p = profileOf(scene);
+    // Next to the purse, where the buttons land (the judge and his bubble are below and must not be covered).
+    const at = { x: this.layout.wallet.x - 70, y: this.layout.wallet.y + 4 };
+    const label = scene.add
+      .text(at.x, at.y + 14, text, { fontFamily: Fonts.Title, fontSize: '30px', color: Ink.lapiz, padding: { x: 4, y: 8 } })
+      .setOrigin(1, 0.5)
+      .setDepth(this.depth + 3)
+      .setAlpha(0);
+    this.labels.push(label);
+    const done = () => { this.labels = this.labels.filter((l) => l !== label); label.destroy(); };
+    scene.tweens.add({ targets: label, alpha: 1, y: at.y, duration: 300 / this.speed, ease: p.ease('Back.easeOut'), hold: 900 / this.speed, onComplete: () => {
+      scene.tweens.add({ targets: label, alpha: 0, duration: 300 / this.speed, onComplete: done });
+    } });
   }
 
   /** The cat shows its stars: face, joy, purr, and confetti for five. The judge answers. */
@@ -254,7 +285,7 @@ export class Ceremony {
       this.judge?.hop();
     }
     if (reaction.expression === 'amor') cat.heartbeat();
-    this.judge?.say(reaction.comfort ? lines.comfort() : lines.verdict(catName, this.plan.stars));
+    this.judge?.say(lines.say({ catName, stars: this.plan.stars, bare: this.plan.bare, novelty: this.plan.novelty, hint: this.targets.hint, tags: this.targets.tags }));
     if (reaction.confetti) this.confetti(p.count(36));
   }
 

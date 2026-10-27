@@ -15,6 +15,7 @@ import { makeFakeScene, phaserMock, type FakeScene, type TweenRecord } from './h
 
 const cat = (cats as unknown as CatDef[]).find((c) => c.id === 'naranja')!;
 const names: NameLookup = {
+  tag: (id) => id,
   item: (id) => (clothes as unknown as ClothingDef[]).find((c) => c.id === id)?.name ?? id,
   dye: (id) => (dyes as unknown as DyeDef[]).find((d) => d.id === id)?.name ?? id,
 };

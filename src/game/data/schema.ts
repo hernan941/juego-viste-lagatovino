@@ -5,7 +5,7 @@ import { PHOTO_SECTIONS, WATER_ID } from './assets';
 import { SLOT_ORDER } from '../domain/slots';
 import { ANCHOR_NAMES, BOX_NAMES, CATEGORIES } from '../domain/types';
 import type {
-  AnchorsDef, BrandDef, CatDef, ClothingDef, ComboDef, DyeDef, EconomyRules, ItemTier, PhotoCatalog, SetDef,
+  AnchorsDef, BrandDef, CatDef, ClothingDef, ComboDef, DyeDef, EconomyRules, ItemTier, PhotoCatalog, SetDef, TagNames,
 } from '../domain/types';
 
 export type Result<T> = { ok: true; value: T } | { ok: false; errors: string[] };
@@ -466,6 +466,27 @@ export function validateBrand(data: unknown, textures?: ReadonlySet<string>): Re
   return finish(data, errors);
 }
 
+/** Checks tags.json: every tag the clothes use (but the ignored ones) has its three readable forms. */
+export function validateTags(data: unknown, clothes: readonly ClothingDef[], ignoredTags: readonly string[]): Result<TagNames> {
+  if (!isObj(data)) return { ok: false, errors: ['tags: debe ser un objeto'] };
+  const errors: string[] = [];
+  const ignored = new Set(ignoredTags);
+  const used = [...new Set(clothes.flatMap((c) => c.tags))].filter((t) => !ignored.has(t)).sort();
+  for (const tag of used) {
+    const entry = data[tag];
+    if (entry === undefined) {
+      errors.push(`tags.${tag}: falta el nombre (label, love y style)`);
+      continue;
+    }
+    if (!isObj(entry)) {
+      errors.push(`tags.${tag}: debe ser un objeto`);
+      continue;
+    }
+    for (const form of ['label', 'love', 'style']) if (!isText(entry[form])) errors.push(`tags.${tag}.${form}: debe ser texto`);
+  }
+  return finish(data, errors);
+}
+
 /** Everything in src/game/data/, validated and cross checked. It is a Catalog plus the rule files (ADR 0017). */
 export interface GameData extends Catalog {
   economy: EconomyRules;
@@ -473,6 +494,7 @@ export interface GameData extends Catalog {
   sets: SetDef[];
   photo: PhotoCatalog;
   brand: BrandDef;
+  tags: TagNames;
 }
 
 export interface RawGameData {
@@ -484,6 +506,7 @@ export interface RawGameData {
   sets: unknown;
   photo: unknown;
   brand: unknown;
+  tags: unknown;
   /** Texture keys of the manifest, to check the characters of brand.json. Without it that check is skipped (the manifest comes from this data). */
   textures?: ReadonlySet<string>;
 }
@@ -495,6 +518,10 @@ export function validateGameData(raw: RawGameData): Result<GameData> {
   const errors = [...(base.ok ? [] : base.errors), ...(economy.ok ? [] : economy.errors), ...(dyes.ok ? [] : dyes.errors)];
   const brand = validateBrand(raw.brand, raw.textures);
   if (!brand.ok) errors.push(...brand.errors);
+  if (base.ok && economy.ok) {
+    const tags = validateTags(raw.tags, base.value.clothes, economy.value.scoring.ignoredTags);
+    if (!tags.ok) errors.push(...tags.errors);
+  }
   if (base.ok && dyes.ok) {
     const { cats, clothes, combos } = base.value;
     const shop = validateShopRules(clothes, combos);

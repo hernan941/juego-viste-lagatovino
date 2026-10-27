@@ -97,7 +97,39 @@ describe('Ceremony', () => {
     scene.advance(plan.totalMs);
     expect(cat.hold).toHaveBeenCalledWith('parpadeo');
     expect(cat.hop).not.toHaveBeenCalled();
-    expect(scene.made.texts.some((t) => String(t.text).includes('tiern'))).toBe(true);
+    expect(scene.made.texts.some((t) => String(t.text).includes('adorable'))).toBe(true);
+  });
+
+  it('a cat with no clothes gets a card with "Al natural" and the judge asks for the clothes (A2)', () => {
+    const scene = makeCeremonyScene(false);
+    const bare: RatingResult = { points: 0, stars: 1, breakdown: [{ kind: 'bare', points: 0 }] };
+    const cat = { hold: vi.fn(), release: vi.fn(), hop: vi.fn(), heartbeat: vi.fn() };
+    const plan = ceremonyPlan(bare, [{ type: 'coins', amount: 3 }], 'full');
+    const ceremony = new Ceremony(scene as never, plan, { cat: cat as never, catName: 'Mau', judge: { name: 'Kofi', texture: 'char-judge' } });
+    void ceremony.play();
+    scene.advance(plan.totalMs);
+    const texts = scene.made.texts.map((t) => String(t.text));
+    expect(texts).toContain('Al natural');
+    expect(texts.some((t) => t.includes('¿Y la ropa?'))).toBe(true);
+  });
+
+  it('a repeated look pays a tip and says why: Kofi asks to be surprised and a "Propina +2" note rises (A3)', () => {
+    const scene = makeCeremonyScene(false);
+    const cat = { hold: vi.fn(), release: vi.fn(), hop: vi.fn(), heartbeat: vi.fn() };
+    const plan = ceremonyPlan(result(4), [{ type: 'coins', amount: 2, novelty: 0 }], 'full');
+    const ceremony = new Ceremony(scene as never, plan, { cat: cat as never, catName: 'Mau', judge: { name: 'Kofi', texture: 'char-judge' } });
+    void ceremony.play();
+    scene.advance(plan.totalMs);
+    const texts = scene.made.texts.map((t) => String(t.text));
+    expect(texts.some((t) => t.includes('sorpréndeme'))).toBe(true);
+    expect(texts).toContain('Propina +2');
+  });
+
+  it('with 4 stars Kofi gives a clue to reach 5 (A4)', () => {
+    const { scene, plan, ceremony } = setup(4, 'full', { hint: { missing: 2, love: 'estrellas' }, tags: { estrellas: { label: 'estrellas', love: 'las estrellas', style: '' } } });
+    void ceremony.play();
+    scene.advance(plan.totalMs);
+    expect(scene.made.texts.some((t) => String(t.text).includes('Te faltaron 2 puntitos… ¿y si pruebas con las estrellas?'))).toBe(true);
   });
 
   it('a tap skips x3 and every button still counts', async () => {

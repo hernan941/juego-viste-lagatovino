@@ -10,12 +10,18 @@ export interface ChipText {
   kind: ChipKind;
   glyph: string;
   label: string;
+  /** The hex of the dye of a `color` chip: its dot is painted with it. */
+  swatch?: string;
 }
 
 /** Names of the things a taste points to, from the catalog (the domain does not know the JSON). */
 export interface NameLookup {
+  /** The readable name of a tag (tags.json `label`). */
+  tag(id: string): string;
   item(id: string): string;
   dye(id: string): string;
+  /** The hex of a dye (dyes.json), to paint the dot of the favorite color. */
+  dyeHex?(id: string): string | undefined;
 }
 
 export interface SheetEntry extends ChipText {
@@ -29,9 +35,13 @@ const GLYPHS: Record<ChipKind, string> = { love: '♥', dislike: '✕', favorite
 export function tasteChip(key: TasteKey, names: NameLookup, cat?: CatDef): ChipText {
   const [kind, tag = ''] = key.split(':');
   if (kind === 'favorite') return { kind, glyph: GLYPHS.favorite, label: names.item(cat?.prefs?.favoriteItem ?? '') };
-  if (kind === 'color') return { kind, glyph: GLYPHS.color, label: names.dye(cat?.prefs?.favoriteDye ?? '') };
+  if (kind === 'color') {
+    const dye = cat?.prefs?.favoriteDye ?? '';
+    const swatch = names.dyeHex?.(dye);
+    return { kind, glyph: GLYPHS.color, label: names.dye(dye), ...(swatch ? { swatch } : {}) };
+  }
   const k: ChipKind = kind === 'dislike' ? 'dislike' : 'love';
-  return { kind: k, glyph: GLYPHS[k], label: tag };
+  return { kind: k, glyph: GLYPHS[k], label: names.tag(tag) };
 }
 
 /** The five tastes of a cat in sheet order (loves, dislike, favorite, color), each marked found or not. */

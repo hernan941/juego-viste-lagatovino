@@ -6,15 +6,18 @@ vi.mock('phaser', async () => (await import('./helpers/kitScene')).phaserMock);
 const made = vi.hoisted(() => ({ sheets: [] as unknown[], said: [] as string[] }));
 vi.mock('../../src/game/objects/CheckoutSheet', () => ({
   CheckoutSheet: class {
-    handlers: Record<string, () => void> = {};
+    handlers: Record<string, (...a: unknown[]) => void> = {};
     closed = false;
     destroyed = false;
     nudged = 0;
     constructor(_scene: unknown, public options: { lines: { label: string; price: number }[]; total: number; missing: number; sellerLine: string }) { made.sheets.push(this); }
-    on(e: string, fn: () => void) { this.handlers[e] = fn; return this; }
-    emit(e: string) { this.handlers[e]?.(); }
+    on(e: string, fn: (...a: unknown[]) => void) { this.handlers[e] = fn; return this; }
+    emit(e: string, ...a: unknown[]) { this.handlers[e]?.(...a); }
     close(done?: () => void) { this.closed = true; done?.(); }
     nudge() { this.nudged++; }
+    updates: { lines: { label: string; price: number }[]; total: number; missing: number; sellerLine: string }[] = [];
+    update(o: { lines: { label: string; price: number }[]; total: number; missing: number; sellerLine: string }) { this.updates.push(o); }
+    getRemovePoints() { return [{ x: 7, y: 8 }]; }
     getButtonPoints() { return { takeAll: { x: 1, y: 2 }, leaveOut: { x: 3, y: 4 }, keepTrying: { x: 5, y: 6 } }; }
     get isClosing() { return this.closed; }
     destroy() { this.destroyed = true; }
@@ -98,7 +101,7 @@ function setup({ wallet = 500, worn = [free, basic, fancy], owned = [], dyed = {
   } as never;
   const controller = new CheckoutController();
   controller.attach(ctx);
-  const sheet = () => made.sheets[made.sheets.length - 1] as { emit(e: string): void; closed: boolean; destroyed: boolean; nudged: number; options: { lines: { label: string; price: number }[]; total: number; missing: number; sellerLine: string } };
+  const sheet = () => made.sheets[made.sheets.length - 1] as { emit(e: string, ...a: unknown[]): void; closed: boolean; destroyed: boolean; nudged: number; updates: { lines: { label: string; price: number }[]; total: number; missing: number; sellerLine: string }[]; options: { lines: { label: string; price: number }[]; total: number; missing: number; sellerLine: string } };
   // Runs the pending timers in order of delay, including the ones they add.
   const run = () => {
     for (let guard = 0; guard < 100; guard++) {
@@ -158,6 +161,65 @@ describe('CheckoutController (F13.6)', () => {
     t.leave();
     expect(t.sheet().options.lines.map((l) => l.label)).toEqual([`Tinte ${bottle.name}`]);
     expect(t.sheet().options.total).toBe(50);
+  });
+
+  it('each line carries what to take off if its cross is pressed (A6)', () => {
+    const t = setup();
+    t.leave();
+    const lines = t.sheet().options.lines as unknown as { ref: { kind: string; id: string } }[];
+    expect(lines.map((l) => l.ref).sort((a, b) => a.id.localeCompare(b.id))).toEqual([{ kind: 'item', id: basic.id }, { kind: 'item', id: fancy.id }].sort((a, b) => a.id.localeCompare(b.id)));
+  });
+
+  it('taking one piece off removes only that one with a puf, recalculates the total and keeps the till open (A6)', async () => {
+    const t = setup({ wallet: 100 });
+    t.leave();
+    expect(t.sheet().options.missing).toBe(50);
+    t.sheet().emit(ObjectEvents.SheetRemoveLine, { kind: 'item', id: fancy.id });
+    expect(t.removed).toEqual([fancy.id]);
+    expect(t.outfit()[basic.slot]).toBe(basic.id);
+    expect(t.calls.some((c) => c.startsWith('puf:'))).toBe(true);
+    const sheet = t.sheet();
+    expect(sheet.updates).toHaveLength(1);
+    expect(sheet.updates[0]).toMatchObject({ total: 40, missing: 0 });
+    expect(sheet.updates[0].lines.map((l) => l.label)).toEqual([basic.name]);
+    expect(sheet.closed).toBe(false);
+    expect(t.verdicts).toEqual([]);
+    // The wallet reaches now: [Llevar todo] pays only what is left.
+    sheet.emit(ObjectEvents.SheetConfirm);
+    expect(t.progress().owned).toEqual([basic.id]);
+    expect(t.progress().wallet).toBe(60);
+  });
+
+  it('taking off a bottle keeps the garment and drops the bottle line (A6)', () => {
+    const t = setup({ worn: [free, basic], dyed: { [free.id]: bottle.id } });
+    t.leave();
+    t.sheet().emit(ObjectEvents.SheetRemoveLine, { kind: 'dye', id: bottle.id });
+    expect(t.removed).toEqual([]);
+    expect(t.itemDye()).toEqual({});
+    expect(t.outfit()[free.slot]).toBe(free.id);
+    expect(t.sheet().updates[0].lines.map((l) => l.label)).toEqual([basic.name]);
+  });
+
+  it('taking off the last unpaid piece closes the till and lets the player go with what is theirs (A6)', async () => {
+    const t = setup({ worn: [free, basic] });
+    t.leave();
+    t.sheet().emit(ObjectEvents.SheetRemoveLine, { kind: 'item', id: basic.id });
+    expect(t.sheet().closed).toBe(true);
+    t.run();
+    await t.flush();
+    expect(t.verdicts).toEqual([true]);
+    expect(t.controller.e2eState().outcomes).toEqual(['left-out']);
+  });
+
+  it('a cross pressed on a line that is not there, or after paying, does nothing (A6)', () => {
+    const t = setup();
+    t.leave();
+    t.sheet().emit(ObjectEvents.SheetRemoveLine, { kind: 'item', id: 'nope' });
+    expect(t.removed).toEqual([]);
+    expect(t.sheet().updates).toHaveLength(0);
+    t.sheet().emit(ObjectEvents.SheetConfirm);
+    t.sheet().emit(ObjectEvents.SheetRemoveLine, { kind: 'item', id: basic.id });
+    expect(t.removed).toEqual([]);
   });
 
   it('[Seguir probando] closes the till and stays: the verdict is false and nothing changed', async () => {

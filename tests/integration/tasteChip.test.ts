@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('phaser', async () => (await import('./helpers/kitScene')).phaserMock);
 
 import { SfxKeys } from '../../src/game/constants';
-import { TasteChip } from '../../src/game/objects/TasteChip';
+import { TasteChip, glyphColorFor } from '../../src/game/objects/TasteChip';
 import { makeFakeScene, type FakeScene, type TweenRecord } from './helpers/kitScene';
 
 const chipText = { kind: 'love', glyph: '♥', label: 'estrellas' } as const;
@@ -35,6 +35,21 @@ beforeEach(() => {
   vi.stubGlobal('window', { innerWidth: 1280, innerHeight: 720, matchMedia: () => ({ matches: false }) });
 });
 afterEach(() => vi.unstubAllGlobals());
+
+describe('the color of the glyph (A5b)', () => {
+  it('the dot of the favorite color is painted with the hex of the dye, not with the blue of its kind', () => {
+    expect(glyphColorFor({ kind: 'color', glyph: '●', label: 'Naranjo', swatch: '#F3C04A' }, true)).toBe(0xf3c04a);
+  });
+  it('without a hex, and for the other kinds, the color of the kind', () => {
+    expect(glyphColorFor({ kind: 'color', glyph: '●', label: 'x' }, true)).not.toBe(0xf3c04a);
+    expect(glyphColorFor({ kind: 'love', glyph: '♥', label: 'x', swatch: '#F3C04A' }, true)).not.toBe(0xf3c04a);
+  });
+  it('a hidden taste keeps the washed out version of the same color', () => {
+    const hidden = glyphColorFor({ kind: 'color', glyph: '●', label: 'x', swatch: '#000000' }, false);
+    expect(hidden).toBeGreaterThan(0x000000);
+    expect(hidden).not.toBe(glyphColorFor({ kind: 'color', glyph: '●', label: 'x', swatch: '#000000' }, true));
+  });
+});
 
 describe('TasteChip (F14.3)', () => {
   it('writes the name of the taste; a hidden one writes "???"', () => {

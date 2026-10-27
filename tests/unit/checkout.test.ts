@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { checkoutPlan, comboFate, combosDue, hasUnpaidPieces, keepOnlyOwned, payPlan } from '../../src/game/domain/checkout';
+import { checkoutPlan, comboFate, combosDue, hasUnpaidPieces, keepOnlyOwned, payPlan, withoutLine } from '../../src/game/domain/checkout';
 import { emptyProgress } from '../../src/game/domain/progress';
 import type { ClothingDef, ComboDef, DyeDef, EconomyRules, Progress } from '../../src/game/domain/types';
 
@@ -22,6 +22,31 @@ const dyes: DyeDef[] = [
 ];
 const ctx = { catalog, dyes, rules };
 const progress = (extra: Partial<Progress> = {}): Progress => ({ ...emptyProgress(100), ...extra });
+
+describe('withoutLine (A6)', () => {
+  const outfit = { sweater: 'free', head: 'cheap', neck: 'nice' };
+  it('takes one item off the look and the dye it carried, and leaves the rest', () => {
+    const r = withoutLine(outfit, { cheap: 'cielo', free: 'rosa' }, { kind: 'item', id: 'cheap' });
+    expect(r.outfit).toEqual({ sweater: 'free', neck: 'nice' });
+    expect(r.itemDye).toEqual({ free: 'rosa' });
+  });
+  it('a bottle line clears that dye from every item and keeps the items', () => {
+    const r = withoutLine(outfit, { cheap: 'cielo', free: 'cielo', nice: 'rosa' }, { kind: 'dye', id: 'cielo' });
+    expect(r.outfit).toEqual(outfit);
+    expect(r.itemDye).toEqual({ nice: 'rosa' });
+  });
+  it('an unknown line changes nothing and the inputs are never mutated', () => {
+    const dye = { cheap: 'cielo' };
+    expect(withoutLine(outfit, dye, { kind: 'item', id: 'nope' })).toEqual({ outfit, itemDye: dye });
+    withoutLine(outfit, dye, { kind: 'item', id: 'cheap' });
+    expect(outfit).toHaveProperty('head', 'cheap');
+    expect(dye).toEqual({ cheap: 'cielo' });
+  });
+  it('after taking off the only unpaid piece the plan has nothing to charge', () => {
+    const r = withoutLine({ sweater: 'free', head: 'cheap' }, {}, { kind: 'item', id: 'cheap' });
+    expect(checkoutPlan(r.outfit, r.itemDye, progress(), ctx).cart.total).toBe(0);
+  });
+});
 
 describe('checkoutPlan', () => {
   it('an outfit of owned and free things has an empty cart', () => {

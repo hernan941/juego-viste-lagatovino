@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('phaser', async () => (await import('./helpers/kitScene')).phaserMock);
 
-import { ObjectEvents } from '../../src/game/constants';
+import { Ink, ObjectEvents } from '../../src/game/constants';
 import { Button } from '../../src/game/objects/Button';
 import { CheckoutSheet, type CheckoutSheetOptions } from '../../src/game/objects/CheckoutSheet';
 import { makeFakeScene, phaserMock, type FakeScene, type TweenRecord } from './helpers/kitScene';
@@ -10,11 +10,11 @@ import { makeFakeScene, phaserMock, type FakeScene, type TweenRecord } from './h
 type Fake = InstanceType<(typeof phaserMock)['default']['GameObjects']['Container']>;
 
 const lines = [
-  { label: 'Gorro de chef', price: 40, icon: 'icon-a' },
-  { label: 'Bufanda larga', price: 40, icon: 'icon-b' },
-  { label: 'Tinte Cielo', price: 50, swatch: '#CFE0F3' },
-];
-const base: CheckoutSheetOptions = { lines, total: 130, missing: 0, sellerLine: 'Son 130 botones. Si te tinca, te lo llevas', sellerTexture: 'char-seller' };
+  { label: 'Gorro de chef', price: 40, icon: 'icon-a', ref: { kind: 'item', id: 'chef' } },
+  { label: 'Bufanda larga', price: 40, icon: 'icon-b', ref: { kind: 'item', id: 'scarf' } },
+  { label: 'Tinte Cielo', price: 50, swatch: '#CFE0F3', ref: { kind: 'dye', id: 'cielo' } },
+] as const;
+const base: CheckoutSheetOptions = { lines: [...lines], total: 130, missing: 0, sellerLine: 'Son 130 botones. Si te tinca, te lo llevas', sellerTexture: 'char-seller' };
 
 function finishTweens(scene: FakeScene): void {
   const done = new Set<TweenRecord>();
@@ -75,6 +75,12 @@ describe('CheckoutSheet (F13.6)', () => {
     expect(scene.made.texts.map((t) => String(t.text)).some((t) => t.includes('30'))).toBe(true);
   });
 
+  it('"te faltan" is written in the muted ink, never in alarm red (M3)', () => {
+    const { scene } = make({ missing: 30 });
+    const text = scene.made.texts.find((t) => String(t.text).includes('Te faltan 30'));
+    expect((text?.style as { color: string }).color).toBe(Ink.mutedTexto);
+  });
+
   it('[Sacarme lo que no tengo] and [Seguir probando] each have their own answer', () => {
     const { buttons, events } = make();
     buttons[1].emit(ObjectEvents.ButtonClick);
@@ -116,6 +122,72 @@ describe('CheckoutSheet (F13.6)', () => {
     const blink = calm.scene.tweens.records.slice(first);
     expect(blink.length).toBeGreaterThan(0);
     expect(blink.some((r) => 'x' in r.config)).toBe(false);
+  });
+
+  describe('taking one piece off (A6)', () => {
+    /** The zones of the crosses: the interactive containers that are not buttons. */
+    const crosses = (sheet: unknown) => {
+      const rows = ((sheet as Fake).list as Fake[]).filter((c) => 'list' in c && !c.destroyed).flatMap((c) => (c as Fake).list as Fake[]);
+      return rows.flatMap((r) => ((r as Fake).list ?? []) as Fake[]).filter((z) => z.interactive?.useHandCursor);
+    };
+
+    it('every line has a cross with a touch area of 80 wide, that asks for that line to go', () => {
+      const { sheet } = make();
+      const asked: unknown[] = [];
+      sheet.on(ObjectEvents.SheetRemoveLine, (ref: unknown) => asked.push(ref));
+      const zones = crosses(sheet);
+      expect(zones).toHaveLength(3);
+      for (const z of zones) expect(z.width).toBeGreaterThanOrEqual(80);
+      zones[1].emit('pointerdown');
+      zones[2].emit('pointerdown');
+      expect(asked).toEqual([{ kind: 'item', id: 'scarf' }, { kind: 'dye', id: 'cielo' }]);
+    });
+
+    it('a line with no ref has no cross', () => {
+      const { sheet } = make({ lines: [{ label: 'x', price: 1 }] });
+      expect(crosses(sheet)).toHaveLength(0);
+    });
+
+    it('update() shows the new list and total, drops the old rows and keeps asking for the new ones', () => {
+      const { scene, sheet } = make({ missing: 30 });
+      const asked: unknown[] = [];
+      sheet.on(ObjectEvents.SheetRemoveLine, (ref: unknown) => asked.push(ref));
+      sheet.update({ lines: [lines[0], lines[1]], total: 80, missing: 0, sellerLine: 'Son 80' });
+      const texts = scene.made.texts.map((t) => String(t.text));
+      expect(texts.some((t) => t.includes('Total') && t.includes('80'))).toBe(true);
+      const zones = crosses(sheet);
+      expect(zones).toHaveLength(2);
+      zones[0].emit('pointerdown');
+      expect(asked).toEqual([{ kind: 'item', id: 'chef' }]);
+    });
+
+    it('update() makes [Llevar todo] answer "confirm" once the wallet reaches, and the other way round', () => {
+      const { sheet, buttons, events } = make({ missing: 30 });
+      buttons[0].emit(ObjectEvents.ButtonClick);
+      sheet.update({ lines: [lines[0]], total: 40, missing: 0, sellerLine: '' });
+      buttons[0].emit(ObjectEvents.ButtonClick);
+      sheet.update({ lines: [lines[0], lines[1]], total: 80, missing: 10, sellerLine: '' });
+      buttons[0].emit(ObjectEvents.ButtonClick);
+      expect(events).toEqual([ObjectEvents.SheetShort, ObjectEvents.SheetConfirm, ObjectEvents.SheetShort]);
+    });
+
+    it('update() pops the total, and with reduced motion it does not scale', () => {
+      const a = make();
+      const before = a.scene.tweens.records.length;
+      a.sheet.update({ lines: [lines[0]], total: 40, missing: 0, sellerLine: '' });
+      expect(a.scene.tweens.records.slice(before).some((r) => 'scale' in r.config)).toBe(true);
+      const b = make({}, true);
+      const first = b.scene.tweens.records.length;
+      b.sheet.update({ lines: [lines[0]], total: 40, missing: 0, sellerLine: '' });
+      expect(b.scene.tweens.records.slice(first).some((r) => 'scale' in r.config)).toBe(false);
+    });
+
+    it('reports where the crosses are for the e2e hook', () => {
+      const { sheet } = make();
+      expect(sheet.getRemovePoints()).toHaveLength(3);
+      sheet.update({ lines: [lines[0]], total: 40, missing: 0, sellerLine: '' });
+      expect(sheet.getRemovePoints()).toHaveLength(1);
+    });
   });
 
   it('gives the e2e hook the points of the three buttons', () => {

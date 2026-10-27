@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { eventNote, formatPoints, judgeLines, ratingLineText } from '../../src/game/domain/copy';
+import { eventNote, formatPoints, noveltyNote, ratingLineText } from '../../src/game/domain/copy';
+import tags from '../../src/game/data/tags.json';
+import type { TagNames } from '../../src/game/domain/types';
 import type { CeremonyEvent } from '../../src/game/domain/ceremony';
+
+const names = tags as TagNames;
 
 describe('formatPoints', () => {
   it('signs every number and uses the real minus', () => {
@@ -12,12 +16,17 @@ describe('formatPoints', () => {
 
 describe('ratingLineText (F15.3)', () => {
   it('says each kind of line in Spanish and names the tag', () => {
-    expect(ratingLineText({ kind: 'style', points: 2, ref: 'clasico' })).toContain('clasico');
-    expect(ratingLineText({ kind: 'love', points: 2, ref: 'invierno' })).toContain('invierno');
-    expect(ratingLineText({ kind: 'dislike', points: -3, ref: 'invierno' })).toContain('invierno');
+    expect(ratingLineText({ kind: 'style', points: 2, ref: 'clasico' }, undefined, names)).toBe('Todo muy clásico');
+    expect(ratingLineText({ kind: 'love', points: 2, ref: 'invierno' }, undefined, names)).toBe('Le encanta el invierno');
+    expect(ratingLineText({ kind: 'dislike', points: -3, ref: 'gala' }, undefined, names)).toBe('No le tinca la ropa de gala');
+    expect(ratingLineText({ kind: 'style', points: 2, ref: 'lana' }, undefined, names)).toBe('Todo de lana');
     expect(ratingLineText({ kind: 'complete', points: 2 })).toMatch(/completo/i);
     expect(ratingLineText({ kind: 'favoriteItem', points: 2 })).toMatch(/favorit/i);
     expect(ratingLineText({ kind: 'favoriteDye', points: 1 })).toMatch(/color/i);
+  });
+  it('never leaves the card blank: a bare cat is "Al natural" and a plain look is "Sin combinar"', () => {
+    expect(ratingLineText({ kind: 'bare', points: 0 })).toBe('Al natural');
+    expect(ratingLineText({ kind: 'plain', points: 0 })).toBe('Sin combinar');
   });
   it('uses the name of the combo when it is given, and the id otherwise', () => {
     expect(ratingLineText({ kind: 'combo', points: 3, ref: 'navidad' }, (id) => `Look ${id}!`)).toContain('Look navidad!');
@@ -28,11 +37,11 @@ describe('ratingLineText (F15.3)', () => {
   });
 });
 
-describe('judge comfort (F15.3)', () => {
-  it('comforts a low score with the generic @, never next to the name', () => {
-    const line = judgeLines({ name: 'Kofi' }).comfort();
-    expect(line).toMatch(/tiern/);
-    expect(line).not.toContain('Kofi');
+describe('noveltyNote (A3)', () => {
+  it('explains the small payout of a repeated or near look, and says nothing for a new one', () => {
+    expect(noveltyNote(0, 2)).toBe('Propina +2');
+    expect(noveltyNote(1, 7)).toBe('Casi igual +7');
+    expect(noveltyNote(2, 20)).toBeUndefined();
   });
 });
 
@@ -58,6 +67,7 @@ describe('eventNote', () => {
   });
   it('mentions the stars of a record and the tag of a taste', () => {
     expect(eventNote(notes[0]!).title).toContain('5');
-    expect(eventNote(notes[2]!).title).toContain('gala');
+    expect(eventNote(notes[2]!, names).title).toBe('Le encanta la ropa de gala');
+    expect(eventNote(notes[3]!, names).title).toBe('No le tinca la ropa de gala');
   });
 });

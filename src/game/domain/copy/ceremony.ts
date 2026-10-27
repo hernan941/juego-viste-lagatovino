@@ -1,5 +1,6 @@
 // Pure TS. The words of the runway card and of the event notes (F15.3). The judge's own lines live in judge.ts.
-import type { BreakdownLine, ProgressEvent } from '../types';
+import type { BreakdownLine, Novelty, ProgressEvent, TagNames } from '../types';
+import { tagLove, tagStyle } from './tags';
 
 /** "+3" or "−3" (real minus sign); 0 stays "0". */
 export function formatPoints(points: number): string {
@@ -8,18 +9,27 @@ export function formatPoints(points: number): string {
   return '0';
 }
 
-/** One line of the judge's card. `comboName` turns a combo id into its name; without it the id is shown. */
-export function ratingLineText(line: BreakdownLine, comboName: (id: string) => string = (id) => id): string {
+/** One line of the judge's card. `comboName` turns a combo id into its name; without it the id is shown. `tags` has the readable tags. */
+export function ratingLineText(line: BreakdownLine, comboName: (id: string) => string = (id) => id, tags?: TagNames): string {
   const ref = line.ref ?? '';
   switch (line.kind) {
-    case 'style': return ref ? `Todo muy ${ref}` : 'Prendas que combinan';
-    case 'love': return ref ? `Le encanta lo ${ref}` : 'Lo que le encanta';
-    case 'dislike': return ref ? `No le tinca lo ${ref}` : 'Algo que no le tinca';
+    case 'style': return ref ? tagStyle(tags, ref) : 'Prendas que combinan';
+    case 'love': return ref ? `Le encanta ${tagLove(tags, ref)}` : 'Lo que le encanta';
+    case 'dislike': return ref ? `No le tinca ${tagLove(tags, ref)}` : 'Algo que no le tinca';
     case 'favoriteItem': return '¡Su prenda favorita!';
     case 'complete': return 'Look completo';
     case 'combo': return ref ? `Combo ${comboName(ref)}` : 'Combo';
     case 'favoriteDye': return 'Su color favorito';
+    case 'bare': return 'Al natural';
+    case 'plain': return 'Sin combinar';
   }
+}
+
+/** Why the payout is small: a repeated look pays a tip, a near one pays half. A new look needs no explanation. */
+export function noveltyNote(novelty: Novelty, amount: number): string | undefined {
+  if (novelty === 0) return `Propina +${amount}`;
+  if (novelty === 1) return `Casi igual +${amount}`;
+  return undefined;
 }
 
 export interface EventNote {
@@ -34,7 +44,7 @@ export interface EventNote {
 const tagOf = (taste: string): string => taste.slice(taste.indexOf(':') + 1);
 
 /** The polaroid note of a progress event. */
-export function eventNote(event: Exclude<ProgressEvent, { type: 'coins' }>): EventNote {
+export function eventNote(event: Exclude<ProgressEvent, { type: 'coins' }>, tags?: TagNames): EventNote {
   switch (event.type) {
     case 'milestone':
       return { icon: '★', title: `¡Primeras ${event.stars} estrellas!`, reward: `+${event.amount}` };
@@ -42,8 +52,8 @@ export function eventNote(event: Exclude<ProgressEvent, { type: 'coins' }>): Eve
       const reward = `+${event.amount}`;
       if (event.taste === 'favorite') return { icon: '♥', title: '¡Su prenda favorita!', reward };
       if (event.taste === 'color') return { icon: '✦', title: '¡Su color favorito!', reward };
-      if (event.taste.startsWith('dislike:')) return { icon: '?', title: `No le tinca lo ${tagOf(event.taste)}`, reward };
-      return { icon: '♥', title: `Le encanta lo ${tagOf(event.taste)}`, reward };
+      if (event.taste.startsWith('dislike:')) return { icon: '?', title: `No le tinca ${tagLove(tags, tagOf(event.taste))}`, reward };
+      return { icon: '♥', title: `Le encanta ${tagLove(tags, tagOf(event.taste))}`, reward };
     }
     case 'comboFirst':
       return { icon: '✦', title: '¡Primer combo!', reward: `+${event.amount}` };

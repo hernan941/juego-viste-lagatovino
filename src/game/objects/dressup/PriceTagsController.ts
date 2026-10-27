@@ -10,7 +10,7 @@ import { profileOf } from '../../systems/motion';
 import type { ClothingItem } from '../ClothingItem';
 import { PriceTag } from '../PriceTag';
 import type { DressUpContext, DressUpController } from './DressUpController';
-import { CELL_TAG, WORN_TAG } from './layout';
+import { CELL_TAG, WORN_TAG, wornTagOffset } from './layout';
 
 /** What the catalog of the registry carries besides the clothes (GameData, ADR 0017). */
 interface WithEconomy {
@@ -98,7 +98,8 @@ export class PriceTagsController implements DressUpController {
 
   private hangPoint(item: ClothingDef): Point {
     const anchor = this.ctx.cat.getAnchorWorld(anchorForSlot(item.slot));
-    return { x: anchor.x + WORN_TAG.dx, y: anchor.y + WORN_TAG.dy };
+    const { dx, dy } = wornTagOffset(item.slot);
+    return { x: anchor.x + dx, y: anchor.y + dy };
   }
 
   /** One tag for each worn item that is not bought: new ones fade in, the ones of removed or bought items fade out. */

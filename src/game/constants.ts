@@ -133,6 +133,8 @@ export const ObjectEvents = {
   SheetShort: 'sheet-short',
   /** CheckoutSheet: [Sacarme lo que no tengo] was pressed */
   SheetLeaveOut: 'sheet-leave-out',
+  /** CheckoutSheet: the cross of a line was pressed (with the `CartLineRef` of the line) */
+  SheetRemoveLine: 'sheet-remove-line',
   /** NameSign: (sign) the player touched the sign (the cat sheet opens) */
   SignPress: 'sign-press',
   /** Keychain: the flattened texture is ready and showing */

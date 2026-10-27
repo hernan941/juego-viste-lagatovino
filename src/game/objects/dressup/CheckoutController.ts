@@ -5,7 +5,7 @@
 // It talks to the others through scene events (WalletFlight, WalletShake, ItemsBought) and the progress in the registry.
 import type Phaser from 'phaser';
 import { DressUpEvents, ObjectEvents, RegistryKeys, SfxKeys } from '../../constants';
-import { checkoutPlan, keepOnlyOwned, payPlan, type CheckoutPlan } from '../../domain/checkout';
+import { checkoutPlan, keepOnlyOwned, payPlan, withoutLine, type CartLineRef, type CheckoutPlan } from '../../domain/checkout';
 import { sellerLines, shopLines } from '../../domain/copy';
 import { anchorForSlot } from '../../domain/slots';
 import { staggerDelays } from '../../domain/stagger';
@@ -71,7 +71,7 @@ export class CheckoutController implements DressUpController {
   }
 
   e2eState(): {
-    open: boolean; busy: boolean; total: number | null; lines: string[]; buttons: ReturnType<CheckoutSheet['getButtonPoints']> | null; outcomes: Outcome[];
+    open: boolean; busy: boolean; total: number | null; lines: string[]; buttons: ReturnType<CheckoutSheet['getButtonPoints']> | null; removes: Point[]; outcomes: Outcome[];
   } {
     return {
       open: this.sheet !== null,
@@ -79,6 +79,7 @@ export class CheckoutController implements DressUpController {
       total: this.plan && this.sheet ? this.plan.cart.total : null,
       lines: this.sheet ? [...this.lines] : [],
       buttons: this.sheet && !this.sheet.isClosing ? this.sheet.getButtonPoints() : null,
+      removes: this.sheet && !this.sheet.isClosing ? this.sheet.getRemovePoints() : [],
       outcomes: [...this.outcomes],
     };
   }
@@ -123,29 +124,36 @@ export class CheckoutController implements DressUpController {
 
   private open(plan: CheckoutPlan): void {
     const { scene, catalog } = this.ctx;
-    const clothes = catalog.clothes;
-    const lines: CheckoutLine[] = [
-      ...plan.cart.items.map((l) => {
-        const item = clothes.find((c) => c.id === l.id)!;
-        return { label: item.name, price: l.price, icon: item.icon };
-      }),
-      ...plan.cart.dyes.map((l) => {
-        const dye = this.dyes.find((d) => d.id === l.id);
-        return { label: shopLines.dyeRow(dye?.name ?? l.id), price: l.price, swatch: dye?.hex };
-      }),
-    ];
-    this.plan = plan;
-    this.lines = lines.map((l) => l.label);
     const seller = (catalog as unknown as WithShop).brand?.seller;
-    const sheet = new CheckoutSheet(scene, {
-      lines, total: plan.cart.total, missing: plan.missing,
-      sellerLine: seller ? sellerLines(seller).checkout(plan.cart.total) : shopLines.total(plan.cart.total), sellerTexture: seller?.texture,
-    });
+    const sheet = new CheckoutSheet(scene, { ...this.contentOf(plan), sellerTexture: seller?.texture });
     this.sheet = sheet;
     sheet.on(ObjectEvents.SheetConfirm, () => this.pay(sheet));
     sheet.on(ObjectEvents.SheetShort, () => this.short(sheet));
     sheet.on(ObjectEvents.SheetLeaveOut, () => this.leaveOut(sheet));
+    sheet.on(ObjectEvents.SheetRemoveLine, (ref: CartLineRef) => this.removeLine(sheet, ref));
     sheet.on(ObjectEvents.SheetCancel, () => this.keepTrying(sheet));
+  }
+
+  /** What the till shows for a plan: the lines (each with the cross that takes it off), the total and what the seller says. */
+  private contentOf(plan: CheckoutPlan): { lines: CheckoutLine[]; total: number; missing: number; sellerLine: string } {
+    const { clothes } = this.ctx.catalog;
+    const lines: CheckoutLine[] = [
+      ...plan.cart.items.map((l): CheckoutLine => {
+        const item = clothes.find((c) => c.id === l.id)!;
+        return { label: item.name, price: l.price, icon: item.icon, ref: { kind: 'item', id: l.id } };
+      }),
+      ...plan.cart.dyes.map((l): CheckoutLine => {
+        const dye = this.dyes.find((d) => d.id === l.id);
+        return { label: shopLines.dyeRow(dye?.name ?? l.id), price: l.price, swatch: dye?.hex, ref: { kind: 'dye', id: l.id } };
+      }),
+    ];
+    this.plan = plan;
+    this.lines = lines.map((l) => l.label);
+    const seller = (this.ctx.catalog as unknown as WithShop).brand?.seller;
+    return {
+      lines, total: plan.cart.total, missing: plan.missing,
+      sellerLine: seller ? sellerLines(seller).checkout(plan.cart.total) : shopLines.total(plan.cart.total),
+    };
   }
 
   private close(sheet: CheckoutSheet): void {
@@ -204,6 +212,49 @@ export class CheckoutController implements DressUpController {
     hearts.explode(p.count(4), head.x, head.y - 40);
     sparkles.explode(p.count(8), at.x, at.y);
     this.say(shopLines.bought, head.x + 195, head.y + 10);
+  }
+
+  // ---- The cross of a line -------------------------------------------------
+
+  /**
+   * One garment (or one bottle) goes, with a puf, and the till is written again with the new total: "no alcanza" is not a dead
+   * end, choosing what to take home is part of the wanting. When nothing unpaid is left the till closes and the player goes.
+   */
+  private removeLine(sheet: CheckoutSheet, ref: CartLineRef): void {
+    if (this.sheet !== sheet || this.busy) return;
+    const before = this.makePlan();
+    const there = ref.kind === 'item' ? before.unpaidItems.includes(ref.id) : before.cart.dyes.some((d) => d.id === ref.id);
+    if (!there) return;
+    const { scene, cat, sparkles } = this.ctx;
+    const puf = (slotItemId: string) => {
+      const item = this.ctx.catalog.clothes.find((c) => c.id === slotItemId);
+      if (!item) return;
+      const at = cat.getAnchorWorld(anchorForSlot(item.slot));
+      sparkles.explode(profileOf(scene).count(6), at.x, at.y);
+    };
+    const dye = this.itemDye();
+    const next = withoutLine(this.ctx.getOutfit(), dye, ref);
+    // The bottle goes first (the garment shows its own color), then the garment comes off.
+    if (Object.keys(next.itemDye).length !== Object.keys(dye).length) scene.registry.set(RegistryKeys.ItemDye, next.itemDye);
+    if (ref.kind === 'item') {
+      const item = this.ctx.catalog.clothes.find((c) => c.id === ref.id);
+      if (item) {
+        puf(item.id);
+        this.ctx.removeItem(item);
+        this.ctx.grid.getCell(item.id)?.receivePop();
+      }
+    } else {
+      before.unpaidDyed.forEach(puf);
+    }
+    const after = this.makePlan();
+    if (after.cart.items.length + after.cart.dyes.length === 0) {
+      this.busy = true;
+      this.outcomes.push('left-out');
+      this.close(sheet);
+      this.later(OFF_GO_MS, () => this.go());
+      return;
+    }
+    sheet.update(this.contentOf(after));
   }
 
   // ---- [Sacarme lo que no tengo] -------------------------------------------

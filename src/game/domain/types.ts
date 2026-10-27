@@ -140,6 +140,14 @@ export interface CharacterDef {
   texture?: string;
 }
 
+/** The readable forms of a tag (tags.json): the chip, "Le encanta ..." and the "Todo ..." line of the judge's card. */
+export interface TagName {
+  label: string;
+  love: string;
+  style: string;
+}
+export type TagNames = Record<string, TagName>;
+
 export interface BrandDef {
   judge: CharacterDef;
   seller: CharacterDef;
@@ -286,9 +294,15 @@ export type Progress = Required<StoredProgress>;
 
 export type BreakdownKind = 'style' | 'love' | 'dislike' | 'complete' | 'combo' | 'favoriteItem' | 'favoriteDye';
 
+/**
+ * What a line of the card can be: a rule, or a placeholder so the card is never blank: `bare` (no clothes at all) and `plain`
+ * (clothes, but no rule gave or took points). Placeholders are worth 0.
+ */
+export type BreakdownLineKind = BreakdownKind | 'bare' | 'plain';
+
 /** One line of the judge's card. */
 export interface BreakdownLine {
-  kind: BreakdownKind;
+  kind: BreakdownLineKind;
   points: number;
   /** Tag, item or combo id that caused the line. */
   ref?: string;
@@ -300,9 +314,19 @@ export interface RatingResult {
   breakdown: BreakdownLine[];
 }
 
+/** How many slots changed against recent looks, capped: 0 = repeat, 1 = near, 2 = new. */
+export type Novelty = 0 | 1 | 2;
+
+/** The clue of the judge with 3-4 stars: points missing for the next star and, if known, a loved tag the look left out. */
+export interface NextHint {
+  missing: number;
+  love?: string;
+}
+
 /** Things the ceremony replays after the progress was applied (ADR 0017). */
 export type ProgressEvent =
-  | { type: 'coins'; amount: number }
+  /** `novelty`: how new the look was (0 repeat, 1 near, 2 new); the ceremony explains the small payouts. */
+  | { type: 'coins'; amount: number; novelty?: Novelty }
   | { type: 'milestone'; stars: 3 | 4 | 5; amount: number }
   | { type: 'tasteFound'; taste: TasteKey; amount: number }
   | { type: 'comboFirst'; comboId: string; amount: number }

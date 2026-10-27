@@ -10,8 +10,9 @@ import dyes from '../../src/game/data/dyes.json';
 import sets from '../../src/game/data/sets.json';
 import photo from '../../src/game/data/photo.json';
 import brand from '../../src/game/data/brand.json';
+import tags from '../../src/game/data/tags.json';
 
-const catalog = assertGameData({ cats, clothes, combos, economy, dyes, sets, photo, brand });
+const catalog = assertGameData({ cats, clothes, combos, economy, dyes, sets, photo, brand, tags });
 const abriguito = catalog.sets.find((s) => s.id === 'abriguito')!;
 const withAbriguito = () => {
   const p = emptyProgress(0);

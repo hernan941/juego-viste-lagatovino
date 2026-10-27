@@ -162,9 +162,10 @@ import dyes from '../../src/game/data/dyes.json';
 import sets from '../../src/game/data/sets.json';
 import photo from '../../src/game/data/photo.json';
 import brand from '../../src/game/data/brand.json';
+import tags from '../../src/game/data/tags.json';
 import type { FakeScene } from './helpers/sceneFake';
 
-const catalog = assertGameData({ cats, clothes, combos, economy, dyes, sets, photo, brand });
+const catalog = assertGameData({ cats, clothes, combos, economy, dyes, sets, photo, brand, tags });
 const sweater = catalog.clothes.find((c) => c.slot === 'sweater')!;
 
 type Scene = FakeScene & {

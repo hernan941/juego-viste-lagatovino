@@ -6,6 +6,7 @@ import combos from '../../src/game/data/combos.json';
 import dyes from '../../src/game/data/dyes.json';
 import economy from '../../src/game/data/economy.json';
 import photo from '../../src/game/data/photo.json';
+import tags from '../../src/game/data/tags.json';
 import sets from '../../src/game/data/sets.json';
 import { UI_ART, buildManifest } from '../../src/game/data/assets';
 import { validateGameData } from '../../src/game/data/schema';
@@ -14,7 +15,7 @@ import type { BrandDef, CatDef, ClothingDef, DyeDef, PhotoCatalog } from '../../
 const extras = { dyes: dyes as DyeDef[], photo: photo as unknown as PhotoCatalog, brand: brand as BrandDef };
 const manifest = buildManifest(cats as CatDef[], clothes as ClothingDef[], extras);
 const files = import.meta.glob('/public/assets/**/*.svg', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
-const raw = () => ({ cats, clothes, combos, economy, dyes, sets, photo, brand, textures: new Set(manifest.map((m) => m.key)) });
+const raw = () => ({ cats, clothes, combos, economy, dyes, sets, photo, brand, tags, textures: new Set(manifest.map((m) => m.key)) });
 
 describe('the real data files (F11.9 and F11.10)', () => {
   it('pass the whole validation', () => {

@@ -927,6 +927,12 @@ Se está consultando con el usuario (§9.1 del diseño). **No bloquea nada**:
 - **Aceptación**: verde en los 4 proyectos; 0 errores de consola.
 - **Depende de**: F15.4, F13.6, F11.16. **Conflictos**: ninguno.
 
+##### F15.6. Nombres legibles de los tags y voz del juez (A1 de `docs/reviews/hito-A.md`)
+- **Agente**: writer · **Tamaño**: S · **Ola**: 6
+- **Entregables**: `data/tags.json` (3 formas por tag: `label`, `love`, `style`) validado en `schema.ts` (`validateTags`: todo tag usado, menos `ignoredTags`, tiene entrada); `copy/tags.ts`; la libreta, las polaroids, los chips y la ficha usan el mapa; frases nuevas del juez por caso; la "@" solo en frases genéricas.
+- **Aceptación**: tests escritos antes (tabla con "invierno", "clasico" y "gala"); nunca sale un tag en crudo.
+- **Depende de**: F15.3, F14.4. **Conflictos**: `copy/`, `schema.ts`.
+
 ##### F15.R. Revisión GD del loop jugable (Hito A)
 - **Agente**: GD · **Ola**: 6
 - **Objetivo**: jugar el loop corto completo (probar → reacciones → ¡Listo! → caja → veredicto → botones → comprar) en PC y celular, con y sin movimiento reducido.

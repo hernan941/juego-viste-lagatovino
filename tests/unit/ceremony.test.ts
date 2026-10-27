@@ -32,6 +32,24 @@ describe('catReaction', () => {
   });
 });
 
+describe('ceremonyPlan, bare cat (A2)', () => {
+  it('knows the look is bare when the card only has the placeholder', () => {
+    const bare: RatingResult = { points: 0, stars: 1, breakdown: [{ kind: 'bare', points: 0 }] };
+    expect(ceremonyPlan(bare, []).bare).toBe(true);
+    expect(ceremonyPlan(result(1), []).bare).toBe(false);
+    expect(ceremonyPlan({ ...bare, breakdown: [{ kind: 'plain', points: 0 }] }, []).bare).toBe(false);
+  });
+});
+
+describe('ceremonyPlan, novelty (A3)', () => {
+  it('carries the novelty of the payout, and a new look when the event does not say', () => {
+    expect(ceremonyPlan(result(3), [{ type: 'coins', amount: 2, novelty: 0 }]).novelty).toBe(0);
+    expect(ceremonyPlan(result(3), [{ type: 'coins', amount: 9, novelty: 1 }]).novelty).toBe(1);
+    expect(ceremonyPlan(result(3), [{ type: 'coins', amount: 18 }]).novelty).toBe(2);
+    expect(ceremonyPlan(result(3), []).novelty).toBe(2);
+  });
+});
+
 describe('eventCoins and buttonCount', () => {
   it('adds the amounts of the events and ignores those without one', () => {
     expect(eventCoins(many)).toBe(40 + 50 + 15 + 15 + 40);

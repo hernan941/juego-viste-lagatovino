@@ -9,3 +9,4 @@ export * from './photo';
 export * from './keychain';
 export * from './ceremony';
 export * from './dyes';
+export * from './tags';

@@ -9,6 +9,7 @@ import type { ClothingDef, EconomyRules, Outfit, Progress } from '../../src/game
 import type { DressUpContext } from '../../src/game/objects/dressup/DressUpController';
 import { controllerFactories } from '../../src/game/objects/dressup/controllers';
 import { PriceTagsController } from '../../src/game/objects/dressup/PriceTagsController';
+import { WORN_TAG, WORN_TAG_FACE } from '../../src/game/objects/dressup/layout';
 import { WalletController } from '../../src/game/objects/dressup/WalletController';
 import { makeFakeScene } from './helpers/kitScene';
 
@@ -164,6 +165,17 @@ describe('PriceTagsController: the worn items (F13.4)', () => {
     expect(hud.list.length).toBeGreaterThan(0);
     wear({ head: 'cheap', neck: 'fancy' });
     expect(state().worn.sort()).toEqual(['cheap', 'fancy']);
+  });
+
+  it('the tag of a head item hangs farther out than the one of a neck item, clear of the eyes (A5)', () => {
+    const { wear, hud } = setup();
+    wear({ head: 'cheap' });
+    const head = hud.list.at(-1) as unknown as { x: number };
+    wear({ head: 'cheap', neck: 'fancy' });
+    const neck = hud.list.at(-1) as unknown as { x: number };
+    expect(head.x).toBe(700 + WORN_TAG_FACE.dx);
+    expect(neck.x).toBe(700 + WORN_TAG.dx);
+    expect(head.x).toBeGreaterThan(neck.x);
   });
 
   it('wearing what is free or bought hangs nothing', () => {
