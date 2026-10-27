@@ -23,9 +23,9 @@ Aquí se registran las decisiones de arquitectura del proyecto (formato Nygard).
 | [0016](0016-direccion-de-arte-lagatovino.md) | Dirección de arte Lagatovino | Aceptado (reemplaza la estética v1 y enmienda 0006) |
 | [0017](0017-guardado-v2-y-reglas-de-juego-en-json.md) | Guardado v2 y reglas de juego en JSON | Aceptado (amplía 0004) |
 | [0018](0018-tenido-por-recoloreado-de-svg.md) | Teñido por recoloreado del SVG en tiempo de ejecución | Aceptado (amplía 0006; enmienda: evento `ItemDyed`, API de `Cat` y medición pendiente) |
-| [0019](0019-flujo-de-escenas-v2.md) | Flujo de escenas v2 | Aceptado (amplía 0007; enmiendas: contrato de controladores de DressUp; vuelta al Showcase y `getComposition()`) |
+| [0019](0019-flujo-de-escenas-v2.md) | Flujo de escenas v2 | Aceptado (amplía 0007; enmiendas: contrato de controladores de DressUp; vuelta al Showcase y `getComposition()`; etiquetas de tintes y `setTip`/`pulseTip`) |
 | 0020 | Sin uso: las reglas de juego en JSON se fusionaron en 0017 | — |
-| [0021](0021-el-llavero-como-tratamiento-del-render.md) | El llavero como tratamiento del render del look | Aceptado (enmienda: notas de F19) |
+| [0021](0021-el-llavero-como-tratamiento-del-render.md) | El llavero como tratamiento del render del look | Aceptado (enmiendas: notas de F19; el primero se cuelga solo y premio del set "Colgador dorado") |
 | [0022](0022-una-textura-por-lote-en-webgl-por-software.md) | Una textura por lote en WebGL por software | Aceptado (amplía 0011 y 0012) |
 
 ## Estados

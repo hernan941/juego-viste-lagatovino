@@ -116,3 +116,39 @@ No cambia la decisión. Registra dónde la implementación se apartó del texto 
   - dejar el barniz fijo con un destello breve, como en movimiento reducido.
   
   Sea cual sea, la decisión se agrega a este ADR como enmienda.
+
+## Enmienda (2026-10-27): el primero se cuelga solo y premio del set "Colgador dorado" (F19.R)
+Cambia la última viñeta de §2 ("colgarlo es un paso aparte") para el caso del gancho vacío. Lo demás de §2 sigue vigente: un llavero por gato, se pregunta siempre antes de reemplazar y la opción resaltada es la de más estrellas. Viene del punto K2 de `docs/reviews/F19.R-llavero.md`.
+
+### Colgado automático del primero (K2)
+**Problema** (verificado en `scenes/PhotoMode.ts`): el progreso solo se escribe en `finishHang`, que se llama solo desde [Colgarlo] (`hangIt`). Si el jugador sale del empaque con [Seguir vistiendo] (`leave` → `go(this, 'keepDressing')`) o tocando la tarjeta (`PackageTap` → `putAway`), el PNG se descargó pero el llavero no queda en el colgador, aunque el gancho esté vacío.
+
+**Decisión**:
+- **Gancho vacío** (`!needsConfirm(collection, recipe)`): el llavero se cuelga solo cuando el empaque queda listo, es decir, al final de `hangPackage`, después de la descarga y en el mismo momento en que `keychainPhase` pasa a `'ready'`. El progreso (`RegistryKeys.Progress`, ADR 0017) se escribe ahí mismo. Así queda colgado salga como salga el jugador: con [Seguir vistiendo], tocando la tarjeta o pulsando [Colgarlo].
+- **Gancho ocupado** (`needsConfirm` es `true`): no cambia nada. No se escribe nada sin preguntar. [Colgarlo] abre la pregunta de reemplazo de siempre, y salir por cualquier otro camino deja el llavero anterior.
+- **[Colgarlo] después del colgado automático** significa "ir a verlo". No vuelve a escribir el progreso ni pregunta: navega con `hangArgs(catId, true)`, así que en el colgador se ve el vuelo al gancho (K1).
+- Si la escena se cierra antes de que el empaque esté listo (falló la transformación o se salió en medio de la animación), no se cuelga nada. Tampoco se guardó el PNG, así que el jugador no pierde nada que haya visto terminado.
+
+**Se escribe al quedar listo y no al salir**: escribir el registry en `shutdown` depende del orden de limpieza de la escena y no cubre todas las salidas de la misma forma. Escribirlo en un solo punto es más simple de probar, y el jugador ve lo mismo.
+
+**Detalles que la implementación tiene que respetar** (verificados contra el código):
+- `hangKeychain(collection, recipe, undefined)` **no** es seguro para el colgado automático: cuando el gancho ya tiene un llavero, aplica `defaultReplace` y **reemplaza sin preguntar** si el nuevo tiene igual o más estrellas (`domain/keychain.ts`, `confirm ?? defaultReplace(...)`). El colgado automático se decide con `needsConfirm` y nunca se llama a `hangKeychain` con un gancho ocupado y sin respuesta del jugador. Para que no se pueda usar mal, conviene que la regla viva en un helper puro de `domain/keychain.ts`, por ejemplo `autoHang(collection, recipe) → collection | null` (devuelve `null` si el gancho está ocupado), escrito con TDD.
+- Después del colgado automático, el gancho de ese gato ya tiene **esta misma receta**. Si [Colgarlo] volviera a consultar `needsConfirm`, preguntaría "¿Cambio el llavero de {nombre}?" contra sí mismo. PhotoMode guarda que esta receta ya se colgó (un campo junto a `madeRecipe`, que se reinicia en `init()` y en `hideReady()`) y `hangIt` / `finishHang` lo respetan.
+- Después de colgarlo solo, si el jugador guarda otro llavero del mismo gato en la misma visita, ese gancho ya está ocupado y se pregunta. Es lo esperado.
+
+**Pruebas (ADR 0012)**:
+- Unit: el helper devuelve la colección con la receta si el gancho está vacío y `null` si está ocupado, con cualquier cantidad de estrellas.
+- Integración (PhotoMode): con el gancho vacío, al llegar a `'ready'` el progreso ya tiene la receta. Con el gancho ocupado, el progreso no cambia hasta que se responde la pregunta. [Colgarlo] después del colgado automático no abre `ReplaceSheet`.
+- e2e (`keychain`): guardar → [Seguir vistiendo] → abrir el colgador → el llavero está. Lo mismo tocando la tarjeta. Y sobrevive a una recarga.
+
+### Premio del set "Colgador dorado"
+**Decisión**: el set `colgador-dorado` (`sets.json`, hoy con `reward: []`) premia con un sticker **"Dije dorado"** (`sticker-dije`) que reutiliza el arte del dije ✦ de los herrajes (`art/ui/keychain/charm-star.svg`). El coordinador lo aprobó como un **agregado de datos dentro del alcance del ADR 0015**: los sets premian piezas del modo foto (S5 y S6), y no hace falta código ni arte nuevo.
+
+**Datos**:
+- En `photo.json → stickers`: `{ "id": "sticker-dije", "name": "Dije dorado", "texture": "photo-sticker-dije", "unlock": { "set": "colgador-dorado" } }`.
+- En `sets.json`: `colgador-dorado` pasa a `"reward": ["sticker-dije"]`.
+- `schema.ts` ya valida las dos mitades: la textura tiene que empezar con `photo-sticker-`, el set tiene que existir y su `reward` tiene que incluir la pieza.
+
+**Arte**: el manifiesto deriva la ruta de cada sticker a partir de su textura (`assets/photo/stickers/<id>.svg`, lienzo de 128 × 128, `data/assets.ts`). Por eso la textura **no puede apuntar** a `ui-keychain-charm-star`. Lo más simple es una copia: `art/photo/stickers/dije.svg` con los mismos trazos del dije (96 × 128), centrados en un `viewBox` de 128 × 128. No se dibuja nada nuevo. Si el dije cambia, la copia se actualiza a mano (el riesgo de que se desfasen es bajo).
+
+**Pendiente** (no es arquitectura): según la revisión F19.R, cambiar la fila de la tabla de §S5 en `docs/design/segunda-etapa.md` necesita la aprobación del usuario. Esta enmienda no edita ese documento.

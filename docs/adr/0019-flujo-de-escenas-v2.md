@@ -138,3 +138,26 @@ No cambia lo anterior. Concreta dos puntos que fijó la implementación.
 ### `PhotoMode.getComposition()`
 - `PhotoMode` expone `getComposition(): PhotoComposition`, que devuelve lo que está "sobre la mesa": fondo, marco y stickers con su posición y ángulo. El tipo y el saneo (`composition(state)`) están en `domain/photoComposition.ts` (TS puro).
 - Es la única fuente para la foto guardada, para la receta del llavero (`KeychainRecipe.photo`, ADR 0021) y para el estado de test. Ni el llavero ni el hook leen los objetos de la escena.
+
+## Enmienda (2026-10-27): etiquetas de los tintes y el consejo de la tarjeta (F16.5)
+No cambia lo anterior. Registra cómo quedó repartida la compra de tintes entre controladores y qué se sumó al contexto. Está verificado contra `objects/dressup/` y `constants.ts`.
+
+### Las etiquetas de los tintes viven en `DyeTabController`
+- Las etiquetas de precio de los **frascos** y las de las **prendas teñidas** con un tinte sin comprar son de `DyeTabController`, no de `PriceTagsController`, que solo maneja las etiquetas de las prendas y no sabe nada de tintes.
+- Motivo: los frascos existen solo en esa pestaña y la etiqueta de la prenda teñida depende de `itemDye` (ADR 0018). Así `PriceTagsController` no tiene que saber de tintes, y cada feature queda en su archivo, como pide la regla de esta enmienda.
+- La compra la sigue haciendo `PurchaseController` (la hoja, el pago y el vuelo del monedero), igual que con las prendas.
+
+### Eventos nuevos (se suman a la tabla de eventos de escena)
+| Evento | Argumentos | Quién lo emite → quién lo escucha |
+|---|---|---|
+| `DyeTagPressed` | `(request: DyeTagRequest)` con `{ dye: DyeDef, at: Point, scale: number }` | `DyeTabController`, cuando se toca la etiqueta de un frasco sin comprar o la de la prenda teñida con él → `PurchaseController`, que abre la hoja de compra desde `at` |
+| `DyesBought` | `(ids: string[])` | `PurchaseController` (compra suelta) y `CheckoutController` (la caja de ¡Listo!) → `DyeTabController`, que refresca las etiquetas y hace el pop del frasco |
+
+Además, `DyeTabController` escucha `changedata-progress` (ADR 0017) para refrescar sus etiquetas.
+
+**Desvío a corregir**: `DyeTabController.ts` hace `import type { DyeTagRequest } from './PurchaseController'`. Es un import solo de tipo (no acopla en ejecución), pero va contra la regla de que los controladores no se importan entre sí. El tipo de la carga de un evento es parte del contrato, así que se mueve a `DressUpController.ts` (o a `domain/types.ts`) y los dos controladores lo importan de ahí. Es un cambio chico que no tiene que esperar a otra tarea.
+
+### El contexto suma `setTip` y `pulseTip`: un solo consejo a la vez
+- `setTip(text: string | null)`: reemplaza el consejo al pie de la tarjeta. Es el **único** texto de consejo de DressUp y es de la escena (`hint`). Cambia con un fundido cruzado de 140 ms (70 ms de salida y 70 de entrada) y no hace nada si el texto ya es el mismo. Con `null` vuelve el consejo de la escena ("arrastra la ropa…", `DEFAULT_TIP`).
+- `pulseTip()`: hace latir el consejo cuando se toca algo que solo se arrastra (ADR 0008). **No suena**: el sonido del toque lo pone quien llama, si corresponde.
+- **Regla**: una pestaña o feature que necesita decir algo propio usa `setTip`. No crea un segundo texto de consejo. Al irse (por ejemplo, al cerrar la pestaña Tintes), devuelve el control con `setTip(null)`. Si dos controladores lo pidieran a la vez, gana el último. Hoy solo lo usa `DyeTabController`, así que no hace falta arbitrar. Si aparece un segundo usuario, se decide en otra enmienda.
