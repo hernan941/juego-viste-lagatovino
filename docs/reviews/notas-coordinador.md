@@ -71,3 +71,11 @@ Resultados del jugador modelo con el `economy.json` actual, con 5 semillas:
 ## F16.5: comprar tintes
 - Las etiquetas de los frascos y de las prendas teñidas viven en `DyeTabController` (eventos `DyeTagPressed` y `DyesBought`), separadas de `PriceTagsController`. Hay que registrarlo en el ADR 0018 o en el 0019.
 - La etiqueta "Tinte Lila" de la prenda cae cerca de la alfombra. Revisarlo con el GD.
+
+## F20.5: DressUp repintado (captura f205/after-worn.png)
+- Se ve muy bien: papel cuadriculado, pestañas índice de colores, el espejo con marco de tinta y washi, "Capas" en tarjeta, ¡Listo! en píldora negra y el cartel del nombre colgando.
+- Queda para F20.7:
+  - `WalletHud` sigue con el estilo v1;
+  - `GiftBox.ts` todavía usa `Palette` y `FONT_FAMILY`.
+- En Tintes, las etiquetas de los frascos se pisan con las de precio y con la fila de abajo (layout de `DyeTabController`).
+- En las celdas aparecen corazones sobre las etiquetas de precio: confirmar con el GD qué indican.

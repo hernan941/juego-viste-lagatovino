@@ -350,3 +350,13 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
 - "Iniciar" lleva a CatSelect, con y sin progreso.
 - `@mobile`: el gato del centro no tapa "Mi álbum".
 - Sin errores de consola.
+
+## F20.5: DressUp repintado
+### E2E pendientes
+- Flujo completo:
+  - arrastrar prendas, quitarlas con la ✕ de capas y cambiar de pestaña, incluida Tintes;
+  - ¡Listo! y "Cambiar de gato" funcionan con los puntos del hook.
+- `getE2EUi` sigue exponiendo `finish`, `change`, `mute`, `motion` (y `fullscreen` en táctil).
+- Las nuevas coordenadas de `cells`, `tabs`, `layerRows` y `dropZone`.
+- La pestaña Tintes (compra y teñido) con el panel de capas lleno.
+- Sin errores de consola.
