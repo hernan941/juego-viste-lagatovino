@@ -79,3 +79,11 @@ Resultados del jugador modelo con el `economy.json` actual, con 5 semillas:
   - `GiftBox.ts` todavía usa `Palette` y `FONT_FAMILY`.
 - En Tintes, las etiquetas de los frascos se pisan con las de precio y con la fila de abajo (layout de `DyeTabController`).
 - En las celdas aparecen corazones sobre las etiquetas de precio: confirmar con el GD qué indican.
+
+## F19.4 y F19.5: colgador (captura 06-hanger-full.png)
+- Se ve lindo: tablero de corcho, llaveros con argolla de plata o dorada, y siluetas en lápiz en los ganchos vacíos.
+- **Problemas de layout**:
+  - el tablero sale de la hoja: la fila de abajo y sus nombres quedan sobre el borde del corcho y de la página;
+  - el anillado del lomo pisa la parte de arriba del tablero.
+- `AlbumTabs.getTabPositions()` devuelve el mismo punto para las 5 pestañas. Corregirlo antes del e2e F19.6.
+- "Colgador dorado" sigue con `reward: []`. El premio sería arte nuevo (un tag con ✦).
