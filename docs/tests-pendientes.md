@@ -419,3 +419,11 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
 8. Tras guardar y tocar la tarjeta, `info.pose` no cambia.
 9. Con 12 llaveros de 4★ o más, `sticker-dije` aparece desbloqueado.
 10. **K1 en vivo**: el vuelo al gancho se ve entero. Las capturas por software no alcanzan para verlo: hay que mirarlo en vivo.
+
+## Página contenedora de Lagatovino (ADR 0023)
+### E2E pendientes (no escritos)
+1. Se ven el header (wordmark), el footer y los dos botones; el wordmark, "Volver a Lagatovino" y el enlace del footer apuntan a `https://lagatovino.com/` (o a `VITE_HOME_URL`).
+2. El botón de pantalla completa existe una sola vez y, al pulsarlo, `document.fullscreenElement.id === 'stage'`, `<html>` lleva `page-fullscreen`, el header y el footer no se ven y aparece "Salir"; al salir vuelve todo. Un solo botón visible en cada estado.
+3. El lienzo entra completo sin scroll en 1280 × 720, 1920 × 1080 y en celular horizontal (844 × 390). En horizontal bajo 520 px de alto no hay footer y el header mide 36 px.
+4. Ninguna petición sale del origen y no hay errores de consola.
+5. **Afectados**: `getE2EUi` ya no expone `fullscreen` en ninguna escena (antes, solo en táctil). Ningún spec de `tests/e2e/` lo usaba. Los e2e que calculan coordenadas con el rect del lienzo siguen sirviendo, pero el lienzo ahora está más abajo (header de 56 px) y más chico en 1280 × 720 (unos 1086 × 611); `tests/e2e/mobile.spec.ts` y `load.spec.ts` deberían revisarse por si asumen un lienzo a pantalla completa.

@@ -2,16 +2,53 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#FFFCF5" />
+    <meta name="description" content="Viste Lagato: un juego para vestir gatitos con sweaters, de Lagatovino." />
     <link rel="stylesheet" href="/style.css">
-    <title>Viste Lagato</title>
+    <title>Viste Lagato · Lagatovino</title>
 </head>
 
 <body>
-    <div id="app">
-        <div id="game-container"></div>
+    <div id="page">
+        <!-- Lagatovino header (ADR 0023): the page around the game, styled like lagatovino.com. -->
+        <header class="site-header">
+            <div class="site-header-inner">
+                <a class="brand" href="https://lagatovino.com/" data-home aria-label="Lagatovino, volver al inicio">
+                    <img src="/brand/lagatovino-logo.svg" alt="Lagatovino" width="648" height="100">
+                </a>
+                <p class="site-title"><span class="spark" aria-hidden="true">&#10022;</span> Viste Lagato</p>
+                <div class="site-actions">
+                    <a class="pill pill-outline" id="page-home" href="https://lagatovino.com/" data-home aria-label="Volver a Lagatovino">
+                        <span aria-hidden="true">&larr;</span><span class="pill-text">Volver a Lagatovino</span>
+                    </a>
+                    <button type="button" class="pill pill-solid" id="page-fullscreen" aria-pressed="false" aria-label="Pantalla completa">
+                        <svg class="pill-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <span class="pill-text" id="page-fullscreen-label">Pantalla completa</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- The stage is what goes fullscreen: the canvas and the way out (the header and the footer stay behind). -->
+        <main id="stage">
+            <div id="game-container"></div>
+            <button type="button" class="pill pill-solid stage-exit" id="page-fullscreen-exit" aria-label="Salir de pantalla completa">
+                <svg class="pill-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span class="pill-text">Salir</span>
+            </button>
+        </main>
+
+        <footer class="site-footer">
+            <div class="stripes" aria-hidden="true"></div>
+            <p class="site-footer-inner">
+                <span class="hand">Xoxo, mau!</span>
+                <span>Gatitos con mucho cariño, de <a href="https://lagatovino.com/" data-home>Lagatovino</a>.</span>
+            </p>
+        </footer>
     </div>
     <!-- ADR 0014: shown (class rotate-hint on <html>) when a phone is held in portrait. -->
     <div id="rotate-hint" role="alert" aria-live="polite">

@@ -8,7 +8,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
-      include: ['src/game/domain/**', 'src/game/data/**', 'src/game/plugins/**', 'src/game/systems/**'],
+      include: ['src/game/domain/**', 'src/game/data/**', 'src/game/plugins/**', 'src/game/systems/**', 'src/page/**'],
       exclude: ['**/*.gitkeep', '**/*.json'],
       // ADR 0012: 90 % en domain/ y data/ (schema), 80 % en plugins/ y systems/.
       // Las carpetas vacías no producen archivos que medir, así que no fallan por vacío.

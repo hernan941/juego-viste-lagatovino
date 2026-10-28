@@ -47,6 +47,20 @@
     size-adjust: 88%;
 }
 
+/* Lagatovino tokens (ADR 0023): copied from lagatovino.com, not linked. Same values as Ink in constants.ts (art-direction v2). */
+:root {
+    --background: #FFFCF5;
+    --foreground: #1F1B1A;
+    --muted-foreground: #6A5F57;
+    --border: #E8E0D2;
+    --sol: #F3C04A;
+    --frambuesa: #C2306B;
+    --linea-lapiz: #8FA8E3;
+    --ring: #3A5FC4;
+    --font-display: 'Londrina Solid', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+    --font-hand: 'Gaegu', 'Londrina Acentos', 'Comic Sans MS', 'Chalkboard SE', cursive;
+}
+
 html, body {
     margin: 0;
     padding: 0;
@@ -55,7 +69,8 @@ html, body {
     overscroll-behavior: none;
     color: #1F1B1A;
     background-color: #FFFCF5;
-    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
     /* ADR 0014: a finger must never scroll, zoom, select or open a menu over the game. */
     touch-action: none;
     -webkit-user-select: none;
@@ -64,23 +79,238 @@ html, body {
     -webkit-tap-highlight-color: transparent;
 }
 
-#app {
+/* The page is a column: header, the stage that takes what is left, footer. */
+#page {
+    display: flex;
+    flex-direction: column;
     width: 100%;
     height: 100vh;
     height: 100dvh;
     overflow: hidden;
+    box-sizing: border-box;
+    /* Notches and rounded corners (viewport-fit=cover). */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+#stage {
+    position: relative;
+    flex: 1 1 0;
+    min-height: 0;
     display: flex;
     justify-content: center;
     align-items: center;
-    /* Notches and rounded corners (viewport-fit=cover). */
-    box-sizing: border-box;
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    overflow: hidden;
+    background-color: #FFFCF5;
+}
+
+#game-container {
+    width: 100%;
+    height: 100%;
 }
 
 #game-container, #game-container canvas {
     touch-action: none;
     -webkit-touch-callout: none;
     outline: none;
+}
+
+a:focus-visible, button:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+}
+
+/* Header: lagatovino.com's, lighter (bottom border, wordmark on the left, pill buttons on the right). */
+.site-header {
+    flex: none;
+    z-index: 30;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255, 252, 245, 0.95);
+}
+
+.site-header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    height: 56px;
+    padding: 0 16px;
+    box-sizing: border-box;
+}
+
+.brand {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    color: var(--foreground);
+}
+
+.brand img {
+    display: block;
+    height: 24px;
+    width: auto;
+}
+
+.site-title {
+    flex: 1 1 auto;
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 20px;
+    letter-spacing: 0.02em;
+    color: var(--muted-foreground);
+    white-space: nowrap;
+}
+
+.spark {
+    color: var(--sol);
+}
+
+.site-actions {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Pill buttons: the main one is black with cream text, the other has a border (lagatovino.com). */
+.pill {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    padding: 6px 14px;
+    border: 1.5px solid var(--foreground);
+    border-radius: 9999px;
+    font-family: var(--font-display);
+    font-size: 18px;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.pill:hover {
+    transform: rotate(-2deg);
+}
+
+.pill:active {
+    transform: scale(0.96);
+}
+
+.pill-solid {
+    background: var(--foreground);
+    color: var(--background);
+}
+
+.pill-outline {
+    background: transparent;
+    color: var(--foreground);
+}
+
+.pill-outline:hover {
+    background: var(--sol);
+}
+
+.pill-icon {
+    width: 16px;
+    height: 16px;
+    flex: none;
+}
+
+.pill[hidden] {
+    display: none;
+}
+
+/* Only in fullscreen: the way out, lying on the stage. The header and the footer are not part of it. */
+.stage-exit {
+    display: none;
+    position: absolute;
+    left: 10px;
+    bottom: 10px;
+    z-index: 5;
+    opacity: 0.55;
+}
+
+.stage-exit:hover,
+.stage-exit:focus-visible {
+    opacity: 1;
+}
+
+html.page-fullscreen .stage-exit:not([hidden]) {
+    display: inline-flex;
+}
+
+/* Footer: the striped strip and a line of text, like the footer of lagatovino.com. */
+.site-footer {
+    flex: none;
+    z-index: 30;
+    border-top: 1px solid var(--border);
+}
+
+.stripes {
+    height: 10px;
+    border-bottom: 1px solid var(--border);
+    background-color: var(--background);
+    background-image: repeating-linear-gradient(90deg, transparent 0 2.75rem, var(--linea-lapiz) 2.75rem calc(2.75rem + 1.5px));
+}
+
+.site-footer-inner {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 12px;
+    margin: 0;
+    padding: 6px 16px 8px;
+    font-size: 14px;
+    color: var(--muted-foreground);
+}
+
+.site-footer .hand {
+    font-family: var(--font-hand);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--frambuesa);
+}
+
+.site-footer a {
+    color: var(--foreground);
+    text-decoration: underline;
+    text-decoration-color: var(--sol);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+}
+
+.site-footer a:hover {
+    color: var(--muted-foreground);
+}
+
+/* Narrow windows: the wordmark and the buttons are enough. */
+@media (max-width: 720px) {
+    .site-title { display: none; }
+    .site-actions { margin-left: auto; }
+}
+
+/* Little height (a phone held sideways, ADR 0014): a thin strip, no footer, so the canvas keeps its size. */
+@media (max-height: 520px) {
+    .site-header-inner { height: 36px; padding: 0 10px; }
+    .brand img { height: 16px; }
+    .site-title, .pill-text { display: none; }
+    .site-actions { margin-left: auto; gap: 6px; }
+    .pill { padding: 0; width: 30px; height: 30px; justify-content: center; font-size: 16px; }
+    /* The hit area is a bit bigger than the drawing. */
+    .pill::after { content: ''; position: absolute; inset: -4px; }
+    .site-footer { display: none; }
+    /* The way out in fullscreen keeps its word: it is the only thing on the stage. */
+    .stage-exit { width: auto; padding: 0 16px 0 12px; }
+    .stage-exit .pill-text { display: inline; }
+}
+
+/* Fullscreen on the stage hides the page by itself; this is for browsers that fullscreen the whole document. */
+html.page-fullscreen .site-header,
+html.page-fullscreen .site-footer {
+    display: none;
 }
 
 /* "Gira tu teléfono": a phone held in portrait (class set by systems/touchEnv.ts). */

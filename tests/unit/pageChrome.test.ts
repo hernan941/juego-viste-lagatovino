@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   DEFAULT_HOME_URL, FULLSCREEN_CLASS, fullscreenLabel, installPageChrome, resolveHomeUrl, shouldShowPageFullscreen,
-} from '../../src/game/systems/pageChrome';
+} from '../../src/page/pageChrome';
 
 describe('resolveHomeUrl', () => {
   it('falls back to lagatovino.com when nothing is configured', () => {
@@ -53,25 +53,28 @@ function fakePage(opts: { api: boolean }) {
   const exit = makeButton();
   const label = { textContent: '' };
   const home = { href: '' };
+  const home2 = { href: '' };
   const classes = new Set<string>();
   const doc = {
     fullscreenElement: null as unknown,
     fullscreenEnabled: opts.api,
     exitFullscreen: vi.fn(async () => { doc.fullscreenElement = null; fire('fullscreenchange'); }),
     documentElement: { classList: { toggle: (c: string, on: boolean) => (on ? classes.add(c) : classes.delete(c)) } },
-    getElementById: (id: string): unknown => ({ 'page-home': home, 'page-fullscreen': button, 'page-fullscreen-exit': exit, 'page-fullscreen-label': label, app: target }[id] ?? null),
+    querySelectorAll: () => [home, home2],
+    getElementById: (id: string): unknown => ({ 'page-fullscreen': button, 'page-fullscreen-exit': exit, 'page-fullscreen-label': label, stage: target }[id] ?? null),
     addEventListener: (t: string, fn: () => void) => (listeners[t] ??= []).push(fn),
     removeEventListener: (t: string, fn: () => void) => { listeners[t] = (listeners[t] ?? []).filter((f) => f !== fn); },
   };
   const target = { requestFullscreen: vi.fn(async () => { doc.fullscreenElement = target; fire('fullscreenchange'); }) };
-  return { doc, button, exit, label, home, classes, target, listeners };
+  return { doc, button, exit, label, home, home2, classes, target, listeners };
 }
 
 describe('installPageChrome', () => {
-  it('points the home link at the configured address', () => {
+  it('points every home link at the configured address', () => {
     const p = fakePage({ api: true });
     installPageChrome(p.doc, 'https://example.com/');
     expect(p.home.href).toBe('https://example.com/');
+    expect(p.home2.href).toBe('https://example.com/');
   });
 
   it('hides both fullscreen buttons when there is no API', () => {

@@ -36,18 +36,20 @@ export interface PageDocument {
   exitFullscreen?(): Promise<void>;
   documentElement: { classList: { toggle(name: string, on: boolean): unknown } };
   getElementById(id: string): unknown;
+  querySelectorAll(selector: string): ArrayLike<{ href: string }>;
   addEventListener(type: 'fullscreenchange', fn: () => void): void;
   removeEventListener(type: 'fullscreenchange', fn: () => void): void;
 }
 
 /** Wires the header link and the fullscreen buttons. Returns the function that undoes it. */
 export function installPageChrome(doc: PageDocument, configuredHome: string | undefined): () => void {
-  const home = doc.getElementById('page-home') as { href: string } | null;
   const button = doc.getElementById('page-fullscreen') as ButtonLike | null;
   const exit = doc.getElementById('page-fullscreen-exit') as ButtonLike | null;
   const label = doc.getElementById('page-fullscreen-label') as { textContent: string | null } | null;
-  const area = doc.getElementById('app') as { requestFullscreen?(): Promise<void> } | null;
-  if (home) home.href = resolveHomeUrl(configuredHome);
+  const area = doc.getElementById('stage') as { requestFullscreen?(): Promise<void> } | null;
+  // Every link marked data-home (wordmark, "Volver", footer) goes to the same place.
+  const homeUrl = resolveHomeUrl(configuredHome);
+  for (const a of Array.from(doc.querySelectorAll('[data-home]'))) a.href = homeUrl;
 
   const available = shouldShowPageFullscreen({ available: !!doc.fullscreenEnabled && !!area?.requestFullscreen });
   for (const b of [button, exit]) if (b) b.hidden = !available;
