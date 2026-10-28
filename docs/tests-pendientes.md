@@ -435,3 +435,10 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
 3. En el celular en vertical no se pide (sale el aviso de girar).
 4. Si `requestFullscreen` se rechaza, el juego sigue a CatSelect sin errores de consola.
 5. Salir con "Salir" o con Esc, volver al Title y pulsar "Iniciar" otra vez vuelve a pedirla.
+
+## Arreglos de las capturas F20.R (caja, hook, Showcase y ShopEntrance)
+### E2E pendientes
+- Hook: `purchase.buttons`, `checkout.buttons` y `removes`, `catsheet.sign`, `dyes.jars`, `wallet.wallet.jar` y `album.button` coinciden con el centro real en la página, con el header, a 1920 y en el celular.
+- Cerrar DressUp con la caja abierta (por ejemplo con "Volver a Lagatovino") no da errores de consola.
+- Showcase con 7 notas: el contador "Secretos" y el borde del cuaderno siguen visibles.
+- ShopEntrance: los botones de sonido y movimiento responden sin tapar el letrero, y la entrada (campanita y zoom) sigue funcionando.
