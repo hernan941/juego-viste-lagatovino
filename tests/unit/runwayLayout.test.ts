@@ -51,6 +51,15 @@ describe('the notes of the ceremony (F20.R)', () => {
     }
   });
 
+  it('are 3 at most, readable: 110 apart at least and overlapping 15% at most (second pass)', () => {
+    for (const n of [2, 3]) {
+      const { scale, step } = noteRowFit(n);
+      const width = 161 * scale;
+      expect(step).toBeGreaterThanOrEqual(110);
+      expect((width - step) / width).toBeLessThanOrEqual(0.15);
+    }
+  });
+
   it('keep the way out clear', () => {
     for (const exit of RUNWAY_EXITS) expect(rectsOverlap(noteRowRect(10), exit)).toBe(false);
   });

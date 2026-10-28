@@ -187,13 +187,15 @@ export class Showcase extends Phaser.Scene implements E2EUi {
   /** The judge's turn. The buttons that land add to the purse; at the end the purse settles on the real wallet. */
   private runCeremony(rating: RatingResult, events: ProgressEvent[], wallet: number) {
     const p = profileOf(this);
-    const plan = ceremonyPlan(rating, events, p.reduced ? 'reduced' : 'full');
+    const plan = ceremonyPlan(rating, events, p.reduced ? 'reduced' : 'full', this.catalog.tags);
     const comboName = (id: string) => this.catalog.combos.find((c) => c.id === id)?.name ?? id;
     this.hud.hold();
     this.showHint();
     const ceremony = new Ceremony(this, plan, {
       cat: this.cat, catName: this.look.catName, judge: this.catalog.brand.judge, comboName, tags: this.catalog.tags, hint: this.hintFor(rating),
       layout: { ...LAYOUT, wallet: this.hud.getJarPoint() },
+      sparkTo: NOTEBOOK_AT,
+      onSpark: () => this.notebook?.setNews(true),
       onCredit: (credit) => this.hud.adjust(credit),
       onStep: (step: CeremonyStep) => {
         this.step = step.kind;

@@ -55,6 +55,9 @@ export interface CeremonyTargets {
   hint?: NextHint | null;
   /** The readable tags (tags.json) for the card and the notes. */
   tags?: TagNames;
+  /** Where the pile's sparkle flies to (the notebook button) and what happens when it arrives. */
+  sparkTo?: { x: number; y: number };
+  onSpark?: () => void;
   /** A button landed: `credit` buttons to add to the counter, `total` landed so far. */
   onCredit?: (credit: number, total: number) => void;
   /** A step of the plan starts (the e2e hook reads it as `ceremonyStep`). */
@@ -133,7 +136,7 @@ export class Ceremony {
     if (noteCount > 0) {
       const at = this.layout.notesAt;
       const fit = this.layout.notesFit?.(noteCount) ?? { scale: 1, maxWidth: this.layout.notesWidth };
-      this.notes = new EventNotes(scene, at.x, at.y, { count: noteCount, maxWidth: fit.maxWidth, scale: fit.scale, tags: this.targets.tags });
+      this.notes = new EventNotes(scene, at.x, at.y, { count: noteCount, maxWidth: fit.maxWidth, scale: fit.scale, sparkTo: this.targets.sparkTo, onSpark: this.targets.onSpark });
       this.notes.setDepth(this.depth + 3);
     }
     this.schedule(0);
@@ -246,7 +249,7 @@ export class Ceremony {
         );
         break;
       case 'note':
-        this.notes?.addNote(step.index, step.event, step.ms);
+        this.notes?.addNote(step.index, step.note, step.ms);
         break;
     }
   }

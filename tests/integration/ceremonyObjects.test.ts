@@ -184,7 +184,7 @@ describe('StarStamps', () => {
 });
 
 describe('EventNotes', () => {
-  const note = { type: 'comboFirst' as const, comboId: 'navidad', amount: 40 };
+  const note = { icon: '✦', title: 'Primer combo!', reward: '+40' };
 
   it('drops a polaroid note in with its caption and reward, and rustles the paper', () => {
     const s = makeCeremonyScene();
@@ -215,6 +215,43 @@ describe('EventNotes', () => {
     expect(speedOf(last(s))).toBe(3);
     notes.destroy();
     expect(s.activeTweens()).toHaveLength(0);
+  });
+});
+
+describe('EventNotes, the pile (F20.R)', () => {
+  const pile = { icon: '✦', title: '+4 mas en tu album', reward: '+130', stack: 4 };
+
+  it('stacks 3 papers behind the front one, each flip 60 ms later, and writes the caption', () => {
+    const s = makeCeremonyScene();
+    const notes = new EventNotes(s as never, 640, 600, { count: 3 });
+    notes.addNote(2, pile, 500);
+    expect(s.made.images.filter((i) => (i as { key: string }).key === TextureKeys.NotePolaroid)).toHaveLength(3);
+    expect(s.made.texts.some((t) => t.text === '+4 mas en tu album')).toBe(true);
+    const delays = s.tweens.records.map((r) => r.config.delay as number | undefined).filter((d) => d !== undefined);
+    expect(delays).toContain(60);
+  });
+
+  it('releases a sparkle toward the notebook after 2 s, once, and tells the scene', () => {
+    const s = makeCeremonyScene();
+    const onSpark = vi.fn();
+    const notes = new EventNotes(s as never, 640, 600, { count: 3, sparkTo: { x: 1000, y: 56 }, onSpark });
+    notes.addNote(2, pile, 500);
+    s.advance(2100);
+    expect(last(s).config).toMatchObject({ x: 1000 - 640, y: 56 - 600 });
+    (last(s).config.onComplete as () => void)();
+    expect(onSpark).toHaveBeenCalledTimes(1);
+    s.advance(3000);
+    expect(onSpark).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not fly the sparkle with reduced motion, but still tells the scene', () => {
+    const s = makeCeremonyScene(true);
+    const onSpark = vi.fn();
+    const notes = new EventNotes(s as never, 640, 600, { count: 3, sparkTo: { x: 1000, y: 56 }, onSpark });
+    notes.addNote(2, pile, 500);
+    s.advance(2100);
+    expect(onSpark).toHaveBeenCalledTimes(1);
+    expect(s.tweens.records.some((r) => r.config.x === 1000 - 640)).toBe(false);
   });
 });
 

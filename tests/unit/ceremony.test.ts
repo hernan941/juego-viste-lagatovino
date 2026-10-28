@@ -110,15 +110,22 @@ describe('ceremonyPlan', () => {
     }
   });
 
-  it('notes are 700 ms apart when there is room and never lost when squeezed', () => {
-    const five = many.slice(0, 6);
-    const plan = ceremonyPlan(result(5, 5), five);
+  it('notes are 700 ms apart when there is room, grouped, at most 3, and no button is lost when squeezed', () => {
+    const plan = ceremonyPlan(result(5, 5), many);
     const notes = of(plan, 'note');
-    expect(notes).toHaveLength(five.filter((e) => e.type !== 'coins').length);
+    expect(notes.length).toBeLessThanOrEqual(3);
     notes.slice(1).forEach((s, i) => expect(s.at - notes[i].at).toBe(700));
-    const crowded = of(ceremonyPlan(result(5, 5), Array.from({ length: 20 }, () => many[5])), 'note');
-    expect(crowded).toHaveLength(20);
-    expect(crowded[1].at - crowded[0].at).toBeLessThan(700);
+    const crowded = ceremonyPlan(result(5, 5), Array.from({ length: 20 }, (_, i) => ({ type: 'tasteFound' as const, taste: `love:t${i}`, amount: 15 })));
+    expect(of(crowded, 'note')).toHaveLength(3);
+    expect(of(crowded, 'note')[2].note.stack).toBe(18);
+    expect(crowded.coins).toBe(300);
+  });
+
+  it('the pile comes last', () => {
+    const plan = ceremonyPlan(result(5, 5), many);
+    const notes = of(plan, 'note');
+    expect(notes[notes.length - 1].note.stack).toBe(4);
+    expect(notes.slice(0, -1).every((s) => s.note.stack === undefined)).toBe(true);
   });
 
   it('button credits always add up to the coins of the events', () => {

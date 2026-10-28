@@ -1,7 +1,8 @@
 // Pure TS, no Phaser (ADR 0010, 0017). The timeline of the runway ceremony (docs/design/segunda-etapa.md, S1):
 // order, times and the "skip x3", so scenes only play the steps. Times are in ms from the start of the ceremony.
 import type { Expression } from './expressions';
-import type { BreakdownLine, Novelty, ProgressEvent, RatingResult } from './types';
+import { MAX_NOTES, groupRewardNotes, type RewardNote } from './rewardNotes';
+import type { BreakdownLine, Novelty, ProgressEvent, RatingResult, TagNames } from './types';
 
 export const JUDGE_ENTER_MS = 420;
 export const LINE_GAP_MS = 260;
@@ -40,7 +41,7 @@ export type CeremonyStep =
   | (StepBase & { kind: 'stamp'; index: number; shake: boolean; /** The 5th star, in `sol` with a burst. */ golden: boolean })
   | (StepBase & { kind: 'reaction'; reaction: CatReaction })
   | (StepBase & { kind: 'coin'; index: number; /** Coins this button adds to the counter. */ credit: number; fly: boolean })
-  | (StepBase & { kind: 'note'; index: number; event: CeremonyEvent });
+  | (StepBase & { kind: 'note'; index: number; note: RewardNote });
 
 export interface CeremonyPlan {
   profile: CeremonyProfile;
@@ -100,12 +101,13 @@ const endOf = (steps: readonly CeremonyStep[]): number => steps.reduce((end, s) 
 
 /**
  * The ordered steps of the ceremony: judge enters, breakdown lines (up to 5, 260 ms apart), stamps (140 ms apart),
- * the cat's reaction, the buttons flying to the wallet and the event notes. Total <= 6 s.
+ * the cat's reaction, the buttons flying to the wallet and the event notes (grouped, at most 3). Total <= 6 s.
  */
 export function ceremonyPlan(
   result: RatingResult,
   events: readonly ProgressEvent[],
   profile: CeremonyProfile = 'full',
+  tags?: TagNames,
 ): CeremonyPlan {
   const reduced = profile === 'reduced';
   const steps: CeremonyStep[] = [{ kind: 'judgeEnter', at: 0, ms: JUDGE_ENTER_MS, slide: !reduced }];
@@ -128,10 +130,10 @@ export function ceremonyPlan(
   credits(coins, buttons).forEach((credit, index) =>
     steps.push({ kind: 'coin', index, at: stampsEnd + index * COIN_GAP_MS, ms: COIN_FLIGHT_MS, credit, fly: !reduced }));
 
-  const notes = events.filter((e): e is CeremonyEvent => e.type !== 'coins');
+  const notes = groupRewardNotes(events.filter((e): e is CeremonyEvent => e.type !== 'coins'), MAX_NOTES, tags);
   const room = MAX_TOTAL_MS - stampsEnd - NOTE_MS;
   const gap = notes.length < 2 ? NOTE_GAP_MS : Math.max(MIN_NOTE_GAP_MS, Math.min(NOTE_GAP_MS, Math.floor(room / (notes.length - 1))));
-  notes.forEach((event, index) => steps.push({ kind: 'note', index, event, at: stampsEnd + index * gap, ms: NOTE_MS }));
+  notes.forEach((note, index) => steps.push({ kind: 'note', index, note, at: stampsEnd + index * gap, ms: NOTE_MS }));
 
   steps.sort((a, b) => a.at - b.at);
   return { profile, stars: result.stars, bare: result.breakdown[0]?.kind === 'bare', novelty: noveltyOf(events), steps, coins, totalMs: endOf(steps) };
