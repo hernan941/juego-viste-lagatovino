@@ -3,7 +3,7 @@
 import Phaser from 'phaser';
 import { Fonts, Ink, colorToNumber } from '../constants';
 import type { Point } from '../domain/types';
-import { BOUTIQUE } from '../systems/boutiquePalette';
+import { BOUTIQUE } from '../systems/boutiqueColors';
 import { opaqueBounds } from './alphaMap';
 
 const W = 520;

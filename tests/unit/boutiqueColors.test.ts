@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BOUTIQUE, STREET_SKETCH } from '../../src/game/systems/boutiquePalette';
+import { BOUTIQUE, STREET_SKETCH } from '../../src/game/systems/boutiqueColors';
 
 describe('boutique palette (F12.R M1)', () => {
   it('the wall is paper, not rosa', () => {

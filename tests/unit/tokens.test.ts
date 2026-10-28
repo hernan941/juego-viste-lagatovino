@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FontFaces, Fonts, Ink, Palette } from '../../src/game/constants';
+import { FontFaces, Fonts, Ink } from '../../src/game/constants';
 
 const css = Object.values(import.meta.glob<string>('/public/style.css', { query: '?raw', import: 'default', eager: true }))[0];
 const files = new Set(Object.keys(import.meta.glob('/public/fonts/*', { query: '?url' })));
@@ -40,12 +40,6 @@ describe('Ink (tokens v2, art-direction §4)', () => {
 
   it('every token is a #RRGGBB hex', () => {
     for (const value of Object.values(Ink)) expect(value).toMatch(/^#[0-9A-F]{6}$/);
-  });
-
-  it('does not change the v1 palette (scenes look the same until F20)', () => {
-    expect(Palette.cielo).toBe('#C4E6FF');
-    expect(Palette.texto).toBe('#5A3A48');
-    expect(Palette.contorno).toBe('#4A3036');
   });
 });
 

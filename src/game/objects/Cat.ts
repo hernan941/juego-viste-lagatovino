@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { ObjectEvents, TextureKeys } from '../constants';
+import { Ink, ObjectEvents, TextureKeys, colorToNumber } from '../constants';
 import { catTailKey, faceKey } from '../data/assets';
 import { catPose, headNoSteps, puajShiver, type CatPoseId } from '../domain/catPose';
 import { reactionFor, type Expression, type ReactionEvent } from '../domain/expressions';
@@ -13,7 +13,6 @@ import { isE2EEnabled } from '../e2eHook';
 import { profileOf } from '../systems/motion';
 import { RegistryKeys } from '../constants';
 import { alphaMapOf, opaqueBounds } from './alphaMap';
-import { hex } from './ui';
 import type { AnchorName, AnchorsDef, CatDef, ClothingDef, Point, Rect } from '../domain/types';
 
 /** Y of the paws' bottom edge in the 512 canvas: the pivot for breathing and squash. */
@@ -765,7 +764,7 @@ export class Cat extends Phaser.GameObjects.Container {
       return this.canvasImage(this.shown.get(img) ?? item.texture)
         .setPosition(img.x + Math.cos(a) * HALO_PX, img.y + Math.sin(a) * HALO_PX)
         .setScale(img.scaleX, img.scaleY)
-        .setTint(hex('rosa200')).setTintMode(Phaser.TintModes.FILL)
+        .setTint(colorToNumber(Ink.rosa)).setTintMode(Phaser.TintModes.FILL)
         .setDepth(HALO_DEPTH).setAlpha(0);
     });
     this.breath.add(copies);

@@ -2,7 +2,6 @@
 
 export const GAME_WIDTH = 1280;
 export const GAME_HEIGHT = 720;
-export const FONT_FAMILY = 'Fredoka';
 
 export const SceneKeys = {
   Boot: 'Boot',
@@ -17,24 +16,7 @@ export const SceneKeys = {
 } as const;
 export type SceneKey = (typeof SceneKeys)[keyof typeof SceneKeys];
 
-// Palette tokens from docs/art-direction.md.
-export const Palette = {
-  rosa50: '#FFF0F6',
-  rosa200: '#FFD1E3',
-  rosa400: '#FF8FB8',
-  rosa600: '#E2578B',
-  crema: '#FFF7EC',
-  menta: '#BDEFD8',
-  lavanda: '#D8CCFF',
-  cielo: '#C4E6FF',
-  mantequilla: '#FFF0A8',
-  texto: '#5A3A48',
-  contorno: '#4A3036',
-} as const;
-export type PaletteToken = keyof typeof Palette;
-
-// Tokens v2 (ADR 0016, art-direction §4). Own namespace until F20.7 removes `Palette`:
-// `cielo` differs between both (Palette.cielo #C4E6FF, Ink.cielo #CFE0F3).
+// Color tokens (ADR 0016, art-direction §4).
 export const Ink = {
   // Paper, ink and cards
   cremaPapel: '#FFFCF5',

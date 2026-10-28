@@ -81,7 +81,7 @@ function wear() {
 }
 
 describe('Cat hover on worn items (F9, review of task 16)', () => {
-  it('hover never tints the fill: it asks for the sparkle and adds a rosa-200 glow behind the garment', () => {
+  it('hover never tints the fill: it asks for the sparkle and adds a rosa glow behind the garment', () => {
     const { layer, emitted, f, halos } = wear();
     f.pointer.x = 900; f.pointer.y = 900; // the pointer moved away from where the garment appeared
     layer.handlers.get('pointermove')?.({ x: 900, y: 900 });
@@ -90,7 +90,7 @@ describe('Cat hover on worn items (F9, review of task 16)', () => {
     expect(layer.tintModes).not.toContain(1);
     expect(halos().length).toBeGreaterThanOrEqual(8);
     for (const h of halos()) {
-      expect(h.tints).toEqual([0xffd1e3]);
+      expect(h.tints).toEqual([0xf6bfd0]);
       expect(h.tintModes).toEqual([2]);
     }
     expect(emitted()).toBe(1);

@@ -26,7 +26,7 @@ vi.mock('../../src/game/systems/transitions', () => ({
   enterKind: (d: { transition?: string } | undefined) => d?.transition ?? null,
   transitionIn: (...a: unknown[]) => h.transitionIn(...a),
 }));
-vi.mock('../../src/game/objects/ui', () => ({ touchEnv: () => ({ touch: false, scale: 1 }), hex: () => 0, makeText: () => ({}) }));
+vi.mock('../../src/game/objects/ui', () => ({ touchEnv: () => ({ touch: false, scale: 1 }) }));
 vi.mock('../../src/game/objects/showcase/runwayBackdrop', () => ({ drawRunwayBackdrop: (...a: unknown[]) => { h.backdrops.push(a); return undefined; } }));
 vi.mock('../../src/game/objects/kit/PaperBackground', () => ({ PaperBackground: class { setDepth() { return this; } } }));
 vi.mock('../../src/game/plugins/AudioPlugin', () => ({ getAudio: (s: { plugins: { get(k: string): unknown } }) => s.plugins.get('audio') }));

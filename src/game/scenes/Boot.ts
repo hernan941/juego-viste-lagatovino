@@ -1,5 +1,5 @@
 import { Scene } from 'phaser';
-import { FONT_FAMILY, SceneKeys } from '../constants';
+import { SceneKeys } from '../constants';
 import { fontSpecs, loadFonts } from '../systems/fonts';
 import { go } from '../systems/navigate';
 
@@ -11,9 +11,7 @@ export class Boot extends Scene {
   }
 
   create() {
-    // Wait for the self-hosted v2 fonts and for Fredoka (Google Fonts, still used by the v1 scenes until F20)
-    // before any text is created; fall back after a timeout (e.g. offline).
-    const specs = [...fontSpecs(), `500 16px ${FONT_FAMILY}`];
-    void loadFonts(document.fonts, FONT_TIMEOUT_MS, specs).then(() => go(this, 'boot'));
+    // Wait for the self-hosted fonts before any text is created; fall back after a timeout (e.g. offline).
+    void loadFonts(document.fonts, FONT_TIMEOUT_MS, fontSpecs()).then(() => go(this, 'boot'));
   }
 }

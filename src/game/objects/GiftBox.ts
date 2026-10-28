@@ -1,10 +1,12 @@
 import Phaser from 'phaser';
-import { FONT_FAMILY, ObjectEvents, Palette, SfxKeys, TextureKeys } from '../constants';
+import { Fonts, Ink, ObjectEvents, SfxKeys, TextureKeys, colorToNumber, type InkToken } from '../constants';
 import type { ClothingDef, Point } from '../domain/types';
 import { getAudio } from '../plugins/AudioPlugin';
 import { profileOf } from '../systems/motion';
-import { addHover, hex, hitRect } from './ui';
+import { addHover, hitRect } from './ui';
 import { hoverSfx } from './hoverSfx';
+
+const ink = (token: InkToken) => colorToNumber(Ink[token]);
 
 /** How far the bow has to be pulled from its knot to open the box (game px). */
 export const BOW_PULL = 70;
@@ -33,25 +35,25 @@ export class GiftBox extends Phaser.GameObjects.Container {
     this.comboId = comboId;
     this.item = item;
     const body = scene.add.graphics();
-    body.fillStyle(hex('rosa600'), 0.2).fillRoundedRect(-58, -6 + 10, 120, 92, 14);
-    body.fillStyle(hex('rosa400'), 1).fillRoundedRect(-60, -10, 120, 92, 14);
-    body.lineStyle(4, hex('contorno'), 1).strokeRoundedRect(-60, -10, 120, 92, 14);
-    body.fillStyle(hex('mantequilla'), 1).fillRect(-12, -10, 24, 92);
-    body.lineStyle(3, hex('contorno'), 1).strokeRect(-12, -10, 24, 92);
+    body.fillStyle(ink('tinta'), 0.14).fillRoundedRect(-58, -6 + 10, 120, 92, 14);
+    body.fillStyle(ink('rosa'), 1).fillRoundedRect(-60, -10, 120, 92, 14);
+    body.lineStyle(4, ink('tinta'), 1).strokeRoundedRect(-60, -10, 120, 92, 14);
+    body.fillStyle(ink('sol'), 1).fillRect(-12, -10, 24, 92);
+    body.lineStyle(3, ink('tinta'), 1).strokeRect(-12, -10, 24, 92);
     body.fillStyle(0xffffff, 0.55).fillRoundedRect(-48, 6, 20, 6, 3);
 
     const lid = scene.add.graphics();
-    lid.fillStyle(hex('rosa600'), 1).fillRoundedRect(-70, -44, 140, 38, 12);
-    lid.lineStyle(4, hex('contorno'), 1).strokeRoundedRect(-70, -44, 140, 38, 12);
-    lid.fillStyle(hex('mantequilla'), 1).fillRect(-12, -44, 24, 38);
-    lid.lineStyle(3, hex('contorno'), 1).strokeRect(-12, -44, 24, 38);
+    lid.fillStyle(ink('naranjo'), 1).fillRoundedRect(-70, -44, 140, 38, 12);
+    lid.lineStyle(4, ink('tinta'), 1).strokeRoundedRect(-70, -44, 140, 38, 12);
+    lid.fillStyle(ink('sol'), 1).fillRect(-12, -44, 24, 38);
+    lid.lineStyle(3, ink('tinta'), 1).strokeRect(-12, -44, 24, 38);
     this.lid = scene.add.container(0, 0, [lid]);
 
     const bowArt = scene.add.graphics();
-    bowArt.fillStyle(hex('mantequilla'), 1).lineStyle(4, hex('contorno'), 1);
+    bowArt.fillStyle(ink('sol'), 1).lineStyle(4, ink('tinta'), 1);
     bowArt.fillEllipse(-22, 0, 40, 30).strokeEllipse(-22, 0, 40, 30);
     bowArt.fillEllipse(22, 0, 40, 30).strokeEllipse(22, 0, 40, 30);
-    bowArt.fillStyle(hex('rosa200'), 1).fillCircle(0, 4, 11).strokeCircle(0, 4, 11);
+    bowArt.fillStyle(ink('cielo'), 1).fillCircle(0, 4, 11).strokeCircle(0, 4, 11);
     this.bow = scene.add.container(this.bowRest.x, this.bowRest.y, [bowArt]);
     this.bow.setSize(90, 56);
     this.bow.setInteractive({ hitArea: hitRect(90, 56), hitAreaCallback: Phaser.Geom.Rectangle.Contains, draggable: true, useHandCursor: true });
@@ -61,18 +63,18 @@ export class GiftBox extends Phaser.GameObjects.Container {
     this.bow.on('drag', (_p: Phaser.Input.Pointer, dragX: number, dragY: number) => this.onBowDrag(dragX, dragY));
     this.bow.on('dragend', () => this.onBowRelease());
 
-    // The instruction: a cream pill with a pink border, above the bow and inside the mirror (it used to sit over the gold frame),
+    // The instruction: a white card pill, above the bow and inside the mirror (it used to sit over the gold frame),
     // and a dotted arrow that rises away from the bow, to show which way to pull.
     const label = scene.add
-      .text(0, -3, 'Arrastra el lazo!', { fontFamily: FONT_FAMILY, fontSize: '22px', color: Palette.texto, fontStyle: '600', padding: { x: 4, y: 6 } })
+      .text(0, -3, 'Arrastra el lazo!', { fontFamily: Fonts.Voice, fontSize: '26px', color: Ink.tinta, fontStyle: '700', padding: { x: 4, y: 6 } })
       .setOrigin(0.5);
     const pillW = label.width + 40;
     const pill = scene.add.graphics();
-    pill.fillStyle(hex('rosa600'), 0.18).fillRoundedRect(-pillW / 2 + 2, -24 + 6, pillW, 48, 24);
-    pill.fillStyle(hex('crema'), 1).fillRoundedRect(-pillW / 2, -24, pillW, 48, 24);
-    pill.lineStyle(4, hex('rosa200'), 1).strokeRoundedRect(-pillW / 2, -24, pillW, 48, 24);
+    pill.fillStyle(ink('sombraTarjeta'), 1).fillRoundedRect(-pillW / 2 + 2, -24 + 6, pillW, 48, 24);
+    pill.fillStyle(ink('tarjeta'), 1).fillRoundedRect(-pillW / 2, -24, pillW, 48, 24);
+    pill.lineStyle(3, ink('borde'), 1).strokeRoundedRect(-pillW / 2, -24, pillW, 48, 24);
     const dots = scene.add.graphics();
-    dots.fillStyle(hex('rosa400'), 1);
+    dots.fillStyle(ink('rosa'), 1);
     // Short, between the bow and the pill that sits right above it.
     dots.fillCircle(0, -88, 4.2).fillTriangle(-8, -95, 8, -95, 0, -108);
     this.arrow = scene.add.container(0, 0, [dots]);
@@ -192,7 +194,7 @@ export class GiftBox extends Phaser.GameObjects.Container {
 
     // The prize rises out of the box, growing and glowing.
     const glow = scene.add.graphics().setDepth(3590).setAlpha(0);
-    glow.fillStyle(hex('mantequilla'), 0.9).fillCircle(0, 0, 90);
+    glow.fillStyle(ink('sol'), 0.9).fillCircle(0, 0, 90);
     glow.setPosition(at.x, at.y - 120);
     // Only the garment (its texture), not the cream tile of the wardrobe icon.
     const prize = scene.add.image(at.x, at.y - 10, this.item.texture).setDisplaySize(30, 30).setDepth(3610);

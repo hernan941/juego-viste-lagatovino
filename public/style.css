@@ -53,9 +53,9 @@ html, body {
     height: 100%;
     overflow: hidden;
     overscroll-behavior: none;
-    color: #5A3A48;
+    color: #1F1B1A;
     background-color: #FFFCF5;
-    font-family: 'Fredoka', sans-serif;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     /* ADR 0014: a finger must never scroll, zoom, select or open a menu over the game. */
     touch-action: none;
     -webkit-user-select: none;
@@ -102,10 +102,10 @@ html.rotate-hint #rotate-hint {
 .rotate-card {
     padding: 28px 32px;
     max-width: 80vw;
-    border: 4px solid #FFD1E3;
+    border: 3px solid #E8E0D2;
     border-radius: 36px;
-    background: #FFF7EC;
-    box-shadow: 0 10px 0 rgba(226, 87, 139, 0.16);
+    background: #FFFFFF;
+    box-shadow: 0 10px 0 #F4EEE3;
 }
 
 .rotate-phone {
@@ -115,8 +115,9 @@ html.rotate-hint #rotate-hint {
 .rotate-title {
     margin: 8px 0 4px;
     font-size: 32px;
-    font-weight: 700;
-    color: #E2578B;
+    color: #1F1B1A;
+    font-family: 'Londrina Solid', sans-serif;
+    font-weight: 900;
 }
 
 .rotate-text {

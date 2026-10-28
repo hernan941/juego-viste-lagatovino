@@ -1,7 +1,7 @@
 // The street of ShopEntrance in the Lagatovino style (art-direction sections 3 and 7): flat `cielo`, clouds and houses in ink.
 import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH, Ink, colorToNumber } from '../constants';
-import { STREET_SKETCH } from '../systems/boutiquePalette';
+import { STREET_SKETCH } from '../systems/boutiqueColors';
 import { profileOf } from '../systems/motion';
 
 const c = (token: keyof typeof Ink) => colorToNumber(Ink[token]);
