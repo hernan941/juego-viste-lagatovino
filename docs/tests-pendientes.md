@@ -397,3 +397,10 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
   - un set completo muestra el sello;
   - las fichas de prenda y frasco dicen "Del set…".
 - Title con progreso: "Iniciar" y "Mi álbum" no se solapan y los dos siguen clicables.
+
+## F20.7: retirar los tokens v1 y Fredoka
+### E2E pendientes
+- Los botones de DressUp, CatSelect, Title y Showcase (ahora todos píldora) siguen emitiendo `ButtonClick` y reaccionan al hover.
+- La cajita de regalo repintada se abre arrastrando el lazo.
+- `photo.spec`: la descarga funciona con el nuevo `takePhoto`.
+- `mobile.spec`: el aviso de girar el teléfono se ve con el estilo nuevo.
