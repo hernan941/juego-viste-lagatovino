@@ -93,3 +93,7 @@ Resultados del jugador modelo con el `economy.json` actual, con 5 semillas:
 - **Hook e2e**: `purchase.buttons`, `checkout.buttons` y `catsheet.sign` vienen en coordenadas de juego. Con la página contenedora ya no coinciden con la página. Hay que convertirlos en el hook.
 - **Showcase**: al final, las tarjetas de premio tapan el contador "Secretos" y el borde del cuaderno.
 - **ShopEntrance**: los botones de movimiento y sonido se montan sobre el letrero "Lagatovino".
+
+## Showcase tras el arreglo de las notas (f20r2/desk/showcase-final.png)
+- Ya no se tapa "Secretos". Pero con 7 notas, las polaroids quedan tan apretadas que sus pies **no se leen**. Para la revisión del GD: tal vez conviene agrupar las notas ("+3 novedades") o mostrar solo las 3 o 4 más importantes.
+- "Le encanta las estrellas" sigue sin concordancia. Lo está corrigiendo el agente de las Altas de F20.R.
