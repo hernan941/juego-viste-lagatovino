@@ -302,7 +302,7 @@ describe('setEntries (L1): the sets of the album', () => {
     const list = of(empty());
     expect(list.map((e) => e.id)).toEqual(setsJson.map((s) => s.id));
     expect(list.find((e) => e.id === 'abriguito')!.rewards).toEqual([{ id: 'bg-vichy', name: 'Vichy celeste', texture: 'photo-bg-vichy', kind: 'background' }]);
-    expect(list.find((e) => e.id === 'colgador-dorado')!.rewards).toEqual([]);
+    expect(list.find((e) => e.id === 'colgador-dorado')!.rewards).toEqual([{ id: 'sticker-dije', name: 'Dije dorado', texture: 'photo-sticker-dije', kind: 'sticker' }]);
   });
 
   it('counts the pieces that are yours: "3 de 5", and the set is done only with all of them', () => {
