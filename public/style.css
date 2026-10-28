@@ -223,12 +223,12 @@ a:focus-visible, button:focus-visible {
     display: none;
 }
 
-/* Only in fullscreen: the way out, lying on the stage. The header and the footer are not part of it. */
+/* Only in fullscreen: the way out, lying on the stage's top left corner, which no scene uses (F20.R M8). The header and the footer are not part of it. */
 .stage-exit {
     display: none;
     position: absolute;
     left: 10px;
-    bottom: 10px;
+    top: 10px;
     z-index: 5;
     opacity: 0.55;
 }
@@ -290,6 +290,13 @@ html.page-fullscreen .stage-exit:not([hidden]) {
 @media (max-width: 720px) {
     .site-title { display: none; }
     .site-actions { margin-left: auto; }
+}
+
+/* Low desktop windows (1280 x 720 is the main size, ADR 0008): the footer is one thin line, so the canvas keeps more height (F20.R M2). */
+@media (max-height: 800px) {
+    .stripes { display: none; }
+    .site-footer-inner { padding: 3px 16px 4px; font-size: 13px; }
+    .site-footer .hand { font-size: 18px; }
 }
 
 /* Little height (a phone held sideways, ADR 0014): a thin strip, no footer, so the canvas keeps its size. */
