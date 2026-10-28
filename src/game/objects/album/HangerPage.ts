@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { Fonts, Ink, KeychainTextures, ObjectEvents, RegistryKeys, SfxKeys, TextureKeys, colorToNumber } from '../../constants';
-import { HANGER, goldCount, hangerHooks, keychainEntries, type KeychainEntry } from '../../domain/albumEntries';
+import { HANGER, goldCount, goldHeadingScale, hangerHooks, keychainEntries, type KeychainEntry } from '../../domain/albumEntries';
 import { pageTally } from '../../domain/albumPages';
 import { albumLines, keychainLines } from '../../domain/copy';
 import { pushAngle, pushStrength, ringFor } from '../../domain/keychain';
@@ -30,6 +30,8 @@ const DRAG_MIN = 6;
 const AFTER_DRAG_MS = 80;
 const FLIGHT = { ms: 520, from: { x: 70, y: 300 }, scale: 2.2, angle: 24 };
 const PAPER = colorToNumber(Ink.cremaPapel);
+/** Width of the gold star of the "dorados" count, in px of the page. */
+const GOLD_STAR_W = 22;
 
 /** What one hook is made of. */
 interface Hook {
@@ -93,11 +95,16 @@ export class HangerPage extends BookPage {
   private goldHeading() {
     const n = goldCount(this.entries, this.rules());
     if (n === 0) return;
+    // A star and the count, in one group that shrinks to the room between the title and the tally (it used to run over the title).
     const text = this.scene.add
-      .text(this.tallyEdge() - 14, HEADER_Y + 4, albumLines.golds(n), { fontFamily: Fonts.Voice, fontStyle: 'bold', fontSize: '26px', color: Ink.tinta, padding: { x: 2, y: 8 } })
-      .setOrigin(1, 0.5);
-    const star = this.scene.add.image(text.x - text.width - 18, HEADER_Y + 4, TextureKeys.Sparkle).setScale(0.45).setTint(colorToNumber(Ink.sol));
-    this.left.add([text, star]);
+      .text(GOLD_STAR_W + 6, 0, albumLines.golds(n), { fontFamily: Fonts.Voice, fontStyle: 'bold', fontSize: '22px', color: Ink.tinta, padding: { x: 2, y: 8 } })
+      .setOrigin(0, 0.5);
+    const star = this.scene.add.image(GOLD_STAR_W / 2, 0, TextureKeys.Sparkle).setScale(GOLD_STAR_W / 70).setTint(colorToNumber(Ink.sol));
+    const width = GOLD_STAR_W + 6 + text.width;
+    const right = this.tallyEdge() - 14;
+    const scale = goldHeadingScale(right - (this.titleEdge() + 12), width);
+    const group = this.scene.add.container(right - width * scale, HEADER_Y + 4, [star, text]).setScale(scale);
+    this.left.add(group);
   }
 
   protected shown(): { id: string; state: string }[] {

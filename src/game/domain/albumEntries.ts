@@ -242,8 +242,13 @@ export const HANGER = {
   /** Px of the art from the origin of a hook to where its ring hangs (the bend of the hook). */
   hookTip: 27,
   /** What hangs from a hook, in px of the page: the box a keychain fits, and the line of its name under it. */
-  cell: { fitWidth: 126, fitHeight: 60, nameGap: 6, nameHeight: 18 },
+  cell: { fitWidth: 126, fitHeight: 56, nameGap: 4, nameHeight: 18 },
 } as const;
+
+/** How much the "N dorados" count shrinks (never grows) to fit `available` px between the title and the tally; `needed` is its width. */
+export function goldHeadingScale(available: number, needed: number): number {
+  return needed <= 0 ? 1 : Math.max(0.3, Math.min(1, available / needed));
+}
 
 export interface HangerHook {
   index: number;

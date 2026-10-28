@@ -9,7 +9,7 @@ import setsJson from '../../src/game/data/sets.json';
 import economy from '../../src/game/data/economy.json';
 import { gotEntries, type AlbumCatalogs } from '../../src/game/domain/album';
 import {
-  HALF, HANGER, catEntries, goldCount, comboEntries, dyeEntries, gridPositions, hangerHooks, itemEntries, keychainEntries, paginate, setEntries, setMembership, tasteGlyph,
+  HALF, HANGER, catEntries, goldHeadingScale, goldCount, comboEntries, dyeEntries, gridPositions, hangerHooks, itemEntries, keychainEntries, paginate, setEntries, setMembership, tasteGlyph,
   type EntryContext,
 } from '../../src/game/domain/albumEntries';
 import type { CatDef, ClothingDef, ComboDef, DyeDef, EconomyRules, KeychainRecipe, PhotoCatalog, Progress, SetDef } from '../../src/game/domain/types';
@@ -347,5 +347,25 @@ describe('setMembership (L1): which sets a garment or a bottle belongs to', () =
 
   it('is empty for what belongs to no set', () => {
     expect(setMembership(withSets, 'item', 'no-existe')).toEqual([]);
+  });
+});
+
+describe('the hanger layout (M7)', () => {
+  it('leaves air between the name of a row and the hook of the next one, so they never touch', () => {
+    const { scale, hook, hookTip, cell } = HANGER;
+    const nameBottom = hookTip * scale + cell.fitHeight + cell.nameGap + cell.nameHeight;
+    expect(hook.stepY * scale - nameBottom).toBeGreaterThanOrEqual(16);
+  });
+
+  it('keeps the last name above the border of the cork', () => {
+    const { scale, hook, hookTip, cell, corkBottom } = HANGER;
+    const last = hook.y + 2 * hook.stepY + (hookTip * scale + cell.fitHeight + cell.nameGap + cell.nameHeight) / scale;
+    expect(last).toBeLessThan(corkBottom);
+  });
+
+  it('the "dorados" count shrinks to the room between the title and the tally, and never grows', () => {
+    expect(goldHeadingScale(200, 100)).toBe(1);
+    expect(goldHeadingScale(80, 100)).toBeCloseTo(0.8);
+    expect(goldHeadingScale(-5, 100)).toBeGreaterThan(0);
   });
 });

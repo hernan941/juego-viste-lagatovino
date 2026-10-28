@@ -37,6 +37,7 @@ export abstract class BookPage extends Phaser.GameObjects.Container implements A
   private readonly sides = new Map<string, HalfSide>();
   private marks: NewMark[] = [];
   private tallyText: Phaser.GameObjects.Text | null = null;
+  private titleText: Phaser.GameObjects.Text | null = null;
   /** Everything `place` put on the halves (cells and sparkles), so a page can swap its entries. */
   private placed: Phaser.GameObjects.Container[] = [];
   private card: { id: string; view: Phaser.GameObjects.Container; scrim: Phaser.GameObjects.Zone } | null = null;
@@ -84,10 +85,13 @@ export abstract class BookPage extends Phaser.GameObjects.Container implements A
     const title = ALBUM_TABS.find((t) => t.id === this.tab)?.label ?? '';
     const style = { padding: { x: 2, y: 8 } };
     this.tallyText = this.scene.add.text(HALF.width / 2 - 6, HEADER_Y + 4, tally, { fontFamily: Fonts.Voice, fontSize: '30px', color: Ink.lapiz, ...style }).setOrigin(1, 0.5);
-    this.left.add([
-      this.scene.add.text(-HALF.width / 2 + 6, HEADER_Y, title, { fontFamily: Fonts.Title, fontSize: '42px', color: Ink.tinta, ...style }).setOrigin(0, 0.5),
-      this.tallyText,
-    ]);
+    this.titleText = this.scene.add.text(-HALF.width / 2 + 6, HEADER_Y, title, { fontFamily: Fonts.Title, fontSize: '42px', color: Ink.tinta, ...style }).setOrigin(0, 0.5);
+    this.left.add([this.titleText, this.tallyText]);
+  }
+
+  /** X (in the left half) where the title of the heading ends, so something can sit after it. */
+  protected titleEdge(): number {
+    return -HALF.width / 2 + 6 + (this.titleText?.width ?? 0);
   }
 
   /** X (in the left half) where the count of the heading begins, so something can sit at its left. */
