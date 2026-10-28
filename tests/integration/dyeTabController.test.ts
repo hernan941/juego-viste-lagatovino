@@ -38,7 +38,7 @@ import { controllerFactories } from '../../src/game/objects/dressup/controllers'
 import type { DressUpContext } from '../../src/game/objects/dressup/DressUpController';
 import { DYE_TAB_ID, DyeTabController } from '../../src/game/objects/dressup/DyeTabController';
 import * as sweepModule from '../../src/game/objects/DyeSweep';
-import type { DyeTagRequest } from '../../src/game/objects/dressup/PurchaseController';
+import type { DyeTagRequest } from '../../src/game/objects/dressup/DressUpController';
 import { emptyProgress } from '../../src/game/domain/progress';
 import * as bubbleModule from '../../src/game/objects/kit/SpeechBubble';
 import { makeFakeScene } from './helpers/kitScene';

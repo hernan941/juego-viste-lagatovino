@@ -3,7 +3,7 @@
 // through the scene events (DressUpEvents), the progress in the registry and the cell/tab extension points.
 import type Phaser from 'phaser';
 import type { Catalog } from '../../data/schema';
-import type { AnchorsDef, Category, ClothingDef, Outfit, Rect } from '../../domain/types';
+import type { AnchorsDef, Category, ClothingDef, DyeDef, Outfit, Point, Rect } from '../../domain/types';
 import type { Cat } from '../Cat';
 import type { ItemGrid } from '../ItemGrid';
 import type { LayersPanel } from '../LayersPanel';
@@ -11,6 +11,13 @@ import type { NameSign } from '../NameSign';
 import type { Tabs } from '../Tabs';
 
 /** What a controller can use. The objects are the scene's own: a controller decorates them, it never replaces them. */
+/** "They touched the tag of this bottle": where it hangs now (game px) and how big it is drawn (DressUpEvents.DyeTagPressed). */
+export interface DyeTagRequest {
+  dye: DyeDef;
+  at: Point;
+  scale: number;
+}
+
 export interface DressUpContext {
   /**
    * The DressUp scene. Listen to `scene.events` for DressUpEvents (item-dropped, item-removed, ready-pressed,

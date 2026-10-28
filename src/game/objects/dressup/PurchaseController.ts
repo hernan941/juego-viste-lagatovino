@@ -9,13 +9,13 @@ import { shopLines } from '../../domain/copy';
 import { unpaidPrice } from '../../domain/economy';
 import { buyDye, buyItem, unpaidDyePrice } from '../../domain/purchase';
 import { anchorForSlot } from '../../domain/slots';
-import type { ClothingDef, DyeDef, EconomyRules, Point, Progress } from '../../domain/types';
+import type { ClothingDef, EconomyRules, Point, Progress } from '../../domain/types';
 import { getAudio } from '../../plugins/AudioPlugin';
 import { profileOf } from '../../systems/motion';
 import { SpeechBubble } from '../kit/SpeechBubble';
 import { PurchaseSheet } from '../PurchaseSheet';
 import { TagCut } from '../TagCut';
-import type { DressUpContext, DressUpController } from './DressUpController';
+import type { DressUpContext, DressUpController, DyeTagRequest } from './DressUpController';
 import { CELL_TAG, WALLET_POSITION, WORN_TAG } from './layout';
 import type { WalletFlightRequest } from './WalletController';
 
@@ -29,13 +29,6 @@ const REGISTER_MS = 520;
 /** The purchase is over (the next one may start) a bit after the celebration begins. */
 const BUSY_MS = 1100;
 const BUBBLE_MS = 1500;
-
-/** "They touched the tag of this bottle": where it hangs now (game px) and how big it is drawn (DressUpEvents.DyeTagPressed). */
-export interface DyeTagRequest {
-  dye: DyeDef;
-  at: Point;
-  scale: number;
-}
 
 export class PurchaseController implements DressUpController {
   readonly key = 'purchase';
