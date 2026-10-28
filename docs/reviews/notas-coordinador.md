@@ -87,3 +87,9 @@ Resultados del jugador modelo con el `economy.json` actual, con 5 semillas:
   - el anillado del lomo pisa la parte de arriba del tablero.
 - `AlbumTabs.getTabPositions()` devuelve el mismo punto para las 5 pestañas. Corregirlo antes del e2e F19.6.
 - "Colgador dorado" sigue con `reward: []`. El premio sería arte nuevo (un tag con ✦).
+
+## Capturas F20.R (commit f6f934c, en scratchpad/f20r/)
+- **Bug**: si DressUp se cierra con la caja abierta, `CheckoutSheet.destroy` lanza `TypeError ... 'tweens'` en `killRowTweens` (CheckoutSheet.ts:75). El shutdown no es robusto.
+- **Hook e2e**: `purchase.buttons`, `checkout.buttons` y `catsheet.sign` vienen en coordenadas de juego. Con la página contenedora ya no coinciden con la página. Hay que convertirlos en el hook.
+- **Showcase**: al final, las tarjetas de premio tapan el contador "Secretos" y el borde del cuaderno.
+- **ShopEntrance**: los botones de movimiento y sonido se montan sobre el letrero "Lagatovino".
