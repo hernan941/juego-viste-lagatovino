@@ -27,7 +27,7 @@ Aquí se registran las decisiones de arquitectura del proyecto (formato Nygard).
 | 0020 | Sin uso: las reglas de juego en JSON se fusionaron en 0017 | — |
 | [0021](0021-el-llavero-como-tratamiento-del-render.md) | El llavero como tratamiento del render del look | Aceptado (enmiendas: notas de F19; el primero se cuelga solo y premio del set "Colgador dorado") |
 | [0022](0022-una-textura-por-lote-en-webgl-por-software.md) | Una textura por lote en WebGL por software | Aceptado (amplía 0011 y 0012) |
-| [0023](0023-pagina-contenedora-lagatovino-en-subdominio.md) | Página contenedora con la estética de Lagatovino, en un subdominio | Aceptado (enmienda 0005, 0014 y 0015; amplía 0016) |
+| [0023](0023-pagina-contenedora-lagatovino-en-subdominio.md) | Página contenedora con la estética de Lagatovino, en un subdominio | Aceptado (enmienda 0005, 0014 y 0015; amplía 0016; enmiendas: pantalla completa al tocar "Iniciar"; riel lateral en el celular horizontal) |
 
 ## Estados
 `Propuesto` → `Aceptado` → (`Obsoleto` | `Reemplazado por NNNN`)
