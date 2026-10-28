@@ -404,3 +404,18 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
 - La cajita de regalo repintada se abre arrastrando el lazo.
 - `photo.spec`: la descarga funciona con el nuevo `takePhoto`.
 - `mobile.spec`: el aviso de girar el teléfono se ve con el estilo nuevo.
+
+## Ajustes del llavero (K1–K10) y del modo foto (F3, F4 y F6)
+### E2E pendientes
+1. Guardar → [Seguir vistiendo] → colgador: el llavero está ahí y sobrevive a una recarga.
+2. Lo mismo, pero tocando la tarjeta (`PackageTap`).
+3. Con el gancho ocupado:
+   - tocar la tarjeta no cambia el llavero;
+   - [Colgarlo] muestra la pregunta.
+4. Después del colgado automático, [Colgarlo] navega sin `ReplaceSheet` (`buttons.hang`).
+5. Con `keychainPhase` ≠ null, los clics en la bandeja y en las pestañas no cambian `background`, `pose` ni `tab`.
+6. En el colgador aparece "N dorados" con llaveros de 4★ o más, y no aparece con 3★ o menos.
+7. Hay un botón de pose para cada pose. Tocar una bloqueada muestra la pista con el avance.
+8. Tras guardar y tocar la tarjeta, `info.pose` no cambia.
+9. Con 12 llaveros de 4★ o más, `sticker-dije` aparece desbloqueado.
+10. **K1 en vivo**: el vuelo al gancho se ve entero. Las capturas por software no alcanzan para verlo: hay que mirarlo en vivo.
