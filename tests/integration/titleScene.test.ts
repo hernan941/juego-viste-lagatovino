@@ -8,10 +8,12 @@ vi.mock('phaser', async () => {
 
 const h = vi.hoisted(() => ({
   go: vi.fn(),
+  invite: vi.fn(),
   buttons: [] as { x: number; y: number; label: string; options: { pill?: string }; emit(ev: string): void; destroyed: boolean }[],
 }));
 
 vi.mock('../../src/game/systems/navigate', () => ({ go: (...a: unknown[]) => h.go(...a) }));
+vi.mock('../../src/game/systems/touchEnv', () => ({ inviteFullscreen: (...a: unknown[]) => h.invite(...a) }));
 vi.mock('../../src/game/systems/transitions', () => ({ enterKind: () => null, transitionIn: () => {} }));
 vi.mock('../../src/game/systems/motion', () => ({
   profileOf: () => ({ reduced: false, loops: false, squash: 1, shake: 0, ease: (e: string) => e, every: (ms: number) => ms }),
@@ -87,7 +89,7 @@ const run = (scene: FakeScene) => {
 };
 const button = (label: string) => h.buttons.find((b) => b.label === label);
 
-beforeEach(() => { h.go.mockClear(); h.buttons.length = 0; });
+beforeEach(() => { h.invite.mockClear(); h.go.mockClear(); h.buttons.length = 0; });
 
 describe('Title with "Mi álbum" (F20.3)', () => {
   it('has no album button in a new game: only "Iniciar", as a primary pill', () => {
@@ -122,6 +124,20 @@ describe('Title with "Mi álbum" (F20.3)', () => {
     run(scene);
     expect(h.go).toHaveBeenCalledTimes(1);
     expect(h.go.mock.calls[0]!.slice(1)).toEqual(['album', { from: SceneKeys.Title, fromData: {} }]);
+  });
+
+  it('"Iniciar" invites the page to fullscreen inside the click, once', () => {
+    vi.stubGlobal('window', {});
+    vi.stubGlobal('document', {});
+    try {
+      const scene = open();
+      run(scene);
+      button('Iniciar')!.emit(ObjectEvents.ButtonClick);
+      button('Iniciar')!.emit(ObjectEvents.ButtonClick);
+      expect(h.invite).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('"Iniciar" still goes to CatSelect', () => {

@@ -1,6 +1,7 @@
 // The page around the canvas (index.html + public/style.css): the Lagatovino header and footer, the "back to Lagatovino" link and
 // the fullscreen button. Phaser knows nothing about it. Pure decisions first; installPageChrome takes the document as a
 // parameter so tests can fake it.
+import { PageEvents } from '../game/constants';
 
 /** Where "Volver a Lagatovino" goes unless VITE_HOME_URL says otherwise (staging, local tests...). */
 export const DEFAULT_HOME_URL = 'https://lagatovino.com/';
@@ -37,8 +38,8 @@ export interface PageDocument {
   documentElement: { classList: { toggle(name: string, on: boolean): unknown } };
   getElementById(id: string): unknown;
   querySelectorAll(selector: string): ArrayLike<{ href: string }>;
-  addEventListener(type: 'fullscreenchange', fn: () => void): void;
-  removeEventListener(type: 'fullscreenchange', fn: () => void): void;
+  addEventListener(type: string, fn: () => void): void;
+  removeEventListener(type: string, fn: () => void): void;
 }
 
 /** Wires the header link and the fullscreen buttons. Returns the function that undoes it. */
@@ -67,11 +68,18 @@ export function installPageChrome(doc: PageDocument, configuredHome: string | un
     request?.catch(() => {});
   };
 
+  // The game's invitation (a tap on "Iniciar" on a phone, ADR 0023): enter only, never leave.
+  const invite = () => {
+    if (!doc.fullscreenElement) area?.requestFullscreen?.()?.catch(() => {});
+  };
+
   sync();
+  doc.addEventListener(PageEvents.RequestFullscreen, invite);
   button?.addEventListener('click', toggle);
   exit?.addEventListener('click', toggle);
   doc.addEventListener('fullscreenchange', sync);
   return () => {
+    doc.removeEventListener(PageEvents.RequestFullscreen, invite);
     button?.removeEventListener('click', toggle);
     exit?.removeEventListener('click', toggle);
     doc.removeEventListener('fullscreenchange', sync);

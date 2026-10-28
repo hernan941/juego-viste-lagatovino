@@ -1,3 +1,4 @@
+import { PageEvents } from '../../src/game/constants';
 import { describe, expect, it, vi } from 'vitest';
 import {
   DEFAULT_HOME_URL, FULLSCREEN_CLASS, fullscreenLabel, installPageChrome, resolveHomeUrl, shouldShowPageFullscreen,
@@ -68,6 +69,35 @@ function fakePage(opts: { api: boolean }) {
   const target = { requestFullscreen: vi.fn(async () => { doc.fullscreenElement = target; fire('fullscreenchange'); }) };
   return { doc, button, exit, label, home, home2, classes, target, listeners };
 }
+
+describe('installPageChrome: invitation from the game', () => {
+  it('enters fullscreen on the game area when the game asks, and stops listening on cleanup', () => {
+    const p = fakePage({ api: true });
+    const off = installPageChrome(p.doc, undefined);
+    p.listeners[PageEvents.RequestFullscreen]!.forEach((f) => f());
+    expect(p.target.requestFullscreen).toHaveBeenCalledTimes(1);
+    off();
+    expect(p.listeners[PageEvents.RequestFullscreen]).toEqual([]);
+  });
+
+  it('does not ask again when it is already fullscreen, and a refusal leaves no error', async () => {
+    const p = fakePage({ api: true });
+    installPageChrome(p.doc, undefined);
+    p.doc.fullscreenElement = p.target;
+    p.listeners[PageEvents.RequestFullscreen]!.forEach((f) => f());
+    expect(p.target.requestFullscreen).not.toHaveBeenCalled();
+    p.doc.fullscreenElement = null;
+    p.target.requestFullscreen.mockRejectedValueOnce(new Error('denied'));
+    p.listeners[PageEvents.RequestFullscreen]!.forEach((f) => f());
+    await Promise.resolve();
+  });
+
+  it('ignores the game when there is no API', () => {
+    const p = fakePage({ api: false });
+    installPageChrome(p.doc, undefined);
+    expect(p.listeners[PageEvents.RequestFullscreen] ?? []).toEqual([]);
+  });
+});
 
 describe('installPageChrome', () => {
   it('points every home link at the configured address', () => {

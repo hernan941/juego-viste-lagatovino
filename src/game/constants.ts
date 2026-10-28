@@ -71,6 +71,12 @@ export function colorToNumber(hex: string): number {
   return parseInt(hex.replace('#', ''), 16);
 }
 
+/** Events the game sends to the page around it (ADR 0023). They travel as CustomEvents on `document`, so Phaser and the page share no globals. */
+export const PageEvents = {
+  /** The game invites the page to put #stage fullscreen. Dispatched inside a user gesture; src/page/pageChrome.ts listens. */
+  RequestFullscreen: 'viste:request-fullscreen',
+} as const;
+
 export const Events = {
   SceneReady: 'scene-ready',
 } as const;

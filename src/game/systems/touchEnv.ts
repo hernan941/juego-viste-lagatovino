@@ -1,6 +1,7 @@
 // The browser side of touch play (ADR 0014): what the window says about fingers and orientation. Takes the window and the
 // document as parameters so tests can fake them; the pure decisions live in touch.ts.
-import { landscapeScale, shouldShowRotateHint } from './touch';
+import { PageEvents } from '../constants';
+import { landscapeScale, shouldInviteFullscreen, shouldShowRotateHint } from './touch';
 
 export interface MediaWindow {
   innerWidth: number;
@@ -33,4 +34,17 @@ export function installRotateHint(
   return () => {
     for (const l of lists) l.removeEventListener('change', update);
   };
+}
+
+/**
+ * Asks the page to go fullscreen (phones only, see shouldInviteFullscreen). Call it inside the tap: dispatchEvent is
+ * synchronous, so the page's listener runs with the user's activation still alive.
+ */
+export function inviteFullscreen(
+  win: MediaWindow, doc: { fullscreenElement: unknown; fullscreenEnabled?: boolean; dispatchEvent(e: Event): unknown },
+): void {
+  const invite = shouldInviteFullscreen({
+    coarse: matches(win, COARSE), portrait: matches(win, PORTRAIT), fullscreen: !!doc.fullscreenElement, available: !!doc.fullscreenEnabled,
+  });
+  if (invite) doc.dispatchEvent(new CustomEvent(PageEvents.RequestFullscreen));
 }

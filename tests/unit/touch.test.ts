@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  MIN_TOUCH_CSS, applyLift, dragThreshold, isDragPointer, landscapeScale, liftOffset, minHitExtent, shouldShowRotateHint,
+  MIN_TOUCH_CSS, applyLift, dragThreshold, isDragPointer, landscapeScale, liftOffset, minHitExtent, shouldInviteFullscreen, shouldShowRotateHint,
 } from '../../src/game/systems/touch';
 
 describe('landscapeScale', () => {
@@ -89,5 +89,20 @@ describe('shouldShowRotateHint', () => {
     expect(shouldShowRotateHint({ coarse: true, portrait: true })).toBe(true);
     expect(shouldShowRotateHint({ coarse: true, portrait: false })).toBe(false);
     expect(shouldShowRotateHint({ coarse: false, portrait: true })).toBe(false);
+  });
+});
+
+describe('shouldInviteFullscreen', () => {
+  const phone = { coarse: true, portrait: false, fullscreen: false, available: true };
+  it('invites on a phone held in landscape that is not fullscreen yet', () => {
+    expect(shouldInviteFullscreen(phone)).toBe(true);
+  });
+  it.each([
+    ['a desktop with a mouse', { coarse: false }],
+    ['portrait (the rotate notice is up)', { portrait: true }],
+    ['already fullscreen', { fullscreen: true }],
+    ['no Fullscreen API', { available: false }],
+  ])('does not invite on %s', (_n, patch) => {
+    expect(shouldInviteFullscreen({ ...phone, ...patch })).toBe(false);
   });
 });

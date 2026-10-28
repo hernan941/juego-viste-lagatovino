@@ -53,3 +53,8 @@ export function shouldShowRotateHint(env: { coarse: boolean; portrait: boolean }
   return env.coarse && env.portrait;
 }
 
+
+/** Tapping "Iniciar" invites fullscreen only on a finger held in landscape, when it is not fullscreen yet and the browser can do it. */
+export function shouldInviteFullscreen(env: { coarse: boolean; portrait: boolean; fullscreen: boolean; available: boolean }): boolean {
+  return env.coarse && !env.portrait && !env.fullscreen && env.available;
+}

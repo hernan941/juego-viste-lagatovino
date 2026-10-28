@@ -40,6 +40,8 @@ Fuerzas:
 - **Mantener el botón de pantalla completa dentro del juego**: solo existe en táctil y deja el header y el footer afuera de la decisión. Si convive con el de la página, hay dos controles para lo mismo.
 - **Pasar a `Scale.RESIZE` para aprovechar el espacio**: obliga a reacomodar toda la UI (ya se descartó en el ADR 0014).
 
+- **Enmienda (pantalla completa en el celular)**: al tocar "Iniciar" en un dispositivo táctil (`pointer: coarse`) en horizontal, el juego invita a la pantalla completa. Emite `CustomEvent` `viste:request-fullscreen` (`PageEvents.RequestFullscreen` en `constants.ts`) en `document`, y `pageChrome` lo escucha y pide pantalla completa sobre `#stage`. `dispatchEvent` es síncrono, así que se conserva el gesto del usuario. No se pide en PC con mouse, en vertical, si ya está en pantalla completa o si no hay API; si el navegador la rechaza, el juego sigue sin errores.
+
 ## Consecuencias
 - El juego se siente parte de Lagatovino y se puede volver al sitio con un toque. El juego en sí (escenas, datos y guardado) no cambia.
 - `index.html` y `public/style.css` crecen. Su lógica es mínima y está en helpers puros.

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { ROTATE_CLASS, installRotateHint, readTouchEnv } from '../../src/game/systems/touchEnv';
+import { vi } from 'vitest';
+import { PageEvents } from '../../src/game/constants';
+import { ROTATE_CLASS, inviteFullscreen, installRotateHint, readTouchEnv } from '../../src/game/systems/touchEnv';
 
 /** A window with media queries we can flip, like a phone being turned. */
 function fakeWindow(initial: { coarse: boolean; anyCoarse?: boolean; portrait: boolean }, size = { w: 863, h: 360 }) {
@@ -75,5 +77,29 @@ describe('installRotateHint', () => {
     const dispose = installRotateHint({ innerWidth: 1, innerHeight: 1 } as never, doc);
     expect(typeof dispose).toBe('function');
     expect(doc.classes.size).toBe(0);
+  });
+});
+
+describe('inviteFullscreen', () => {
+  const doc = (over: Record<string, unknown> = {}) => ({ fullscreenElement: null, fullscreenEnabled: true, dispatchEvent: vi.fn(), ...over });
+
+  it('dispatches the page event on a landscape phone', () => {
+    const d = doc();
+    inviteFullscreen(fakeWindow({ coarse: true, portrait: false }).win, d);
+    expect(d.dispatchEvent).toHaveBeenCalledTimes(1);
+    expect((d.dispatchEvent.mock.calls[0]![0] as Event).type).toBe(PageEvents.RequestFullscreen);
+  });
+
+  it('stays quiet with a mouse, in portrait, when already fullscreen or with no API', () => {
+    const cases: Array<[ReturnType<typeof fakeWindow>, ReturnType<typeof doc>]> = [
+      [fakeWindow({ coarse: false, portrait: false }), doc()],
+      [fakeWindow({ coarse: true, portrait: true }), doc()],
+      [fakeWindow({ coarse: true, portrait: false }), doc({ fullscreenElement: {} })],
+      [fakeWindow({ coarse: true, portrait: false }), doc({ fullscreenEnabled: false })],
+    ];
+    for (const [w, d] of cases) {
+      inviteFullscreen(w.win, d);
+      expect(d.dispatchEvent).not.toHaveBeenCalled();
+    }
   });
 });

@@ -17,6 +17,7 @@ import { addInkClouds, addInkSun } from '../objects/streetInk';
 import { Cooldown } from '../domain/cooldown';
 import { getAudio } from '../plugins/AudioPlugin';
 import { go } from '../systems/navigate';
+import { inviteFullscreen } from '../systems/touchEnv';
 import { profileOf } from '../systems/motion';
 import { enterKind, transitionIn } from '../systems/transitions';
 
@@ -198,6 +199,8 @@ export class Title extends Phaser.Scene implements E2EUi {
     this.start.on(ObjectEvents.ButtonClick, () => {
       if (!this.ready) return;
       this.ready = false;
+      // On a phone the tap also invites the page to go fullscreen (ADR 0023); it has to happen inside this gesture.
+      if (typeof window !== 'undefined' && typeof document !== 'undefined') inviteFullscreen(window, document);
       // The first click also unlocks the browser audio (ADR 0009).
       getAudio(this).playRandom(MEOW_KEYS);
       if (profileOf(this).shake > 0) this.start.scene.tweens.add({ targets: this.start, angle: { from: -3, to: 3 }, duration: 70, yoyo: true, repeat: 2 });
