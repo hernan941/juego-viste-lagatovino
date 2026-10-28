@@ -71,3 +71,14 @@ describe('eventNote', () => {
     expect(eventNote(notes[3]!, names).title).toBe('No le tinca la ropa de gala');
   });
 });
+
+// F20.R M5: the verb agrees with the tag ("las estrellas" is plural).
+describe('plural tags (F20.R M5)', () => {
+  it('says "encantan" and "tincan" for a plural tag and keeps the singular for the rest', () => {
+    expect(ratingLineText({ kind: 'love', points: 2, ref: 'estrellas' }, undefined, names)).toBe('Le encantan las estrellas');
+    expect(ratingLineText({ kind: 'dislike', points: -3, ref: 'estrellas' }, undefined, names)).toBe('No le tincan las estrellas');
+    expect(ratingLineText({ kind: 'love', points: 2, ref: 'invierno' }, undefined, names)).toBe('Le encanta el invierno');
+    expect(eventNote({ type: 'tasteFound', taste: 'love:estrellas', amount: 5 }, names).title).toBe('Le encantan las estrellas');
+    expect(eventNote({ type: 'tasteFound', taste: 'dislike:estrellas', amount: 5 }, names).title).toBe('No le tincan las estrellas');
+  });
+});

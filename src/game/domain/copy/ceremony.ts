@@ -1,6 +1,6 @@
 // Pure TS. The words of the runway card and of the event notes (F15.3). The judge's own lines live in judge.ts.
 import type { BreakdownLine, Novelty, ProgressEvent, TagNames } from '../types';
-import { tagLove, tagStyle } from './tags';
+import { tagDislikes, tagLoves, tagStyle } from './tags';
 
 /** "+3" or "−3" (real minus sign); 0 stays "0". */
 export function formatPoints(points: number): string {
@@ -14,8 +14,8 @@ export function ratingLineText(line: BreakdownLine, comboName: (id: string) => s
   const ref = line.ref ?? '';
   switch (line.kind) {
     case 'style': return ref ? tagStyle(tags, ref) : 'Prendas que combinan';
-    case 'love': return ref ? `Le encanta ${tagLove(tags, ref)}` : 'Lo que le encanta';
-    case 'dislike': return ref ? `No le tinca ${tagLove(tags, ref)}` : 'Algo que no le tinca';
+    case 'love': return ref ? tagLoves(tags, ref) : 'Lo que le encanta';
+    case 'dislike': return ref ? tagDislikes(tags, ref) : 'Algo que no le tinca';
     case 'favoriteItem': return 'Su prenda favorita!';
     case 'complete': return 'Look completo';
     case 'combo': return ref ? `Combo ${comboName(ref)}` : 'Combo';
@@ -52,8 +52,8 @@ export function eventNote(event: Exclude<ProgressEvent, { type: 'coins' }>, tags
       const reward = `+${event.amount}`;
       if (event.taste === 'favorite') return { icon: '♥', title: 'Su prenda favorita!', reward };
       if (event.taste === 'color') return { icon: '✦', title: 'Su color favorito!', reward };
-      if (event.taste.startsWith('dislike:')) return { icon: '?', title: `No le tinca ${tagLove(tags, tagOf(event.taste))}`, reward };
-      return { icon: '♥', title: `Le encanta ${tagLove(tags, tagOf(event.taste))}`, reward };
+      if (event.taste.startsWith('dislike:')) return { icon: '?', title: tagDislikes(tags, tagOf(event.taste)), reward };
+      return { icon: '♥', title: tagLoves(tags, tagOf(event.taste)), reward };
     }
     case 'comboFirst':
       return { icon: '✦', title: 'Primer combo!', reward: `+${event.amount}` };
