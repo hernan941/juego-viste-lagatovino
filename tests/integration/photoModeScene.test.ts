@@ -97,6 +97,7 @@ vi.mock('../../src/game/objects/Button', async () => {
       setVisible(v: boolean) { this.visible = v; return this; }
       setAlpha() { return this; }
       setScale() { return this; }
+      setAngle() { return this; }
       visible = true;
       destroy() { this.destroyed = true; }
     },
@@ -810,6 +811,38 @@ describe('PhotoMode: the keychain is ready (F19.4)', () => {
     run(scene);
     await vi.waitFor(() => expect(scene.getE2EUi().info.photoBusy).toBe(false));
     expect(h.trays[0]!.enabled).toBe(true);
+  });
+
+  it('K8: [Colgarlo] gulps the thumbnail when it lands (a pop and a tic) and then nudges every 3 s until it is touched', async () => {
+    const scene = open(rating(4));
+    await finishSave(scene);
+    const mine = () => scene.tweens.records.filter((r) => r.config.targets === button('Colgarlo'));
+    await vi.waitFor(() => expect(mine().some((r) => r.config.scale !== undefined)).toBe(true));
+    const gulp = mine().find((r) => r.config.scale !== undefined)!;
+    expect(gulp.config.scale).toMatchObject({ to: 1 });
+    expect((gulp.config.scale as { from: number }).from).toBeCloseTo(1.12, 5);
+    expect(scene.played).toContain('sfx-click');
+    const wag = mine().find((r) => r.config.repeat === -1)!;
+    expect(wag.config.repeatDelay).toBe(3000);
+    expect(wag.config.yoyo).toBe(true);
+    // Leaving the ready state takes the nudge away with the button.
+    h.cards[0]!.emit(ObjectEvents.PackageTap);
+    await vi.waitFor(() => expect(h.cards[0]!.destroyed).toBe(true));
+    expect(wag.removed).toBe(true);
+  });
+
+  it('K8: with reduced motion the button pops softly and never nudges', async () => {
+    const scene = new PhotoMode() as unknown as Scene;
+    scene.registry.set(RegistryKeys.Catalog, catalog);
+    scene.registry.set(RegistryKeys.Anchors, anchors);
+    scene.registry.set(RegistryKeys.Progress, emptyProgress(0));
+    scene.registry.set(RegistryKeys.ReducedMotion, true);
+    for (const [k, v] of Object.entries({ catId: catalog.cats[0]!.id, catName: 'Luna', outfit: { sweater: sweater.id } })) scene.registry.set(k, v);
+    scene.init(rating(4));
+    scene.create();
+    await finishSave(scene);
+    const mine = scene.tweens.records.filter((r) => r.config.targets === button('Colgarlo'));
+    expect(mine.some((r) => r.config.repeat === -1)).toBe(false);
   });
 
   it('presses [Colgarlo] only once', async () => {

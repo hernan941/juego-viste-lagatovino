@@ -670,13 +670,30 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
       this.readyTitle.setAngle(-3);
       this.tweens.add({ targets: this.readyTitle, angle: 0, duration: 320, ease: p.ease('Back.easeOut') });
     }
-    void card.flyThumb({ x: 1090, y: 560 });
+    void card.flyThumb({ x: 1090, y: 560 }).then(() => this.gulp());
+  }
+
+  /** The thumbnail lands on [Colgarlo] and the button swallows it (K8): a pop and a tic, then a soft nudge every 3 s until it is pressed. */
+  private gulp() {
+    const button = this.hangButton;
+    if (!button || this.closed || this.leaving) return;
+    const p = profileOf(this);
+    getAudio(this).play(SfxKeys.Click);
+    this.tweens.killTweensOf(button);
+    button.setAlpha(1);
+    this.tweens.add({ targets: button, scale: { from: 1 + 0.12 * p.squash, to: 1 }, duration: 240, ease: p.ease('Back.easeOut') });
+    if (p.reduced) return;
+    this.tweens.add({ targets: button, angle: { from: -3, to: 3 }, duration: 110, yoyo: true, repeat: -1, repeatDelay: 3000, ease: 'Sine.easeInOut' });
   }
 
   /** [Colgarlo]: if that cat already has a keychain the player is asked; otherwise it is hung at once. */
   private hangIt() {
     const recipe = this.madeRecipe;
     if (!recipe || this.hanging || this.leaving || this.replaceSheet) return;
+    if (this.hangButton) {
+      this.tweens.killTweensOf(this.hangButton);
+      this.hangButton.setAngle(0);
+    }
     if (this.autoHung) return this.finishHang(recipe, undefined);
     const collection = this.latestProgress().keychains;
     if (!needsConfirm(collection, recipe)) return this.finishHang(recipe, undefined);
@@ -737,6 +754,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
   private hideReady() {
     this.replaceSheet?.destroy();
     this.replaceSheet = null;
+    if (this.hangButton) this.tweens.killTweensOf(this.hangButton);
     this.hangButton?.destroy();
     this.hangButton = null;
     this.readyTitle?.destroy();
