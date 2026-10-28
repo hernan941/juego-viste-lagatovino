@@ -95,8 +95,6 @@ export const ObjectEvents = {
   ButtonClick: 'button-click',
   /** MuteButton: (muted: boolean) after toggling */
   MuteToggle: 'mute-toggle',
-  /** FullscreenButton: (entering: boolean) after the tap */
-  FullscreenToggle: 'fullscreen-toggle',
   /** NotebookButton: pressed and released on it */
   NotebookPress: 'notebook-press',
   /** MotionButton: (reduced: boolean) after toggling */

@@ -13,7 +13,7 @@ describe('stamp buttons (round v2, F12.R A3)', () => {
   });
 
   it('each stamp rests with its own small tilt', () => {
-    expect(STAMP_TILT).toEqual({ mute: -2, motion: 1, fullscreen: -1 });
+    expect(STAMP_TILT).toEqual({ mute: -2, motion: 1 });
   });
 });
 

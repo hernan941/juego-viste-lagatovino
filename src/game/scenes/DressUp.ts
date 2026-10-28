@@ -17,7 +17,6 @@ import type { DressUpE2EState, E2EScene, E2EUi, UiState } from '../e2eHook';
 import { Button } from '../objects/Button';
 import { MuteButton } from '../objects/MuteButton';
 import { MotionButton } from '../objects/MotionButton';
-import { FullscreenButton } from '../objects/FullscreenButton';
 import { getAudio } from '../plugins/AudioPlugin';
 import { getSave } from '../plugins/SavePlugin';
 import { go } from '../systems/navigate';
@@ -75,7 +74,6 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
   private changeButton!: Button;
   private mute!: MuteButton;
   private motion!: MotionButton;
-  private fullscreen: FullscreenButton | null = null;
   private leaving = false;
   private lastDragSound = 0;
   private rainbow!: Phaser.GameObjects.Graphics;
@@ -172,8 +170,6 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.changeButton.on(ObjectEvents.ButtonClick, () => this.leave('change'));
     this.mute = new MuteButton(this, 1240, 686).setScale(0.8);
     this.motion = new MotionButton(this, 1240, 636).setScale(0.8);
-    this.fullscreen = FullscreenButton.create(this, 1244, 36);
-    this.fullscreen?.setScale(0.8);
 
     this.tabs.select(categories[0], true);
     this.showCategory(categories[0]);
@@ -246,7 +242,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.drag = null;
     this.fx?.destroy();
     this.tweens.killAll();
-    for (const o of [this.doneButton, this.changeButton, this.mute, this.motion, this.fullscreen, this.sign, this.cat, this.grid, this.tabs, this.layersPanel, this.panel]) o?.destroy();
+    for (const o of [this.doneButton, this.changeButton, this.mute, this.motion, this.sign, this.cat, this.grid, this.tabs, this.layersPanel, this.panel]) o?.destroy();
   }
 
   /** Back from the album: the tab it was on and how far the grid was scrolled (a tab of a controller answers to its own listener). */
@@ -433,7 +429,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
   getE2EUi(): UiState {
     return {
       ready: this.cat.alpha > 0.99 && !this.leaving,
-      buttons: { finish: this.doneButton.getCenter(), change: this.changeButton.getCenter(), mute: this.mute.getCenter(), motion: this.motion.getCenter(), ...(this.fullscreen ? { fullscreen: this.fullscreen.getCenter() } : {}) },
+      buttons: { finish: this.doneButton.getCenter(), change: this.changeButton.getCenter(), mute: this.mute.getCenter(), motion: this.motion.getCenter() },
       points: {},
       info: { catName: this.catName },
     };

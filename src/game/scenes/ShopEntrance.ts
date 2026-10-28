@@ -7,7 +7,6 @@ import type { E2EUi, UiState } from '../e2eHook';
 import { Cat } from '../objects/Cat';
 import { MuteButton } from '../objects/MuteButton';
 import { MotionButton } from '../objects/MotionButton';
-import { FullscreenButton } from '../objects/FullscreenButton';
 import { makeHintPill } from '../objects/kit/HintPill';
 import { SpeechBubble } from '../objects/kit/SpeechBubble';
 import { addInkClouds, addInkSky, addInkStreet, addInkSun } from '../objects/streetInk';
@@ -38,7 +37,6 @@ export class ShopEntrance extends Phaser.Scene implements E2EUi {
   private cat!: Cat;
   private mute!: MuteButton;
   private motion!: MotionButton;
-  private fullscreen: FullscreenButton | null = null;
   private phase: Phase = 'fading-in';
   private skipped = false;
   private bob?: Phaser.Tweens.Tween;
@@ -80,8 +78,6 @@ export class ShopEntrance extends Phaser.Scene implements E2EUi {
     this.tweens.add({ targets: hint, alpha: 1, delay: 1000, duration: 400 });
     this.mute = new MuteButton(this, GAME_WIDTH - 56, 56).setDepth(50);
     this.motion = new MotionButton(this, GAME_WIDTH - 128, 56).setDepth(50);
-    this.fullscreen = FullscreenButton.create(this, GAME_WIDTH - 200, 56);
-    this.fullscreen?.setDepth(50);
 
     this.input.on('pointerdown', this.skip, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -91,7 +87,6 @@ export class ShopEntrance extends Phaser.Scene implements E2EUi {
       this.cat?.destroy();
       this.mute?.destroy();
       this.motion?.destroy();
-      this.fullscreen?.destroy();
       this.tweens.killAll();
     });
     transitionIn(this, this.enter, () => this.walk());
@@ -200,7 +195,7 @@ export class ShopEntrance extends Phaser.Scene implements E2EUi {
   getE2EUi(): UiState {
     return {
       ready: this.phase !== 'fading-in',
-      buttons: { mute: this.mute.getCenter(), motion: this.motion.getCenter(), ...(this.fullscreen ? { fullscreen: this.fullscreen.getCenter() } : {}) },
+      buttons: { mute: this.mute.getCenter(), motion: this.motion.getCenter() },
       points: { cat: { x: this.cat.x, y: this.cat.y } },
       info: { phase: this.phase, skipped: this.skipped },
     };

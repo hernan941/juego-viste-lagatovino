@@ -9,7 +9,7 @@ export const CAT_SIZE = 540;
 /** Longest side of the dragged item, and of the one that flies back to its cell. */
 export const GHOST_SIZE = 150;
 export const GHOST_HOME_SIZE = 90;
-/** The purse, top of the screen between the cat and the secrets counter (the counter keeps the top right; the fullscreen button of the phone sits at its right). */
+/** The purse, top of the screen between the cat and the secrets counter (the counter keeps the top right). */
 export const WALLET_POSITION = { x: 896, y: 34 } as const;
 /** The tag hung on a grid cell, in cell px from its center: from the top right corner, over the edge of the picture. */
 export const CELL_TAG = { x: 36, y: -62, scale: 0.46 } as const;

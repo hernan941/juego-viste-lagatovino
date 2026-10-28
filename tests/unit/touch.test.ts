@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  MIN_TOUCH_CSS, applyLift, dragThreshold, isDragPointer, landscapeScale, liftOffset, minHitExtent, shouldShowFullscreen, shouldShowRotateHint,
+  MIN_TOUCH_CSS, applyLift, dragThreshold, isDragPointer, landscapeScale, liftOffset, minHitExtent, shouldShowRotateHint,
 } from '../../src/game/systems/touch';
 
 describe('landscapeScale', () => {
@@ -89,13 +89,5 @@ describe('shouldShowRotateHint', () => {
     expect(shouldShowRotateHint({ coarse: true, portrait: true })).toBe(true);
     expect(shouldShowRotateHint({ coarse: true, portrait: false })).toBe(false);
     expect(shouldShowRotateHint({ coarse: false, portrait: true })).toBe(false);
-  });
-});
-
-describe('shouldShowFullscreen', () => {
-  it('needs a touch device and the Fullscreen API', () => {
-    expect(shouldShowFullscreen({ touch: true, available: true })).toBe(true);
-    expect(shouldShowFullscreen({ touch: true, available: false })).toBe(false);
-    expect(shouldShowFullscreen({ touch: false, available: true })).toBe(false);
   });
 });

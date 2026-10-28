@@ -37,7 +37,6 @@ vi.mock('../../src/game/objects/Button', async () => {
 });
 vi.mock('../../src/game/objects/MuteButton', () => ({ MuteButton: class { setDepth() { return this; } getCenter() { return { x: 0, y: 0 }; } destroy() {} } }));
 vi.mock('../../src/game/objects/MotionButton', () => ({ MotionButton: class { setDepth() { return this; } getCenter() { return { x: 0, y: 0 }; } destroy() {} } }));
-vi.mock('../../src/game/objects/FullscreenButton', () => ({ FullscreenButton: { create: () => null } }));
 
 import { Title } from '../../src/game/scenes/Title';
 import { ObjectEvents, RegistryKeys, SceneKeys, TextureKeys } from '../../src/game/constants';

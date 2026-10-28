@@ -32,8 +32,8 @@ export function tabLayout(count: number, active: number, size: number, gap: numb
   return Array.from({ length: count }, (_, i) => ({ x: i * (size + gap), rise: i === active ? TAB_RISE : 0 }));
 }
 
-/** Round stamp buttons (sound, motion, fullscreen): resting tilt of each, like stickers stuck on the notebook. */
-export const STAMP_TILT = { mute: -2, motion: 1, fullscreen: -1 } as const;
+/** Round stamp buttons (sound, motion): resting tilt of each, like stickers stuck on the notebook. */
+export const STAMP_TILT = { mute: -2, motion: 1 } as const;
 
 /** Colors (Ink tokens) of a stamp: white disc with ink icon, inverted on hover. */
 export function stampColors(hover: boolean): { fill: 'tarjeta' | 'tinta'; icon: 'tinta' | 'cremaPapel' } {

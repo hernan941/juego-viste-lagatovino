@@ -15,7 +15,6 @@ import type { AnchorsDef, ProgressEvent, Progress, RatingResult } from '../domai
 import type { E2EUi, UiState } from '../e2eHook';
 import { Button } from '../objects/Button';
 import { Cat } from '../objects/Cat';
-import { FullscreenButton } from '../objects/FullscreenButton';
 import { MotionButton } from '../objects/MotionButton';
 import { NotebookButton } from '../objects/NotebookButton';
 import { MuteButton } from '../objects/MuteButton';
@@ -44,7 +43,7 @@ const FLOURISH_MS = 1700;
 const LAYOUT = { judgeAt: { x: 1060, y: 745 }, cardAt: JUDGE_CARD_AT, notesAt: { x: 475, y: 108 }, notesWidth: 420, buttonsFrom: { x: 1060, y: 690 }, confettiAt: { x: 380, y: -10 } };
 /** The purse sits over the middle of the runway, clear of the judge's card. */
 const WALLET_AT = { x: 896, y: 28 };
-/** The notebook stamp joins the exits (top right, next to the fullscreen, motion and sound stamps). */
+/** The notebook stamp joins the exits (top right, next to the motion and sound stamps). */
 const NOTEBOOK_AT = { x: GAME_WIDTH - 272, y: 56 };
 
 /**
@@ -67,7 +66,6 @@ export class Showcase extends Phaser.Scene implements E2EUi {
   private hint: Phaser.GameObjects.Text | null = null;
   private mute!: MuteButton;
   private motion!: MotionButton;
-  private fullscreen: FullscreenButton | null = null;
   private notebook: NotebookButton | null = null;
   private counter!: SecretsTag;
   private hearts!: Phaser.GameObjects.Particles.ParticleEmitter;
@@ -160,8 +158,6 @@ export class Showcase extends Phaser.Scene implements E2EUi {
     this.hud.setValue(before.wallet);
     this.mute = new MuteButton(this, GAME_WIDTH - 56, 56).setDepth(50);
     this.motion = new MotionButton(this, GAME_WIDTH - 128, 56).setDepth(50);
-    this.fullscreen = FullscreenButton.create(this, GAME_WIDTH - 200, 56);
-    this.fullscreen?.setDepth(50);
     this.counter = new SecretsTag(this, 140, 50).setDepth(50);
     // A prize that was delivered quietly: the counter shows the old number and pops to the new one with the toast.
     const won = getSave(this).secrets.length;
@@ -182,7 +178,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.ceremony?.destroy();
       this.cat?.destroy();
-      for (const o of [this.photo, this.keep, this.change, this.notebook, this.hint, this.mute, this.motion, this.fullscreen, this.counter, this.hud]) o?.destroy();
+      for (const o of [this.photo, this.keep, this.change, this.notebook, this.hint, this.mute, this.motion, this.counter, this.hud]) o?.destroy();
       this.tweens.killAll();
     });
     transitionIn(this, this.enter);
@@ -322,7 +318,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
       const p = b ? b.getCenter() : undefined;
       if (p) buttons[key] = { x: p.x, y: p.y };
     }
-    for (const [key, b] of Object.entries({ mute: this.mute, motion: this.motion, fullscreen: this.fullscreen, album: this.notebook })) if (b) buttons[key] = b.getCenter();
+    for (const [key, b] of Object.entries({ mute: this.mute, motion: this.motion, album: this.notebook })) if (b) buttons[key] = b.getCenter();
     return {
       ready: this.ready && !this.leaving,
       buttons,

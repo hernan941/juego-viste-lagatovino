@@ -53,7 +53,3 @@ export function shouldShowRotateHint(env: { coarse: boolean; portrait: boolean }
   return env.coarse && env.portrait;
 }
 
-/** The optional fullscreen button: a touch device whose browser has the Fullscreen API (not Safari on iPhone). */
-export function shouldShowFullscreen(env: { touch: boolean; available: boolean }): boolean {
-  return env.touch && env.available;
-}

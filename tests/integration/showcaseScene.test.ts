@@ -74,7 +74,6 @@ vi.mock('../../src/game/objects/NotebookButton', async () => {
 });
 vi.mock('../../src/game/objects/MuteButton', async () => ({ MuteButton: class { setDepth() { return this; } getCenter() { return { x: 0, y: 0 }; } destroy() {} } }));
 vi.mock('../../src/game/objects/MotionButton', async () => ({ MotionButton: class { setDepth() { return this; } getCenter() { return { x: 0, y: 0 }; } destroy() {} } }));
-vi.mock('../../src/game/objects/FullscreenButton', async () => ({ FullscreenButton: { create: () => null } }));
 vi.mock('../../src/game/objects/showcase/SecretsTag', async () => ({ SecretsTag: class { text = ''; setDepth() { return this; } setCount() {} destroy() {} } }));
 vi.mock('../../src/game/objects/WalletHud', async () => ({
   WalletHud: class {

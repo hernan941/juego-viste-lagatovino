@@ -11,7 +11,6 @@ import { CARD_H, CARD_W, CatCard } from '../objects/CatCard';
 import { DomNameInput, canvasOf } from '../objects/DomNameInput';
 import { MuteButton } from '../objects/MuteButton';
 import { MotionButton } from '../objects/MotionButton';
-import { FullscreenButton } from '../objects/FullscreenButton';
 import { Card } from '../objects/kit/Card';
 import { PaperBackground } from '../objects/kit/PaperBackground';
 import { touchEnv } from '../objects/ui';
@@ -44,7 +43,6 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
   private choose!: Button;
   private mute!: MuteButton;
   private motion!: MotionButton;
-  private fullscreen: FullscreenButton | null = null;
   private hint!: Phaser.GameObjects.Text;
   private bar!: Phaser.GameObjects.Container;
   private box!: Phaser.GameObjects.Graphics;
@@ -105,8 +103,6 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
     this.createBar();
     this.mute = new MuteButton(this, GAME_WIDTH - 56, 56).setDepth(50);
     this.motion = new MotionButton(this, GAME_WIDTH - 128, 56).setDepth(50);
-    this.fullscreen = FullscreenButton.create(this, GAME_WIDTH - 200, 56);
-    this.fullscreen?.setDepth(50);
 
     // Coming back from the fitting room keeps the cat and the name that were chosen.
     const session = readSession(this.registry);
@@ -128,7 +124,6 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
       this.choose?.destroy();
       this.mute?.destroy();
       this.motion?.destroy();
-      this.fullscreen?.destroy();
       this.tweens.killAll();
     });
     transitionIn(this, this.enter);
@@ -295,7 +290,7 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
     const cats = Object.fromEntries(this.cards.map((c) => [c.def.id, c.getCenter()]));
     return {
       ready: this.ready,
-      buttons: { ...(this.barShown ? { choose: this.choose.getCenter() } : {}), mute: this.mute.getCenter(), motion: this.motion.getCenter(), ...(this.fullscreen ? { fullscreen: this.fullscreen.getCenter() } : {}) },
+      buttons: { ...(this.barShown ? { choose: this.choose.getCenter() } : {}), mute: this.mute.getCenter(), motion: this.motion.getCenter() },
       points: { ...cats, nameInput: { x: INPUT.x, y: INPUT.y } },
       info: { enter: this.enter, selected: this.selected?.id ?? null, name: this.name, nameIsDefault: this.nameIsDefault, nameKeyboard: this.dom?.focused ?? false, chooseVisible: this.barShown && this.bar.alpha > 0.99, warning: this.warning.alpha > 0.5 },
     };
