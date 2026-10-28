@@ -145,7 +145,7 @@ describe('trayCellPositions with the whole catalog (F20.R A3)', () => {
   const ROOM = 510 - 65 - 12;
   it('keeps every tray inside the panel, with all the pieces of photo.json, and every cell at least 80 tall', () => {
     for (const kind of ['backgrounds', 'frames', 'poses', 'stickers'] as const) {
-      const n = (photo as Record<string, unknown[]>)[kind]!.length;
+      const n = (photo[kind] as unknown[]).length;
       const spots = trayCellPositions(kind, n);
       const rows = [...new Set(spots.map((s) => s.y))];
       const rowStep = rows.length > 1 ? rows[1]! - rows[0]! : 0;
