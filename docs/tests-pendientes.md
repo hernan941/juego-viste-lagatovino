@@ -452,3 +452,18 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
 5. La tarjeta del juez dice "Le encantan las estrellas".
 6. En la caja, la línea de la vendedora ocupa 2 líneas.
 7. En pantalla completa 16:9, "Salir" no se monta sobre "Modo foto".
+
+## Últimos ajustes: notas agrupadas, texto legible, colgador, M9 y ✦ de "nuevo"
+### E2E pendientes
+1. Showcase con muchos premios:
+   - `ui` expone las notas visibles (como máximo 3);
+   - los secretos se verifican en el progreso y en los créditos, no contando notas.
+2. Con más de 3 grupos:
+   - aparece la pila "+N mas en tu album";
+   - el ✦ llega al cuaderno;
+   - los créditos suman el total.
+3. Con movimiento reducido, la pila aparece con fundido y sin vuelo.
+4. En el modo foto con los marcos polaroid y cuaderno, el nombre queda por encima de un sticker (también con "Doña").
+5. En el celular, las pistas de DressUp, el panel de capas y CatSheet tienen un tamaño legible, y los nombres largos terminan en "…".
+6. Colgador con 12 llaveros: no hay solapes y "N dorados" no pisa el título.
+7. Conviene un hook para inyectar eventos de progreso falsos.
