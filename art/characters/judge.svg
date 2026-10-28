@@ -1,15 +1,43 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
-  <!-- Viste Lagato · PROVISIONAL (F11.10): gato supervisor genérico con libreta. Lo reemplaza el arte de F15.3, sin tocar código ni JSON. -->
-  <g stroke="#1F1B1A" stroke-width="7" stroke-linejoin="round" stroke-linecap="round">
-    <path d="M58 92 L52 38 L104 70 Z" fill="#A9A9B8"/>
-    <path d="M198 92 L204 38 L152 70 Z" fill="#A9A9B8"/>
-    <ellipse cx="128" cy="124" rx="86" ry="70" fill="#A9A9B8"/>
-    <rect x="86" y="178" width="84" height="62" rx="8" fill="#FFFCF5"/>
+  <!-- Viste Lagato · juez genérico (F20.R A4, art-direction v2): gato gris supervisor con libreta. Tinta de 7 px con la copia desplazada de los gatos, ojos almendra con brillito, nariz y boca en "y", orejas con interior durazno. Kofi (F12.12) lo reemplaza sin tocar código ni JSON. -->
+  <defs>
+    <path id="ear-l" d="M58 96 C52 74 52 52 60 40 C66 32 76 36 84 44 L104 68 Z"/>
+    <path id="ear-r" d="M198 96 C204 74 204 52 196 40 C190 32 180 36 172 44 L152 68 Z"/>
+    <ellipse id="head" cx="128" cy="124" rx="86" ry="70"/>
+    <rect id="pad" x="80" y="176" width="96" height="68" rx="9"/>
+  </defs>
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <!-- copia desplazada del contorno (el trazo "a mano" de los gatos) -->
+    <g fill="none" stroke="#1F1B1A" stroke-width="7" transform="translate(1.5 2)">
+      <use href="#ear-l"/><use href="#ear-r"/><use href="#head"/><use href="#pad"/>
+    </g>
+    <!-- orejas debajo de la cabeza: su base queda tapada -->
+    <use href="#ear-l" fill="#A9A9B8" stroke="#1F1B1A" stroke-width="7"/>
+    <use href="#ear-r" fill="#A9A9B8" stroke="#1F1B1A" stroke-width="7"/>
+    <!-- interior durazno de las orejas -->
+    <path d="M66 96 C62 76 63 58 68 50 C72 46 77 50 83 57 L96 74 Z" fill="#F1D1C0"/>
+    <path d="M190 96 C194 76 193 58 188 50 C184 46 179 50 173 57 L160 74 Z" fill="#F1D1C0"/>
+    <use href="#head" fill="#A9A9B8" stroke="#1F1B1A" stroke-width="7"/>
+    <!-- rayas de la frente -->
+    <path d="M118 66 L120 80 M128 64 L128 80 M138 66 L136 80" fill="none" stroke="#7E7E96" stroke-width="6"/>
+    <use href="#pad" fill="#FFFCF5" stroke="#1F1B1A" stroke-width="7"/>
+    <!-- libreta: espiral y renglones de cuadricula -->
+    <g fill="none" stroke="#1F1B1A" stroke-width="4">
+      <path d="M92 176 V186 M106 176 V186 M120 176 V186 M134 176 V186 M148 176 V186 M162 176 V186"/>
+    </g>
+    <path d="M92 202 H164 M92 216 H164 M92 230 H144" stroke="#C9DBF1" stroke-width="4"/>
+    <!-- bigotes -->
+    <g fill="none" stroke="#1F1B1A" stroke-width="3">
+      <path d="M62 138 Q50 134 40 135 M62 148 Q49 148 38 152"/>
+      <path d="M194 138 Q206 134 216 135 M194 148 Q207 148 218 152"/>
+    </g>
+    <!-- ojos almendra con brillito -->
+    <path fill="#1F1B1A" stroke="#1F1B1A" stroke-width="1.5" d="M80 120 C86 106 106 106 112 120 C106 134 86 134 80 120 Z"/>
+    <path fill="#1F1B1A" stroke="#1F1B1A" stroke-width="1.5" d="M144 120 C150 106 170 106 176 120 C170 134 150 134 144 120 Z"/>
+    <circle cx="92" cy="114" r="4.5" fill="#FFFFFF"/>
+    <circle cx="156" cy="114" r="4.5" fill="#FFFFFF"/>
+    <!-- nariz y boca en "y" -->
+    <path fill="#D9A48C" stroke="#1F1B1A" stroke-width="2.5" d="M120 134 C124 131 132 131 136 134 C135 140 131 144 128 146 C125 144 121 140 120 134 Z"/>
+    <path fill="none" stroke="#1F1B1A" stroke-width="4" d="M128 146 L128 152 M114 156 C121 162 128 159 128 152 C128 159 135 162 142 156"/>
   </g>
-  <g fill="#1F1B1A">
-    <circle cx="98" cy="118" r="8"/>
-    <circle cx="158" cy="118" r="8"/>
-  </g>
-  <path d="M112 142 Q120 152 128 142 Q136 152 144 142" fill="none" stroke="#1F1B1A" stroke-width="6" stroke-linecap="round"/>
-  <path d="M100 200 H156 M100 216 H140" stroke="#8FA8E3" stroke-width="5" stroke-linecap="round"/>
 </svg>
