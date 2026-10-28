@@ -9,7 +9,7 @@ import { packageOps } from '../domain/keychainPackage';
 import { catPose, poseFaceLayout } from '../domain/catPose';
 import { faceKey } from '../data/assets';
 import type { Expression } from '../domain/expressions';
-import { sheetOps, SHEET_LAYOUT, starRow, type SheetOp } from '../domain/photoSheet';
+import { captionPlan, sheetOps, SHEET_LAYOUT, starRow, type SheetOp } from '../domain/photoSheet';
 import { isInsideDropZone } from '../domain/dropZone';
 import { getLayers } from '../domain/outfit';
 import { initialPieces, photoFileName, resolveLook, stickerLimit, type PhotoLook } from '../domain/photo';
@@ -22,6 +22,7 @@ import type { AnchorsDef, ItemDye, KeychainRecipe, PhotoPiece, PhotoPose, PhotoU
 import type { E2EUi, UiState } from '../e2eHook';
 import { Button } from '../objects/Button';
 import { Cat } from '../objects/Cat';
+import { drawCaptionLabel } from '../objects/photo';
 import { MotionButton } from '../objects/MotionButton';
 import { MuteButton } from '../objects/MuteButton';
 import { Tabs, type TabDef } from '../objects/Tabs';
@@ -62,7 +63,7 @@ const STAGE_DIM = 0.35;
 const STAGE_AWAY = 20;
 const JAR = { x: 1090, y: 330, width: 122, height: 150 };
 const JAR_ZONE: Rect = { x: JAR.x - JAR.width / 2, y: JAR.y - JAR.height / 2, width: JAR.width, height: JAR.height };
-const DEPTH = { sheet: 2, cat: 3, placed: 4, panel: 5, tray: 6, card: 7, keychain: 8, buttons: 20, held: 40 };
+const DEPTH = { sheet: 2, cat: 3, placed: 4, label: 4.5, panel: 5, tray: 6, card: 7, keychain: 8, buttons: 20, held: 40 };
 /** A tap skips the transformation only after this long: the same tap that pressed Guardar must not skip it. */
 const SKIP_AFTER_MS = 350;
 const KINDS: readonly TrayKind[] = ['backgrounds', 'frames', 'poses', 'stickers'];
@@ -104,6 +105,8 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
   private held: Held | null = null;
   private cat!: Cat;
   private sheet!: Phaser.GameObjects.Container;
+  /** The caption (name, stars, signature and, on a frame with no margin, the paper label), rebuilt when the frame changes. */
+  private caption!: Phaser.GameObjects.Container;
   private bgLayer!: Phaser.GameObjects.Container;
   private frameLayer!: Phaser.GameObjects.Container;
   /** The art showing now in each layer (the one a swap takes away). */
@@ -199,7 +202,9 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     this.shown = { bg: this.pieceImage(this.catalog.photo.backgrounds, this.background), frame: this.pieceImage(this.catalog.photo.frames, this.frame) };
     if (this.shown.bg) this.bgLayer.add(this.shown.bg);
     if (this.shown.frame) this.frameLayer.add(this.shown.frame);
-    this.sheet = this.add.container(SHEET.x, SHEET.y, [this.bgLayer, this.frameLayer, ...this.margin()]).setDepth(DEPTH.sheet);
+    this.sheet = this.add.container(SHEET.x, SHEET.y, [this.bgLayer, this.frameLayer]).setDepth(DEPTH.sheet);
+    this.caption = this.add.container(SHEET.x, SHEET.y);
+    this.buildCaption(false);
     this.cat = new Cat(this, SHEET.x, CAT.feetY, def, this.anchors, CAT.size).setDepth(DEPTH.cat);
     this.cat.setOutfit(getLayers(this.look.outfit, this.catalog.clothes));
     void this.dyeWorn();
@@ -245,25 +250,40 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     }));
   }
 
-  /** What is written in the bottom margin of the frame, as the saved picture has it: the name, the stars and "Xoxo, mau!". */
-  private margin(): Phaser.GameObjects.GameObject[] {
-    const { name, stars, signature } = SHEET_LAYOUT;
-    const out: Phaser.GameObjects.GameObject[] = [];
+  /**
+   * What is written under the picture, as the saved one has it: the name, the stars and "Xoxo, mau!". A frame with its own margin
+   * (the polaroid) gets them behind the cat; one without (the golden one) gets them on a paper label in front of the stickers.
+   * `pop`: the label lands with 6 degrees extra, like a sticker being pressed (F20.R A2).
+   */
+  private buildCaption(pop: boolean) {
+    const plan = captionPlan(this.frame);
+    const { stars } = SHEET_LAYOUT;
+    this.tweens.killTweensOf(this.caption);
+    this.caption.removeAll(true);
+    this.caption.setDepth(plan.label ? DEPTH.label : DEPTH.sheet).setAngle(0);
     const text = (value: string, x: number, y: number, size: number, maxWidth: number, angle = 0) => {
       const t = this.add.text(x, y, value, { fontFamily: Fonts.Voice, fontSize: `${size}px`, color: Ink.tinta, padding: { x: 4, y: 8 } }).setOrigin(0.5).setAngle(angle);
       if (t.width > maxWidth) t.setScale(maxWidth / t.width);
       return t;
     };
-    out.push(text(this.look.catName, name.x, name.y, name.fontSize, name.maxWidth));
+    if (plan.label) {
+      const { x, y, width, height, angle } = plan.label;
+      this.caption.add(drawCaptionLabel(this.add.graphics({ x, y }), width, height).setAngle(angle));
+    }
+    this.caption.add(text(this.look.catName, plan.name.x, plan.name.y, plan.name.fontSize, plan.name.maxWidth));
     if (this.look.rating) {
-      for (const slot of starRow(this.look.rating.stars)) {
-        const star = this.add.image(slot.x, stars.y, slot.filled ? stars.filled : stars.empty);
-        star.setScale(stars.size / star.height).setAlpha(slot.filled ? 1 : stars.emptyAlpha);
-        out.push(star);
+      for (const slot of starRow(this.look.rating.stars, plan.stars.x)) {
+        const star = this.add.image(slot.x, plan.stars.y, slot.filled ? stars.filled : stars.empty);
+        star.setScale(plan.stars.size / star.height).setAlpha(slot.filled ? 1 : stars.emptyAlpha);
+        this.caption.add(star);
       }
     }
-    out.push(text(photoLines.signature(this.catalog.brand), signature.x, signature.y, signature.fontSize, signature.maxWidth, signature.angle));
-    return out;
+    const sig = plan.signature;
+    this.caption.add(text(photoLines.signature(this.catalog.brand), sig.x, sig.y, sig.fontSize, sig.maxWidth, sig.angle));
+    if (pop && plan.label) {
+      const p = profileOf(this);
+      if (!p.reduced) this.tweens.add({ targets: this.caption, angle: { from: 6, to: 0 }, duration: 300, ease: p.ease('Back.easeOut') });
+    }
   }
 
   /** The art of the picked piece, 1:1 around the middle of the sheet; null when nothing is unlocked. */
@@ -361,6 +381,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     } else if (kind === 'frames') {
       this.frame = id;
       this.shown.bg?.setCrop(backgroundCrop(id) as Phaser.Geom.Rectangle);
+      this.buildCaption(true);
       this.swapPiece('frame', this.catalog.photo.frames, id);
       audio.play(SfxKeys.Paper);
     } else {
@@ -569,13 +590,15 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
   private dropIn() {
     const p = profileOf(this);
     this.sheet.setAlpha(0);
+    this.caption.setAlpha(0);
     if (p.reduced) {
-      this.tweens.add({ targets: this.sheet, alpha: 1, duration: 250 });
+      this.tweens.add({ targets: [this.sheet, this.caption], alpha: 1, duration: 250 });
       return;
     }
     const y = this.sheet.y;
     this.sheet.setY(y - 60);
-    this.tweens.add({ targets: this.sheet, alpha: 1, y, duration: 420, ease: p.ease('Back.easeOut') });
+    this.caption.setY(y - 60);
+    this.tweens.add({ targets: [this.sheet, this.caption], alpha: 1, y, duration: 420, ease: p.ease('Back.easeOut') });
   }
 
   /** The picture that is saved: what is on the table (pieces, pose, stickers), the name, the stars and the signature of the brand. */
@@ -894,6 +917,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     this.mute?.destroy();
     this.motion?.destroy();
     this.sheet?.destroy();
+    this.caption?.destroy();
   }
 
   getE2EUi(): UiState {

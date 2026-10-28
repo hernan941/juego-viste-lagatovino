@@ -1,14 +1,14 @@
 // F18.5: what the saved picture of the photo mode draws (domain/photoSheet.ts), in the coordinates of the sheet (its middle is 0, 0).
 import { describe, expect, it } from 'vitest';
 import { PHOTO_SIZE, STICKER_SIZE } from '../../src/game/domain/photoComposition';
-import { SHEET_LAYOUT, sheetOps, starRow, type SheetOp } from '../../src/game/domain/photoSheet';
+import { SHEET_LAYOUT, captionPlan, sheetOps, starRow, type SheetOp } from '../../src/game/domain/photoSheet';
 
 const photo = {
   backgrounds: [{ id: 'bg-a', texture: 'tex-bg-a' }, { id: 'bg-b', texture: 'tex-bg-b' }],
-  frames: [{ id: 'frame-a', texture: 'tex-frame-a' }],
+  frames: [{ id: 'frame-polaroid', texture: 'tex-frame-a' }, { id: 'frame-dorado', texture: 'tex-frame-d' }],
   stickers: [{ id: 'st-1', texture: 'tex-st-1' }, { id: 'st-2', texture: 'tex-st-2' }],
 };
-const base = { background: 'bg-b', frame: 'frame-a', pose: 'pose-sentadito', stickers: [] as { id: string; x: number; y: number; angle: number }[] };
+const base = { background: 'bg-b', frame: 'frame-polaroid', pose: 'pose-sentadito', stickers: [] as { id: string; x: number; y: number; angle: number }[] };
 const input = (over: Partial<Parameters<typeof sheetOps>[0]> = {}) => ({
   photo, composition: base, catName: 'Mochi', stars: 3, signature: 'Xoxo, mau!', ...over,
 });
@@ -83,5 +83,45 @@ describe('sheetOps', () => {
     const name = (text: string) => sheetOps(input({ catName: text })).find((o) => o.kind === 'text' && o.text === text) as Extract<SheetOp, { kind: 'text' }>;
     expect(Math.abs(name('Mochi').x) + 1).toBeLessThan(PHOTO_SIZE.width / 2);
     expect(name('Mochi').maxWidth).toBeLessThanOrEqual(PHOTO_SIZE.width - 100);
+  });
+});
+
+// F20.R A2: a frame with no margin of its own (the golden one) gets a paper label over the stickers.
+describe('captionPlan', () => {
+  it('draws no label where the frame has its own bottom margin (polaroid, notebook, kofi)', () => {
+    for (const f of ['frame-polaroid', 'frame-cuaderno', 'frame-kofi']) expect(captionPlan(f).label, f).toBeNull();
+  });
+
+  it('draws a label where the margin is thin (golden, watercolor, no frame)', () => {
+    for (const f of ['frame-dorado', 'frame-acuarela', null]) expect(captionPlan(f).label, String(f)).not.toBeNull();
+  });
+
+  it('keeps everything of the label inside the sheet and the signature apart from the stars', () => {
+    const plan = captionPlan('frame-dorado');
+    const l = plan.label!;
+    expect(l.y + l.height / 2).toBeLessThanOrEqual(PHOTO_SIZE.height / 2);
+    expect(Math.abs(l.x) + l.width / 2).toBeLessThan(PHOTO_SIZE.width / 2);
+    const starsRight = Math.max(...starRow(5, plan.stars.x).map((s) => s.x)) + SHEET_LAYOUT.stars.size / 2;
+    expect(plan.signature.x - plan.signature.maxWidth / 2).toBeGreaterThan(starsRight);
+    expect(plan.signature.x + plan.signature.maxWidth / 2).toBeLessThanOrEqual(l.x + l.width / 2);
+  });
+});
+
+describe('sheetOps with a label', () => {
+  const gold = (over = {}) => input({ composition: { ...base, frame: 'frame-dorado', stickers: [{ id: 'st-1', x: 0, y: 250, angle: 0 }] }, ...over });
+
+  it('puts the label, the name, the stars and the signature in front of the stickers', () => {
+    const list = kinds(sheetOps(gold()));
+    const sticker = list.indexOf('image:tex-st-1');
+    expect(list.indexOf('label')).toBeGreaterThan(sticker);
+    expect(list.indexOf('text:Mochi')).toBeGreaterThan(list.indexOf('label'));
+    expect(list.indexOf('text:Xoxo, mau!')).toBeGreaterThan(list.indexOf('label'));
+    expect(list.indexOf('image:ui-stamp-sol')).toBeGreaterThan(list.indexOf('label'));
+  });
+
+  it('keeps the old order (name behind the cat) and no label with a margin frame', () => {
+    const list = kinds(sheetOps(input()));
+    expect(list).not.toContain('label');
+    expect(list.indexOf('text:Mochi')).toBeLessThan(list.indexOf('cat'));
   });
 });

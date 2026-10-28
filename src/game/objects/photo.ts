@@ -107,6 +107,19 @@ export interface SheetPlace {
   scale: number;
 }
 
+/**
+ * The paper label of the caption (F20.R A2), centered on (0, 0) of `g`: a flat shadow, the white card with its border and a washi of
+ * sol at the top. The live table and the saved picture draw the same one.
+ */
+export function drawCaptionLabel(g: Phaser.GameObjects.Graphics, width: number, height: number): Phaser.GameObjects.Graphics {
+  const r = 10;
+  g.fillStyle(colorToNumber(Ink.sombraTarjeta), 1).fillRoundedRect(-width / 2 + 3, -height / 2 + 4, width, height, r);
+  g.fillStyle(colorToNumber(Ink.tarjeta), 1).fillRoundedRect(-width / 2, -height / 2, width, height, r);
+  g.lineStyle(3, colorToNumber(Ink.borde), 1).strokeRoundedRect(-width / 2, -height / 2, width, height, r);
+  g.fillStyle(colorToNumber(Ink.sol), 0.7).fillRect(-34, -height / 2 - 9, 68, 18);
+  return g;
+}
+
 /** What the operations that are not plain images and texts need from the scene. */
 export interface SheetExtras {
   /** The live cat for a 'cat' op, drawn with this face. */
@@ -145,6 +158,12 @@ export function drawSheetOps(
       const room = op.maxWidth * at.scale;
       if (text.width > room) text.setScale(room / text.width);
       rt.draw(text);
+    } else if (op.kind === 'label') {
+      const g = new Phaser.GameObjects.Graphics(scene);
+      temp.push(g);
+      drawCaptionLabel(g, op.width, op.height);
+      g.setPosition(x, y).setScale(at.scale).setAngle(op.angle);
+      rt.draw(g);
     } else if (op.kind === 'cat') {
       if (!extras.cat) continue;
       const k = (op.size / 512) * at.scale;
