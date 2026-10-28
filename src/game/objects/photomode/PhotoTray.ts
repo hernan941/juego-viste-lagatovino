@@ -21,11 +21,12 @@ export interface TrayEntry {
 }
 
 /** Cell sizes and the number of columns of each tray. Every cell is at least 80 x 80 (the touch minimum of the kit). */
-const LAYOUT: Record<TrayKind, { w: number; h: number; cols: number }> = {
+const LAYOUT: Record<TrayKind, { w: number; h: number; cols: number; rowGap?: number }> = {
   backgrounds: { w: 88, h: 104, cols: 3 },
   frames: { w: 88, h: 104, cols: 3 },
   poses: { w: 138, h: 84, cols: 2 },
-  stickers: { w: 88, h: 88, cols: 3 },
+  // 13 stickers are 5 rows: 80 tall with 6 between rows keeps the last one inside the panel (F20.R A3).
+  stickers: { w: 88, h: 80, cols: 3, rowGap: 6 },
 };
 const GAP = 12;
 /** The side of the canvas every cat and face texture is drawn on (anchors.json). */
@@ -36,8 +37,8 @@ const CARD = colorToNumber(Ink.tarjeta);
 
 /** Where each cell goes, relative to the tray origin (the top left of the first cell). */
 export function trayCellPositions(kind: TrayKind, count: number): Point[] {
-  const { w, h, cols } = LAYOUT[kind];
-  return Array.from({ length: count }, (_, i) => ({ x: (i % cols) * (w + GAP) + w / 2, y: Math.floor(i / cols) * (h + GAP) + h / 2 }));
+  const { w, h, cols, rowGap = GAP } = LAYOUT[kind];
+  return Array.from({ length: count }, (_, i) => ({ x: (i % cols) * (w + GAP) + w / 2, y: Math.floor(i / cols) * (h + rowGap) + h / 2 }));
 }
 
 class TrayCell extends Phaser.GameObjects.Container {

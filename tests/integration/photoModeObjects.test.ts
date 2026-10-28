@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('phaser', async () => (await import('./helpers/kitScene')).phaserMock);
 
+import photo from '../../src/game/data/photo.json';
 import { ObjectEvents } from '../../src/game/constants';
 import { PhotoTray, trayCellPositions, type TrayEntry } from '../../src/game/objects/photomode/PhotoTray';
 import { Sticker } from '../../src/game/objects/photomode/Sticker';
@@ -136,6 +137,22 @@ describe('trayCellPositions', () => {
     const spots = trayCellPositions('stickers', 12);
     expect(spots[0]!.x).toBeGreaterThanOrEqual(44);
     expect(Math.max(...spots.map((s) => s.y)) + 44).toBeLessThanOrEqual(420);
+  });
+});
+
+describe('trayCellPositions with the whole catalog (F20.R A3)', () => {
+  // The panel is 510 px tall and the tray starts 65 px below its top, with 12 px of paper left under the last row.
+  const ROOM = 510 - 65 - 12;
+  it('keeps every tray inside the panel, with all the pieces of photo.json, and every cell at least 80 tall', () => {
+    for (const kind of ['backgrounds', 'frames', 'poses', 'stickers'] as const) {
+      const n = (photo as Record<string, unknown[]>)[kind]!.length;
+      const spots = trayCellPositions(kind, n);
+      const rows = [...new Set(spots.map((s) => s.y))];
+      const rowStep = rows.length > 1 ? rows[1]! - rows[0]! : 0;
+      expect(rowStep === 0 || rowStep >= 80, kind).toBe(true);
+      const bottom = Math.max(...spots.map((s) => s.y)) + (kind === 'poses' ? 42 : kind === 'stickers' ? 40 : 52);
+      expect(bottom, kind).toBeLessThanOrEqual(ROOM);
+    }
   });
 });
 
