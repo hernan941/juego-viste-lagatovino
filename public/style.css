@@ -307,6 +307,34 @@ html.page-fullscreen .stage-exit:not([hidden]) {
     .stage-exit .pill-text { display: inline; }
 }
 
+/* A phone held sideways (F20.R A1, ADR 0023 s7): the phone is longer than 16:9, so the header becomes a rail on the left and the
+   canvas keeps the whole height. The buttons are 44 x 44, the touch minimum (ADR 0014). */
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 520px) {
+    #page { flex-direction: row; }
+    .site-header {
+        flex: none;
+        width: 56px;
+        border-bottom: 0;
+        border-right: 1px solid var(--border);
+    }
+    .site-header-inner {
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        padding: 10px 0;
+        gap: 8px;
+    }
+    /* The wordmark is too wide for the rail: the little cat of the favicon stands for it. */
+    .brand { width: 32px; height: 32px; background: url('/favicon.svg') center / contain no-repeat; }
+    .brand img { display: none; }
+    .site-actions { flex-direction: column; margin: 0; gap: 8px; }
+    .pill { width: 44px; height: 44px; font-size: 20px; }
+    .pill::after { inset: 0; }
+    .pill-icon { width: 20px; height: 20px; }
+}
+
 /* Fullscreen on the stage hides the page by itself; this is for browsers that fullscreen the whole document. */
 html.page-fullscreen .site-header,
 html.page-fullscreen .site-footer {
