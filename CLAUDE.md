@@ -54,7 +54,7 @@ Aprobada por el usuario. Detalle en `docs/design/segunda-etapa.md`.
 La plataforma no cambia: PC primero y celular horizontal jugable. El juez y la vendedora son personajes parametrizados en datos (`data/brand.json`).
 
 **Descartado**: pedidos de clientes.
-**Fuera de alcance**: integración web con lagatovino.com (la hace el usuario), caminar por un mapa, cuentas de usuario, backend.
+**Fuera de alcance**: integración web con lagatovino.com, salvo la página contenedora en un subdominio (ADR 0023); el despliegue y el DNS los hace el usuario. También caminar por un mapa, cuentas de usuario, backend.
 
 Las preguntas abiertas y los supuestos por defecto están en `docs/game-design.md`.
 

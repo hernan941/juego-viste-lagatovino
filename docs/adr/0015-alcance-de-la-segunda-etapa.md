@@ -3,6 +3,7 @@
 - **Estado**: Aceptado
 - **Fecha**: 2026-10-25
 - **Reemplaza en parte**: la lista "Fuera del MVP" de `CLAUDE.md` y de `docs/game-design.md` (monedas, compra e inventario dejan de estar fuera). El resto del alcance del MVP sigue vigente.
+- **Enmendado por**: ADR 0023 (de la integración web entra **solo** la página contenedora con la estética de Lagatovino en un subdominio; el despliegue y el DNS siguen siendo del usuario).
 
 ## Contexto
 El MVP está terminado: se elige un gato, se entra a la tienda, se viste arrastrando y se admira el look. Falta un **para qué**: un motivo para volver a vestir. El `game-designer` propuso la segunda etapa en `docs/design/segunda-etapa.md` y el usuario la aprobó. Varias cosas que el MVP dejó "fuera" (monedas, compra, inventario) ahora entran, y otras se descartan de forma expresa para que no vuelvan como ideas sueltas.
@@ -23,7 +24,7 @@ El MVP está terminado: se elige un gato, se entra a la tienda, se viste arrastr
 - **Pedidos de clientes** (encargos con requisitos externos). El objetivo viene del propio gato (sus gustos), no de un cliente. No se diseña ni se deja preparado.
 
 **Fuera de esta etapa** (sigue fuera o queda para después):
-- La **integración web con lagatovino.com** (enlaces, embebido, tienda real): la hace el usuario. El juego no depende de ella.
+- La **integración web con lagatovino.com** (enlaces, embebido, tienda real): la hace el usuario. El juego no depende de ella. *(Enmendado por ADR 0023: entra la página contenedora en un subdominio; el despliegue, el DNS, el embebido y la tienda real siguen fuera).*
 - Caminar por un mapa, cuentas de usuario, backend y Supabase (ADR 0004 sigue con localStorage).
 - Gatos llavero dibujados aparte (nice to have posterior de S8).
 - Energía, tiempos de espera, regalos diarios, compras con dinero real y cualquier mecánica de FOMO.

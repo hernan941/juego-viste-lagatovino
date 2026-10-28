@@ -2,6 +2,7 @@
 
 - **Estado**: Aceptado
 - **Fecha**: 2026-10-20
+- **Enmendado por**: ADR 0023. El destino es un subdominio de lagatovino.com con una página contenedora propia, y el hosting y el DNS los hace el usuario. Vercel o Netlify quedan como sugerencia.
 
 ## Contexto
 El juego corre entero en el navegador. Se quiere compartir con un link y sin servidores que mantener.

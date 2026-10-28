@@ -9,7 +9,7 @@ Aquí se registran las decisiones de arquitectura del proyecto (formato Nygard).
 | [0002](0002-engine-phaser-typescript-vite.md) | Engine: Phaser 3 + TypeScript + Vite | Aceptado (versión reemplazada por 0011) |
 | [0003](0003-sistema-de-capas-para-vestir.md) | Sistema de capas para vestir | Aceptado |
 | [0004](0004-persistencia.md) | Persistencia: localStorage → Supabase | Propuesto |
-| [0005](0005-despliegue-estatico.md) | Despliegue estático | Aceptado |
+| [0005](0005-despliegue-estatico.md) | Despliegue estático | Aceptado (enmendado por 0023) |
 | [0006](0006-arte-vectorial-propio-en-svg.md) | Arte vectorial propio en SVG | Aceptado (enmendado por 0016) |
 | [0007](0007-flujo-de-escenas-y-transiciones.md) | Flujo de escenas y transiciones | Aceptado (ampliado por 0019) |
 | [0008](0008-plataforma-pc-y-solo-arrastrar.md) | Plataforma PC e interacción solo arrastrando | Aceptado (enmendado por 0014) |
@@ -18,8 +18,8 @@ Aquí se registran las decisiones de arquitectura del proyecto (formato Nygard).
 | [0011](0011-phaser-4.md) | Usar Phaser 4 en vez de Phaser 3 | Aceptado |
 | [0012](0012-desarrollo-guiado-por-tests-tdd.md) | Desarrollo guiado por tests (TDD) | Aceptado |
 | [0013](0013-movimiento-reducido.md) | Movimiento reducido | Aceptado |
-| [0014](0014-soporte-para-celular-tactil.md) | Soporte para celular (táctil) | Aceptado |
-| [0015](0015-alcance-de-la-segunda-etapa.md) | Alcance de la segunda etapa | Aceptado |
+| [0014](0014-soporte-para-celular-tactil.md) | Soporte para celular (táctil) | Aceptado (enmendado por 0023) |
+| [0015](0015-alcance-de-la-segunda-etapa.md) | Alcance de la segunda etapa | Aceptado (enmendado por 0023) |
 | [0016](0016-direccion-de-arte-lagatovino.md) | Dirección de arte Lagatovino | Aceptado (reemplaza la estética v1 y enmienda 0006) |
 | [0017](0017-guardado-v2-y-reglas-de-juego-en-json.md) | Guardado v2 y reglas de juego en JSON | Aceptado (amplía 0004) |
 | [0018](0018-tenido-por-recoloreado-de-svg.md) | Teñido por recoloreado del SVG en tiempo de ejecución | Aceptado (amplía 0006; enmienda: evento `ItemDyed`, API de `Cat` y medición pendiente) |
@@ -27,6 +27,7 @@ Aquí se registran las decisiones de arquitectura del proyecto (formato Nygard).
 | 0020 | Sin uso: las reglas de juego en JSON se fusionaron en 0017 | — |
 | [0021](0021-el-llavero-como-tratamiento-del-render.md) | El llavero como tratamiento del render del look | Aceptado (enmiendas: notas de F19; el primero se cuelga solo y premio del set "Colgador dorado") |
 | [0022](0022-una-textura-por-lote-en-webgl-por-software.md) | Una textura por lote en WebGL por software | Aceptado (amplía 0011 y 0012) |
+| [0023](0023-pagina-contenedora-lagatovino-en-subdominio.md) | Página contenedora con la estética de Lagatovino, en un subdominio | Aceptado (enmienda 0005, 0014 y 0015; amplía 0016) |
 
 ## Estados
 `Propuesto` → `Aceptado` → (`Obsoleto` | `Reemplazado por NNNN`)

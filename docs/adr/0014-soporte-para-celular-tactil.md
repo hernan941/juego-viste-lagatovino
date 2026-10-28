@@ -3,6 +3,7 @@
 - **Estado**: Aceptado
 - **Fecha**: 2026-10-23
 - **Enmienda**: ADR 0008 (deja sin efecto "el soporte táctil o móvil no es un objetivo"; el resto del 0008 sigue vigente)
+- **Enmendado por**: ADR 0023 (punto 6: el único botón de pantalla completa es el de la página contenedora, y el del juego deja de mostrarse; la página suma un header compacto en horizontal)
 
 ## Contexto
 El ADR 0008 dejó el móvil fuera de los objetivos. Ahora el usuario pide explícitamente que el juego **también se pueda jugar desde el celular**. El juego ya está construido para PC: lienzo de 1280 × 720 horizontal con `Scale.FIT`, drag & drop como única forma de equipar y hover en todo lo interactivo. Hay que sumar el móvil sin rehacer el layout, sin romper la experiencia de PC y sin crear una segunda rama de UI.
