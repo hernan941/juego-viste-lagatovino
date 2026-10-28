@@ -114,7 +114,7 @@ export class CheckoutSheet extends ModalSheet {
     const { scene, dynamic } = this;
     if (!dynamic) return;
     for (const child of dynamic.list) if ('list' in child) killTweensDeep(scene, child as Phaser.GameObjects.Container);
-    scene.tweens?.killTweensOf(dynamic);
+    scene?.tweens?.killTweensOf(dynamic);
   }
 
   destroy(fromScene?: boolean): void {
