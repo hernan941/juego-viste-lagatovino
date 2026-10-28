@@ -252,7 +252,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
 
   /**
    * What is written under the picture, as the saved one has it: the name, the stars and "Xoxo, mau!". A frame with its own margin
-   * (the polaroid) gets them behind the cat; one without (the golden one) gets them on a paper label in front of the stickers.
+   * (the polaroid) gets them straight on its margin; one without (the golden one) gets them on a paper label. Always above the stickers (M9).
    * `pop`: the label lands with 6 degrees extra, like a sticker being pressed (F20.R A2).
    */
   private buildCaption(pop: boolean) {
@@ -260,7 +260,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     const { stars } = SHEET_LAYOUT;
     this.tweens.killTweensOf(this.caption);
     this.caption.removeAll(true);
-    this.caption.setDepth(plan.label ? DEPTH.label : DEPTH.sheet).setAngle(0);
+    this.caption.setDepth(DEPTH.label).setAngle(0);
     const text = (value: string, x: number, y: number, size: number, maxWidth: number, angle = 0) => {
       const t = this.add.text(x, y, value, { fontFamily: Fonts.Voice, fontSize: `${size}px`, color: Ink.tinta, padding: { x: 4, y: 8 } }).setOrigin(0.5).setAngle(angle);
       if (t.width > maxWidth) t.setScale(maxWidth / t.width);

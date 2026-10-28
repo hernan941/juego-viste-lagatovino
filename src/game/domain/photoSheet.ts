@@ -111,25 +111,22 @@ export function stickerOps({ photo, composition }: Pick<SheetInput, 'photo' | 'c
   return ops;
 }
 
-/** The operations, back to front: background, frame, name, the cat, the stickers, the "zzz", the stars and the signature. With a label
- * the caption (label, name, stars, signature) goes last, in front of the stickers. */
+/** The operations, back to front: background, frame, the cat, the stickers, the "zzz", the name, the stars and the signature. With a label
+ * the caption (label, name, stars, signature) always goes last, in front of the stickers (M9). */
 export function sheetOps(input: SheetInput): SheetOp[] {
   const { composition, catName, stars, signature } = input;
   const ops: SheetOp[] = paperOps(input);
   const plan = captionPlan(composition.frame);
   const { cat } = SHEET_LAYOUT;
   const nameOp: SheetOp = { kind: 'text', text: catName, x: plan.name.x, y: plan.name.y, fontSize: plan.name.fontSize, maxWidth: plan.name.maxWidth };
-  if (!plan.label) ops.push(nameOp);
   ops.push({ kind: 'cat', x: cat.x, y: cat.feetY, size: cat.size });
   ops.push(...stickerOps(input));
   if (composition.pose === SLEEPY_POSE) {
     const { zzz } = SHEET_LAYOUT;
     ops.push({ kind: 'image', texture: zzz.texture, x: zzz.x, y: zzz.y, height: zzz.size });
   }
-  if (plan.label) {
-    ops.push({ kind: 'label', ...plan.label });
-    ops.push(nameOp);
-  }
+  if (plan.label) ops.push({ kind: 'label', ...plan.label });
+  ops.push(nameOp);
   if (stars !== null) {
     const row = SHEET_LAYOUT.stars;
     for (const slot of starRow(stars, plan.stars.x)) {

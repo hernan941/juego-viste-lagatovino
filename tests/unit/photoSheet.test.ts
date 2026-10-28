@@ -30,11 +30,11 @@ describe('starRow', () => {
 });
 
 describe('sheetOps', () => {
-  it('draws, back to front: background, frame, name, the cat, the stickers, the stars and the signature', () => {
+  it('draws, back to front: background, frame, the cat, the stickers, the name, the stars and the signature (M9)', () => {
     const ops = sheetOps(input({ composition: { ...base, stickers: [{ id: 'st-1', x: 10, y: 20, angle: 5 }, { id: 'st-2', x: -30, y: -40, angle: -7 }] } }));
     const list = kinds(ops);
-    expect(list.slice(0, 4)).toEqual(['image:tex-bg-b', 'image:tex-frame-a', 'text:Mochi', 'cat']);
-    expect(list.slice(4, 6)).toEqual(['image:tex-st-1', 'image:tex-st-2']);
+    expect(list.slice(0, 4)).toEqual(['image:tex-bg-b', 'image:tex-frame-a', 'cat', 'image:tex-st-1']);
+    expect(list.slice(4, 6)).toEqual(['image:tex-st-2', 'text:Mochi']);
     expect(list[list.length - 1]).toBe('text:Xoxo, mau!');
   });
 
@@ -87,6 +87,16 @@ describe('sheetOps', () => {
 });
 
 // F20.R A2: a frame with no margin of its own (the golden one) gets a paper label over the stickers.
+describe('the name is never under a sticker (M9)', () => {
+  const stickers = [{ id: 'st-1', x: 0, y: 200, angle: 0 }];
+  for (const frame of ['frame-polaroid', 'frame-cuaderno', 'frame-kofi', 'frame-dorado', null]) {
+    it(`${String(frame)}: the name comes after every sticker`, () => {
+      const list = kinds(sheetOps(input({ composition: { ...base, frame, stickers } })));
+      expect(list.indexOf('text:Mochi')).toBeGreaterThan(list.indexOf('image:tex-st-1'));
+    });
+  }
+});
+
 describe('captionPlan', () => {
   it('draws no label where the frame has its own bottom margin (polaroid, notebook, kofi)', () => {
     for (const f of ['frame-polaroid', 'frame-cuaderno', 'frame-kofi']) expect(captionPlan(f).label, f).toBeNull();
@@ -119,9 +129,9 @@ describe('sheetOps with a label', () => {
     expect(list.indexOf('image:ui-stamp-sol')).toBeGreaterThan(list.indexOf('label'));
   });
 
-  it('keeps the old order (name behind the cat) and no label with a margin frame', () => {
+  it('draws no label with a margin frame, and the name comes after the cat (M9)', () => {
     const list = kinds(sheetOps(input()));
     expect(list).not.toContain('label');
-    expect(list.indexOf('text:Mochi')).toBeLessThan(list.indexOf('cat'));
+    expect(list.indexOf('text:Mochi')).toBeGreaterThan(list.indexOf('cat'));
   });
 });
