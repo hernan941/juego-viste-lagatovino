@@ -35,3 +35,30 @@ export function runwayStage(catX: number, feetY: number): Rect {
 export function rectsOverlap(a: Rect, b: Rect): boolean {
   return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
 }
+
+/** "Secretos X/N" (a paper tag of 210 x 44, top left) and the room it takes while it pops (x1.3) and tilts. */
+export const SECRETS_TAG_AT = { x: 140, y: 50 } as const;
+export const RUNWAY_SECRETS_TAG: Rect = { x: SECRETS_TAG_AT.x - 137, y: SECRETS_TAG_AT.y - 36, width: 274, height: 72 };
+
+/** The notes of the ceremony: a row of polaroids above the cat, between the Secretos tag and the judge's card. */
+export const NOTES_TOP_MARGIN = 8;
+export const NOTES_BAND = { x: 292, width: 424, y: 108 } as const;
+/** A polaroid at scale 1 (260 x 300 at 0.62), the gap between two at most, and the room its tilt and fall need around it. */
+const NOTE_SIZE = { width: 161, height: 186 };
+const NOTE_GAP = 150;
+const NOTE_TILT_ROOM = 14;
+
+/** How big the notes are and how far apart their centers go so that `count` of them fit the band. */
+export function noteRowFit(count: number): { scale: number; maxWidth: number; step: number } {
+  const scale = count > 4 ? 0.75 : 0.9;
+  const maxWidth = NOTES_BAND.width - 2 * NOTE_TILT_ROOM - NOTE_SIZE.width * scale;
+  return { scale, maxWidth, step: count > 1 ? Math.min(NOTE_GAP, maxWidth / (count - 1)) : NOTE_GAP };
+}
+
+/** The room a row of `count` notes takes, tilt included (what must stay clear of the tag, the card and the edge). */
+export function noteRowRect(count: number): Rect {
+  const { scale, step } = noteRowFit(count);
+  const width = (count - 1) * step + NOTE_SIZE.width * scale + 2 * NOTE_TILT_ROOM;
+  const height = NOTE_SIZE.height * scale + 2 * NOTE_TILT_ROOM;
+  return { x: NOTES_BAND.x + NOTES_BAND.width / 2 - width / 2, y: NOTES_BAND.y - height / 2, width, height };
+}

@@ -17,6 +17,8 @@ export interface EventNotesOptions {
   maxWidth?: number;
   /** The readable tags (tags.json). */
   tags?: TagNames;
+  /** Size of every note (1 by default): a long row shrinks its notes to stay in its band. */
+  scale?: number;
 }
 
 const NOTE_SCALE = 0.62;
@@ -33,12 +35,14 @@ export class EventNotes extends Phaser.GameObjects.Container {
   private readonly noteCount: number;
   private readonly step: number;
   private readonly tags?: TagNames;
+  private readonly noteScale: number;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, { count, gap = 150, maxWidth = 760, tags }: EventNotesOptions) {
+  constructor(scene: Phaser.Scene, x: number, y: number, { count, gap = 150, maxWidth = 760, tags, scale = 1 }: EventNotesOptions) {
     super(scene, x, y);
     this.bag = new TweenBag(scene);
     this.noteCount = count;
     this.tags = tags;
+    this.noteScale = scale;
     this.step = count > 1 ? Math.min(gap, maxWidth / (count - 1)) : gap;
     scene.add.existing(this);
   }
@@ -62,6 +66,7 @@ export class EventNotes extends Phaser.GameObjects.Container {
       .text(0, 100 * NOTE_SCALE, note.title, { fontFamily: Fonts.Voice, fontSize: '19px', color: Ink.tinta, align: 'center', wordWrap: { width: 136 } })
       .setOrigin(0.5);
     holder.add([paper, icon, caption]);
+    holder.setScale(this.noteScale);
     if (note.reward) {
       holder.add(scene.add.text(-46, -74, note.reward, { fontFamily: Fonts.Title, fontSize: '26px', color: Ink.lapiz }).setOrigin(0.5));
     }
