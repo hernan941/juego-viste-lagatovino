@@ -14,6 +14,7 @@ import { chooseCat, emptySession } from './domain/session';
 import { readSession, writeSession } from './systems/sessionStore';
 import type { GameData } from './data/schema';
 import type { PerfCounts } from './systems/perf';
+import { mapPointsDeep, pageMapper, splitMapped } from './systems/pagePoints';
 
 /** What a scene reports to the test hook, in game coordinates (1280 x 720). */
 export interface DressUpE2EState {
@@ -200,12 +201,13 @@ const isE2EScene = (s: Phaser.Scene): s is Phaser.Scene & E2EScene =>
 /** Reads what is alive in the game (see `e2ePerf.ts`); injected so this file does not import the EventBus (Cat imports `isE2EEnabled` from here). */
 export type PerfReader = (game: Game) => PerfCounts & { fps: number };
 
+/** Keys of the DressUp state that `dressUp` converts by hand (the rest goes through `mapPointsDeep`). */
+const HANDLED = ['cells', 'tabs', 'slotAnchors', 'dropZone', 'layerGrab', 'layerRows', 'grid', 'gift'];
+
 export function installE2EHook(game: Game, readPerf: PerfReader): void {
   if (!isE2EEnabled()) return;
   const toPage = (): ((p: Point) => Point) => {
-    const r = game.canvas.getBoundingClientRect();
-    const f = r.width / GAME_WIDTH;
-    return (p) => ({ x: r.left + p.x * f, y: r.top + p.y * f });
+    return pageMapper(game.canvas.getBoundingClientRect(), GAME_WIDTH);
   };
   const audio = () => game.plugins.get(PluginKeys.Audio) as AudioPlugin;
   const motion = () => game.plugins.get(PluginKeys.Motion) as MotionPlugin;
@@ -357,8 +359,11 @@ export function installE2EHook(game: Game, readPerf: PerfReader): void {
       const zone = { x: tl.x, y: tl.y, width: s.dropZone.width * f, height: s.dropZone.height * f };
       const gt = map({ x: s.grid.x, y: s.grid.y });
       const grid = { ...s.grid, x: gt.x, y: gt.y, width: s.grid.width * f, height: s.grid.height * f };
+      // What the controllers add (purchase, checkout, catsheet, dyes, wallet, album...) is converted in one go: any {x, y} in it is a point.
+      const rest = splitMapped(s, HANDLED);
       return {
         ...s,
+        ...mapPointsDeep(rest, map),
         grid: { ...grid, center: { x: grid.x + grid.width / 2, y: grid.y + grid.height / 2 } },
         gift: s.gift && { ...s.gift, bow: map(s.gift.bow), box: map(s.gift.box), pill: map(s.gift.pill) },
         pxPerGamePx: f,
