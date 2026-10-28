@@ -1,6 +1,7 @@
 // Pure TS, no Phaser (ADR 0010, 0021). The transformation of the cat into a porcelain keychain (S8) as a plan: what each moment of
 // the ~2.2 s looks like is a function of time alone. The scene moves its objects to what `transformFrame(t)` says, so the order of the
 // steps, the numbers and the "skip with a tap" (asking for the end) are tested here and the scene stays thin.
+import type { Ring } from './keychain';
 import { backIn, bounceOut, clamp01, sineInOut, sineOut } from './ease';
 
 export type KeychainPhase = 'oven' | 'turn' | 'varnish' | 'hardware' | 'swing' | 'package';
@@ -63,6 +64,8 @@ export interface TransformFrame {
   /** How much of the chain is unrolled and how much the charm has shown (0..1; the charm is 0 without 5 stars). */
   chain: number;
   charm: number;
+  /** 0..1..0 of the pop of scale (1 -> 1.08 -> 1) right after the half turn, for every keychain (K6). */
+  pop: number;
   /** True from the moment the keychain hangs and starts to swing. */
   swing: boolean;
 }
@@ -71,6 +74,19 @@ export interface TransformOptions {
   reduced: boolean;
   /** 5 stars: the charm comes with the ring. */
   charm: boolean;
+}
+
+/** The pop right after the half turn: how long it lasts and how much it grows (K6). */
+export const POP = { ms: 180, grow: 0.08 };
+
+/** How many stars jump out when it turns into porcelain: 3 with the silver ring, 5 with the gold one, 7 with the charm (K6). */
+export function sparkleCount(ring: Ring): number {
+  return ring.charm ? 7 : ring.metal === 'gold' ? 5 : 3;
+}
+
+function popAt(since: number): number {
+  const p = since / POP.ms;
+  return p > 0 && p < 1 ? Math.sin(Math.PI * p) : 0;
 }
 
 const SHRINK = { to: 0.6, ms: 220, squash: 0.12 };
@@ -100,6 +116,7 @@ export function transformFrame(t: number, { reduced, charm }: TransformOptions):
       ring: { alpha: fade, drop: 0 },
       chain: fade,
       charm: charm ? fade : 0,
+      pop: 0,
       swing: swinging,
     };
   }
@@ -128,6 +145,7 @@ export function transformFrame(t: number, { reduced, charm }: TransformOptions):
     ring: { alpha: t >= hw.from + RING.from ? 1 : 0, drop: 1 - bounceOut((t - hw.from - RING.from) / RING.ms) },
     chain: sineOut((t - hw.from - CHAIN.from) / CHAIN.ms),
     charm: charm ? sineOut((t - hw.from - CHARM.from) / CHARM.ms) : 0,
+    pop: popAt(t - turn.to),
     swing: swinging || t >= total,
   };
 }

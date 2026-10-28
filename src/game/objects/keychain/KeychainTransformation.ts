@@ -5,7 +5,7 @@
 import Phaser from 'phaser';
 import { ObjectEvents, SfxKeys, TextureKeys, colorToNumber, GAME_HEIGHT, GAME_WIDTH } from '../../constants';
 import { hardwareParts, ringFor, type HardwarePartId } from '../../domain/keychain';
-import { streakStops, transformFrame, transformPlan, type KeychainPhase, type TransformFrame } from '../../domain/keychainTransform';
+import { POP, sparkleCount, streakStops, transformFrame, transformPlan, type KeychainPhase, type TransformFrame } from '../../domain/keychainTransform';
 import type { Point, KeychainRecipe } from '../../domain/types';
 import { profileOf } from '../../systems/motion';
 import type { Cat } from '../Cat';
@@ -49,6 +49,7 @@ export class KeychainTransformation {
   private catScale = 1;
   private phase: KeychainPhase | null = null;
   private swung = false;
+  private sparkled = false;
   private chimed = false;
   private quiet = false;
   private finished = false;
@@ -177,14 +178,18 @@ export class KeychainTransformation {
     if (!k) return;
     k.setAlpha(frame.keychain.alpha);
     const ks = this.catScale * SHRUNK;
-    k.setScale(ks * frame.keychain.flip, ks);
+    k.setScale(ks * frame.keychain.flip * (1 + POP.grow * frame.pop), ks * (1 + POP.grow * frame.pop));
     this.streakImages.forEach((img, i) => img.setVisible(frame.streak === i));
     this.setPart('eyelet', frame.eyelet.alpha, frame.eyelet.angle);
     for (const id of ['ring-silver', 'ring-gold'] as const) this.setPart(id, frame.ring.alpha, 0, -frame.ring.drop * RING_FALL);
     this.unroll(frame.chain, frame.charm);
+    // "It is porcelain now": the stars jump out as the pop starts (a skip jumps over it, so they come with the swing instead).
+    if ((frame.pop > 0 || frame.swing) && !this.sparkled) {
+      this.sparkled = true;
+      this.sparkle();
+    }
     if (frame.swing && !this.swung) {
       this.swung = true;
-      this.sparkleCharm();
       k.swing(1);
     }
   }
@@ -212,19 +217,21 @@ export class KeychainTransformation {
     }
   }
 
-  /** With 5 stars the charm flashes and a few golden stars jump out of it. */
-  private sparkleCharm(): void {
-    const charm = this.parts.charm;
+  /** A few golden stars jump out of the porcelain: 3 with the silver ring, 5 with the gold one, 7 with the charm (K6). */
+  private sparkle(): void {
     const k = this.keychain;
-    if (!charm || !k || this.reduced) return;
+    if (!k) return;
     const p = profileOf(this.scene);
-    const at = { x: k.x + charm.x * k.scaleX, y: k.y + charm.y * k.scaleY };
-    const n = p.count(7);
+    const { layout } = k;
+    const ks = this.catScale * SHRUNK;
+    // The middle of the look, in the scene (the keychain sits on its hang point).
+    const at = { x: k.x + (layout.look.x + k.px / 2 - layout.hang.x) * ks, y: k.y + (layout.look.y + k.px / 2 - layout.hang.y) * ks };
+    const n = p.count(sparkleCount(ringFor(this.o.recipe.stars, this.o.data.rules)));
     for (let i = 0; i < n; i++) {
       const a = (i / n) * Math.PI * 2 + 0.3;
       const star = this.scene.add.image(at.x, at.y, TextureKeys.Sparkle).setScale(0.5).setDepth(this.o.depth + 1).setTint(colorToNumber('#FFC84A'));
       this.scene.tweens.add({
-        targets: star, x: at.x + Math.cos(a) * 70, y: at.y + Math.sin(a) * 70, alpha: 0, scale: 0.12, angle: 120, duration: 520, ease: 'Sine.easeOut',
+        targets: star, x: at.x + Math.cos(a) * 90, y: at.y + Math.sin(a) * 90, alpha: 0, scale: 0.12, angle: 120, duration: 520, ease: 'Sine.easeOut',
         onComplete: () => star.destroy(),
       });
     }
