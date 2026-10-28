@@ -53,6 +53,9 @@ const PHOTO_RECT: Rect = { x: SHEET.x - PHOTO_SIZE.width / 2, y: SHEET.y - PHOTO
 /** The paper panel on the left with the tabs and the tray, and the jar on the right: dropping a sticker on either takes it off the photo. */
 const PANEL: Rect = { x: 25, y: 150, width: 330, height: 510 };
 const TRAY_ORIGIN: Point = { x: 46, y: 215 };
+/** The table steps back while the keychain is made (K4): how dim it gets and how far (px) it moves away. */
+const STAGE_DIM = 0.35;
+const STAGE_AWAY = 20;
 const JAR = { x: 1090, y: 330, width: 122, height: 150 };
 const JAR_ZONE: Rect = { x: JAR.x - JAR.width / 2, y: JAR.y - JAR.height / 2, width: JAR.width, height: JAR.height };
 const DEPTH = { sheet: 2, cat: 3, placed: 4, panel: 5, tray: 6, card: 7, keychain: 8, buttons: 20, held: 40 };
@@ -106,6 +109,9 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
   private tray!: PhotoTray;
   private jar!: Phaser.GameObjects.Image;
   private count!: Phaser.GameObjects.Text;
+  /** The parts of the table that step back while the keychain is made (K4), and where each one rests. */
+  private stageParts: (Phaser.GameObjects.Container | Phaser.GameObjects.Image)[] = [];
+  private stage: { part: Phaser.GameObjects.Container | Phaser.GameObjects.Image; x: number; away: number }[] = [];
   private zzz: Phaser.GameObjects.Image | null = null;
   private save!: Button;
   private keep!: Button;
@@ -284,6 +290,24 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     this.jar = this.add.image(JAR.x, JAR.y, 'photo-jar').setDisplaySize(JAR.width, JAR.height).setDepth(DEPTH.tray);
     this.count = this.add.text(JAR.x, JAR.y + JAR.height / 2 + 24, '', { fontFamily: Fonts.Voice, fontStyle: 'bold', fontSize: '32px', color: Ink.tinta, padding: { x: 4, y: 6 } }).setOrigin(0.5).setDepth(DEPTH.tray);
     this.updateCount(false);
+    this.stage = [
+      { part: this.panel, away: -STAGE_AWAY }, { part: this.tabs, away: -STAGE_AWAY }, { part: this.tray, away: -STAGE_AWAY }, { part: this.jar, away: STAGE_AWAY },
+    ].map((s) => ({ ...s, x: s.part.x }));
+    this.stageParts = this.stage.map((s) => s.part);
+  }
+
+  /** "The lights go down" (K4): while the keychain is made the table dims, steps back and stops answering; it comes back with a pop. */
+  private setStage(busy: boolean) {
+    const p = profileOf(this);
+    this.tray.setEnabled(!busy);
+    this.tabs.setEnabled(!busy);
+    this.tweens.killTweensOf(this.stageParts);
+    this.tweens.add({ targets: this.stageParts, alpha: busy ? STAGE_DIM : 1, duration: busy ? 220 : 280 });
+    if (p.reduced) return;
+    for (const s of this.stage) {
+      this.tweens.killTweensOf(s.part);
+      this.tweens.add({ targets: s.part, x: busy ? s.x + s.away : s.x, duration: busy ? 260 : 320, ease: busy ? 'Sine.easeOut' : p.ease('Back.easeOut') });
+    }
   }
 
   private listOf(kind: TrayKind): readonly (PhotoPiece | PhotoPose)[] {
@@ -311,7 +335,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
 
   /** A piece of the tray was chosen: it goes onto the table, if it is unlocked. */
   private pick(kind: TrayKind, id: string) {
-    if (!this.ready || this.leaving || kind === 'stickers') return;
+    if (!this.ready || this.leaving || this.photoBusy || kind === 'stickers') return;
     if (!canPick(id, this.listOf(kind), this.openOf(kind))) return this.hintFor(kind, id);
     if (this.chosen(kind) === id) return;
     const audio = getAudio(this);
@@ -356,7 +380,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
 
   /** A locked piece shows how to get it. */
   private hintFor(kind: TrayKind, id: string) {
-    if (!this.ready || this.leaving) return;
+    if (!this.ready || this.leaving || this.photoBusy) return;
     const piece = this.listOf(kind).find((p) => p.id === id);
     if (!piece || this.openOf(kind).has(id)) return;
     this.toast(photoLines.unlockHint(piece.unlock, (setId) => this.catalog.sets.find((s) => s.id === setId)?.name));
@@ -390,7 +414,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
 
   /** Pulls a sticker off the sheet: it peels, grows and goes to the finger. */
   private grabFromTray(id: string, pointer: Phaser.Input.Pointer) {
-    if (!this.ready || this.leaving || this.held) return;
+    if (!this.ready || this.leaving || this.photoBusy || this.held) return;
     const piece = this.catalog.photo.stickers.find((s) => s.id === id);
     if (!piece || !canPick(id, this.catalog.photo.stickers, this.unlocks.stickers)) return;
     const sticker = new Sticker(this, pointer.x, pointer.y, id, piece.texture);
@@ -400,7 +424,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
 
   /** Picks a sticker of the photo up again. */
   private grabPlaced(sticker: Sticker, pointer: Phaser.Input.Pointer) {
-    if (!this.ready || this.leaving || this.held) return;
+    if (!this.ready || this.leaving || this.photoBusy || this.held) return;
     const i = this.placed.indexOf(sticker);
     if (i < 0) return;
     const from = this.stickerData[i]!;
@@ -560,6 +584,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
   private async snap() {
     if (this.photoBusy || this.leaving) return;
     this.photoBusy = true;
+    this.setStage(true);
     getAudio(this).play(SfxKeys.Shutter);
     const audio = getAudio(this);
     const recipe = this.recipe();
@@ -705,6 +730,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     this.cat.squash();
     this.putting = false;
     this.photoBusy = false;
+    this.setStage(false);
   }
 
   /** Takes [Colgarlo], its title and the question away and brings [Guardar] back. */
@@ -736,6 +762,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     this.photos++;
     this.lastPhoto = file;
     this.photoBusy = false;
+    this.setStage(false);
     this.toast(photoLines.saved);
   }
 

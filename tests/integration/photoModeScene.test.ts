@@ -18,8 +18,8 @@ const h = vi.hoisted(() => ({
   buttons: [] as { label: string; emit(ev: string): void; destroyed: boolean; visible: boolean }[],
   cats: [] as { outfit: string[]; held: string[]; textures: Record<string, string>; destroyed: boolean }[],
   bubbles: [] as { text: string; destroyed: boolean }[],
-  trays: [] as { kinds: string[]; selected: Record<string, string | null>; emit(ev: string, ...a: unknown[]): void; destroyed: boolean }[],
-  tabs: [] as { emit(ev: string, ...a: unknown[]): void; destroyed: boolean }[],
+  trays: [] as { kinds: string[]; selected: Record<string, string | null>; emit(ev: string, ...a: unknown[]): void; destroyed: boolean; enabled: boolean }[],
+  tabs: [] as { emit(ev: string, ...a: unknown[]): void; destroyed: boolean; enabled: boolean }[],
   failTransform: false,
   transformations: [] as FakeTransformation[],
   cards: [] as FakeCard[],
@@ -117,7 +117,8 @@ vi.mock('../../src/game/objects/photomode/PhotoTray', async () => {
   const { Emitter } = await import('./helpers/sceneFake');
   return {
     PhotoTray: class extends Emitter {
-      kinds: string[] = []; selected: Record<string, string | null> = {}; destroyed = false;
+      kinds: string[] = []; selected: Record<string, string | null> = {}; destroyed = false; enabled = true;
+      setEnabled(on: boolean) { this.enabled = on; }
       constructor() { super(); h.trays.push(this as never); }
       setDepth() { return this; }
       show(kind: string) { this.kinds.push(kind); }
@@ -131,7 +132,8 @@ vi.mock('../../src/game/objects/Tabs', async () => {
   const { Emitter } = await import('./helpers/sceneFake');
   return {
     Tabs: class extends Emitter {
-      destroyed = false;
+      destroyed = false; enabled = true;
+      setEnabled(on: boolean) { this.enabled = on; }
       constructor() { super(); h.tabs.push(this as never); }
       setDepth() { return this; }
       select() {}
@@ -775,6 +777,39 @@ describe('PhotoMode: the keychain is ready (F19.4)', () => {
     await vi.waitFor(() => expect(button('Colgarlo')).toBeDefined());
     button('Colgarlo').emit(ObjectEvents.ButtonClick);
     expect(h.sheets).toHaveLength(1);
+  });
+
+  it('K4: while the keychain is made the tray, the tabs and the jar dim and stop answering; they come back when the packaging is put away', async () => {
+    const scene = open(rating(4));
+    const dims = () => scene.tweens.records.filter((r) => !r.removed && (r.config.targets as unknown[]).length === 4 && r.config.alpha !== undefined);
+    run(scene);
+    save();
+    expect(h.trays[0]!.enabled).toBe(false);
+    expect(h.tabs[0]!.enabled).toBe(false);
+    expect(dims().map((r) => r.config.alpha)).toEqual([0.35]);
+    // Nothing on the table changes behind the card.
+    h.trays[0]!.emit(ObjectEvents.TrayPick, 'backgrounds', 'bg-cielo');
+    expect(scene.getE2EUi().info.background).toBe('bg-cuadriculado');
+    h.transformations[0]!.finish();
+    await vi.waitFor(() => expect(phaseOf(scene)).toBe('ready'));
+    expect(h.trays[0]!.enabled).toBe(false);
+    h.cards[0]!.emit(ObjectEvents.PackageTap);
+    await vi.waitFor(() => expect(h.cards[0]!.destroyed).toBe(true));
+    expect(h.trays[0]!.enabled).toBe(true);
+    expect(h.tabs[0]!.enabled).toBe(true);
+    expect(dims().map((r) => r.config.alpha)).toEqual([1]);
+    h.trays[0]!.emit(ObjectEvents.TrayPick, 'backgrounds', 'bg-cielo');
+    expect(scene.getE2EUi().info.background).toBe('bg-cielo');
+  });
+
+  it('K4: the plain photo way out also gives the table back', async () => {
+    h.failTransform = true;
+    const scene = open();
+    save();
+    expect(h.trays[0]!.enabled).toBe(false);
+    run(scene);
+    await vi.waitFor(() => expect(scene.getE2EUi().info.photoBusy).toBe(false));
+    expect(h.trays[0]!.enabled).toBe(true);
   });
 
   it('presses [Colgarlo] only once', async () => {

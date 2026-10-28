@@ -146,6 +146,7 @@ class TrayCell extends Phaser.GameObjects.Container {
 export class PhotoTray extends Phaser.GameObjects.Container {
   private cells: TrayCell[] = [];
   private kind: TrayKind | null = null;
+  private enabled = true;
   private readonly chosen: Partial<Record<TrayKind, string | null>> = {};
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
@@ -168,12 +169,19 @@ export class PhotoTray extends Phaser.GameObjects.Container {
         this.emit(ObjectEvents.TrayLocked, ...a);
       });
       cell.on(ObjectEvents.TrayStickerGrab, (...a: unknown[]) => this.emit(ObjectEvents.TrayStickerGrab, ...a));
+      if (!this.enabled && cell.input) cell.input.enabled = false;
       cell.setAlpha(0);
       if (!p.reduced) cell.setScale(0.8);
       this.add(cell);
       this.cells.push(cell);
       this.scene.tweens.add({ targets: cell, alpha: 1, scale: 1, duration: p.reduced ? 180 : 260, delay: delays[i], ease: p.ease('Back.easeOut') });
     });
+  }
+
+  /** Turns the answer to the finger on or off (the scene dims the tray while something else has the stage); the next page keeps it. */
+  setEnabled(on: boolean): void {
+    this.enabled = on;
+    for (const cell of this.cells) if (cell.input) cell.input.enabled = on;
   }
 
   /** Marks the chosen piece of a kind (remembered when that page is not showing). */
