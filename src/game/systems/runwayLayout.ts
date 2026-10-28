@@ -50,7 +50,7 @@ const NOTE_TILT_ROOM = 14;
 
 /** How big the notes are and how far apart their centers go so that `count` of them fit the band. */
 export function noteRowFit(count: number): { scale: number; maxWidth: number; step: number } {
-  const scale = count > 4 ? 0.75 : 0.9;
+  const scale = count > 4 ? 0.75 : count > 2 ? 0.8 : 0.9;
   const maxWidth = NOTES_BAND.width - 2 * NOTE_TILT_ROOM - NOTE_SIZE.width * scale;
   return { scale, maxWidth, step: count > 1 ? Math.min(NOTE_GAP, maxWidth / (count - 1)) : NOTE_GAP };
 }

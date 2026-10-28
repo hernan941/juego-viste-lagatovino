@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { Fonts, Ink, SfxKeys, TextureKeys } from '../../constants';
-import type { RewardNote } from '../../domain/rewardNotes';
+import { captionSize, type RewardNote } from '../../domain/rewardNotes';
 import { stableTilt } from '../../domain/stableTilt';
 import { getAudio } from '../../plugins/AudioPlugin';
 import { profileOf } from '../../systems/motion';
@@ -79,7 +79,7 @@ export class EventNotes extends Phaser.GameObjects.Container {
       .text(0, -28 * NOTE_SCALE, note.icon, { fontFamily: Fonts.Title, fontSize: '64px', color: ICON_COLORS[note.icon] ?? Ink.lapiz })
       .setOrigin(0.5);
     const caption = scene.add
-      .text(0, 100 * NOTE_SCALE, note.title, { fontFamily: Fonts.Voice, fontSize: '19px', color: Ink.tinta, align: 'center', wordWrap: { width: 136 } })
+      .text(0, 100 * NOTE_SCALE, note.title, { fontFamily: Fonts.Voice, fontSize: `${captionSize(note.title, this.noteScale)}px`, color: Ink.tinta, align: 'center', wordWrap: { width: 150 }, lineSpacing: -4 })
       .setOrigin(0.5);
     holder.add([paper, icon, caption]);
     holder.setScale(this.noteScale);

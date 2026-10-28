@@ -43,8 +43,7 @@ export function groupRewardNotes(events: readonly CeremonyEvent[], max = MAX_NOT
     }
   }
   if (unlocks.length > 0) {
-    const ids = unlocks.reduce((n, e) => n + e.ids.length, 0);
-    groups.push(group('✿', ids > 1 ? 'Novedades para el modo foto!' : 'Novedad para el modo foto!', 1, 0));
+    groups.push(group('✿', 'Novedades!', 1, 0));
   }
   if (sets.length > 0) groups.push(group('✦', sets.length > 1 ? `${sets.length} sets completos!` : 'Set completo!', 2, 0));
   if (milestones.length > 0) {
@@ -60,4 +59,10 @@ export function groupRewardNotes(events: readonly CeremonyEvent[], max = MAX_NOT
     ...groups.slice(0, max - 1).map(strip),
     { icon: '✦', title: `+${rest.length} mas en tu album`, reward: amount > 0 ? `+${amount}` : undefined, stack: rest.length },
   ];
+}
+
+/** Font size (px, before the note is scaled by `scale`) of a note's caption: short titles reach 20 units on screen, long ones shrink to stay in two lines. */
+export function captionSize(title: string, scale: number): number {
+  if (title.length <= 14) return Math.max(24, Math.ceil(20 / scale));
+  return title.length <= 20 ? 21 : 18;
 }

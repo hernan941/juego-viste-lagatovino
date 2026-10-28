@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { groupRewardNotes } from '../../src/game/domain/rewardNotes';
+import { captionSize, groupRewardNotes } from '../../src/game/domain/rewardNotes';
 import type { CeremonyEvent } from '../../src/game/domain/ceremony';
 
 const milestones: CeremonyEvent[] = [
@@ -30,7 +30,7 @@ describe('groupRewardNotes', () => {
       { type: 'setCompleted', setId: 'a' }, { type: 'setCompleted', setId: 'b' },
       { type: 'unlock', ids: ['x'] }, { type: 'unlock', ids: ['y', 'z'] },
     ]);
-    expect(notes.map((n) => n.title)).toEqual(['Novedades para el modo foto!', '2 sets completos!']);
+    expect(notes.map((n) => n.title)).toEqual(['Novedades!', '2 sets completos!']);
     expect(notes.every((n) => n.reward === undefined)).toBe(true);
   });
 
@@ -69,5 +69,14 @@ describe('groupRewardNotes', () => {
   it('keeps every note when they fit', () => {
     expect(groupRewardNotes(milestones, 3)).toHaveLength(1);
     expect(groupRewardNotes([{ type: 'unlock', ids: ['x'] }, { type: 'setCompleted', setId: 'a' }])).toHaveLength(2);
+  });
+});
+
+describe('captionSize', () => {
+  it('writes short titles big (20 units or more once the note is scaled) and long ones smaller so they stay in two lines', () => {
+    expect(captionSize('Set completo!', 0.8) * 0.8).toBeGreaterThanOrEqual(20);
+    expect(captionSize('+4 mas en tu album', 0.8)).toBeLessThanOrEqual(captionSize('Novedades!', 0.8));
+    expect(captionSize('Le encantan los gorros con orejas!', 0.8)).toBeLessThan(captionSize('Set completo!', 0.8));
+    expect(captionSize('Set completo!', 1)).toBe(24);
   });
 });

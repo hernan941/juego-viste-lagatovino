@@ -60,6 +60,12 @@ describe('the notes of the ceremony (F20.R)', () => {
     }
   });
 
+  it('with 3 notes the captions are never covered by the next paper (the pile comes last)', () => {
+    const { scale, step } = noteRowFit(3);
+    const width = 161 * scale;
+    expect((width - step) / width).toBeLessThanOrEqual(0.02);
+  });
+
   it('keep the way out clear', () => {
     for (const exit of RUNWAY_EXITS) expect(rectsOverlap(noteRowRect(10), exit)).toBe(false);
   });
