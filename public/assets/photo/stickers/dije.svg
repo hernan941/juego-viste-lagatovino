@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- Viste Lagato · sticker "dije dorado": copia de art/ui/keychain/charm-star.svg (96 x 128) centrada en el lienzo de 128 x 128 de los stickers. Si el dije cambia, se actualiza a mano. -->
+  <g transform="translate(16 0)">
+  <!-- Borde blanco de sticker (silueta engrosada) y sombra suave abajo a la derecha. -->
+  <g fill="#1F1B1A" fill-opacity="0.16" stroke="#1F1B1A" stroke-opacity="0.16" stroke-width="14" stroke-linejoin="round" stroke-linecap="round" transform="translate(3 4)"><path d="M48 36 Q57.68 70.32 92 80 Q57.68 89.68 48 124 Q38.32 89.68 4 80 Q38.32 70.32 48 36 Z"/><path d="M35 17 a13 13 0 1 0 26 0 a13 13 0 1 0 -26 0 Z"/></g>
+  <g fill="#FFFFFF" stroke="#FFFFFF" stroke-width="14" stroke-linejoin="round" stroke-linecap="round"><path d="M48 36 Q57.68 70.32 92 80 Q57.68 89.68 48 124 Q38.32 89.68 4 80 Q38.32 70.32 48 36 Z"/><path d="M35 17 a13 13 0 1 0 26 0 a13 13 0 1 0 -26 0 Z"/></g>
+<!-- Cuelga de la argolla por el aro de arriba (48, 17). -->
+  <defs><clipPath id="charm"><path d="M48 36 Q57.68 70.32 92 80 Q57.68 89.68 48 124 Q38.32 89.68 4 80 Q38.32 70.32 48 36 Z"/></clipPath></defs>
+  <path d="M48 36 Q57.68 70.32 92 80 Q57.68 89.68 48 124 Q38.32 89.68 4 80 Q38.32 70.32 48 36 Z" fill="#F5D86A"/>
+  <ellipse cx="62" cy="104" rx="38" ry="26" fill="#D0B85A" clip-path="url(#charm)"/>
+  <path d="M35 17 a13 13 0 1 0 26 0 a13 13 0 1 0 -26 0 Z M42.5 17 a5.5 5.5 0 1 0 11 0 a5.5 5.5 0 1 0 -11 0 Z" fill="#F5D86A" fill-rule="evenodd" stroke="#1F1B1A" stroke-width="4.5" stroke-linejoin="round"/>
+  <path d="M48 36 Q57.68 70.32 92 80 Q57.68 89.68 48 124 Q38.32 89.68 4 80 Q38.32 70.32 48 36 Z" fill="none" stroke="#1F1B1A" stroke-width="5" stroke-linejoin="round"/>
+  <ellipse cx="36" cy="68" rx="7" ry="3.5" fill="#FFFFFF" fill-opacity="0.75" transform="rotate(-35 36 68)"/>
+  <circle cx="43" cy="61" r="2.2" fill="#FFFFFF" fill-opacity="0.75"/>
+  </g>
+</svg>

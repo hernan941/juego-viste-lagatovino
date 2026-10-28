@@ -170,6 +170,29 @@ describe('the keychains hang from their recipes', () => {
   });
 });
 
+describe('the gold ones show (K10)', () => {
+  const withStars = (...stars: (1 | 2 | 3 | 4 | 5)[]): Progress => ({
+    ...emptyProgress(0), keychains: Object.fromEntries(stars.map((s, i) => [catList[i]!.id, { ...recipeOf(i), stars: s }])),
+  });
+  const texts = (scene: { made: { texts: Record<string, unknown>[] } }) => scene.made.texts.map((t) => t.text);
+
+  it('says how many hang with a gold ring next to the tally', () => {
+    const { scene } = make(withStars(5, 4, 2));
+    expect(texts(scene)).toContain('2 dorados');
+  });
+
+  it('says nothing when none is gold yet', () => {
+    const { scene } = make(withStars(3, 1));
+    expect(texts(scene).some((t) => String(t).includes('dorado'))).toBe(false);
+  });
+
+  it('underlines the name of each gold keychain in sol, and no other', () => {
+    const { scene } = make(withStars(5, 2, 4));
+    const lines = (scene.made.graphics as { calls: string[] }[]).filter((g) => g.calls.includes('lineBetween'));
+    expect(lines).toHaveLength(2);
+  });
+});
+
 describe('touching a keychain', () => {
   it('the first tap swings it with a chain jingle, and only that one: the others keep still', () => {
     const { page, scene } = make(progressWith(0, 1));
@@ -306,6 +329,19 @@ describe('the keychain that was just hung flies to its hook (F19.5)', () => {
     await flying;
     expect(scene.played).toContain(SfxKeys.Click);
     expect(kc()[0]!.swings).toEqual([1]);
+  });
+
+  it('K1: the keychain that was just hung is hidden from the start, so it is not at rest on its hook before it flies', async () => {
+    const { page, scene } = make(progressWith(0, 4), { hang: catList[4]!.id });
+    expect(kc()[1]!.alpha).toBe(0);
+    expect(kc()[0]!.alpha).toBe(1);
+    const flying = page.reveal();
+    await settle();
+    // It starts the flight from below, still invisible, and only then does the tween show it.
+    expect(kc()[1]!.alpha).toBe(0);
+    expect(kc()[1]!.y).toBeGreaterThan(kc()[0]!.y + 100);
+    for (const r of scene.tweens.records) (r.config.onComplete as (() => void) | undefined)?.();
+    await flying;
   });
 
   it('a hang for a cat without a keychain flies nothing and does not fail', async () => {

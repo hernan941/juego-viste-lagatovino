@@ -19,6 +19,7 @@
     { "id": "sticker-corazon", "name": "Corazoncito", "texture": "photo-sticker-corazon", "unlock": "starter" },
     { "id": "sticker-huellita", "name": "Huellita", "texture": "photo-sticker-huellita", "unlock": "starter" },
     { "id": "sticker-xoxo", "name": "Xoxo, mau!", "texture": "photo-sticker-xoxo", "unlock": "starter" },
+    { "id": "sticker-dije", "name": "Dije dorado", "texture": "photo-sticker-dije", "unlock": { "set": "colgador-dorado" } },
     { "id": "sticker-fresa", "name": "Fresa", "texture": "photo-sticker-fresa", "unlock": { "set": "fresas-y-flores" } },
     { "id": "sticker-flor", "name": "Flor", "texture": "photo-sticker-flor", "unlock": { "set": "fresas-y-flores" } },
     { "id": "sticker-kofi", "name": "Kofi", "texture": "photo-sticker-kofi", "unlock": { "set": "michi-mood" } },

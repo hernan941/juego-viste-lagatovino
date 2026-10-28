@@ -13,6 +13,8 @@ export const albumLines = {
   percent: (pct: number): string => `Llevas el ${pct}% completo`,
   /** The secondary button of the Title. */
   titleButton: (pct: number): string => `Mi álbum · ${pct}%`, // Fonts.Title: accents allowed
+  /** The gold rings that hang in the hanger (Fonts.Voice: no accents). */
+  golds: (n: number): string => (n === 1 ? '1 dorado' : `${n} dorados`),
   tally: (t: Tally): string => `${t.got} de ${t.total}`,
   /** The count of the cats page: it counts tastes (not cats). */
   tastesTally: (t: Tally): string => `${t.got} de ${t.total} gustos`,

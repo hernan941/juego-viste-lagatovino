@@ -30,9 +30,8 @@ import { TAB_SIZE } from '../Tabs';
 import { liftFor } from '../ui';
 import type { ClothingItem } from '../ClothingItem';
 import { CELL_SIZE } from '../ClothingItem';
-import type { DressUpContext, DressUpController } from './DressUpController';
+import type { DressUpContext, DressUpController, DyeTagRequest } from './DressUpController';
 import { DYE_TAB_COLOR, WORN_TAG } from './layout';
-import type { DyeTagRequest } from './PurchaseController';
 
 /** Id of the tab (not a wardrobe category: the scene ignores it and this controller answers it). */
 export const DYE_TAB_ID = 'tintes';

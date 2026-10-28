@@ -23,7 +23,7 @@ const EXPECTED: Record<string, string[]> = {
   'ui/album': ['cover', 'page', 'tab-prendas', 'tab-gatos', 'tab-looks', 'tab-tintes', 'tab-colgador'],
   'photo/backgrounds': ['cuadriculado', 'cielo', 'vichy', 'rayado', 'estrellas', 'escenario'],
   'photo/frames': ['polaroid', 'cuaderno', 'dorado', 'acuarela', 'kofi'],
-  'photo/stickers': ['estrella', 'corazon', 'huellita', 'xoxo', 'fresa', 'flor', 'kofi', 'zzz', 'nube', 'ovillo', 'pescadito', 'luna'],
+  'photo/stickers': ['estrella', 'corazon', 'huellita', 'xoxo', 'fresa', 'flor', 'kofi', 'zzz', 'nube', 'ovillo', 'pescadito', 'luna', 'dije'],
   'photo': ['jar'],
   // F12.15
   'ui/runway': ['paper-card', 'stamp-star', 'stamp-star-sol', 'pencil-mark', 'note-polaroid'],

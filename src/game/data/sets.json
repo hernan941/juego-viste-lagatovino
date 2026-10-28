@@ -5,5 +5,5 @@
   { "id": "michi-mood", "name": "Michi mood", "requires": { "items": ["sweater-hoodie-orejitas", "sweater-huellitas", "neck-collar-cascabel", "accessory-taza-leche", "accessory-ovillo"] }, "reward": ["sticker-kofi"] },
   { "id": "la-paleta", "name": "La paleta", "requires": { "dyes": ["cielo", "rosa", "sol", "lila", "durazno", "naranjo", "lapiz", "frambuesa", "tomate", "hoja"] }, "reward": ["frame-acuarela"] },
   { "id": "todos-los-secretos", "name": "Todos los secretos", "requires": { "combos": ["galactico", "navidad", "fresas", "realeza", "enamorado", "arcoiris"] }, "reward": ["bg-estrellas"] },
-  { "id": "colgador-dorado", "name": "Colgador dorado", "requires": { "keychains": { "count": 12, "minStars": 4 } }, "reward": [] }
+  { "id": "colgador-dorado", "name": "Colgador dorado", "requires": { "keychains": { "count": 12, "minStars": 4 } }, "reward": ["sticker-dije"] }
 ]

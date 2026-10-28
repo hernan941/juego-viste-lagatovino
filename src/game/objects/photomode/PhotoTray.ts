@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { Fonts, Ink, ObjectEvents, colorToNumber } from '../../constants';
+import type { PoseFaceLayout } from '../../domain/catPose';
 import type { Point } from '../../domain/types';
 import { staggerDelays } from '../../domain/stagger';
 import { profileOf } from '../../systems/motion';
@@ -15,6 +16,8 @@ export interface TrayEntry {
   name: string;
   texture?: string;
   open: boolean;
+  /** A pose shows the head of the cat with its face (F3): the textures of the fur and of the face, and how they fit the button. */
+  face?: { fur: string; face: string } & Omit<PoseFaceLayout, 'expression'>;
 }
 
 /** Cell sizes and the number of columns of each tray. Every cell is at least 80 x 80 (the touch minimum of the kit). */
@@ -25,6 +28,8 @@ const LAYOUT: Record<TrayKind, { w: number; h: number; cols: number }> = {
   stickers: { w: 88, h: 88, cols: 3 },
 };
 const GAP = 12;
+/** The side of the canvas every cat and face texture is drawn on (anchors.json). */
+const CANVAS = 512;
 const INK = colorToNumber(Ink.tinta);
 const BORDER = colorToNumber(Ink.borde);
 const CARD = colorToNumber(Ink.tarjeta);
@@ -71,9 +76,21 @@ class TrayCell extends Phaser.GameObjects.Container {
   }
 
   private content(scene: Phaser.Scene, w: number, h: number): Phaser.GameObjects.GameObject[] {
-    const { open, texture, name } = this.entry;
+    const { open, texture, name, face } = this.entry;
     const out: Phaser.GameObjects.GameObject[] = [];
-    if (texture) {
+    if (face) {
+      // The head of the cat with the face of the pose, tilted like the pose, and the name small under it.
+      const head = scene.add.container(0, -12, [face.fur, face.face].map((key) => {
+        const img = scene.add.image(face.offset.x, face.offset.y, key);
+        // The layout is in px of the 512 canvas; the textures can be bigger, so crop and scale by their own size.
+        const k = img.width / CANVAS;
+        img.setScale(face.scale / k).setCrop(face.crop.x * k, face.crop.y * k, face.crop.width * k, face.crop.height * k);
+        return img.setAlpha(open ? 1 : 0.35);
+      }));
+      head.setAngle(face.angle);
+      out.push(head);
+      out.push(scene.add.text(0, h / 2 - 17, name, { fontFamily: Fonts.Voice, fontStyle: 'bold', fontSize: '20px', color: open ? Ink.tinta : Ink.mutedTexto, padding: { x: 4, y: 4 } }).setOrigin(0.5).setAlpha(open ? 1 : 0.6));
+    } else if (texture) {
       const img = scene.add.image(0, 0, texture);
       img.setScale(Math.min((w - 16) / img.width, (h - 16) / img.height));
       // A locked piece is only a sketch of itself.
@@ -146,6 +163,7 @@ class TrayCell extends Phaser.GameObjects.Container {
 export class PhotoTray extends Phaser.GameObjects.Container {
   private cells: TrayCell[] = [];
   private kind: TrayKind | null = null;
+  private enabled = true;
   private readonly chosen: Partial<Record<TrayKind, string | null>> = {};
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
@@ -168,12 +186,19 @@ export class PhotoTray extends Phaser.GameObjects.Container {
         this.emit(ObjectEvents.TrayLocked, ...a);
       });
       cell.on(ObjectEvents.TrayStickerGrab, (...a: unknown[]) => this.emit(ObjectEvents.TrayStickerGrab, ...a));
+      if (!this.enabled && cell.input) cell.input.enabled = false;
       cell.setAlpha(0);
       if (!p.reduced) cell.setScale(0.8);
       this.add(cell);
       this.cells.push(cell);
       this.scene.tweens.add({ targets: cell, alpha: 1, scale: 1, duration: p.reduced ? 180 : 260, delay: delays[i], ease: p.ease('Back.easeOut') });
     });
+  }
+
+  /** Turns the answer to the finger on or off (the scene dims the tray while something else has the stage); the next page keeps it. */
+  setEnabled(on: boolean): void {
+    this.enabled = on;
+    for (const cell of this.cells) if (cell.input) cell.input.enabled = on;
   }
 
   /** Marks the chosen piece of a kind (remembered when that page is not showing). */

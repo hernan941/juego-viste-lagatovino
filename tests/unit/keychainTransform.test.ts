@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { backIn, bounceOut, clamp01, sineInOut } from '../../src/game/domain/ease';
 import {
-  KEYCHAIN_PHASES, STREAK_FRAMES, phaseAt, streakStops, transformFrame, transformPlan,
+  KEYCHAIN_PHASES, POP, STREAK_FRAMES, phaseAt, sparkleCount, streakStops, transformFrame, transformPlan,
 } from '../../src/game/domain/keychainTransform';
 
 const FULL = { reduced: false, charm: false };
@@ -206,5 +206,36 @@ describe('streakStops', () => {
     expect(stops[6]!).toBeGreaterThanOrEqual(300 + 110);
     const step = stops[1]! - stops[0]!;
     stops.forEach((x, i) => { if (i > 0) expect(x - stops[i - 1]!).toBeCloseTo(step, 5); });
+  });
+});
+
+describe('K6: the pop of the porcelain, whatever the stars', () => {
+  const turnEnd = () => transformPlan(false).spans.find((s) => s.phase === 'turn')!.to;
+
+  it('is 0 before and after its window, and a rise and fall (0 -> 1 -> 0) inside it', () => {
+    const t0 = turnEnd();
+    expect(transformFrame(t0 - 50, FULL).pop).toBe(0);
+    expect(transformFrame(t0, FULL).pop).toBeCloseTo(0, 5);
+    expect(transformFrame(t0 + POP.ms / 2, FULL).pop).toBeCloseTo(1, 5);
+    expect(transformFrame(t0 + POP.ms, FULL).pop).toBeCloseTo(0, 5);
+    expect(transformFrame(t0 + POP.ms + 200, FULL).pop).toBe(0);
+    expect(transformFrame(transformPlan(false).total, FULL).pop).toBe(0);
+  });
+
+  it('is the same with or without the charm (the pop is for every keychain)', () => {
+    const t = turnEnd() + 60;
+    expect(transformFrame(t, { reduced: false, charm: true }).pop).toBe(transformFrame(t, FULL).pop);
+  });
+
+  it('is never there with reduced motion', () => {
+    for (let t = 0; t <= transformPlan(true).total; t += 20) expect(transformFrame(t, REDUCED).pop).toBe(0);
+  });
+});
+
+describe('sparkleCount (K6)', () => {
+  it('is 3 with the silver ring, 5 with the gold one and 7 with the charm', () => {
+    expect(sparkleCount({ metal: 'silver', charm: false })).toBe(3);
+    expect(sparkleCount({ metal: 'gold', charm: false })).toBe(5);
+    expect(sparkleCount({ metal: 'gold', charm: true })).toBe(7);
   });
 });

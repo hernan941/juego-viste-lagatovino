@@ -18,8 +18,8 @@ const h = vi.hoisted(() => ({
   buttons: [] as { label: string; emit(ev: string): void; destroyed: boolean; visible: boolean }[],
   cats: [] as { outfit: string[]; held: string[]; textures: Record<string, string>; destroyed: boolean }[],
   bubbles: [] as { text: string; destroyed: boolean }[],
-  trays: [] as { kinds: string[]; selected: Record<string, string | null>; emit(ev: string, ...a: unknown[]): void; destroyed: boolean }[],
-  tabs: [] as { emit(ev: string, ...a: unknown[]): void; destroyed: boolean }[],
+  trays: [] as { entries: Record<string, { id: string; face?: { fur: string; face: string; angle: number } }[]>; kinds: string[]; selected: Record<string, string | null>; emit(ev: string, ...a: unknown[]): void; destroyed: boolean; enabled: boolean }[],
+  tabs: [] as { emit(ev: string, ...a: unknown[]): void; destroyed: boolean; enabled: boolean }[],
   failTransform: false,
   transformations: [] as FakeTransformation[],
   cards: [] as FakeCard[],
@@ -78,7 +78,7 @@ vi.mock('../../src/game/objects/Cat', () => ({
     appear() {}
     hold(e: string) { this.held.push(e); }
     poses: string[] = [];
-    applyPose(id: string) { this.poses.push(id); return true; }
+    applyPose(id: string, o?: { instant?: boolean }) { this.poses.push(o?.instant ? `${id}!` : id); return true; }
     clearPose() { this.poses.push('none'); }
     squash() {}
     textures: Record<string, string> = {};
@@ -97,6 +97,7 @@ vi.mock('../../src/game/objects/Button', async () => {
       setVisible(v: boolean) { this.visible = v; return this; }
       setAlpha() { return this; }
       setScale() { return this; }
+      setAngle() { return this; }
       visible = true;
       destroy() { this.destroyed = true; }
     },
@@ -117,10 +118,12 @@ vi.mock('../../src/game/objects/photomode/PhotoTray', async () => {
   const { Emitter } = await import('./helpers/sceneFake');
   return {
     PhotoTray: class extends Emitter {
-      kinds: string[] = []; selected: Record<string, string | null> = {}; destroyed = false;
+      kinds: string[] = []; selected: Record<string, string | null> = {}; destroyed = false; enabled = true;
+      setEnabled(on: boolean) { this.enabled = on; }
       constructor() { super(); h.trays.push(this as never); }
       setDepth() { return this; }
-      show(kind: string) { this.kinds.push(kind); }
+      entries: Record<string, { id: string; face?: { fur: string; face: string; angle: number } }[]> = {};
+      show(kind: string, entries: { id: string; face?: { fur: string; face: string; angle: number } }[]) { this.kinds.push(kind); this.entries[kind] = entries; }
       select(kind: string, id: string | null) { this.selected[kind] = id; }
       getCellCenters() { return { 'bg-cielo': { x: 5, y: 5 } }; }
       destroy() { this.destroyed = true; }
@@ -131,7 +134,8 @@ vi.mock('../../src/game/objects/Tabs', async () => {
   const { Emitter } = await import('./helpers/sceneFake');
   return {
     Tabs: class extends Emitter {
-      destroyed = false;
+      destroyed = false; enabled = true;
+      setEnabled(on: boolean) { this.enabled = on; }
       constructor() { super(); h.tabs.push(this as never); }
       setDepth() { return this; }
       select() {}
@@ -393,13 +397,32 @@ describe('PhotoMode trays (F18.3)', () => {
     const scene = ready();
     tray().emit(ObjectEvents.TrayPick, 'backgrounds', 'bg-vichy');
     expect(scene.getComposition().background).toBe('bg-cuadriculado');
-    expect(h.bubbles.at(-1)!.text).toBe('Completa el set Abriguito');
+    expect(h.bubbles.at(-1)!.text).toMatch(/^Completa el set Abriguito \(\d+ de 5\)$/);
   });
 
   it('the tray also reports a locked press, with the same answer', () => {
     ready();
     tray().emit(ObjectEvents.TrayLocked, 'backgrounds', 'bg-rayado');
-    expect(h.bubbles.at(-1)!.text).toBe('Llena el 50 % del cuaderno');
+    expect(h.bubbles.at(-1)!.text).toMatch(/^Llena el 50 % del cuaderno \(vas en \d+ %\)$/);
+  });
+
+  it('F4: the hint of a set says how many pieces you have, and names the one that is left', () => {
+    const abrigo = catalog.sets.find((s) => s.id === 'abriguito')!.requires.items!;
+    const progress = { ...emptyProgress(0), owned: abrigo.slice(0, 3) };
+    const scene = open(undefined, undefined, progress);
+    run(scene);
+    tray().emit(ObjectEvents.TrayLocked, 'backgrounds', 'bg-vichy');
+    expect(h.bubbles.at(-1)!.text).toBe('Completa el set Abriguito (3 de 5)');
+    scene.registry.set(RegistryKeys.Progress, { ...progress, owned: abrigo.slice(0, 4) });
+    tray().emit(ObjectEvents.TrayLocked, 'backgrounds', 'bg-vichy');
+    expect(h.bubbles.at(-1)!.text).toBe(`Te falta ${catalog.clothes.find((c) => c.id === abrigo[4])!.name} para el set Abriguito`);
+  });
+
+  it('F4: the hint of the five star background shows the best stars so far', () => {
+    const scene = open(undefined, undefined, { ...emptyProgress(0), bestStars: { naranja: 4 } });
+    run(scene);
+    tray().emit(ObjectEvents.TrayLocked, 'backgrounds', 'bg-escenario');
+    expect(h.bubbles.at(-1)!.text).toBe('Consigue 5 estrellas (tu mejor: 4)');
   });
 
   it('a pose is applied to the cat by id without the prefix', () => {
@@ -732,6 +755,144 @@ describe('PhotoMode: the keychain is ready (F19.4)', () => {
     expect(progressOf(scene).keychains[catId]).toMatchObject({ catId, catName: 'Luna', stars: 4 });
     expect(h.sheets).toHaveLength(0);
     expect(h.go).toHaveBeenCalledWith(scene, 'hang', { from: 'DressUp', tab: 'colgador', hang: catId });
+  });
+
+  it('K2: with an empty hook the keychain is hung as soon as the packaging is ready, whatever way the player leaves', async () => {
+    const scene = open(rating(4));
+    expect(progressOf(scene).keychains[catId]).toBeUndefined();
+    await finishSave(scene);
+    expect(progressOf(scene).keychains[catId]).toMatchObject({ catId, stars: 4 });
+    // A tap on the card puts it away and the keychain stays hung.
+    h.cards[0]!.emit(ObjectEvents.PackageTap);
+    await vi.waitFor(() => expect(h.cards[0]!.destroyed).toBe(true));
+    expect(progressOf(scene).keychains[catId]).toMatchObject({ catId, stars: 4 });
+  });
+
+  it('K2: [Colgarlo] after the automatic hanging only goes to see it: no question and the same keychain', async () => {
+    const scene = open(rating(4));
+    await finishSave(scene);
+    const hung = progressOf(scene).keychains[catId];
+    button('Colgarlo').emit(ObjectEvents.ButtonClick);
+    expect(h.sheets).toHaveLength(0);
+    expect(progressOf(scene).keychains[catId]).toBe(hung);
+    expect(h.go).toHaveBeenCalledWith(scene, 'hang', { from: 'DressUp', tab: 'colgador', hang: catId });
+  });
+
+  it('K2: with a taken hook nothing is written until the player answers', async () => {
+    const scene = open(rating(5), undefined, { ...emptyProgress(0), keychains: { [catId]: oldRecipe(3) } });
+    await finishSave(scene);
+    expect(progressOf(scene).keychains[catId]!.stars).toBe(3);
+    h.cards[0]!.emit(ObjectEvents.PackageTap);
+    await vi.waitFor(() => expect(h.cards[0]!.destroyed).toBe(true));
+    expect(progressOf(scene).keychains[catId]!.stars).toBe(3);
+  });
+
+  it('K2: after putting the packaging away, saving the same cat again asks (the hook is taken by the first one)', async () => {
+    const scene = open(rating(4));
+    await finishSave(scene);
+    h.cards[0]!.emit(ObjectEvents.PackageTap);
+    await vi.waitFor(() => expect(h.cards[0]!.destroyed).toBe(true));
+    save();
+    h.transformations[1]!.finish();
+    await vi.waitFor(() => expect(h.cards).toHaveLength(2));
+    await vi.waitFor(() => expect(button('Colgarlo')).toBeDefined());
+    button('Colgarlo').emit(ObjectEvents.ButtonClick);
+    expect(h.sheets).toHaveLength(1);
+  });
+
+  it('F3: the buttons of the poses carry the head of this cat with the face of each pose', () => {
+    open();
+    h.tabs[0]!.emit(ObjectEvents.TabSelect, 'poses');
+    const poses = h.trays[0]!.entries['poses']!;
+    expect(poses.map((p) => p.face?.face)).toEqual(['face-normal', 'face-amor', 'face-feliz', 'face-parpadeo']);
+    expect(poses.every((p) => p.face?.fur === catalog.cats[0]!.texture)).toBe(true);
+    expect(poses[1]!.face!.angle).toBe(8);
+  });
+
+  it('F6: putting the packaging away gives the cat back in the pose that was chosen (face and tilt), also after the keychain path', async () => {
+    const scene = ready();
+    tray().emit(ObjectEvents.TrayPick, 'poses', 'pose-coqueto');
+    save();
+    h.transformations[0]!.finish();
+    await vi.waitFor(() => expect(phaseOf(scene)).toBe('ready'));
+    h.cards[0]!.emit(ObjectEvents.PackageTap);
+    await vi.waitFor(() => expect(h.cards[0]!.destroyed).toBe(true));
+    expect(h.transformations[0]!.restored).toBe(true);
+    expect(catPoses().at(-1)).toBe('coqueto!');
+  });
+
+  it('F6: the same when the plain photo is saved because the keychain failed', async () => {
+    h.failTransform = true;
+    const scene = ready();
+    tray().emit(ObjectEvents.TrayPick, 'poses', 'pose-coqueto');
+    save();
+    await vi.waitFor(() => expect(info(scene).photoBusy).toBe(false));
+    expect(catPoses().at(-1)).toBe('coqueto!');
+  });
+
+  it('K4: while the keychain is made the tray, the tabs and the jar dim and stop answering; they come back when the packaging is put away', async () => {
+    const scene = open(rating(4));
+    const dims = () => scene.tweens.records.filter((r) => !r.removed && (r.config.targets as unknown[]).length === 4 && r.config.alpha !== undefined);
+    run(scene);
+    save();
+    expect(h.trays[0]!.enabled).toBe(false);
+    expect(h.tabs[0]!.enabled).toBe(false);
+    expect(dims().map((r) => r.config.alpha)).toEqual([0.35]);
+    // Nothing on the table changes behind the card.
+    h.trays[0]!.emit(ObjectEvents.TrayPick, 'backgrounds', 'bg-cielo');
+    expect(scene.getE2EUi().info.background).toBe('bg-cuadriculado');
+    h.transformations[0]!.finish();
+    await vi.waitFor(() => expect(phaseOf(scene)).toBe('ready'));
+    expect(h.trays[0]!.enabled).toBe(false);
+    h.cards[0]!.emit(ObjectEvents.PackageTap);
+    await vi.waitFor(() => expect(h.cards[0]!.destroyed).toBe(true));
+    expect(h.trays[0]!.enabled).toBe(true);
+    expect(h.tabs[0]!.enabled).toBe(true);
+    expect(dims().map((r) => r.config.alpha)).toEqual([1]);
+    h.trays[0]!.emit(ObjectEvents.TrayPick, 'backgrounds', 'bg-cielo');
+    expect(scene.getE2EUi().info.background).toBe('bg-cielo');
+  });
+
+  it('K4: the plain photo way out also gives the table back', async () => {
+    h.failTransform = true;
+    const scene = open();
+    save();
+    expect(h.trays[0]!.enabled).toBe(false);
+    run(scene);
+    await vi.waitFor(() => expect(scene.getE2EUi().info.photoBusy).toBe(false));
+    expect(h.trays[0]!.enabled).toBe(true);
+  });
+
+  it('K8: [Colgarlo] gulps the thumbnail when it lands (a pop and a tic) and then nudges every 3 s until it is touched', async () => {
+    const scene = open(rating(4));
+    await finishSave(scene);
+    const mine = () => scene.tweens.records.filter((r) => r.config.targets === button('Colgarlo'));
+    await vi.waitFor(() => expect(mine().some((r) => r.config.scale !== undefined)).toBe(true));
+    const gulp = mine().find((r) => r.config.scale !== undefined)!;
+    expect(gulp.config.scale).toMatchObject({ to: 1 });
+    expect((gulp.config.scale as { from: number }).from).toBeCloseTo(1.12, 5);
+    expect(scene.played).toContain('sfx-click');
+    const wag = mine().find((r) => r.config.repeat === -1)!;
+    expect(wag.config.repeatDelay).toBe(3000);
+    expect(wag.config.yoyo).toBe(true);
+    // Leaving the ready state takes the nudge away with the button.
+    h.cards[0]!.emit(ObjectEvents.PackageTap);
+    await vi.waitFor(() => expect(h.cards[0]!.destroyed).toBe(true));
+    expect(wag.removed).toBe(true);
+  });
+
+  it('K8: with reduced motion the button pops softly and never nudges', async () => {
+    const scene = new PhotoMode() as unknown as Scene;
+    scene.registry.set(RegistryKeys.Catalog, catalog);
+    scene.registry.set(RegistryKeys.Anchors, anchors);
+    scene.registry.set(RegistryKeys.Progress, emptyProgress(0));
+    scene.registry.set(RegistryKeys.ReducedMotion, true);
+    for (const [k, v] of Object.entries({ catId: catalog.cats[0]!.id, catName: 'Luna', outfit: { sweater: sweater.id } })) scene.registry.set(k, v);
+    scene.init(rating(4));
+    scene.create();
+    await finishSave(scene);
+    const mine = scene.tweens.records.filter((r) => r.config.targets === button('Colgarlo'));
+    expect(mine.some((r) => r.config.repeat === -1)).toBe(false);
   });
 
   it('presses [Colgarlo] only once', async () => {

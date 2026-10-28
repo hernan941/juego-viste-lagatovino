@@ -12,6 +12,11 @@ describe('album copy (L6, L7, T9)', () => {
     expect(albumLines.dyeSketch(50)).toBe('Cuesta 50 botones. En el probador es gratis');
   });
 
+  it('K10: the hanger counts its gold rings, in the singular too', () => {
+    expect(albumLines.golds(1)).toBe('1 dorado');
+    expect(albumLines.golds(3)).toBe('3 dorados');
+  });
+
   it('T9: the dye tip says "sweater" like the rest of the game', () => {
     expect(dyeLines.tip).toBe('Arrastra el frasco a un sweater');
   });

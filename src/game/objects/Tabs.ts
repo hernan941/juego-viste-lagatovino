@@ -133,6 +133,11 @@ export class Tabs extends Phaser.GameObjects.Container {
     this.x -= (TAB_SIZE + TAB_GAP) / 2;
   }
 
+  /** Turns the answer to the finger on or off (the scene dims the row while something else has the stage). */
+  setEnabled(on: boolean): void {
+    for (const t of this.tabs) if (t.input) t.input.enabled = on;
+  }
+
   get selectedId(): string | null {
     return this.current;
   }

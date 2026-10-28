@@ -1,11 +1,13 @@
 import Phaser from 'phaser';
 import { Fonts, GAME_HEIGHT, GAME_WIDTH, Ink, KeychainTextures, MEOW_KEYS, ObjectEvents, RegistryKeys, SceneKeys, SfxKeys, TextureKeys } from '../constants';
 import type { GameData } from '../data/schema';
-import { photoUnlocks, type PhotoUnlocks } from '../domain/album';
-import { keychainLines, photoLines, withBrand } from '../domain/copy';
-import { defaultReplace, hangKeychain, keychainRecipe, needsConfirm } from '../domain/keychain';
+import { completion, photoUnlocks, type PhotoUnlocks } from '../domain/album';
+import { setEntries } from '../domain/albumEntries';
+import { keychainLines, photoLines, withBrand, type UnlockProgress } from '../domain/copy';
+import { autoHang, defaultReplace, hangKeychain, keychainRecipe, needsConfirm } from '../domain/keychain';
 import { packageOps } from '../domain/keychainPackage';
-import { catPose } from '../domain/catPose';
+import { catPose, poseFaceLayout } from '../domain/catPose';
+import { faceKey } from '../data/assets';
 import type { Expression } from '../domain/expressions';
 import { sheetOps, SHEET_LAYOUT, starRow, type SheetOp } from '../domain/photoSheet';
 import { isInsideDropZone } from '../domain/dropZone';
@@ -16,7 +18,7 @@ import {
 } from '../domain/photoComposition';
 import { hangArgs } from '../domain/flow';
 import { emptyProgress } from '../domain/progress';
-import type { AnchorsDef, ItemDye, KeychainRecipe, PhotoPiece, PhotoPose, PlacedSticker, Point, Progress, Rect, Stars } from '../domain/types';
+import type { AnchorsDef, ItemDye, KeychainRecipe, PhotoPiece, PhotoPose, PhotoUnlock, PlacedSticker, Point, Progress, Rect, Stars } from '../domain/types';
 import type { E2EUi, UiState } from '../e2eHook';
 import { Button } from '../objects/Button';
 import { Cat } from '../objects/Cat';
@@ -31,7 +33,7 @@ import { keychainData } from '../objects/keychain/Keychain';
 import { KeychainTransformation } from '../objects/keychain/KeychainTransformation';
 import { PackageCard } from '../objects/keychain/PackageCard';
 import { ReplaceSheet } from '../objects/keychain/ReplaceSheet';
-import { PhotoTray, type TrayKind } from '../objects/photomode/PhotoTray';
+import { PhotoTray, type TrayEntry, type TrayKind } from '../objects/photomode/PhotoTray';
 import { Sticker } from '../objects/photomode/Sticker';
 import { tabIconKey } from '../objects/tabIcons';
 import { touchEnv } from '../objects/ui';
@@ -53,6 +55,11 @@ const PHOTO_RECT: Rect = { x: SHEET.x - PHOTO_SIZE.width / 2, y: SHEET.y - PHOTO
 /** The paper panel on the left with the tabs and the tray, and the jar on the right: dropping a sticker on either takes it off the photo. */
 const PANEL: Rect = { x: 25, y: 150, width: 330, height: 510 };
 const TRAY_ORIGIN: Point = { x: 46, y: 215 };
+/** The table steps back while the keychain is made (K4): how dim it gets and how far (px) it moves away. */
+/** The box of the head on a pose button (F3). */
+const POSE_FACE_BOX = { width: 110, height: 50 };
+const STAGE_DIM = 0.35;
+const STAGE_AWAY = 20;
 const JAR = { x: 1090, y: 330, width: 122, height: 150 };
 const JAR_ZONE: Rect = { x: JAR.x - JAR.width / 2, y: JAR.y - JAR.height / 2, width: JAR.width, height: JAR.height };
 const DEPTH = { sheet: 2, cat: 3, placed: 4, panel: 5, tray: 6, card: 7, keychain: 8, buttons: 20, held: 40 };
@@ -106,6 +113,9 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
   private tray!: PhotoTray;
   private jar!: Phaser.GameObjects.Image;
   private count!: Phaser.GameObjects.Text;
+  /** The parts of the table that step back while the keychain is made (K4), and where each one rests. */
+  private stageParts: (Phaser.GameObjects.Container | Phaser.GameObjects.Image)[] = [];
+  private stage: { part: Phaser.GameObjects.Container | Phaser.GameObjects.Image; x: number; away: number }[] = [];
   private zzz: Phaser.GameObjects.Image | null = null;
   private save!: Button;
   private keep!: Button;
@@ -124,6 +134,8 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
   private readyTitle: Phaser.GameObjects.Text | null = null;
   private replaceSheet: ReplaceSheet | null = null;
   private hanging = false;
+  /** True once the recipe of this packaging was hung on its own on an empty hook (ADR 0021, K2): [Colgarlo] only goes to see it. */
+  private autoHung = false;
   private skippable = false;
   private putting = false;
   private closed = false;
@@ -153,6 +165,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     this.readyTitle = null;
     this.replaceSheet = null;
     this.hanging = false;
+    this.autoHung = false;
     this.skippable = false;
     this.putting = false;
     this.closed = false;
@@ -281,6 +294,24 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     this.jar = this.add.image(JAR.x, JAR.y, 'photo-jar').setDisplaySize(JAR.width, JAR.height).setDepth(DEPTH.tray);
     this.count = this.add.text(JAR.x, JAR.y + JAR.height / 2 + 24, '', { fontFamily: Fonts.Voice, fontStyle: 'bold', fontSize: '32px', color: Ink.tinta, padding: { x: 4, y: 6 } }).setOrigin(0.5).setDepth(DEPTH.tray);
     this.updateCount(false);
+    this.stage = [
+      { part: this.panel, away: -STAGE_AWAY }, { part: this.tabs, away: -STAGE_AWAY }, { part: this.tray, away: -STAGE_AWAY }, { part: this.jar, away: STAGE_AWAY },
+    ].map((s) => ({ ...s, x: s.part.x }));
+    this.stageParts = this.stage.map((s) => s.part);
+  }
+
+  /** "The lights go down" (K4): while the keychain is made the table dims, steps back and stops answering; it comes back with a pop. */
+  private setStage(busy: boolean) {
+    const p = profileOf(this);
+    this.tray.setEnabled(!busy);
+    this.tabs.setEnabled(!busy);
+    // Every tween of these parts goes first (killing by one part also kills the shared one), then the new ones are added.
+    for (const part of this.stageParts) this.tweens.killTweensOf(part);
+    this.tweens.add({ targets: this.stageParts, alpha: busy ? STAGE_DIM : 1, duration: busy ? 220 : 280 });
+    if (p.reduced) return;
+    for (const s of this.stage) {
+      this.tweens.add({ targets: s.part, x: busy ? s.x + s.away : s.x, duration: busy ? 260 : 320, ease: busy ? 'Sine.easeOut' : p.ease('Back.easeOut') });
+    }
   }
 
   private listOf(kind: TrayKind): readonly (PhotoPiece | PhotoPose)[] {
@@ -300,15 +331,26 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     this.kind = kind;
     const open = this.openOf(kind);
     const list = this.listOf(kind);
-    const entries = pieceStates(list, open).map((s, i) => ({ ...s, name: list[i]!.name, texture: (list[i] as PhotoPiece).texture }));
+    const entries = pieceStates(list, open).map((s, i) => ({
+      ...s, name: list[i]!.name, texture: (list[i] as PhotoPiece).texture, face: kind === 'poses' ? this.poseFace(list[i]!.id) : undefined,
+    }));
     for (const k of KINDS) this.tray.select(k, this.chosen(k));
     this.tray.show(kind, entries);
     this.tray.select(kind, this.chosen(kind));
   }
 
+  /** The head of this cat with the face of a pose, for its button (F3): null for a pose the cat does not know. */
+  private poseFace(id: string): TrayEntry['face'] | undefined {
+    const pose = catPose(id);
+    const cat = this.catalog.cats.find((c) => c.id === this.look.catId);
+    if (!pose || !cat) return undefined;
+    const { expression, ...layout } = poseFaceLayout(pose, POSE_FACE_BOX);
+    return { fur: cat.texture, face: faceKey(expression), ...layout };
+  }
+
   /** A piece of the tray was chosen: it goes onto the table, if it is unlocked. */
   private pick(kind: TrayKind, id: string) {
-    if (!this.ready || this.leaving || kind === 'stickers') return;
+    if (!this.ready || this.leaving || this.photoBusy || kind === 'stickers') return;
     if (!canPick(id, this.listOf(kind), this.openOf(kind))) return this.hintFor(kind, id);
     if (this.chosen(kind) === id) return;
     const audio = getAudio(this);
@@ -353,10 +395,22 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
 
   /** A locked piece shows how to get it. */
   private hintFor(kind: TrayKind, id: string) {
-    if (!this.ready || this.leaving) return;
+    if (!this.ready || this.leaving || this.photoBusy) return;
     const piece = this.listOf(kind).find((p) => p.id === id);
     if (!piece || this.openOf(kind).has(id)) return;
-    this.toast(photoLines.unlockHint(piece.unlock, (setId) => this.catalog.sets.find((s) => s.id === setId)?.name));
+    this.toast(photoLines.unlockHint(piece.unlock, (setId) => this.catalog.sets.find((s) => s.id === setId)?.name, this.hintProgress(piece.unlock)));
+  }
+
+  /** How far the player is from a locked piece, so the hint says it (F4): the pieces of its set, the percent of the notebook, the best stars. */
+  private hintProgress(unlock: PhotoUnlock): UnlockProgress {
+    if (unlock === 'starter') return {};
+    const progress = this.latestProgress();
+    if ('set' in unlock) {
+      const set = setEntries({ catalog: this.catalog, progress, seen: progress.albumSeen }).find((e) => e.id === unlock.set);
+      return set ? { set: { got: set.gotCount, total: set.total, missing: set.pieces.filter((p) => !p.got).map((p) => p.label) } } : {};
+    }
+    if ('albumPct' in unlock) return { pct: completion(progress, this.catalog).pct };
+    return { best: Math.max(0, ...Object.values(progress.bestStars)) };
   }
 
   /** The cat takes the pose that is chosen (with a little squash), and the dormilón gets its "zzz". */
@@ -365,6 +419,11 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     this.cat.applyPose(key);
     this.cat.squash();
     this.showZzz(key === 'dormilon');
+  }
+
+  /** Gives the cat back in the pose that is chosen, face and tilt, at once: whatever the transformation or the photo did to it, the table is as the player left it (F6). */
+  private restorePose() {
+    this.cat.applyPose(this.poseKey(), { instant: true });
   }
 
   /** The sleeping pose brings its "zzz" next to the head; any other pose sends it away. */
@@ -387,7 +446,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
 
   /** Pulls a sticker off the sheet: it peels, grows and goes to the finger. */
   private grabFromTray(id: string, pointer: Phaser.Input.Pointer) {
-    if (!this.ready || this.leaving || this.held) return;
+    if (!this.ready || this.leaving || this.photoBusy || this.held) return;
     const piece = this.catalog.photo.stickers.find((s) => s.id === id);
     if (!piece || !canPick(id, this.catalog.photo.stickers, this.unlocks.stickers)) return;
     const sticker = new Sticker(this, pointer.x, pointer.y, id, piece.texture);
@@ -397,7 +456,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
 
   /** Picks a sticker of the photo up again. */
   private grabPlaced(sticker: Sticker, pointer: Phaser.Input.Pointer) {
-    if (!this.ready || this.leaving || this.held) return;
+    if (!this.ready || this.leaving || this.photoBusy || this.held) return;
     const i = this.placed.indexOf(sticker);
     if (i < 0) return;
     const from = this.stickerData[i]!;
@@ -557,6 +616,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
   private async snap() {
     if (this.photoBusy || this.leaving) return;
     this.photoBusy = true;
+    this.setStage(true);
     getAudio(this).play(SfxKeys.Shutter);
     const audio = getAudio(this);
     const recipe = this.recipe();
@@ -608,9 +668,21 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     this.photos++;
     this.lastPhoto = file;
     this.keychainPhase = 'ready';
+    this.hangOnEmptyHook();
     card.enableTap();
     card.on(ObjectEvents.PackageTap, () => void this.putAway());
     this.showReady(card);
+  }
+
+  /** An empty hook gets the keychain at once, so it is in the hanger however the player leaves; a taken one is asked about in [Colgarlo]. */
+  private hangOnEmptyHook() {
+    const recipe = this.madeRecipe;
+    if (!recipe) return;
+    const progress = this.latestProgress();
+    const keychains = autoHang(progress.keychains, recipe);
+    if (!keychains) return;
+    this.registry.set(RegistryKeys.Progress, { ...progress, keychains });
+    this.autoHung = true;
   }
 
   /** "¡Tu llavero está listo!": [Colgarlo] takes the place of [Guardar] (the other button stays: [Seguir vistiendo]), and the print flies to it. */
@@ -630,13 +702,31 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
       this.readyTitle.setAngle(-3);
       this.tweens.add({ targets: this.readyTitle, angle: 0, duration: 320, ease: p.ease('Back.easeOut') });
     }
-    void card.flyThumb({ x: 1090, y: 560 });
+    void card.flyThumb({ x: 1090, y: 560 }).then(() => this.gulp());
+  }
+
+  /** The thumbnail lands on [Colgarlo] and the button swallows it (K8): a pop and a tic, then a soft nudge every 3 s until it is pressed. */
+  private gulp() {
+    const button = this.hangButton;
+    if (!button || this.closed || this.leaving) return;
+    const p = profileOf(this);
+    getAudio(this).play(SfxKeys.Click);
+    this.tweens.killTweensOf(button);
+    button.setAlpha(1);
+    this.tweens.add({ targets: button, scale: { from: 1 + 0.12 * p.squash, to: 1 }, duration: 240, ease: p.ease('Back.easeOut') });
+    if (p.reduced) return;
+    this.tweens.add({ targets: button, angle: { from: -3, to: 3 }, duration: 110, yoyo: true, repeat: -1, repeatDelay: 3000, ease: 'Sine.easeInOut' });
   }
 
   /** [Colgarlo]: if that cat already has a keychain the player is asked; otherwise it is hung at once. */
   private hangIt() {
     const recipe = this.madeRecipe;
     if (!recipe || this.hanging || this.leaving || this.replaceSheet) return;
+    if (this.hangButton) {
+      this.tweens.killTweensOf(this.hangButton);
+      this.hangButton.setAngle(0);
+    }
+    if (this.autoHung) return this.finishHang(recipe, undefined);
     const collection = this.latestProgress().keychains;
     if (!needsConfirm(collection, recipe)) return this.finishHang(recipe, undefined);
     const before = collection[recipe.catId]!;
@@ -661,9 +751,10 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     if (this.hanging || this.leaving || this.closed) return;
     this.hanging = true;
     const progress = this.latestProgress();
-    const result = hangKeychain(progress.keychains, recipe, confirm);
-    const hung = result.replaced || result.isFirst;
-    if (hung) this.registry.set(RegistryKeys.Progress, { ...progress, keychains: result.collection });
+    // Already hung on its own: nothing to write (it would ask against itself), it only goes to see it fly to its hook.
+    const result = this.autoHung ? null : hangKeychain(progress.keychains, recipe, confirm);
+    const hung = result === null || result.replaced || result.isFirst;
+    if (result && hung) this.registry.set(RegistryKeys.Progress, { ...progress, keychains: result.collection });
     this.leaving = true;
     go(this, 'hang', hangArgs(recipe.catId, hung));
   }
@@ -681,6 +772,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     this.card = null;
     this.hideReady();
     transformation.restoreCat();
+    this.restorePose();
     transformation.destroy();
     this.transformation = null;
     this.keychainPhase = null;
@@ -688,17 +780,20 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     this.cat.squash();
     this.putting = false;
     this.photoBusy = false;
+    this.setStage(false);
   }
 
   /** Takes [Colgarlo], its title and the question away and brings [Guardar] back. */
   private hideReady() {
     this.replaceSheet?.destroy();
     this.replaceSheet = null;
+    if (this.hangButton) this.tweens.killTweensOf(this.hangButton);
     this.hangButton?.destroy();
     this.hangButton = null;
     this.readyTitle?.destroy();
     this.readyTitle = null;
     this.madeRecipe = null;
+    this.autoHung = false;
     this.count.setVisible(true);
     this.save.setVisible(true);
   }
@@ -706,6 +801,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
   /** The way out when the keychain cannot be made: the composition of the table as a PNG, with the flash. The cat does not change. */
   private async savePlainPhoto(transformation: KeychainTransformation) {
     transformation.restoreCat();
+    this.restorePose();
     transformation.destroy();
     this.transformation = null;
     this.keychainPhase = null;
@@ -718,6 +814,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     this.photos++;
     this.lastPhoto = file;
     this.photoBusy = false;
+    this.setStage(false);
     this.toast(photoLines.saved);
   }
 
@@ -807,7 +904,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     const unlocked = Object.fromEntries(KINDS.map((k) => [k, [...this.unlocks[k]]]));
     return {
       ready: this.ready && !this.leaving,
-      buttons: { save: this.save.getCenter(), keep: this.keep.getCenter(), mute: this.mute.getCenter(), motion: this.motion.getCenter() },
+      buttons: { save: this.save.getCenter(), keep: this.keep.getCenter(), mute: this.mute.getCenter(), motion: this.motion.getCenter(), ...(this.hangButton ? { hang: this.hangButton.getCenter() } : {}) },
       points,
       info: {
         catId: this.look.catId, catName: this.look.catName, layers: this.cat.wornIds, stars: this.look.rating?.stars ?? null,
