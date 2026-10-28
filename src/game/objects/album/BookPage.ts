@@ -90,6 +90,11 @@ export abstract class BookPage extends Phaser.GameObjects.Container implements A
     ]);
   }
 
+  /** X (in the left half) where the count of the heading begins, so something can sit at its left. */
+  protected tallyEdge(): number {
+    return HALF.width / 2 - 6 - (this.tallyText?.width ?? 0);
+  }
+
   /** Changes the count at the right of the title (a page with two sheets counts something else on each). */
   protected setTally(tally: string): void {
     this.tallyText?.setText(tally);

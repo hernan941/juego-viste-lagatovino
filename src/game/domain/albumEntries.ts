@@ -4,7 +4,8 @@ import { completedSets, gotEntries, seenIdOf, tasteKeys, type AlbumCatalogs } fr
 import { WATER_DYE } from './dye';
 import { dyePrice, priceOf } from './economy';
 import { albumLines } from './copy/album';
-import type { CatDef, ClothingDef, EconomyRules, KeychainRecipe, Progress, SetDef, Stars } from './types';
+import { ringFor } from './keychain';
+import type { CatDef, ClothingDef, EconomyRules, KeychainRecipe, KeychainRules, Progress, SetDef, Stars } from './types';
 
 /** The notebook is open: each page lives in one half of the sheet, and the rings of the spine run down the middle (x = 0). */
 export const HALF = {
@@ -217,6 +218,11 @@ export function keychainEntries(ctx: EntryContext): KeychainEntry[] {
     const id = `keychain:${cat.id}`;
     return { id, catId: cat.id, name: cat.name, def: cat, recipe, stars: recipe?.stars ?? null, isNew: recipe !== null && !seen.has(id) };
   });
+}
+
+/** How many hooks hold a keychain with a gold ring (4 stars or more, from the rules of the photo mode): the long goal of the hanger (K10). */
+export function goldCount(entries: readonly KeychainEntry[], rules: Pick<KeychainRules, 'goldFrom' | 'charmFrom'>): number {
+  return entries.filter((e) => e.stars !== null && ringFor(e.stars, rules).metal === 'gold').length;
 }
 
 /**

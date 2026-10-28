@@ -1,16 +1,16 @@
 import Phaser from 'phaser';
 import { Fonts, Ink, KeychainTextures, ObjectEvents, RegistryKeys, SfxKeys, TextureKeys, colorToNumber } from '../../constants';
-import { HANGER, hangerHooks, keychainEntries, type KeychainEntry } from '../../domain/albumEntries';
+import { HANGER, goldCount, hangerHooks, keychainEntries, type KeychainEntry } from '../../domain/albumEntries';
 import { pageTally } from '../../domain/albumPages';
 import { albumLines, keychainLines } from '../../domain/copy';
-import { pushAngle, pushStrength } from '../../domain/keychain';
+import { pushAngle, pushStrength, ringFor } from '../../domain/keychain';
 import { fitKeychain } from '../../domain/keychainPackage';
-import type { AnchorsDef } from '../../domain/types';
+import type { AnchorsDef, KeychainRules } from '../../domain/types';
 import { getAudio } from '../../plugins/AudioPlugin';
 import { profileOf } from '../../systems/motion';
 import { Keychain, keychainData } from '../keychain/Keychain';
 import type { AlbumPageContext } from './AlbumPage';
-import { BookPage, entryContext } from './BookPage';
+import { BookPage, HEADER_Y, entryContext } from './BookPage';
 import { makeTappable } from './makeTappable';
 import { sketchImage } from './pencil';
 
@@ -73,6 +73,7 @@ export class HangerPage extends BookPage {
     const board = scene.add.image(0, HANGER.centerY, KeychainTextures.HangerBoard).setScale(HANGER.scale);
     this.addAt(board, 0);
     this.heading(albumLines.tally(pageTally('colgador', ctx.completion.sections)));
+    this.goldHeading();
     hangerHooks(this.entries.length).forEach((hook) => {
       const entry = this.entries[hook.index]!;
       const cell = this.buildHook(entry);
@@ -80,6 +81,23 @@ export class HangerPage extends BookPage {
       this.place(hook.side, entry.id, cell, entry.isNew, { x: CELL.width / 2 - 14, y: -CELL.height / 2 + 12 });
     });
     this.popIn(this.cellList());
+  }
+
+  /** The rules of the rings (the defaults when the catalog has none, as the tests do). */
+  private rules() {
+    const rules: Partial<KeychainRules> = this.ctx.catalog.photo.keychain;
+    return { goldFrom: rules.goldFrom ?? 4, charmFrom: rules.charmFrom ?? 5 };
+  }
+
+  /** "3 dorados" with a gold star, at the left of the tally: the long goal of the hanger is seen (K10). */
+  private goldHeading() {
+    const n = goldCount(this.entries, this.rules());
+    if (n === 0) return;
+    const text = this.scene.add
+      .text(this.tallyEdge() - 14, HEADER_Y + 4, albumLines.golds(n), { fontFamily: Fonts.Voice, fontStyle: 'bold', fontSize: '26px', color: Ink.tinta, padding: { x: 2, y: 8 } })
+      .setOrigin(1, 0.5);
+    const star = this.scene.add.image(text.x - text.width - 18, HEADER_Y + 4, TextureKeys.Sparkle).setScale(0.45).setTint(colorToNumber(Ink.sol));
+    this.left.add([text, star]);
   }
 
   protected shown(): { id: string; state: string }[] {
@@ -121,6 +139,9 @@ export class HangerPage extends BookPage {
       // An empty hook: the cat in pencil, a little under the hook.
       parts.push(sketchImage(scene, entry.def.texture, SKETCH).setPosition(0, -BOX / 2 + 4 + SKETCH / 2));
     }
+    // A gold ring has its name underlined in sol: from far away the silver and the gold look the same (K10).
+    const gold = entry.stars !== null && ringFor(entry.stars, this.rules()).metal === 'gold';
+    if (gold) parts.push(scene.add.graphics().lineStyle(4, colorToNumber(Ink.sol), 1).lineBetween(-20, CAPTION_Y + 14, 20, CAPTION_Y + 14));
     parts.push(
       scene.add
         .text(0, CAPTION_Y, entry.name, { fontFamily: Fonts.Voice, fontStyle: 'bold', fontSize: '19px', color: hung ? Ink.tinta : Ink.lineaLapiz, padding: { x: 2, y: 4 } })

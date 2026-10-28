@@ -9,7 +9,7 @@ import setsJson from '../../src/game/data/sets.json';
 import economy from '../../src/game/data/economy.json';
 import { gotEntries, type AlbumCatalogs } from '../../src/game/domain/album';
 import {
-  HALF, HANGER, catEntries, comboEntries, dyeEntries, gridPositions, hangerHooks, itemEntries, keychainEntries, paginate, setEntries, setMembership, tasteGlyph,
+  HALF, HANGER, catEntries, goldCount, comboEntries, dyeEntries, gridPositions, hangerHooks, itemEntries, keychainEntries, paginate, setEntries, setMembership, tasteGlyph,
   type EntryContext,
 } from '../../src/game/domain/albumEntries';
 import type { CatDef, ClothingDef, ComboDef, DyeDef, EconomyRules, KeychainRecipe, PhotoCatalog, Progress, SetDef } from '../../src/game/domain/types';
@@ -221,6 +221,24 @@ describe('keychainEntries (F19.5)', () => {
     const p = { ...empty(), keychains: { [cat.id]: recipeOf(cat) } };
     const got = keychainEntries(ctx(p)).filter((e) => e.recipe).map((e) => e.id);
     expect(gotEntries(p, catalogs).filter((id) => id.startsWith("keychain:"))).toEqual(got);
+  });
+});
+
+describe('goldCount (K10)', () => {
+  const rules = { goldFrom: 4 as const, charmFrom: 5 as const };
+  const withStars = (...stars: (1 | 2 | 3 | 4 | 5)[]) => {
+    const list = cats as CatDef[];
+    const p = { ...empty(), keychains: Object.fromEntries(stars.map((s, i) => [list[i]!.id, recipeOf(list[i]!, s)])) };
+    return keychainEntries(ctx(p));
+  };
+  it('counts the hooks with a gold ring: 4 stars or more', () => {
+    expect(goldCount(withStars(), rules)).toBe(0);
+    expect(goldCount(withStars(1, 3), rules)).toBe(0);
+    expect(goldCount(withStars(4, 5, 3, 2), rules)).toBe(2);
+    expect(goldCount(withStars(5, 5, 5), rules)).toBe(3);
+  });
+  it('follows the threshold of the rules, not a number of its own', () => {
+    expect(goldCount(withStars(3, 4), { goldFrom: 3, charmFrom: 5 })).toBe(2);
   });
 });
 

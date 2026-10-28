@@ -170,6 +170,29 @@ describe('the keychains hang from their recipes', () => {
   });
 });
 
+describe('the gold ones show (K10)', () => {
+  const withStars = (...stars: (1 | 2 | 3 | 4 | 5)[]): Progress => ({
+    ...emptyProgress(0), keychains: Object.fromEntries(stars.map((s, i) => [catList[i]!.id, { ...recipeOf(i), stars: s }])),
+  });
+  const texts = (scene: { made: { texts: Record<string, unknown>[] } }) => scene.made.texts.map((t) => t.text);
+
+  it('says how many hang with a gold ring next to the tally', () => {
+    const { scene } = make(withStars(5, 4, 2));
+    expect(texts(scene)).toContain('2 dorados');
+  });
+
+  it('says nothing when none is gold yet', () => {
+    const { scene } = make(withStars(3, 1));
+    expect(texts(scene).some((t) => String(t).includes('dorado'))).toBe(false);
+  });
+
+  it('underlines the name of each gold keychain in sol, and no other', () => {
+    const { scene } = make(withStars(5, 2, 4));
+    const lines = (scene.made.graphics as { calls: string[] }[]).filter((g) => g.calls.includes('lineBetween'));
+    expect(lines).toHaveLength(2);
+  });
+});
+
 describe('touching a keychain', () => {
   it('the first tap swings it with a chain jingle, and only that one: the others keep still', () => {
     const { page, scene } = make(progressWith(0, 1));
