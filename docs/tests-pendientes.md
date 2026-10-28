@@ -442,3 +442,13 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
 - Cerrar DressUp con la caja abierta (por ejemplo con "Volver a Lagatovino") no da errores de consola.
 - Showcase con 7 notas: el contador "Secretos" y el borde del cuaderno siguen visibles.
 - ShopEntrance: los botones de sonido y movimiento responden sin tapar el letrero, y la entrada (campanita y zoom) sigue funcionando.
+
+## Altas de F20.R: riel en el celular, pie de la foto, bandeja y juez
+### E2E pendientes
+1. `@mobile` en un Pixel 7 horizontal: el lienzo escala a ≥ 0,5, "Volver" y "Pantalla completa" miden ≥ 44×44 y el footer está oculto.
+2. Modo foto con el marco dorado: la etiqueta del pie aparece y se mantiene al guardar; el PNG mide 1080×1350, sin errores de consola.
+3. Con los marcos polaroid, cuaderno y Kofi no aparece esa etiqueta.
+4. Con los 13 stickers desbloqueados, la celda de la luna queda dentro del panel.
+5. La tarjeta del juez dice "Le encantan las estrellas".
+6. En la caja, la línea de la vendedora ocupa 2 líneas.
+7. En pantalla completa 16:9, "Salir" no se monta sobre "Modo foto".
