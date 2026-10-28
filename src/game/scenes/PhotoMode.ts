@@ -3,7 +3,7 @@ import { Fonts, GAME_HEIGHT, GAME_WIDTH, Ink, KeychainTextures, MEOW_KEYS, Objec
 import type { GameData } from '../data/schema';
 import { photoUnlocks, type PhotoUnlocks } from '../domain/album';
 import { keychainLines, photoLines, withBrand } from '../domain/copy';
-import { defaultReplace, hangKeychain, keychainRecipe, needsConfirm } from '../domain/keychain';
+import { autoHang, defaultReplace, hangKeychain, keychainRecipe, needsConfirm } from '../domain/keychain';
 import { packageOps } from '../domain/keychainPackage';
 import { catPose } from '../domain/catPose';
 import type { Expression } from '../domain/expressions';
@@ -124,6 +124,8 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
   private readyTitle: Phaser.GameObjects.Text | null = null;
   private replaceSheet: ReplaceSheet | null = null;
   private hanging = false;
+  /** True once the recipe of this packaging was hung on its own on an empty hook (ADR 0021, K2): [Colgarlo] only goes to see it. */
+  private autoHung = false;
   private skippable = false;
   private putting = false;
   private closed = false;
@@ -153,6 +155,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     this.readyTitle = null;
     this.replaceSheet = null;
     this.hanging = false;
+    this.autoHung = false;
     this.skippable = false;
     this.putting = false;
     this.closed = false;
@@ -608,9 +611,21 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     this.photos++;
     this.lastPhoto = file;
     this.keychainPhase = 'ready';
+    this.hangOnEmptyHook();
     card.enableTap();
     card.on(ObjectEvents.PackageTap, () => void this.putAway());
     this.showReady(card);
+  }
+
+  /** An empty hook gets the keychain at once, so it is in the hanger however the player leaves; a taken one is asked about in [Colgarlo]. */
+  private hangOnEmptyHook() {
+    const recipe = this.madeRecipe;
+    if (!recipe) return;
+    const progress = this.latestProgress();
+    const keychains = autoHang(progress.keychains, recipe);
+    if (!keychains) return;
+    this.registry.set(RegistryKeys.Progress, { ...progress, keychains });
+    this.autoHung = true;
   }
 
   /** "¡Tu llavero está listo!": [Colgarlo] takes the place of [Guardar] (the other button stays: [Seguir vistiendo]), and the print flies to it. */
@@ -637,6 +652,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
   private hangIt() {
     const recipe = this.madeRecipe;
     if (!recipe || this.hanging || this.leaving || this.replaceSheet) return;
+    if (this.autoHung) return this.finishHang(recipe, undefined);
     const collection = this.latestProgress().keychains;
     if (!needsConfirm(collection, recipe)) return this.finishHang(recipe, undefined);
     const before = collection[recipe.catId]!;
@@ -661,9 +677,10 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     if (this.hanging || this.leaving || this.closed) return;
     this.hanging = true;
     const progress = this.latestProgress();
-    const result = hangKeychain(progress.keychains, recipe, confirm);
-    const hung = result.replaced || result.isFirst;
-    if (hung) this.registry.set(RegistryKeys.Progress, { ...progress, keychains: result.collection });
+    // Already hung on its own: nothing to write (it would ask against itself), it only goes to see it fly to its hook.
+    const result = this.autoHung ? null : hangKeychain(progress.keychains, recipe, confirm);
+    const hung = result === null || result.replaced || result.isFirst;
+    if (result && hung) this.registry.set(RegistryKeys.Progress, { ...progress, keychains: result.collection });
     this.leaving = true;
     go(this, 'hang', hangArgs(recipe.catId, hung));
   }
@@ -699,6 +716,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     this.readyTitle?.destroy();
     this.readyTitle = null;
     this.madeRecipe = null;
+    this.autoHung = false;
     this.count.setVisible(true);
     this.save.setVisible(true);
   }

@@ -98,6 +98,11 @@ export function needsConfirm(collection: KeychainCollection, recipe: KeychainRec
   return recipe.catId in collection;
 }
 
+/** Hangs the recipe on an empty hook (ADR 0021, K2); null when the hook is taken: replacing is always the player's answer. */
+export function autoHang(collection: KeychainCollection, recipe: KeychainRecipe): Record<string, KeychainRecipe> | null {
+  return needsConfirm(collection, recipe) ? null : { ...collection, [recipe.catId]: recipe };
+}
+
 /** The highlighted option: keep the one with more stars, the new one on a tie. */
 export function defaultReplace(existing: KeychainRecipe, next: KeychainRecipe): boolean {
   return next.stars >= existing.stars;

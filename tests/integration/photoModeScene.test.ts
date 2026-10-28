@@ -734,6 +734,49 @@ describe('PhotoMode: the keychain is ready (F19.4)', () => {
     expect(h.go).toHaveBeenCalledWith(scene, 'hang', { from: 'DressUp', tab: 'colgador', hang: catId });
   });
 
+  it('K2: with an empty hook the keychain is hung as soon as the packaging is ready, whatever way the player leaves', async () => {
+    const scene = open(rating(4));
+    expect(progressOf(scene).keychains[catId]).toBeUndefined();
+    await finishSave(scene);
+    expect(progressOf(scene).keychains[catId]).toMatchObject({ catId, stars: 4 });
+    // A tap on the card puts it away and the keychain stays hung.
+    h.cards[0]!.emit(ObjectEvents.PackageTap);
+    await vi.waitFor(() => expect(h.cards[0]!.destroyed).toBe(true));
+    expect(progressOf(scene).keychains[catId]).toMatchObject({ catId, stars: 4 });
+  });
+
+  it('K2: [Colgarlo] after the automatic hanging only goes to see it: no question and the same keychain', async () => {
+    const scene = open(rating(4));
+    await finishSave(scene);
+    const hung = progressOf(scene).keychains[catId];
+    button('Colgarlo').emit(ObjectEvents.ButtonClick);
+    expect(h.sheets).toHaveLength(0);
+    expect(progressOf(scene).keychains[catId]).toBe(hung);
+    expect(h.go).toHaveBeenCalledWith(scene, 'hang', { from: 'DressUp', tab: 'colgador', hang: catId });
+  });
+
+  it('K2: with a taken hook nothing is written until the player answers', async () => {
+    const scene = open(rating(5), undefined, { ...emptyProgress(0), keychains: { [catId]: oldRecipe(3) } });
+    await finishSave(scene);
+    expect(progressOf(scene).keychains[catId]!.stars).toBe(3);
+    h.cards[0]!.emit(ObjectEvents.PackageTap);
+    await vi.waitFor(() => expect(h.cards[0]!.destroyed).toBe(true));
+    expect(progressOf(scene).keychains[catId]!.stars).toBe(3);
+  });
+
+  it('K2: after putting the packaging away, saving the same cat again asks (the hook is taken by the first one)', async () => {
+    const scene = open(rating(4));
+    await finishSave(scene);
+    h.cards[0]!.emit(ObjectEvents.PackageTap);
+    await vi.waitFor(() => expect(h.cards[0]!.destroyed).toBe(true));
+    save();
+    h.transformations[1]!.finish();
+    await vi.waitFor(() => expect(h.cards).toHaveLength(2));
+    await vi.waitFor(() => expect(button('Colgarlo')).toBeDefined());
+    button('Colgarlo').emit(ObjectEvents.ButtonClick);
+    expect(h.sheets).toHaveLength(1);
+  });
+
   it('presses [Colgarlo] only once', async () => {
     const scene = open();
     await finishSave(scene);

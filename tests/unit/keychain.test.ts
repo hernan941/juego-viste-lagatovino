@@ -8,6 +8,7 @@ import {
   borderOffsets,
   defaultReplace,
   hangKeychain,
+  autoHang,
   keychainRecipe,
   needsConfirm,
   packagingLayout,
@@ -153,6 +154,28 @@ describe('sanitizeRecipe', () => {
     const r = recipe('luna', 3, { outfit: { sweater: 'ghost' } });
     sanitizeRecipe(r, known);
     expect(r.outfit).toEqual({ sweater: 'ghost' });
+  });
+});
+
+describe('autoHang (K2)', () => {
+  it('hangs the recipe when the hook of its cat is empty, keeping the other cats', () => {
+    const tom = recipe('tom', 2);
+    const r = recipe('luna', 1);
+    expect(autoHang({ tom }, r)).toEqual({ tom, luna: r });
+  });
+
+  it('returns null when the hook is taken, whatever the stars (it never replaces without asking)', () => {
+    for (const old of [1, 3, 5] as const) {
+      for (const next of [1, 3, 5] as const) {
+        expect(autoHang({ luna: recipe('luna', old) }, recipe('luna', next))).toBeNull();
+      }
+    }
+  });
+
+  it('does not change the collection it receives', () => {
+    const col = {};
+    autoHang(col, recipe('luna', 2));
+    expect(col).toEqual({});
   });
 });
 
