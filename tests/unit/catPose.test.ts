@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CAT_POSE_IDS, HEAD_NO_ANGLE, catPose, headNoSteps, puajShiver } from '../../src/game/domain/catPose';
+import { CAT_POSE_IDS, FACE_CROP, HEAD_NO_ANGLE, catPose, headNoSteps, poseFaceLayout, puajShiver } from '../../src/game/domain/catPose';
 import { EXPRESSIONS } from '../../src/game/domain/expressions';
 
 describe('catPose with the id of photo.json (F19.3)', () => {
@@ -65,5 +65,28 @@ describe('puajShiver (F12.R A1: the chill of "puaj")', () => {
 
   it('with reduced motion there is no shiver, only the cloud', () => {
     expect(puajShiver(true).steps).toEqual([]);
+  });
+});
+
+describe('poseFaceLayout (F3: the face of the pose on its button)', () => {
+  const box = { width: 60, height: 50 };
+  it('fits the head crop inside the box, whichever side is the tight one', () => {
+    const l = poseFaceLayout(catPose('sentadito')!, box);
+    expect(FACE_CROP.width * l.scale).toBeLessThanOrEqual(box.width + 1e-9);
+    expect(FACE_CROP.height * l.scale).toBeLessThanOrEqual(box.height + 1e-9);
+    expect(Math.max(FACE_CROP.width * l.scale / box.width, FACE_CROP.height * l.scale / box.height)).toBeCloseTo(1, 5);
+  });
+
+  it('moves the images so the middle of the crop lands on the middle of the box (the images are placed by their own middle)', () => {
+    const l = poseFaceLayout(catPose('sentadito')!, box);
+    expect(l.offset.x).toBeCloseTo(-(FACE_CROP.x + FACE_CROP.width / 2 - 256) * l.scale, 5);
+    expect(l.offset.y).toBeCloseTo(-(FACE_CROP.y + FACE_CROP.height / 2 - 256) * l.scale, 5);
+  });
+
+  it('carries the tilt and the expression of the pose', () => {
+    const l = poseFaceLayout(catPose('coqueto')!, box);
+    expect(l.angle).toBe(8);
+    expect(l.expression).toBe('amor');
+    expect(poseFaceLayout(catPose('dormilon')!, box).expression).toBe('parpadeo');
   });
 });

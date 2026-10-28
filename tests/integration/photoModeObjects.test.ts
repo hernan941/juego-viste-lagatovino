@@ -168,6 +168,21 @@ describe('PhotoTray', () => {
     }
   });
 
+  it('F3: a pose with a face draws the fur and the face of the cat, cropped to the head, and no name in the middle', () => {
+    const scene = makeFakeScene();
+    const tray = new PhotoTray(scene as never, 0, 0);
+    const face = { fur: 'cat-naranja', face: 'face-amor', crop: { x: 96, y: 20, width: 320, height: 250 }, scale: 0.2, offset: { x: 1, y: 2 }, angle: 8 };
+    tray.show('poses', [{ id: 'p0', name: 'Coqueto', open: true, face }, { id: 'p1', name: 'Siestita', open: false, face }]);
+    const images = scene.made.images as { key: string; calls: string[] }[];
+    expect(images.filter((i) => i.key === 'cat-naranja')).toHaveLength(2);
+    expect(images.filter((i) => i.key === 'face-amor')).toHaveLength(2);
+    for (const i of images.filter((x) => x.key === 'face-amor')) expect(i.calls).toContain('setCrop');
+    // The name stays, small, under the face.
+    const names = (scene.made.texts as { text: string; style: { fontSize: string } }[]).filter((t) => t.text === 'Coqueto');
+    expect(names).toHaveLength(1);
+    expect(parseInt(names[0]!.style.fontSize, 10)).toBeLessThanOrEqual(22);
+  });
+
   it('pressing an open piece emits TrayPick with the kind and the id', () => {
     const tray = new PhotoTray(makeFakeScene() as never, 0, 0);
     const pick = vi.fn();

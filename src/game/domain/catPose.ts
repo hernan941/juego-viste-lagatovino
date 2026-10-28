@@ -55,3 +55,28 @@ export function puajShiver(reduced: boolean): { steps: number[]; stepMs: number 
   const swings = Array.from({ length: cycles * 2 }, (_, i) => (i % 2 === 0 ? px : -px));
   return { steps: reduced ? [] : [...swings, 0], stepMs: 30 };
 }
+
+/** The head of the 512 canvas that a pose button shows (px of the canvas): the face and the ears, with room for the tilt. */
+export const FACE_CROP = { x: 80, y: 20, width: 352, height: 280 };
+
+export interface PoseFaceLayout {
+  /** The part of the canvas to show (setCrop). */
+  crop: { x: number; y: number; width: number; height: number };
+  scale: number;
+  /** Where to put the images (placed by their own middle) so the middle of the crop is the middle of the box. */
+  offset: { x: number; y: number };
+  /** The tilt of the pose, in degrees. */
+  angle: number;
+  expression: Expression;
+}
+
+/** How the head of the cat in a pose fits a box of the tray (F3): the player sees the face before choosing it. */
+export function poseFaceLayout(pose: CatPose, box: { width: number; height: number }, canvas = 512): PoseFaceLayout {
+  const scale = Math.min(box.width / FACE_CROP.width, box.height / FACE_CROP.height);
+  const middle = canvas / 2;
+  return {
+    crop: { ...FACE_CROP }, scale,
+    offset: { x: -(FACE_CROP.x + FACE_CROP.width / 2 - middle) * scale, y: -(FACE_CROP.y + FACE_CROP.height / 2 - middle) * scale },
+    angle: pose.angle, expression: pose.expression,
+  };
+}

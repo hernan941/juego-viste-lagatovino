@@ -1,11 +1,13 @@
 import Phaser from 'phaser';
 import { Fonts, GAME_HEIGHT, GAME_WIDTH, Ink, KeychainTextures, MEOW_KEYS, ObjectEvents, RegistryKeys, SceneKeys, SfxKeys, TextureKeys } from '../constants';
 import type { GameData } from '../data/schema';
-import { photoUnlocks, type PhotoUnlocks } from '../domain/album';
-import { keychainLines, photoLines, withBrand } from '../domain/copy';
+import { completion, photoUnlocks, type PhotoUnlocks } from '../domain/album';
+import { setEntries } from '../domain/albumEntries';
+import { keychainLines, photoLines, withBrand, type UnlockProgress } from '../domain/copy';
 import { autoHang, defaultReplace, hangKeychain, keychainRecipe, needsConfirm } from '../domain/keychain';
 import { packageOps } from '../domain/keychainPackage';
-import { catPose } from '../domain/catPose';
+import { catPose, poseFaceLayout } from '../domain/catPose';
+import { faceKey } from '../data/assets';
 import type { Expression } from '../domain/expressions';
 import { sheetOps, SHEET_LAYOUT, starRow, type SheetOp } from '../domain/photoSheet';
 import { isInsideDropZone } from '../domain/dropZone';
@@ -16,7 +18,7 @@ import {
 } from '../domain/photoComposition';
 import { hangArgs } from '../domain/flow';
 import { emptyProgress } from '../domain/progress';
-import type { AnchorsDef, ItemDye, KeychainRecipe, PhotoPiece, PhotoPose, PlacedSticker, Point, Progress, Rect, Stars } from '../domain/types';
+import type { AnchorsDef, ItemDye, KeychainRecipe, PhotoPiece, PhotoPose, PhotoUnlock, PlacedSticker, Point, Progress, Rect, Stars } from '../domain/types';
 import type { E2EUi, UiState } from '../e2eHook';
 import { Button } from '../objects/Button';
 import { Cat } from '../objects/Cat';
@@ -31,7 +33,7 @@ import { keychainData } from '../objects/keychain/Keychain';
 import { KeychainTransformation } from '../objects/keychain/KeychainTransformation';
 import { PackageCard } from '../objects/keychain/PackageCard';
 import { ReplaceSheet } from '../objects/keychain/ReplaceSheet';
-import { PhotoTray, type TrayKind } from '../objects/photomode/PhotoTray';
+import { PhotoTray, type TrayEntry, type TrayKind } from '../objects/photomode/PhotoTray';
 import { Sticker } from '../objects/photomode/Sticker';
 import { tabIconKey } from '../objects/tabIcons';
 import { touchEnv } from '../objects/ui';
@@ -54,6 +56,8 @@ const PHOTO_RECT: Rect = { x: SHEET.x - PHOTO_SIZE.width / 2, y: SHEET.y - PHOTO
 const PANEL: Rect = { x: 25, y: 150, width: 330, height: 510 };
 const TRAY_ORIGIN: Point = { x: 46, y: 215 };
 /** The table steps back while the keychain is made (K4): how dim it gets and how far (px) it moves away. */
+/** The box of the head on a pose button (F3). */
+const POSE_FACE_BOX = { width: 110, height: 50 };
 const STAGE_DIM = 0.35;
 const STAGE_AWAY = 20;
 const JAR = { x: 1090, y: 330, width: 122, height: 150 };
@@ -301,11 +305,11 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     const p = profileOf(this);
     this.tray.setEnabled(!busy);
     this.tabs.setEnabled(!busy);
-    this.tweens.killTweensOf(this.stageParts);
+    // Every tween of these parts goes first (killing by one part also kills the shared one), then the new ones are added.
+    for (const part of this.stageParts) this.tweens.killTweensOf(part);
     this.tweens.add({ targets: this.stageParts, alpha: busy ? STAGE_DIM : 1, duration: busy ? 220 : 280 });
     if (p.reduced) return;
     for (const s of this.stage) {
-      this.tweens.killTweensOf(s.part);
       this.tweens.add({ targets: s.part, x: busy ? s.x + s.away : s.x, duration: busy ? 260 : 320, ease: busy ? 'Sine.easeOut' : p.ease('Back.easeOut') });
     }
   }
@@ -327,10 +331,21 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     this.kind = kind;
     const open = this.openOf(kind);
     const list = this.listOf(kind);
-    const entries = pieceStates(list, open).map((s, i) => ({ ...s, name: list[i]!.name, texture: (list[i] as PhotoPiece).texture }));
+    const entries = pieceStates(list, open).map((s, i) => ({
+      ...s, name: list[i]!.name, texture: (list[i] as PhotoPiece).texture, face: kind === 'poses' ? this.poseFace(list[i]!.id) : undefined,
+    }));
     for (const k of KINDS) this.tray.select(k, this.chosen(k));
     this.tray.show(kind, entries);
     this.tray.select(kind, this.chosen(kind));
+  }
+
+  /** The head of this cat with the face of a pose, for its button (F3): null for a pose the cat does not know. */
+  private poseFace(id: string): TrayEntry['face'] | undefined {
+    const pose = catPose(id);
+    const cat = this.catalog.cats.find((c) => c.id === this.look.catId);
+    if (!pose || !cat) return undefined;
+    const { expression, ...layout } = poseFaceLayout(pose, POSE_FACE_BOX);
+    return { fur: cat.texture, face: faceKey(expression), ...layout };
   }
 
   /** A piece of the tray was chosen: it goes onto the table, if it is unlocked. */
@@ -383,7 +398,19 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     if (!this.ready || this.leaving || this.photoBusy) return;
     const piece = this.listOf(kind).find((p) => p.id === id);
     if (!piece || this.openOf(kind).has(id)) return;
-    this.toast(photoLines.unlockHint(piece.unlock, (setId) => this.catalog.sets.find((s) => s.id === setId)?.name));
+    this.toast(photoLines.unlockHint(piece.unlock, (setId) => this.catalog.sets.find((s) => s.id === setId)?.name, this.hintProgress(piece.unlock)));
+  }
+
+  /** How far the player is from a locked piece, so the hint says it (F4): the pieces of its set, the percent of the notebook, the best stars. */
+  private hintProgress(unlock: PhotoUnlock): UnlockProgress {
+    if (unlock === 'starter') return {};
+    const progress = this.latestProgress();
+    if ('set' in unlock) {
+      const set = setEntries({ catalog: this.catalog, progress, seen: progress.albumSeen }).find((e) => e.id === unlock.set);
+      return set ? { set: { got: set.gotCount, total: set.total, missing: set.pieces.filter((p) => !p.got).map((p) => p.label) } } : {};
+    }
+    if ('albumPct' in unlock) return { pct: completion(progress, this.catalog).pct };
+    return { best: Math.max(0, ...Object.values(progress.bestStars)) };
   }
 
   /** The cat takes the pose that is chosen (with a little squash), and the dormilón gets its "zzz". */
@@ -392,6 +419,11 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     this.cat.applyPose(key);
     this.cat.squash();
     this.showZzz(key === 'dormilon');
+  }
+
+  /** Gives the cat back in the pose that is chosen, face and tilt, at once: whatever the transformation or the photo did to it, the table is as the player left it (F6). */
+  private restorePose() {
+    this.cat.applyPose(this.poseKey(), { instant: true });
   }
 
   /** The sleeping pose brings its "zzz" next to the head; any other pose sends it away. */
@@ -740,6 +772,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     this.card = null;
     this.hideReady();
     transformation.restoreCat();
+    this.restorePose();
     transformation.destroy();
     this.transformation = null;
     this.keychainPhase = null;
@@ -768,6 +801,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
   /** The way out when the keychain cannot be made: the composition of the table as a PNG, with the flash. The cat does not change. */
   private async savePlainPhoto(transformation: KeychainTransformation) {
     transformation.restoreCat();
+    this.restorePose();
     transformation.destroy();
     this.transformation = null;
     this.keychainPhase = null;
@@ -870,7 +904,7 @@ export class PhotoMode extends Phaser.Scene implements E2EUi {
     const unlocked = Object.fromEntries(KINDS.map((k) => [k, [...this.unlocks[k]]]));
     return {
       ready: this.ready && !this.leaving,
-      buttons: { save: this.save.getCenter(), keep: this.keep.getCenter(), mute: this.mute.getCenter(), motion: this.motion.getCenter() },
+      buttons: { save: this.save.getCenter(), keep: this.keep.getCenter(), mute: this.mute.getCenter(), motion: this.motion.getCenter(), ...(this.hangButton ? { hang: this.hangButton.getCenter() } : {}) },
       points,
       info: {
         catId: this.look.catId, catName: this.look.catName, layers: this.cat.wornIds, stars: this.look.rating?.stars ?? null,

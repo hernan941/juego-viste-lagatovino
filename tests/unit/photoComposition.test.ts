@@ -102,6 +102,21 @@ describe('unlockHint', () => {
   it('does not break with a set it does not know', () => {
     expect(photoLines.unlockHint({ set: 'nada' }, sets)).toBe('Completa un set');
   });
+  it('F4: shows how far the player is: the pieces of a set, the percent of the notebook, the best stars', () => {
+    expect(photoLines.unlockHint({ set: 'abriguito' }, sets, { set: { got: 3, total: 5, missing: ['Mitones', 'Bufanda'] } })).toBe('Completa el set Abriguito (3 de 5)');
+    expect(photoLines.unlockHint({ albumPct: 75 }, sets, { pct: 40 })).toBe('Llena el 75 % del cuaderno (vas en 40 %)');
+    expect(photoLines.unlockHint({ firstFiveStar: true }, sets, { best: 4 })).toBe('Consigue 5 estrellas (tu mejor: 4)');
+  });
+  it('F4: names the only piece that is missing', () => {
+    expect(photoLines.unlockHint({ set: 'abriguito' }, sets, { set: { got: 4, total: 5, missing: ['Mitones'] } })).toBe('Te falta Mitones para el set Abriguito');
+  });
+  it('F4: a set that asks for something that is not a piece (keychains) shows the count only', () => {
+    expect(photoLines.unlockHint({ set: 'abriguito' }, sets, { set: { got: 2, total: 12, missing: [] } })).toBe('Completa el set Abriguito (2 de 12)');
+  });
+  it('F4: says nothing extra when there is no progress yet', () => {
+    expect(photoLines.unlockHint({ albumPct: 75 }, sets, { pct: 0 })).toBe('Llena el 75 % del cuaderno (vas en 0 %)');
+    expect(photoLines.unlockHint({ firstFiveStar: true }, sets, { best: 0 })).toBe('Consigue 5 estrellas');
+  });
   it('has a line for the full sheet', () => {
     expect(photoLines.full.length).toBeGreaterThan(0);
   });

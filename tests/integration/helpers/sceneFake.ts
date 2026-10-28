@@ -52,7 +52,7 @@ export class FakeScene {
     };
     this.tweens = {
       records, add, chain: add,
-      killTweensOf: (t) => { for (const r of records) if (r.config.targets === t) r.removed = true; },
+      killTweensOf: (t) => { for (const r of records) if (r.config.targets === t || (Array.isArray(r.config.targets) && r.config.targets.includes(t))) r.removed = true; },
       killAll: () => { for (const r of records) r.removed = true; },
     };
     const delayed: { ms: number; fn: () => void }[] = [];
