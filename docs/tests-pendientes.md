@@ -427,3 +427,11 @@ El 2026-10-26 el usuario decidió mantener el TDD (unit e integración) en cada 
 3. El lienzo entra completo sin scroll en 1280 × 720, 1920 × 1080 y en celular horizontal (844 × 390). En horizontal bajo 520 px de alto no hay footer y el header mide 36 px.
 4. Ninguna petición sale del origen y no hay errores de consola.
 5. **Afectados**: `getE2EUi` ya no expone `fullscreen` en ninguna escena (antes, solo en táctil). Ningún spec de `tests/e2e/` lo usaba. Los e2e que calculan coordenadas con el rect del lienzo siguen sirviendo, pero el lienzo ahora está más abajo (header de 56 px) y más chico en 1280 × 720 (unos 1086 × 611); `tests/e2e/mobile.spec.ts` y `load.spec.ts` deberían revisarse por si asumen un lienzo a pantalla completa.
+
+## Pantalla completa al pulsar Iniciar en el celular (ADR 0023)
+### E2E pendientes
+1. En el celular horizontal con touch, tocar "Iniciar" deja `document.fullscreenElement` en `#stage`.
+2. En PC con mouse, "Iniciar" no pide pantalla completa.
+3. En el celular en vertical no se pide (sale el aviso de girar).
+4. Si `requestFullscreen` se rechaza, el juego sigue a CatSelect sin errores de consola.
+5. Salir con "Salir" o con Esc, volver al Title y pulsar "Iniciar" otra vez vuelve a pedirla.
