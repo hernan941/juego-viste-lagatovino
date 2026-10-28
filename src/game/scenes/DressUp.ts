@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import {
-  CATEGORY_LABELS, DressUpEvents, Fonts, GAME_HEIGHT, GAME_WIDTH, Ink, MEOW_KEYS, ObjectEvents, RegistryKeys, SceneKeys, SfxKeys,
+  CATEGORY_LABELS, DressUpEvents, Fonts, GAME_HEIGHT, GAME_WIDTH, MEOW_KEYS, ObjectEvents, RegistryKeys, SceneKeys, SfxKeys,
 } from '../constants';
 import type { Catalog } from '../data/schema';
 import { dressUpRestore, type DressUpRestore } from '../domain/flow';
@@ -39,6 +39,7 @@ import { PaperBackground } from '../objects/kit/PaperBackground';
 import { tabIconKey } from '../objects/tabIcons';
 import { drawRoom } from '../objects/room';
 import { liftFor, touchEnv } from '../objects/ui';
+import { hintText } from '../systems/touch';
 import { profileOf } from '../systems/motion';
 import { applyLift, dragThreshold, isDragPointer } from '../systems/touch';
 import { enterKind, transitionIn } from '../systems/transitions';
@@ -154,7 +155,7 @@ export class DressUp extends Phaser.Scene implements E2EScene, E2EUi {
     this.tabs.on(ObjectEvents.TabSelect, (id: string) => this.categories.includes(id as Category) && this.showCategory(id as Category));
     // The hint is handwriting in pencil, at the foot of the card.
     this.hint = this.add
-      .text(PANEL.x + PANEL.width / 2, PANEL.y + PANEL.height - 28, DEFAULT_TIP, { fontFamily: Fonts.Voice, fontStyle: '700', fontSize: '26px', color: Ink.mutedTexto, padding: { x: 4, y: 8 } })
+      .text(PANEL.x + PANEL.width / 2, PANEL.y + PANEL.height - 28, DEFAULT_TIP, { fontFamily: Fonts.Voice, fontStyle: '700', ...hintText(26, touchEnv()), padding: { x: 4, y: 8 } })
       .setOrigin(0.5).setAlpha(0.8);
 
     // Right panel: layers.

@@ -1,5 +1,5 @@
 // Pure helpers for touch play (ADR 0014). No Phaser, no DOM: the scenes and objects only apply what these return.
-import { GAME_HEIGHT, GAME_WIDTH } from '../constants';
+import { GAME_HEIGHT, GAME_WIDTH, Ink } from '../constants';
 import type { Point } from '../domain/types';
 
 /** Smallest comfortable touch target, in CSS px. */
@@ -57,4 +57,19 @@ export function shouldShowRotateHint(env: { coarse: boolean; portrait: boolean }
 /** Tapping "Iniciar" invites fullscreen only on a finger held in landscape, when it is not fullscreen yet and the browser can do it. */
 export function shouldInviteFullscreen(env: { coarse: boolean; portrait: boolean; fullscreen: boolean; available: boolean }): boolean {
   return env.coarse && !env.portrait && !env.fullscreen && env.available;
+}
+
+/** Smallest comfortable size of a text that teaches or asks, in CSS px (the clues of a phone at scale 0.5 were ~11). */
+export const MIN_TEXT_CSS = 14;
+
+/** Style of a hint or help text: as drawn with a mouse; with a finger at least 14 CSS px (up to `cap` units) and in `tinta`, not `muted`. */
+export function hintText(size: number, env: { touch: boolean; scale: number }, cap = 40): { fontSize: string; color: string } {
+  if (!env.touch) return { fontSize: `${size}px`, color: Ink.mutedTexto };
+  const wanted = Math.min(cap, Math.ceil(MIN_TEXT_CSS / env.scale));
+  return { fontSize: `${Math.max(size, wanted)}px`, color: Ink.tinta };
+}
+
+/** `text` cut to `maxChars` with an ellipsis, so a long name stays on one line. */
+export function ellipsize(text: string, maxChars: number): string {
+  return text.length <= maxChars ? text : `${text.slice(0, Math.max(0, maxChars - 1)).trimEnd()}…`;
 }

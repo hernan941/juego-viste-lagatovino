@@ -1,7 +1,9 @@
 import Phaser from 'phaser';
 import { Fonts, Ink } from '../../constants';
 import { albumLines } from '../../domain/copy/album';
+import { hintText } from '../../systems/touch';
 import { Card } from '../kit/Card';
+import { touchEnv } from '../ui';
 import { fitImage, silhouetteImage, sketchImage } from './pencil';
 
 export interface EntryCardSpec {
@@ -46,7 +48,7 @@ export function createEntryCard(scene: Phaser.Scene, spec: EntryCardSpec): Card 
     parts.push(text);
     y += text.height + 2;
   }
-  const close = scene.add.text(0, y + 12, albumLines.close, { fontFamily: Fonts.Voice, fontSize: '22px', color: Ink.mutedTexto, padding: { x: 2, y: 4 } }).setOrigin(0.5, 0);
+  const close = scene.add.text(0, y + 12, albumLines.close, { fontFamily: Fonts.Voice, ...hintText(22, touchEnv()), padding: { x: 2, y: 4 } }).setOrigin(0.5, 0);
   parts.push(close);
   const height = y + 12 + close.height + PAD;
   const card = new Card(scene, 0, 0, { width, height });

@@ -3,6 +3,8 @@ import { Fonts, Ink, colorToNumber } from '../constants';
 import type { SheetEntry } from '../domain/catSheet';
 import { tasteLines } from '../domain/copy';
 import { profileOf } from '../systems/motion';
+import { hintText } from '../systems/touch';
+import { touchEnv } from './ui';
 import { ModalSheet } from './kit/ModalSheet';
 import { TasteChip } from './TasteChip';
 
@@ -42,7 +44,7 @@ export class CatSheet extends ModalSheet {
     const clue = scene.add.text(0, 134, `“${hint}”`, {
       fontFamily: Fonts.Voice, fontStyle: 'bold', fontSize: '36px', color: Ink.tinta, align: 'center', wordWrap: { width: CARD.w - 120 }, padding: { x: 2, y: 6 },
     }).setOrigin(0.5);
-    const close = scene.add.text(0, CARD.h / 2 - 34, tasteLines.closeHint(), { fontFamily: Fonts.Voice, fontSize: '24px', color: Ink.mutedTexto, padding: { x: 2, y: 6 } }).setOrigin(0.5);
+    const close = scene.add.text(0, CARD.h / 2 - 34, tasteLines.closeHint(), { fontFamily: Fonts.Voice, ...hintText(24, touchEnv()), padding: { x: 2, y: 6 } }).setOrigin(0.5);
     this.add([washi, title, count, clue, close]);
     this.addChips(entries);
   }

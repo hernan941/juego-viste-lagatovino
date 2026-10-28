@@ -2,7 +2,8 @@ import Phaser from 'phaser';
 import { Fonts, Ink, ObjectEvents, colorToNumber } from '../constants';
 import type { ClothingDef, Point } from '../domain/types';
 import { profileOf } from '../systems/motion';
-import { addHover, addPress, hitCircle } from './ui';
+import { hintText, ellipsize } from '../systems/touch';
+import { addHover, addPress, hitCircle, touchEnv } from './ui';
 import { Card } from './kit/Card';
 import { hoverSfx } from './hoverSfx';
 
@@ -11,6 +12,8 @@ const WIDTH = 250;
 const HEIGHT = 444;
 const ROW_H = 56;
 const TOP = 70;
+/** Letters of a layer name that fit on one line at the touch size. */
+const LABEL_CHARS = 9;
 
 const INK = colorToNumber(Ink.tinta);
 const PAPER = colorToNumber(Ink.cremaPapel);
@@ -29,7 +32,11 @@ class Row extends Phaser.GameObjects.Container {
     bg.fillStyle(colorToNumber(Ink.cremaPapel), 1).fillRoundedRect(-WIDTH / 2 + 18, -26, WIDTH - 36, 52, 14);
     bg.lineStyle(3, colorToNumber(Ink.borde), 1).strokeRoundedRect(-WIDTH / 2 + 18, -26, WIDTH - 36, 52, 14);
     const icon = scene.add.image(-WIDTH / 2 + 52, 0, item.icon).setDisplaySize(40, 40);
-    const label = scene.add.text(-WIDTH / 2 + 80, 0, item.name, { fontFamily: Fonts.Body, fontSize: '15px', color: Ink.tinta, fontStyle: '700', wordWrap: { width: 90 } }).setOrigin(0, 0.5);
+    // With a finger the name is bigger and stays on one line (cut with an ellipsis): the row only has room for ~9 letters.
+    const env = touchEnv();
+    const label = env.touch
+      ? scene.add.text(-WIDTH / 2 + 78, 0, ellipsize(item.name, LABEL_CHARS), { fontFamily: Fonts.Body, ...hintText(15, env, 24), fontStyle: '700' }).setOrigin(0, 0.5)
+      : scene.add.text(-WIDTH / 2 + 80, 0, item.name, { fontFamily: Fonts.Body, fontSize: '15px', color: Ink.tinta, fontStyle: '700', wordWrap: { width: 90 } }).setOrigin(0, 0.5);
 
     // The cross button: a small ink stamp (a disc with a paper ✕) that inverts on hover.
     this.cross = scene.add.graphics();
@@ -73,7 +80,7 @@ export class LayersPanel extends Phaser.GameObjects.Container {
     rule.lineStyle(2, colorToNumber(Ink.lineaLapiz), 0.8);
     for (let lx = 36; lx < WIDTH - 36; lx += 20) rule.lineBetween(lx, 62, lx + 10, 62);
     this.empty = scene.add
-      .text(WIDTH / 2, HEIGHT / 2 + 10, 'Arrastra una prenda\nal gatito', { fontFamily: Fonts.Voice, fontStyle: '700', fontSize: '26px', color: Ink.mutedTexto, align: 'center', padding: { x: 4, y: 8 } })
+      .text(WIDTH / 2, HEIGHT / 2 + 10, 'Arrastra una prenda\nal gatito', { fontFamily: Fonts.Voice, fontStyle: '700', ...hintText(26, touchEnv()), align: 'center', padding: { x: 4, y: 8 } })
       .setOrigin(0.5).setAlpha(0.8);
     this.add([this.card, rule, title, this.empty]);
     scene.add.existing(this);

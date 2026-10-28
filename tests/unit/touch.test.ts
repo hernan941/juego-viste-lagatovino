@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  MIN_TOUCH_CSS, applyLift, dragThreshold, isDragPointer, landscapeScale, liftOffset, minHitExtent, shouldInviteFullscreen, shouldShowRotateHint,
+  MIN_TEXT_CSS, MIN_TOUCH_CSS, applyLift, ellipsize, hintText, dragThreshold, isDragPointer, landscapeScale, liftOffset, minHitExtent, shouldInviteFullscreen, shouldShowRotateHint,
 } from '../../src/game/systems/touch';
 
 describe('landscapeScale', () => {
@@ -104,5 +104,33 @@ describe('shouldInviteFullscreen', () => {
     ['no Fullscreen API', { available: false }],
   ])('does not invite on %s', (_n, patch) => {
     expect(shouldInviteFullscreen({ ...phone, ...patch })).toBe(false);
+  });
+});
+
+describe('hintText (M3)', () => {
+  it('leaves the size and the muted ink alone with a mouse', () => {
+    expect(hintText(22, { touch: false, scale: 0.5 })).toEqual({ fontSize: '22px', color: '#6A5F57' });
+  });
+
+  it('on a phone grows the text to a readable CSS size and writes it in tinta', () => {
+    expect(MIN_TEXT_CSS).toBe(14);
+    const style = hintText(22, { touch: true, scale: 0.5 });
+    expect(parseInt(style.fontSize, 10) * 0.5).toBeGreaterThanOrEqual(MIN_TEXT_CSS);
+    expect(style.color).toBe('#1F1B1A');
+  });
+
+  it('keeps text that is already big, and never passes the cap', () => {
+    expect(hintText(40, { touch: true, scale: 0.5 }).fontSize).toBe('40px');
+    expect(hintText(22, { touch: true, scale: 0.25 }, 24).fontSize).toBe('24px');
+    expect(hintText(22, { touch: true, scale: 1.5 }).fontSize).toBe('22px');
+  });
+});
+
+describe('ellipsize (M3)', () => {
+  it('cuts long names with an ellipsis instead of wrapping them', () => {
+    expect(ellipsize('Sweater de lana', 9)).toBe('Sweater…');
+    expect(ellipsize('Gorro', 9)).toBe('Gorro');
+    expect(ellipsize('Abcdefghij', 10)).toBe('Abcdefghij');
+    expect(ellipsize('Abc', 1)).toBe('…');
   });
 });
