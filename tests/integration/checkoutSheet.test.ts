@@ -62,6 +62,12 @@ describe('CheckoutSheet (F13.6)', () => {
     expect(texts).toContain(base.sellerLine);
   });
 
+  it('gives the seller line room for two lines, not three (F20.R M4)', () => {
+    const { scene } = make();
+    const say = scene.made.texts.find((t) => String(t.text) === base.sellerLine);
+    expect((say?.style as { wordWrap: { width: number } }).wordWrap.width).toBeGreaterThanOrEqual(280);
+  });
+
   it('[Llevar todo] confirms when the wallet reaches', () => {
     const { buttons, events } = make();
     buttons[0].emit(ObjectEvents.ButtonClick);

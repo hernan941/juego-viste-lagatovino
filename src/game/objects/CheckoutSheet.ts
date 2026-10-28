@@ -154,7 +154,7 @@ export class CheckoutSheet extends ModalSheet {
       }
     }
     const say = scene.add.text(SELLER.x, SELLER.y + SELLER.height / 2 + 40, sellerLine, {
-      fontFamily: Fonts.Voice, fontStyle: 'bold', fontSize: '28px', color: Ink.tinta, align: 'center', wordWrap: { width: 230 }, padding: { x: 2, y: 6 },
+      fontFamily: Fonts.Voice, fontStyle: 'bold', fontSize: '28px', color: Ink.tinta, align: 'center', wordWrap: { width: 280 }, padding: { x: 2, y: 6 },
     }).setOrigin(0.5, 0);
     this.add(say);
     return say;
