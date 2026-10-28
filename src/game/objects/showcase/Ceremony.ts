@@ -23,6 +23,8 @@ export interface CeremonyLayout {
   /** The center of the row of notes, and how wide the row may be. */
   notesAt: Point;
   notesWidth: number;
+  /** Optional: how big the notes are and how wide their row is for `count` of them (a long row shrinks to its band). Wins over `notesWidth`. */
+  notesFit?: (count: number) => { scale: number; maxWidth: number };
   /** Where the buttons leave (the notebook) and where they land (the purse). */
   buttonsFrom: Point;
   wallet: Point;
@@ -130,7 +132,8 @@ export class Ceremony {
     const noteCount = this.plan.steps.filter((s) => s.kind === 'note').length;
     if (noteCount > 0) {
       const at = this.layout.notesAt;
-      this.notes = new EventNotes(scene, at.x, at.y, { count: noteCount, maxWidth: this.layout.notesWidth, tags: this.targets.tags });
+      const fit = this.layout.notesFit?.(noteCount) ?? { scale: 1, maxWidth: this.layout.notesWidth };
+      this.notes = new EventNotes(scene, at.x, at.y, { count: noteCount, maxWidth: fit.maxWidth, scale: fit.scale, tags: this.targets.tags });
       this.notes.setDepth(this.depth + 3);
     }
     this.schedule(0);

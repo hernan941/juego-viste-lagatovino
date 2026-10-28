@@ -110,6 +110,12 @@ describe('CheckoutSheet (F13.6)', () => {
     expect(scene.activeTweens()).toHaveLength(0);
   });
 
+  it('destroy is safe when the scene already let go of it (the scene shuts down with the till open)', () => {
+    const { sheet } = make();
+    (sheet as unknown as { scene: unknown }).scene = undefined;
+    expect(() => sheet.destroy(true)).not.toThrow();
+  });
+
   it('nudge shakes the card a little and comes back to rest; with reduced motion it only blinks', () => {
     const { scene, sheet } = make({ missing: 30 });
     const before = scene.tweens.records.length;

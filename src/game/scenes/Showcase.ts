@@ -30,7 +30,7 @@ import { getSave } from '../plugins/SavePlugin';
 import { go } from '../systems/navigate';
 import { readSession } from '../systems/sessionStore';
 import { profileOf } from '../systems/motion';
-import { EXIT_CENTERS, JUDGE_CARD_AT, EXIT_HEIGHT, EXIT_WIDTHS, EXIT_Y } from '../systems/runwayLayout';
+import { EXIT_CENTERS, JUDGE_CARD_AT, EXIT_HEIGHT, EXIT_WIDTHS, EXIT_Y, NOTES_BAND, SECRETS_TAG_AT, noteRowFit } from '../systems/runwayLayout';
 import { enterKind, transitionIn } from '../systems/transitions';
 
 /** The cat stands on the left of the mirror; the judge, his card and the notes take the rest of the runway. */
@@ -40,7 +40,7 @@ const CAT_SIZE = 440;
 /** How often the cat does a little flourish once the verdict is in. */
 const FLOURISH_MS = 1700;
 /** Where the ceremony puts things in this scene (the card sits below the purse, the notes above the cat). */
-const LAYOUT = { judgeAt: { x: 1060, y: 745 }, cardAt: JUDGE_CARD_AT, notesAt: { x: 475, y: 108 }, notesWidth: 420, buttonsFrom: { x: 1060, y: 690 }, confettiAt: { x: 380, y: -10 } };
+const LAYOUT = { judgeAt: { x: 1060, y: 745 }, cardAt: JUDGE_CARD_AT, notesAt: { x: NOTES_BAND.x + NOTES_BAND.width / 2, y: NOTES_BAND.y }, notesWidth: NOTES_BAND.width, notesFit: noteRowFit, buttonsFrom: { x: 1060, y: 690 }, confettiAt: { x: 380, y: -10 } };
 /** The purse sits over the middle of the runway, clear of the judge's card. */
 const WALLET_AT = { x: 896, y: 28 };
 /** The notebook stamp joins the exits (top right, next to the motion and sound stamps). */
@@ -158,7 +158,7 @@ export class Showcase extends Phaser.Scene implements E2EUi {
     this.hud.setValue(before.wallet);
     this.mute = new MuteButton(this, GAME_WIDTH - 56, 56).setDepth(50);
     this.motion = new MotionButton(this, GAME_WIDTH - 128, 56).setDepth(50);
-    this.counter = new SecretsTag(this, 140, 50).setDepth(50);
+    this.counter = new SecretsTag(this, SECRETS_TAG_AT.x, SECRETS_TAG_AT.y).setDepth(50);
     // A prize that was delivered quietly: the counter shows the old number and pops to the new one with the toast.
     const won = getSave(this).secrets.length;
     this.counter.setCount(Math.max(0, won - this.gifted.length), catalog.combos.length);

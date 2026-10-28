@@ -16,9 +16,9 @@ import { getAudio } from '../plugins/AudioPlugin';
 import { go } from '../systems/navigate';
 import { readSession } from '../systems/sessionStore';
 import { profileOf } from '../systems/motion';
+import { ENTRANCE_BUTTONS, ENTRANCE_SHOP as SHOP } from '../systems/entranceLayout';
 import { enterKind, transitionIn } from '../systems/transitions';
 
-const SHOP = { x: 570, y: 14, scale: 1.25 };
 const CAT_SIZE = 190;
 const WALK_FEET_Y = 664;
 const ZOOM = 9;
@@ -76,8 +76,8 @@ export class ShopEntrance extends Phaser.Scene implements E2EUi {
     // "Clic para saltar": the game is for the PC (ADR 0008), in a pill that reads over the sidewalk; it fades in after a second.
     const hint = makeHintPill(this, GAME_WIDTH - 150, GAME_HEIGHT - 44, touchEnv().touch ? 'Toca para saltar' : 'Clic para saltar', { skipIcon: true }).setDepth(40).setAlpha(0);
     this.tweens.add({ targets: hint, alpha: 1, delay: 1000, duration: 400 });
-    this.mute = new MuteButton(this, GAME_WIDTH - 56, 56).setDepth(50);
-    this.motion = new MotionButton(this, GAME_WIDTH - 128, 56).setDepth(50);
+    this.mute = new MuteButton(this, ENTRANCE_BUTTONS.mute.x, ENTRANCE_BUTTONS.mute.y).setDepth(50);
+    this.motion = new MotionButton(this, ENTRANCE_BUTTONS.motion.x, ENTRANCE_BUTTONS.motion.y).setDepth(50);
 
     this.input.on('pointerdown', this.skip, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {

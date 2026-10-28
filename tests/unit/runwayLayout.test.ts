@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { GAME_HEIGHT, GAME_WIDTH } from '../../src/game/constants';
-import { RUNWAY_EXITS, RUNWAY_JUDGE_CARD, rectsOverlap, runwayStage } from '../../src/game/systems/runwayLayout';
+import { NOTES_BAND, NOTES_TOP_MARGIN, RUNWAY_EXITS, RUNWAY_JUDGE_CARD, RUNWAY_SECRETS_TAG, noteRowFit, noteRowRect, rectsOverlap, runwayStage } from '../../src/game/systems/runwayLayout';
 
 describe('runway layout (F20.6)', () => {
   it('the judge card clears the corner buttons (sound, motion, fullscreen end at y 86)', () => {
@@ -27,5 +27,31 @@ describe('runway layout (F20.6)', () => {
 
   it('the exits do not overlap each other', () => {
     RUNWAY_EXITS.forEach((a, i) => RUNWAY_EXITS.slice(i + 1).forEach((b) => expect(rectsOverlap(a, b)).toBe(false)));
+  });
+});
+
+describe('the notes of the ceremony (F20.R)', () => {
+  const counts = [1, 2, 3, 4, 5, 6, 7, 8, 10];
+
+  it('shrink when there are many and fit the band, whatever the count', () => {
+    for (const n of counts) {
+      const row = noteRowRect(n);
+      expect(row.x).toBeGreaterThanOrEqual(NOTES_BAND.x - 0.5);
+      expect(row.x + row.width).toBeLessThanOrEqual(NOTES_BAND.x + NOTES_BAND.width + 0.5);
+    }
+    expect(noteRowFit(7).scale).toBeLessThan(noteRowFit(2).scale);
+  });
+
+  it('never cover the Secretos tag (not even while it pops), the judge card nor the top edge of the notebook', () => {
+    for (const n of counts) {
+      const row = noteRowRect(n);
+      expect(rectsOverlap(row, RUNWAY_SECRETS_TAG)).toBe(false);
+      expect(rectsOverlap(row, RUNWAY_JUDGE_CARD)).toBe(false);
+      expect(row.y).toBeGreaterThanOrEqual(NOTES_TOP_MARGIN);
+    }
+  });
+
+  it('keep the way out clear', () => {
+    for (const exit of RUNWAY_EXITS) expect(rectsOverlap(noteRowRect(10), exit)).toBe(false);
   });
 });
