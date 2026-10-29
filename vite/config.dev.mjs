@@ -7,5 +7,5 @@ export default defineConfig({
             output: { manualChunks: { phaser: ['phaser'] } }
         }
     },
-    server: { port: 8080 }
+    server: { port: 8080, watch: { ignored: ['**/.claude/**'] } }
 });
