@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { NAME_MAX, applyNameKey, sanitizeName, nameOnSelect, validateCatName } from '../../src/game/domain/catName';
+import { NAME_MAX, applyNameKey, sanitizeName, nameOnSelect, nameOverlayRect, validateCatName } from '../../src/game/domain/catName';
 
 describe('validateCatName', () => {
   it('trims the spaces around the name', () => {
@@ -107,5 +107,22 @@ describe('sanitizeName (what a virtual keyboard typed or pasted)', () => {
 
   it('is empty for an empty field', () => {
     expect(sanitizeName('')).toBe('');
+  });
+});
+
+describe('nameOverlayRect', () => {
+  const box = { left: 100, top: 50, width: 640 };
+
+  it('maps the field from game units to page pixels (the canvas is 1280 wide)', () => {
+    const r = nameOverlayRect(box, { x: 200, y: 400, width: 400, height: 100 }, 1280, 0);
+    expect(r).toEqual({ left: 200, top: 250, width: 200, height: 50 });
+  });
+
+  it('grows around the centre to the minimum touch size', () => {
+    const r = nameOverlayRect(box, { x: 200, y: 400, width: 40, height: 20 }, 1280, 44);
+    expect(r.width).toBe(44);
+    expect(r.height).toBe(44);
+    expect(r.left + r.width / 2).toBeCloseTo(100 + 220 * 0.5);
+    expect(r.top + r.height / 2).toBeCloseTo(50 + 410 * 0.5);
   });
 });
