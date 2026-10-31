@@ -112,7 +112,7 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
       if (previous) this.pick(previous, session.catName, true);
     });
 
-    this.dom = new DomNameInput(canvasOf(this), { onInput: (v) => this.onDomInput(v), onEnter: () => this.confirm() }, NAME_MAX);
+    this.dom = new DomNameInput(canvasOf(this), { onInput: (v) => this.onDomInput(v), onEnter: () => this.confirm() }, NAME_MAX, touchEnv().touch);
     this.input.keyboard?.on('keydown', this.onKey, this);
     // A tap anywhere else puts the keyboard away (Phaser prevents the default of touches, so the browser does not blur by itself).
     this.input.on('pointerdown', this.onPointerDown, this);
@@ -197,7 +197,7 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
     if (this.barShown) return;
     this.barShown = true;
     this.tweens.add({ targets: this.hint, alpha: 0, duration: 150 });
-    this.tweens.add({ targets: this.bar, alpha: 1, y: 0, duration: 300, ease: profileOf(this).ease('Back.easeOut'), onComplete: () => { this.choose.input!.enabled = true; if (this.nameZone) this.nameZone.input!.enabled = true; } });
+    this.tweens.add({ targets: this.bar, alpha: 1, y: 0, duration: 300, ease: profileOf(this).ease('Back.easeOut'), onComplete: () => { this.choose.input!.enabled = true; if (this.nameZone) this.nameZone.input!.enabled = true; this.mountNameInput(); } });
   }
 
   private refreshName() {
@@ -205,12 +205,23 @@ export class CatSelect extends Phaser.Scene implements E2EUi {
     // The default name looks selected: dimmed, with the caret at the start.
     this.caret.setX(this.nameIsDefault ? this.nameText.x - 2 : this.nameText.x + this.nameText.width + 4);
     this.counter.setText(`${[...this.name].length}/${NAME_MAX}`);
+    if (this.dom?.mounted && !this.dom.focused) this.dom.setValue(this.nameIsDefault ? '' : this.name);
   }
 
   private openKeyboard() {
     if (!this.selected || !this.barShown) return;
     // The default name acts as selected text: the field starts empty, so the first key replaces it.
-    this.dom.open({ x: INPUT.x - INPUT.width / 2, y: INPUT.y - INPUT.height / 2, width: INPUT.width, height: INPUT.height }, this.nameIsDefault ? '' : this.name);
+    this.dom.open(this.nameField(), this.nameIsDefault ? '' : this.name);
+  }
+
+  private nameField() {
+    return { x: INPUT.x - INPUT.width / 2, y: INPUT.y - INPUT.height / 2, width: INPUT.width, height: INPUT.height };
+  }
+
+  /** On touch the real <input> sits over the field as soon as it is shown, so the finger taps it directly (see DomNameInput). */
+  private mountNameInput() {
+    if (!touchEnv().touch || !this.scene.isActive() || this.dom.mounted) return;
+    this.dom.open(this.nameField(), this.nameIsDefault ? '' : this.name);
   }
 
   private onPointerDown(_pointer: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) {

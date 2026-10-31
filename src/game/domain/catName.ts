@@ -43,3 +43,23 @@ export function nameOnSelect(current: string, previousDefault: string | null, ne
 export function sanitizeName(raw: string): string {
   return [...raw].reduce((name, ch) => applyNameKey(name, ch), '');
 }
+
+export interface PageRect { left: number; top: number; width: number; height: number }
+
+/**
+ * Where the real <input> of the name goes on the page: the field of the canvas (game units) in CSS px, at least `minSide`
+ * px on each side (a finger needs about 44), growing around the centre.
+ */
+export function nameOverlayRect(
+  canvas: { left: number; top: number; width: number },
+  field: { x: number; y: number; width: number; height: number },
+  gameWidth: number,
+  minSide: number,
+): PageRect {
+  const k = canvas.width / gameWidth;
+  const width = Math.max(field.width * k, minSide);
+  const height = Math.max(field.height * k, minSide);
+  const cx = canvas.left + (field.x + field.width / 2) * k;
+  const cy = canvas.top + (field.y + field.height / 2) * k;
+  return { left: cx - width / 2, top: cy - height / 2, width, height };
+}
