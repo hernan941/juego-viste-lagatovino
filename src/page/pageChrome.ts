@@ -20,6 +20,28 @@ export function shouldShowPageFullscreen(env: { available: boolean }): boolean {
   return env.available;
 }
 
+export type FullscreenMode = 'api' | 'hint' | 'none';
+
+/**
+ * What the fullscreen button does. The real API where it exists; on Apple touch devices without it (Safari on iPhone) a
+ * card that explains "Add to Home Screen"; nothing once the game already runs as a home-screen app.
+ */
+export function fullscreenMode(env: { available: boolean; appleTouch: boolean; standalone: boolean }): FullscreenMode {
+  if (env.standalone) return 'none';
+  if (env.available) return 'api';
+  return env.appleTouch ? 'hint' : 'none';
+}
+
+/** iPhone, iPad, iPod, or the iPadOS that says it is a Mac (it has a touch screen, a Mac does not). */
+export function isAppleTouch(userAgent: string, maxTouchPoints: number): boolean {
+  return /iPhone|iPad|iPod/.test(userAgent) || (/Macintosh/.test(userAgent) && maxTouchPoints > 1);
+}
+
+export interface PageEnv {
+  appleTouch: boolean;
+  standalone: boolean;
+}
+
 export function fullscreenLabel(active: boolean): string {
   return active ? 'Salir' : 'Pantalla completa';
 }
@@ -43,7 +65,9 @@ export interface PageDocument {
 }
 
 /** Wires the header link and the fullscreen buttons. Returns the function that undoes it. */
-export function installPageChrome(doc: PageDocument, configuredHome: string | undefined): () => void {
+export function installPageChrome(
+  doc: PageDocument, configuredHome: string | undefined, env: PageEnv = { appleTouch: false, standalone: false },
+): () => void {
   const button = doc.getElementById('page-fullscreen') as ButtonLike | null;
   const exit = doc.getElementById('page-fullscreen-exit') as ButtonLike | null;
   const label = doc.getElementById('page-fullscreen-label') as { textContent: string | null } | null;
@@ -52,8 +76,26 @@ export function installPageChrome(doc: PageDocument, configuredHome: string | un
   const homeUrl = resolveHomeUrl(configuredHome);
   for (const a of Array.from(doc.querySelectorAll('[data-home]'))) a.href = homeUrl;
 
-  const available = shouldShowPageFullscreen({ available: !!doc.fullscreenEnabled && !!area?.requestFullscreen });
-  for (const b of [button, exit]) if (b) b.hidden = !available;
+  const mode = fullscreenMode({ available: !!doc.fullscreenEnabled && !!area?.requestFullscreen, ...env });
+  const available = shouldShowPageFullscreen({ available: mode === 'api' });
+  if (button) button.hidden = mode === 'none';
+  if (exit) exit.hidden = !available;
+
+  if (mode === 'hint') {
+    // iPhone: no Fullscreen API, so the button opens a card that explains how to play fullscreen from the home screen.
+    const card = doc.getElementById('a2hs-hint') as ButtonLike | null;
+    const close = doc.getElementById('a2hs-hint-close') as ButtonLike | null;
+    const open = () => { if (card) card.hidden = false; };
+    const shut = () => { if (card) card.hidden = true; };
+    button?.addEventListener('click', open);
+    close?.addEventListener('click', shut);
+    card?.addEventListener('click', shut);
+    return () => {
+      button?.removeEventListener('click', open);
+      close?.removeEventListener('click', shut);
+      card?.removeEventListener('click', shut);
+    };
+  }
   if (!available) return () => {};
 
   const sync = () => {

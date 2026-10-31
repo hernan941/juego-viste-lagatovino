@@ -5,6 +5,11 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Viste Lagato" />
     <meta name="theme-color" content="#FFFCF5" />
     <meta name="description" content="Viste Lagato: un juego para vestir gatitos con sweaters, de Lagatovino." />
     <link rel="stylesheet" href="/style.css">
@@ -48,6 +53,19 @@
                 <span>Gatitos con mucho cariño, de <a href="https://lagatovino.com/" data-home>Lagatovino</a>.</span>
             </p>
         </footer>
+    </div>
+    <!-- iPhone has no Fullscreen API: this card (opened by the fullscreen button) explains how to play fullscreen. -->
+    <div id="a2hs-hint" class="a2hs-hint" role="dialog" aria-label="Jugar a pantalla completa" hidden>
+        <div class="rotate-card">
+            <svg class="rotate-phone" viewBox="0 0 120 120" width="96" height="96" aria-hidden="true">
+                <rect x="24" y="30" width="72" height="80" rx="14" fill="#FFFFFF" stroke="#1F1B1A" stroke-width="5"/>
+                <path d="M60 12 V62 M44 28 L60 12 L76 28" fill="none" stroke="#1F1B1A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="60" cy="88" r="5" fill="#F6BFD0"/>
+            </svg>
+            <p class="rotate-title">¡A pantalla completa!</p>
+            <p class="rotate-text">Toca <strong>Compartir</strong> y luego <strong>Añadir a pantalla de inicio</strong>. Ábrelo desde ahí y los gatitos tendrán toda la pantalla.</p>
+            <button type="button" class="pill pill-solid" id="a2hs-hint-close">¡Entendido!</button>
+        </div>
     </div>
     <!-- ADR 0014: shown (class rotate-hint on <html>) when a phone is held in portrait. -->
     <div id="rotate-hint" role="alert" aria-live="polite">

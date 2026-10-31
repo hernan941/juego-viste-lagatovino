@@ -403,3 +403,28 @@ html.rotate-hint #rotate-hint {
         transform: rotate(-90deg);
     }
 }
+
+/* iPhone: the card that explains "Add to Home Screen" (the fullscreen button opens it). */
+.a2hs-hint {
+    position: fixed;
+    inset: 0;
+    z-index: 110;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background: rgba(255, 252, 245, 0.92);
+}
+
+.a2hs-hint[hidden] {
+    display: none;
+}
+
+.a2hs-hint .rotate-card {
+    max-height: 90vh;
+    overflow: auto;
+}
+
+.a2hs-hint .rotate-text {
+    margin-bottom: 14px;
+}
