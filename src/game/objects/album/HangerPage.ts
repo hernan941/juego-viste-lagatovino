@@ -267,6 +267,9 @@ export class HangerPage extends BookPage {
   /** Called when the notebook opens: the keychain of `hang` flies from below to its hook, clicks and swings. */
   async reveal(): Promise<void> {
     const catId = this.ctx.hang;
+    // The flight happens once per visit: when the player turns to another tab and back, the page is built again from the same
+    // context and the keychain must hang at rest on its hook, not stay hidden waiting for a flight that never comes.
+    this.ctx.hang = null;
     const hook = catId ? this.hooks.get(`keychain:${catId}`) : undefined;
     const keychain = hook?.keychain;
     if (!hook || !keychain) return;

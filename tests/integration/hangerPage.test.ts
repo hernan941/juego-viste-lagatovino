@@ -82,7 +82,7 @@ function make(progress: Progress = emptyProgress(0), opts: { hang?: string | nul
     get: (k: string) => (k === 'reducedMotion' ? (opts.reduced ?? false) : k === RegistryKeys.Anchors ? anchors : undefined),
   };
   const ctx: AlbumPageContext = { catalog, progress, completion: completion(progress, catalog), hang: opts.hang ?? null };
-  return { scene, page: createPage(scene as never, 'colgador', ctx) as unknown as Page };
+  return { scene, ctx, page: createPage(scene as never, 'colgador', ctx) as unknown as Page };
 }
 const kc = () => h.keychains as FakeKeychain[];
 const tap = (cell: Cell) => { cell.emit('pointerdown'); cell.emit('pointerup'); };
@@ -342,6 +342,20 @@ describe('the keychain that was just hung flies to its hook (F19.5)', () => {
     expect(kc()[1]!.y).toBeGreaterThan(kc()[0]!.y + 100);
     for (const r of scene.tweens.records) (r.config.onComplete as (() => void) | undefined)?.();
     await flying;
+  });
+
+  it('bug: after the flight, coming back to the hanger from another tab shows the keychain at rest on its hook, not hidden', async () => {
+    const { page, scene, ctx } = make(progressWith(0, 4), { hang: catList[4]!.id });
+    const flying = page.reveal();
+    await settle();
+    for (const r of scene.tweens.records) (r.config.onComplete as (() => void) | undefined)?.();
+    await flying;
+    page.destroy();
+    kc().length = 0;
+    // The album builds the page again with the same context when the player turns back to the hanger.
+    const again = createPage(scene as never, 'colgador', ctx) as unknown as Page;
+    expect(again.info().shown).toHaveLength(12);
+    expect(kc()[1]!.alpha).toBe(1);
   });
 
   it('a hang for a cat without a keychain flies nothing and does not fail', async () => {
