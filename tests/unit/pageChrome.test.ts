@@ -1,7 +1,7 @@
 import { PageEvents } from '../../src/game/constants';
 import { describe, expect, it, vi } from 'vitest';
 import {
-  DEFAULT_HOME_URL, FULLSCREEN_CLASS, fullscreenLabel, installPageChrome, resolveHomeUrl, shouldShowPageFullscreen,
+  DEFAULT_HOME_URL, FULLSCREEN_CLASS, fullscreenLabel, fullscreenMode, installPageChrome, isAppleTouch, resolveHomeUrl, shouldShowPageFullscreen,
 } from '../../src/page/pageChrome';
 
 describe('resolveHomeUrl', () => {
@@ -22,6 +22,36 @@ describe('resolveHomeUrl', () => {
     expect(resolveHomeUrl('javascript:alert(1)')).toBe(DEFAULT_HOME_URL);
     expect(resolveHomeUrl('data:text/html,hi')).toBe(DEFAULT_HOME_URL);
     expect(resolveHomeUrl('lagatovino')).toBe(DEFAULT_HOME_URL);
+  });
+});
+
+describe('fullscreenMode', () => {
+  it('uses the real API wherever it exists, even on an iPad', () => {
+    expect(fullscreenMode({ available: true, appleTouch: false, standalone: false })).toBe('api');
+    expect(fullscreenMode({ available: true, appleTouch: true, standalone: false })).toBe('api');
+  });
+
+  it('shows the "add to home screen" card on an iPhone, which has no API', () => {
+    expect(fullscreenMode({ available: false, appleTouch: true, standalone: false })).toBe('hint');
+  });
+
+  it('hides everything when it is already a home-screen app, or there is no API on a non-Apple browser', () => {
+    expect(fullscreenMode({ available: false, appleTouch: true, standalone: true })).toBe('none');
+    expect(fullscreenMode({ available: true, appleTouch: true, standalone: true })).toBe('none');
+    expect(fullscreenMode({ available: false, appleTouch: false, standalone: false })).toBe('none');
+  });
+});
+
+describe('isAppleTouch', () => {
+  it('recognises iPhone, iPad, iPod and the iPadOS that poses as a Mac', () => {
+    expect(isAppleTouch('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)', 0)).toBe(true);
+    expect(isAppleTouch('Mozilla/5.0 (iPad; CPU OS 16_0 like Mac OS X)', 5)).toBe(true);
+    expect(isAppleTouch('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', 5)).toBe(true);
+  });
+  it('rejects a real Mac, Android and Windows', () => {
+    expect(isAppleTouch('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', 0)).toBe(false);
+    expect(isAppleTouch('Mozilla/5.0 (Linux; Android 14; Pixel 8)', 5)).toBe(false);
+    expect(isAppleTouch('Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 0)).toBe(false);
   });
 });
 
@@ -52,6 +82,9 @@ function fakePage(opts: { api: boolean }) {
   };
   const button = makeButton();
   const exit = makeButton();
+  const hint = makeButton();
+  hint.hidden = true;
+  const hintClose = makeButton();
   const label = { textContent: '' };
   const home = { href: '' };
   const home2 = { href: '' };
@@ -62,12 +95,12 @@ function fakePage(opts: { api: boolean }) {
     exitFullscreen: vi.fn(async () => { doc.fullscreenElement = null; fire('fullscreenchange'); }),
     documentElement: { classList: { toggle: (c: string, on: boolean) => (on ? classes.add(c) : classes.delete(c)) } },
     querySelectorAll: () => [home, home2],
-    getElementById: (id: string): unknown => ({ 'page-fullscreen': button, 'page-fullscreen-exit': exit, 'page-fullscreen-label': label, stage: target }[id] ?? null),
+    getElementById: (id: string): unknown => ({ 'page-fullscreen': button, 'page-fullscreen-exit': exit, 'page-fullscreen-label': label, 'a2hs-hint': hint, 'a2hs-hint-close': hintClose, stage: target }[id] ?? null),
     addEventListener: (t: string, fn: () => void) => (listeners[t] ??= []).push(fn),
     removeEventListener: (t: string, fn: () => void) => { listeners[t] = (listeners[t] ?? []).filter((f) => f !== fn); },
   };
   const target = { requestFullscreen: vi.fn(async () => { doc.fullscreenElement = target; fire('fullscreenchange'); }) };
-  return { doc, button, exit, label, home, home2, classes, target, listeners };
+  return { doc, button, exit, hint, hintClose, label, home, home2, classes, target, listeners };
 }
 
 describe('installPageChrome: invitation from the game', () => {
@@ -107,11 +140,29 @@ describe('installPageChrome', () => {
     expect(p.home2.href).toBe('https://example.com/');
   });
 
-  it('hides both fullscreen buttons when there is no API', () => {
+  it('hides both fullscreen buttons when there is no API (and it is not an Apple phone)', () => {
     const p = fakePage({ api: false });
     installPageChrome(p.doc, undefined);
     expect(p.button.hidden).toBe(true);
     expect(p.exit.hidden).toBe(true);
+  });
+
+  it('on an iPhone keeps the button and opens / closes the add-to-home-screen card', () => {
+    const p = fakePage({ api: false });
+    installPageChrome(p.doc, undefined, { appleTouch: true, standalone: false });
+    expect(p.button.hidden).toBe(false);
+    expect(p.exit.hidden).toBe(true);
+    p.button.handlers[0]();
+    expect(p.hint.hidden).toBe(false);
+    expect(p.target.requestFullscreen).not.toHaveBeenCalled();
+    p.hintClose.handlers[0]();
+    expect(p.hint.hidden).toBe(true);
+  });
+
+  it('hides the button once the game runs as a home-screen app', () => {
+    const p = fakePage({ api: false });
+    installPageChrome(p.doc, undefined, { appleTouch: true, standalone: true });
+    expect(p.button.hidden).toBe(true);
   });
 
   it('enters fullscreen on the game area, then leaves it, keeping label and class in step', async () => {

@@ -1,0 +1,16 @@
+{
+  "name": "Viste Lagato",
+  "short_name": "Viste Lagato",
+  "description": "Un juego para vestir gatitos con sweaters, de Lagatovino.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "landscape",
+  "background_color": "#FFFCF5",
+  "theme_color": "#FFFCF5",
+  "icons": [
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any" },
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
